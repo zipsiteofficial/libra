@@ -205,6 +205,8 @@
 <span id="205">205</span>
 <span id="206">206</span>
 <span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -321,9 +323,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">StateSyncClient</span><span class="op">&gt;</span> {
-        <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">StateSyncClient</span> {
-            <span class="ident">coordinator_sender</span>: <span class="self">self</span>.<span class="ident">coordinator_sender</span>.<span class="ident">clone</span>(),
-        })
+        <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">StateSyncClient</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">coordinator_sender</span>.<span class="ident">clone</span>()))
     }
 
     <span class="doccomment">/// The function returns a future that is fulfilled when the state synchronizer is</span>
@@ -343,6 +343,10 @@
 }
 
 <span class="kw">impl</span> <span class="ident">StateSyncClient</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">coordinator_sender</span>: <span class="ident">mpsc</span>::<span class="ident">UnboundedSender</span><span class="op">&lt;</span><span class="ident">CoordinatorMessage</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> { <span class="ident">coordinator_sender</span> }
+    }
+
     <span class="doccomment">/// Sync validator&#39;s state to target.</span>
     <span class="doccomment">/// In case of success (`Result::Ok`) the LI of storage is at the given target.</span>
     <span class="doccomment">/// In case of failure (`Result::Error`) the LI of storage remains unchanged, and the validator</span>

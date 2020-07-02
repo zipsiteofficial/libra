@@ -131,6 +131,14 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -138,7 +146,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">state_replication</span>::<span class="ident">StateComputer</span>, <span class="ident">test_utils</span>::<span class="ident">mock_storage</span>::<span class="ident">MockStorage</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{<span class="ident">block</span>::<span class="ident">Block</span>, <span class="ident">common</span>::<span class="ident">Payload</span>};
-<span class="kw">use</span> <span class="ident">executor_types</span>::<span class="ident">StateComputeResult</span>;
+<span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span>, <span class="ident">StateComputeResult</span>};
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">channel</span>::<span class="ident">mpsc</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">ACCUMULATOR_PLACEHOLDER_HASH</span>, <span class="ident">HashValue</span>};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -173,7 +181,11 @@
 
 <span class="attribute">#[<span class="ident">async_trait</span>::<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">StateComputer</span> <span class="kw">for</span> <span class="ident">MockStateComputer</span> {
-    <span class="kw">fn</span> <span class="ident">compute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>, <span class="ident">_parent_block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">compute</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>,
+        <span class="ident">_parent_block_id</span>: <span class="ident">HashValue</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">block_cache</span>
             .<span class="ident">lock</span>()
             .<span class="ident">unwrap</span>()
@@ -240,7 +252,11 @@
 
 <span class="attribute">#[<span class="ident">async_trait</span>::<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">StateComputer</span> <span class="kw">for</span> <span class="ident">EmptyStateComputer</span> {
-    <span class="kw">fn</span> <span class="ident">compute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>, <span class="ident">_parent_block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">compute</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">_block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>,
+        <span class="ident">_parent_block_id</span>: <span class="ident">HashValue</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="ident">StateComputeResult</span>::<span class="ident">new</span>(
             <span class="kw-2">*</span><span class="ident">ACCUMULATOR_PLACEHOLDER_HASH</span>,
             <span class="macro">vec</span><span class="macro">!</span>[],
