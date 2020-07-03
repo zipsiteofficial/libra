@@ -297,6 +297,13 @@
 <span id="297">297</span>
 <span id="298">298</span>
 <span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -324,6 +331,7 @@
     <span class="ident">AddCurrencyToAccount</span>,
     <span class="ident">AddRecoveryRotationCapability</span>,
     <span class="ident">AddValidator</span>,
+    <span class="ident">AllowCurrencyForVasp</span>,
     <span class="ident">Burn</span>,
     <span class="ident">BurnTxnFees</span>,
     <span class="ident">CancelBurn</span>,
@@ -335,7 +343,6 @@
     <span class="ident">CreateValidatorAccount</span>,
     <span class="ident">CreateValidatorOperatorAccount</span>,
     <span class="ident">FreezeAccount</span>,
-    <span class="ident">TestnetMint</span>,
     <span class="ident">MintLbr</span>,
     <span class="ident">ModifyPublishingOption</span>,
     <span class="ident">PeerToPeerWithMetadata</span>,
@@ -349,16 +356,18 @@
     <span class="ident">RotateBaseUrl</span>,
     <span class="ident">RotateCompliancePublicKey</span>,
     <span class="ident">RotateSharedEd2551PublicKey</span>,
+    <span class="ident">SetAccountLimitWindowCurrentHoldings</span>,
     <span class="ident">SetValidatorConfig</span>,
     <span class="ident">SetValidatorOperator</span>,
+    <span class="ident">TestnetMint</span>,
     <span class="ident">TieredMint</span>,
     <span class="ident">UnfreezeAccount</span>,
     <span class="ident">UnmintLbr</span>,
+    <span class="ident">UpdateAccountLimitDefinition</span>,
     <span class="ident">UpdateExchangeRate</span>,
     <span class="ident">UpdateLibraVersion</span>,
     <span class="ident">UpdateMintingAbility</span>,
     <span class="ident">UpdateTravelRuleLimit</span>,
-    <span class="ident">UpdateUnhostedWalletLimits</span>,
     <span class="comment">// ...add new scripts here</span>
 }
 
@@ -368,9 +377,10 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">StdlibScript</span>::<span class="kw-2">*</span>;
         <span class="macro">vec</span><span class="macro">!</span>[
-            <span class="ident">AddValidator</span>,
             <span class="ident">AddCurrencyToAccount</span>,
             <span class="ident">AddRecoveryRotationCapability</span>,
+            <span class="ident">AddValidator</span>,
+            <span class="ident">AllowCurrencyForVasp</span>,
             <span class="ident">Burn</span>,
             <span class="ident">BurnTxnFees</span>,
             <span class="ident">CancelBurn</span>,
@@ -382,7 +392,6 @@
             <span class="ident">CreateValidatorAccount</span>,
             <span class="ident">CreateValidatorOperatorAccount</span>,
             <span class="ident">FreezeAccount</span>,
-            <span class="ident">TestnetMint</span>,
             <span class="ident">MintLbr</span>,
             <span class="ident">ModifyPublishingOption</span>,
             <span class="ident">PeerToPeerWithMetadata</span>,
@@ -396,16 +405,19 @@
             <span class="ident">RotateBaseUrl</span>,
             <span class="ident">RotateCompliancePublicKey</span>,
             <span class="ident">RotateSharedEd2551PublicKey</span>,
+            <span class="ident">SetAccountLimitWindowCurrentHoldings</span>,
             <span class="ident">SetValidatorConfig</span>,
             <span class="ident">SetValidatorOperator</span>,
+            <span class="ident">TestnetMint</span>,
             <span class="ident">TieredMint</span>,
-            <span class="ident">UpdateTravelRuleLimit</span>,
             <span class="ident">UnfreezeAccount</span>,
             <span class="ident">UnmintLbr</span>,
-            <span class="ident">UpdateUnhostedWalletLimits</span>,
-            <span class="ident">UpdateLibraVersion</span>,
+            <span class="ident">UpdateAccountLimitDefinition</span>,
             <span class="ident">UpdateExchangeRate</span>,
-            <span class="ident">UpdateMintingAbility</span>, <span class="comment">// ...add new scripts here</span>
+            <span class="ident">UpdateLibraVersion</span>,
+            <span class="ident">UpdateMintingAbility</span>,
+            <span class="ident">UpdateTravelRuleLimit</span>,
+            <span class="comment">// ...add new scripts here</span>
         ]
     }
 
@@ -495,6 +507,7 @@
             <span class="string">&quot;{}&quot;</span>,
             <span class="kw">match</span> <span class="self">self</span> {
                 <span class="ident">AddValidator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;add_validator&quot;</span>,
+                <span class="ident">AllowCurrencyForVasp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;allow_currency_for_vasp&quot;</span>,
                 <span class="ident">AddCurrencyToAccount</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;add_currency_to_account&quot;</span>,
                 <span class="ident">AddRecoveryRotationCapability</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;add_recovery_rotation_capability&quot;</span>,
                 <span class="ident">Burn</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;burn&quot;</span>,
@@ -523,13 +536,14 @@
                 <span class="ident">RotateBaseUrl</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate_base_url&quot;</span>,
                 <span class="ident">RotateCompliancePublicKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate_compliance_public_key&quot;</span>,
                 <span class="ident">RotateSharedEd2551PublicKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate_shared_ed25519_public_key&quot;</span>,
+                <span class="ident">SetAccountLimitWindowCurrentHoldings</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set_account_limit_window_current_holdings&quot;</span>,
                 <span class="ident">SetValidatorConfig</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set_validator_config&quot;</span>,
                 <span class="ident">SetValidatorOperator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set_validator_operator&quot;</span>,
                 <span class="ident">TieredMint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;tiered_mint&quot;</span>,
                 <span class="ident">UpdateTravelRuleLimit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_travel_rule_limit&quot;</span>,
                 <span class="ident">UnfreezeAccount</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;unfreeze_account&quot;</span>,
                 <span class="ident">UnmintLbr</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;unmint_lbr&quot;</span>,
-                <span class="ident">UpdateUnhostedWalletLimits</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_unhosted_wallet_limits&quot;</span>,
+                <span class="ident">UpdateAccountLimitDefinition</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_account_limit_definition&quot;</span>,
                 <span class="ident">UpdateLibraVersion</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_libra_version&quot;</span>,
                 <span class="ident">UpdateExchangeRate</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_exchange_rate&quot;</span>,
                 <span class="ident">UpdateMintingAbility</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update_minting_ability&quot;</span>,
