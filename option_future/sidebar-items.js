@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["OptionFuture","Effectively a size=1 future queue, or a slot with at-most-one future inside. This struct is mostly useful for modeling an optional path in `futures::select!`."]]});
