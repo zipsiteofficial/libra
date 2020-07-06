@@ -1490,6 +1490,38 @@
 <span id="1490">1490</span>
 <span id="1491">1491</span>
 <span id="1492">1492</span>
+<span id="1493">1493</span>
+<span id="1494">1494</span>
+<span id="1495">1495</span>
+<span id="1496">1496</span>
+<span id="1497">1497</span>
+<span id="1498">1498</span>
+<span id="1499">1499</span>
+<span id="1500">1500</span>
+<span id="1501">1501</span>
+<span id="1502">1502</span>
+<span id="1503">1503</span>
+<span id="1504">1504</span>
+<span id="1505">1505</span>
+<span id="1506">1506</span>
+<span id="1507">1507</span>
+<span id="1508">1508</span>
+<span id="1509">1509</span>
+<span id="1510">1510</span>
+<span id="1511">1511</span>
+<span id="1512">1512</span>
+<span id="1513">1513</span>
+<span id="1514">1514</span>
+<span id="1515">1515</span>
+<span id="1516">1516</span>
+<span id="1517">1517</span>
+<span id="1518">1518</span>
+<span id="1519">1519</span>
+<span id="1520">1520</span>
+<span id="1521">1521</span>
+<span id="1522">1522</span>
+<span id="1523">1523</span>
+<span id="1524">1524</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1758,7 +1790,7 @@
                 .<span class="ident">display</span>(<span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">symbol_pool</span>())
         );
         <span class="kw">for</span> (<span class="ident">id</span>, <span class="ident">fun</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">get_spec_funs</span>() {
-            <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">body</span>.<span class="ident">is_none</span>() {
+            <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">body</span>.<span class="ident">is_none</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">fun</span>.<span class="ident">uninterpreted</span> {
                 <span class="comment">// This function is native and expected to be found in the prelude.</span>
                 <span class="kw">continue</span>;
             }
@@ -1796,24 +1828,57 @@
                 <span class="macro">vec</span><span class="macro">!</span>[<span class="string">&quot;$m: $Memory, $txn: $Transaction&quot;</span>.<span class="ident">to_string</span>()]
             };
             <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">set_location</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>.<span class="ident">loc</span>);
-            <span class="macro">emitln</span><span class="macro">!</span>(
+            <span class="kw">let</span> <span class="ident">boogie_name</span> <span class="op">=</span> <span class="ident">boogie_spec_fun_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_env</span>(), <span class="kw-2">*</span><span class="ident">id</span>);
+            <span class="kw">let</span> <span class="ident">param_list</span> <span class="op">=</span> <span class="ident">state_params</span>
+                .<span class="ident">into_iter</span>()
+                .<span class="ident">chain</span>(<span class="ident">spec_var_params</span>)
+                .<span class="ident">chain</span>(<span class="ident">type_params</span>)
+                .<span class="ident">chain</span>(<span class="ident">params</span>)
+                .<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>);
+            <span class="macro">emit</span><span class="macro">!</span>(
                 <span class="self">self</span>.<span class="ident">writer</span>,
-                <span class="string">&quot;function {{:inline}} {}({}): {} {{&quot;</span>,
-                <span class="ident">boogie_spec_fun_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_env</span>(), <span class="kw-2">*</span><span class="ident">id</span>),
-                <span class="ident">state_params</span>
-                    .<span class="ident">into_iter</span>()
-                    .<span class="ident">chain</span>(<span class="ident">spec_var_params</span>)
-                    .<span class="ident">chain</span>(<span class="ident">type_params</span>)
-                    .<span class="ident">chain</span>(<span class="ident">params</span>)
-                    .<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>),
+                <span class="string">&quot;function {{:inline}} {}({}): {}&quot;</span>,
+                <span class="ident">boogie_name</span>,
+                <span class="ident">param_list</span>,
                 <span class="ident">result_type</span>
             );
-            <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">indent</span>();
-            <span class="self">self</span>.<span class="ident">translate_exp</span>(<span class="ident">fun</span>.<span class="ident">body</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>());
-            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>);
-            <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">unindent</span>();
-            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;}&quot;</span>);
-            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>);
+            <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">uninterpreted</span> {
+                <span class="comment">// Uninterpreted function has no body.</span>
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;;&quot;</span>);
+                <span class="comment">// Emit axiom about return type.</span>
+                <span class="kw">let</span> <span class="ident">call</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;{}({})&quot;</span>,
+                    <span class="ident">boogie_name</span>,
+                    <span class="ident">fun</span>.<span class="ident">type_params</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">enumerate</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$tv{}&quot;</span>, <span class="ident">i</span>))
+                        .<span class="ident">chain</span>(<span class="ident">fun</span>.<span class="ident">params</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">n</span>, <span class="kw">_</span>)<span class="op">|</span> {
+                            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">n</span>.<span class="ident">display</span>(<span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">symbol_pool</span>()))
+                        }))
+                        .<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>)
+                );
+                <span class="kw">let</span> <span class="ident">type_check</span> <span class="op">=</span> <span class="ident">boogie_well_formed_expr</span>(
+                    <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">call</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">fun</span>.<span class="ident">result_type</span>,
+                    <span class="ident">WellFormedMode</span>::<span class="ident">WithInvariant</span>,
+                );
+                <span class="macro">emitln</span><span class="macro">!</span>(
+                    <span class="self">self</span>.<span class="ident">writer</span>,
+                    <span class="string">&quot;axiom (forall {} :: {});&quot;</span>,
+                    <span class="ident">param_list</span>,
+                    <span class="ident">type_check</span>
+                );
+            } <span class="kw">else</span> {
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot; {&quot;</span>);
+                <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">indent</span>();
+                <span class="self">self</span>.<span class="ident">translate_exp</span>(<span class="ident">fun</span>.<span class="ident">body</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>());
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>);
+                <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">unindent</span>();
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;}&quot;</span>);
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>);
+            }
         }
     }
 }
@@ -1858,7 +1923,6 @@
         <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">function_target</span>();
         <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">get_spec</span>();
         <span class="kw">let</span> <span class="ident">ensures_mod</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">free_ensures</span> { <span class="string">&quot;free &quot;</span> } <span class="kw">else</span> { <span class="string">&quot;&quot;</span> };
-        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;requires $ExistsTxnSenderAccount($m, $txn);&quot;</span>);
 
         <span class="comment">// Get all aborts_if conditions.</span>
         <span class="kw">let</span> <span class="ident">aborts_if</span> <span class="op">=</span> <span class="ident">spec</span>.<span class="ident">filter_kind</span>(<span class="ident">ConditionKind</span>::<span class="ident">AbortsIf</span>).<span class="ident">collect_vec</span>();
@@ -1999,7 +2063,6 @@
     <span class="doccomment">/// entry point of a function.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assume_preconditions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume $Memory__is_well_formed($m);&quot;</span>);
-        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume $ExistsTxnSenderAccount($m, $txn);&quot;</span>);
         <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">function_target</span>();
         <span class="comment">// Assume requires.</span>
         <span class="kw">let</span> <span class="ident">requires</span> <span class="op">=</span> <span class="ident">func_target</span>
@@ -2547,7 +2610,7 @@
             <span class="ident">Value</span>::<span class="ident">Address</span>(<span class="ident">addr</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$Address({})&quot;</span>, <span class="ident">addr</span>),
             <span class="ident">Value</span>::<span class="ident">Number</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$Integer({})&quot;</span>, <span class="ident">val</span>),
             <span class="ident">Value</span>::<span class="ident">Bool</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$Boolean({})&quot;</span>, <span class="ident">val</span>),
-            <span class="ident">Value</span>::<span class="ident">ByteArray</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">boogie_byte_blob</span>(<span class="ident">val</span>)),
+            <span class="ident">Value</span>::<span class="ident">ByteArray</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">boogie_byte_blob</span>(<span class="self">self</span>.<span class="ident">options</span>, <span class="ident">val</span>)),
         }
     }
 
@@ -2687,6 +2750,7 @@
                  parameter of `all` or `any`&quot;</span>,
             ),
             <span class="ident">Operation</span>::<span class="ident">Update</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_primitive_call</span>(<span class="string">&quot;$update_vector_by_value&quot;</span>, <span class="ident">args</span>),
+            <span class="ident">Operation</span>::<span class="ident">Concat</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_primitive_call</span>(<span class="string">&quot;$append_vector&quot;</span>, <span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">Old</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_old</span>(<span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">Trace</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">trace_value</span>(<span class="ident">node_id</span>, <span class="ident">TraceItem</span>::<span class="ident">Explicit</span>, <span class="op">|</span><span class="op">|</span> {
                 <span class="self">self</span>.<span class="ident">translate_exp</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>[<span class="number">0</span>])

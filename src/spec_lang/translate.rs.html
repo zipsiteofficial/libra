@@ -4178,6 +4178,23 @@
 <span id="4178">4178</span>
 <span id="4179">4179</span>
 <span id="4180">4180</span>
+<span id="4181">4181</span>
+<span id="4182">4182</span>
+<span id="4183">4183</span>
+<span id="4184">4184</span>
+<span id="4185">4185</span>
+<span id="4186">4186</span>
+<span id="4187">4187</span>
+<span id="4188">4188</span>
+<span id="4189">4189</span>
+<span id="4190">4190</span>
+<span id="4191">4191</span>
+<span id="4192">4192</span>
+<span id="4193">4193</span>
+<span id="4194">4194</span>
+<span id="4195">4195</span>
+<span id="4196">4196</span>
+<span id="4197">4197</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -4702,6 +4719,17 @@
                     <span class="ident">result_type</span>: <span class="ident">vector_t</span>.<span class="ident">clone</span>(),
                 },
             );
+            <span class="ident">add_builtin</span>(
+                <span class="self">self</span>,
+                <span class="self">self</span>.<span class="ident">builtin_fun_symbol</span>(<span class="string">&quot;concat&quot;</span>),
+                <span class="ident">SpecFunEntry</span> {
+                    <span class="ident">loc</span>: <span class="ident">loc</span>.<span class="ident">clone</span>(),
+                    <span class="ident">oper</span>: <span class="ident">Operation</span>::<span class="ident">Concat</span>,
+                    <span class="ident">type_params</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">param_t</span>.<span class="ident">clone</span>()],
+                    <span class="ident">arg_types</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">vector_t</span>.<span class="ident">clone</span>(), <span class="ident">vector_t</span>.<span class="ident">clone</span>()],
+                    <span class="ident">result_type</span>: <span class="ident">vector_t</span>.<span class="ident">clone</span>(),
+                },
+            );
 
             <span class="comment">// Ranges</span>
             <span class="ident">add_builtin</span>(
@@ -5140,8 +5168,11 @@
             <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">env</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">loc</span>);
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">value</span> {
                 <span class="ident">Function</span> {
-                    <span class="ident">name</span>, <span class="ident">signature</span>, ..
-                } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">decl_ana_spec_fun</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">name</span>, <span class="ident">signature</span>),
+                    <span class="ident">uninterpreted</span>,
+                    <span class="ident">name</span>,
+                    <span class="ident">signature</span>,
+                    ..
+                } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">decl_ana_spec_fun</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="kw-2">*</span><span class="ident">uninterpreted</span>, <span class="ident">name</span>, <span class="ident">signature</span>),
                 <span class="ident">Variable</span> {
                     <span class="ident">is_global</span>: <span class="bool-val">true</span>,
                     <span class="ident">name</span>,
@@ -5160,6 +5191,7 @@
     <span class="kw">fn</span> <span class="ident">decl_ana_spec_fun</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">loc</span>: <span class="kw-2">&amp;</span><span class="ident">Loc</span>,
+        <span class="ident">uninterpreted</span>: <span class="ident">bool</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">PA</span>::<span class="ident">FunctionName</span>,
         <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">FunctionSignature</span>,
     ) {
@@ -5194,6 +5226,7 @@
             <span class="ident">params</span>,
             <span class="ident">result_type</span>,
             <span class="ident">used_spec_vars</span>: <span class="ident">BTreeSet</span>::<span class="ident">new</span>(),
+            <span class="ident">uninterpreted</span>,
             <span class="ident">is_pure</span>: <span class="bool-val">true</span>,
             <span class="ident">body</span>: <span class="prelude-val">None</span>,
         };
@@ -6631,8 +6664,9 @@
         <span class="kw">let</span> <span class="ident">body</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">spec_funs</span>[<span class="ident">fun_idx</span>].<span class="ident">body</span>.<span class="ident">is_some</span>() {
             <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">spec_funs</span>[<span class="ident">fun_idx</span>].<span class="ident">body</span>, <span class="prelude-val">None</span>).<span class="ident">unwrap</span>()
         } <span class="kw">else</span> {
-            <span class="comment">// Native function: assume it is impure. We need a modifier to declare otherwise</span>
-            <span class="self">self</span>.<span class="ident">spec_funs</span>[<span class="ident">fun_idx</span>].<span class="ident">is_pure</span> <span class="op">=</span> <span class="bool-val">false</span>;
+            <span class="comment">// No body: assume it is impure unless uninterpreted.</span>
+            <span class="comment">// We need a modifier to declare otherwise</span>
+            <span class="self">self</span>.<span class="ident">spec_funs</span>[<span class="ident">fun_idx</span>].<span class="ident">is_pure</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">spec_funs</span>[<span class="ident">fun_idx</span>].<span class="ident">uninterpreted</span>;
             <span class="kw">return</span>;
         };
 
