@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["AccountStateBlob",""],["AccountStateBlobHasher",""],["AccountStateWithProof",""]]});
+initSidebarItems({"struct":[["AccountStateBlob",""],["AccountStateBlobHasher","Cryptographic hasher for an LCS-serializable #item"],["AccountStateWithProof",""]]});

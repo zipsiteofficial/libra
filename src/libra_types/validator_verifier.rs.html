@@ -598,6 +598,10 @@
 <span id="598">598</span>
 <span id="599">599</span>
 <span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -606,7 +610,8 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
     <span class="ident">ed25519</span>::{<span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>},
-    <span class="ident">HashValue</span>, <span class="ident">VerifyingKey</span>,
+    <span class="ident">hash</span>::<span class="ident">CryptoHash</span>,
+    <span class="ident">Signature</span>, <span class="ident">VerifyingKey</span>,
 };
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
@@ -729,16 +734,19 @@
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="ident">author_to_validator_info</span>)
     }
 
-    <span class="doccomment">/// Verify the correctness of a signature of a hash by a known author.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_signature</span>(
+    <span class="doccomment">/// Verify the correctness of a signature of a message by a known author.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Serialize</span> <span class="op">+</span> <span class="ident">CryptoHash</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">author</span>: <span class="ident">AccountAddress</span>,
-        <span class="ident">hash</span>: <span class="ident">HashValue</span>,
+        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
         <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519Signature</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VerifyError</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">author</span>) {
             <span class="prelude-val">Some</span>(<span class="ident">public_key</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">public_key</span>.<span class="ident">verify_signature</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>, <span class="ident">signature</span>).<span class="ident">is_err</span>() {
+                <span class="kw">if</span> <span class="ident">public_key</span>
+                    .<span class="ident">verify_struct_signature</span>(<span class="ident">message</span>, <span class="ident">signature</span>)
+                    .<span class="ident">is_err</span>()
+                {
                     <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">InvalidSignature</span>)
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Ok</span>(())
@@ -753,24 +761,24 @@
     <span class="doccomment">/// attached signatures is invalid or it does not correspond to a known author. The latter is to</span>
     <span class="doccomment">/// prevent malicious users from adding arbitrary content to the signature payload that would go</span>
     <span class="doccomment">/// unnoticed.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_aggregated_signature</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_aggregated_struct_signature</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">CryptoHash</span> <span class="op">+</span> <span class="ident">Serialize</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">hash</span>: <span class="ident">HashValue</span>,
+        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
         <span class="ident">aggregated_signature</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">Ed25519Signature</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VerifyError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">check_num_of_signatures</span>(<span class="ident">aggregated_signature</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">check_voting_power</span>(<span class="ident">aggregated_signature</span>.<span class="ident">keys</span>())<span class="question-mark">?</span>;
         <span class="kw">for</span> (<span class="ident">author</span>, <span class="ident">signature</span>) <span class="kw">in</span> <span class="ident">aggregated_signature</span> {
-            <span class="self">self</span>.<span class="ident">verify_signature</span>(<span class="kw-2">*</span><span class="ident">author</span>, <span class="ident">hash</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
+            <span class="self">self</span>.<span class="ident">verify</span>(<span class="kw-2">*</span><span class="ident">author</span>, <span class="ident">message</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="doccomment">/// This function will try batch signature verification and falls back to normal</span>
     <span class="doccomment">/// iterated verification if batching fails.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">batch_verify_aggregated_signature</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">batch_verify_aggregated_signatures</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">CryptoHash</span> <span class="op">+</span> <span class="ident">Serialize</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">hash</span>: <span class="ident">HashValue</span>,
+        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
         <span class="ident">aggregated_signature</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">Ed25519Signature</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VerifyError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">check_num_of_signatures</span>(<span class="ident">aggregated_signature</span>)<span class="question-mark">?</span>;
@@ -783,8 +791,8 @@
             })
             .<span class="ident">collect</span>();
         <span class="comment">// Fallback is required to identify the source of the problem if batching fails.</span>
-        <span class="kw">if</span> <span class="ident">Ed25519PublicKey</span>::<span class="ident">batch_verify_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>, <span class="ident">keys_and_signatures</span>).<span class="ident">is_err</span>() {
-            <span class="self">self</span>.<span class="ident">verify_aggregated_signature</span>(<span class="ident">hash</span>, <span class="ident">aggregated_signature</span>)<span class="question-mark">?</span>
+        <span class="kw">if</span> <span class="ident">Ed25519Signature</span>::<span class="ident">batch_verify</span>(<span class="ident">message</span>, <span class="ident">keys_and_signatures</span>).<span class="ident">is_err</span>() {
+            <span class="self">self</span>.<span class="ident">verify_aggregated_struct_signature</span>(<span class="ident">message</span>, <span class="ident">aggregated_signature</span>)<span class="question-mark">?</span>
         }
         <span class="prelude-val">Ok</span>(())
     }
@@ -954,7 +962,7 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
     <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">validator_signer</span>::<span class="ident">ValidatorSigner</span>;
-    <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">HashValue</span>};
+    <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">test_utils</span>::{<span class="ident">TestLibraCrypto</span>, <span class="ident">TEST_SEED</span>};
     <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -972,9 +980,9 @@
             }
         );
 
-        <span class="kw">let</span> <span class="ident">random_hash</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">random</span>();
+        <span class="kw">let</span> <span class="ident">dummy_struct</span> <span class="op">=</span> <span class="ident">TestLibraCrypto</span>(<span class="string">&quot;Hello, World&quot;</span>.<span class="ident">to_string</span>());
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>() {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
 
         <span class="macro">assert_eq</span><span class="macro">!</span>(
@@ -986,26 +994,26 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_validator</span>() {
         <span class="kw">let</span> <span class="ident">validator_signer</span> <span class="op">=</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>(<span class="ident">TEST_SEED</span>);
-        <span class="kw">let</span> <span class="ident">random_hash</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">random</span>();
-        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">validator_signer</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>);
+        <span class="kw">let</span> <span class="ident">dummy_struct</span> <span class="op">=</span> <span class="ident">TestLibraCrypto</span>(<span class="string">&quot;Hello, World&quot;</span>.<span class="ident">to_string</span>());
+        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>);
         <span class="kw">let</span> <span class="ident">validator</span> <span class="op">=</span>
             <span class="ident">ValidatorVerifier</span>::<span class="ident">new_single</span>(<span class="ident">validator_signer</span>.<span class="ident">author</span>(), <span class="ident">validator_signer</span>.<span class="ident">public_key</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">validator</span>.<span class="ident">verify_signature</span>(<span class="ident">validator_signer</span>.<span class="ident">author</span>(), <span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>),
+            <span class="ident">validator</span>.<span class="ident">verify</span>(<span class="ident">validator_signer</span>.<span class="ident">author</span>(), <span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>),
             <span class="prelude-val">Ok</span>(())
         );
         <span class="kw">let</span> <span class="ident">unknown_validator_signer</span> <span class="op">=</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="number">1</span>; <span class="number">32</span>]);
-        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>);
+        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">validator</span>.<span class="ident">verify_signature</span>(
+            <span class="ident">validator</span>.<span class="ident">verify</span>(
                 <span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(),
-                <span class="ident">random_hash</span>,
+                <span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>,
                 <span class="kw-2">&amp;</span><span class="ident">unknown_signature</span>
             ),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
         <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">validator</span>.<span class="ident">verify_signature</span>(<span class="ident">validator_signer</span>.<span class="ident">author</span>(), <span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">unknown_signature</span>),
+            <span class="ident">validator</span>.<span class="ident">verify</span>(<span class="ident">validator_signer</span>.<span class="ident">author</span>(), <span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">unknown_signature</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">InvalidSignature</span>)
         );
     }
@@ -1017,7 +1025,7 @@
         <span class="kw">let</span> <span class="ident">validator_signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorSigner</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">NUM_SIGNERS</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="ident">i</span>; <span class="number">32</span>]))
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">random_hash</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">random</span>();
+        <span class="kw">let</span> <span class="ident">dummy_struct</span> <span class="op">=</span> <span class="ident">TestLibraCrypto</span>(<span class="string">&quot;Hello, World&quot;</span>.<span class="ident">to_string</span>());
 
         <span class="comment">// Create a map from authors to public keys with equal voting power.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">author_to_public_key_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
@@ -1031,7 +1039,7 @@
         <span class="comment">// Create a map from author to signatures.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">author_to_signature_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>() {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
 
         <span class="comment">// Let&#39;s assume our verifier needs to satisfy at least 5 signatures from the original</span>
@@ -1043,18 +1051,18 @@
         <span class="comment">// Check against signatures == N; this will pass.</span>
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Ok</span>(())
         );
 
         <span class="comment">// Add an extra unknown signer, signatures &gt; N; this will fail.</span>
         <span class="kw">let</span> <span class="ident">unknown_validator_signer</span> <span class="op">=</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="ident">NUM_SIGNERS</span> <span class="op">+</span> <span class="number">1</span>; <span class="number">32</span>]);
-        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>);
+        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>);
         <span class="ident">author_to_signature_map</span>
             .<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>.<span class="ident">clone</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">TooManySignatures</span> {
                 <span class="ident">num_of_signatures</span>: <span class="number">8</span>,
                 <span class="ident">num_of_authors</span>: <span class="number">7</span>
@@ -1064,11 +1072,11 @@
         <span class="comment">// Add 5 valid signers only (quorum threshold is met); this will pass.</span>
         <span class="ident">author_to_signature_map</span>.<span class="ident">clear</span>();
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>().<span class="ident">take</span>(<span class="number">5</span>) {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Ok</span>(())
         );
 
@@ -1078,18 +1086,18 @@
             .<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>.<span class="ident">clone</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
 
         <span class="comment">// Add 4 valid signers only (quorum threshold is NOT met); this will fail.</span>
         <span class="ident">author_to_signature_map</span>.<span class="ident">clear</span>();
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>().<span class="ident">take</span>(<span class="number">4</span>) {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">TooLittleVotingPower</span> {
                 <span class="ident">voting_power</span>: <span class="number">4</span>,
                 <span class="ident">quorum_voting_power</span>: <span class="number">5</span>
@@ -1100,7 +1108,7 @@
         <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
     }
@@ -1112,7 +1120,7 @@
         <span class="kw">let</span> <span class="ident">validator_signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorSigner</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">NUM_SIGNERS</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="ident">i</span>; <span class="number">32</span>]))
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">random_hash</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">random</span>();
+        <span class="kw">let</span> <span class="ident">dummy_struct</span> <span class="op">=</span> <span class="ident">TestLibraCrypto</span>(<span class="string">&quot;Hello, World&quot;</span>.<span class="ident">to_string</span>());
 
         <span class="comment">// Create a map from authors to public keys with increasing weights (0, 1, 2, 3) and</span>
         <span class="comment">// a map of author to signature.</span>
@@ -1125,7 +1133,7 @@
             );
             <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(
                 <span class="ident">validator_signer</span>.<span class="ident">author</span>(),
-                <span class="ident">validator_signer</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>),
+                <span class="ident">validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>),
             );
         }
 
@@ -1137,18 +1145,18 @@
         <span class="comment">// Check against all signatures (6 voting power); this will pass.</span>
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Ok</span>(())
         );
 
         <span class="comment">// Add an extra unknown signer, signatures &gt; N; this will fail.</span>
         <span class="kw">let</span> <span class="ident">unknown_validator_signer</span> <span class="op">=</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="ident">NUM_SIGNERS</span> <span class="op">+</span> <span class="number">1</span>; <span class="number">32</span>]);
-        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>);
+        <span class="kw">let</span> <span class="ident">unknown_signature</span> <span class="op">=</span> <span class="ident">unknown_validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>);
         <span class="ident">author_to_signature_map</span>
             .<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>.<span class="ident">clone</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">TooManySignatures</span> {
                 <span class="ident">num_of_signatures</span>: <span class="number">5</span>,
                 <span class="ident">num_of_authors</span>: <span class="number">4</span>
@@ -1158,11 +1166,11 @@
         <span class="comment">// Add 5 voting power signers only (quorum threshold is met) with (2, 3) ; this will pass.</span>
         <span class="ident">author_to_signature_map</span>.<span class="ident">clear</span>();
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>().<span class="ident">skip</span>(<span class="number">2</span>) {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Ok</span>(())
         );
 
@@ -1172,18 +1180,18 @@
             .<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>.<span class="ident">clone</span>());
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
 
         <span class="comment">// Add first 3 valid signers only (quorum threshold is NOT met); this will fail.</span>
         <span class="ident">author_to_signature_map</span>.<span class="ident">clear</span>();
         <span class="kw">for</span> <span class="ident">validator</span> <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>().<span class="ident">take</span>(<span class="number">3</span>) {
-            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign_message</span>(<span class="ident">random_hash</span>));
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">validator</span>.<span class="ident">author</span>(), <span class="ident">validator</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>));
         }
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">TooLittleVotingPower</span> {
                 <span class="ident">voting_power</span>: <span class="number">3</span>,
                 <span class="ident">quorum_voting_power</span>: <span class="number">5</span>
@@ -1194,7 +1202,7 @@
         <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(<span class="ident">unknown_validator_signer</span>.<span class="ident">author</span>(), <span class="ident">unknown_signature</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">validator_verifier</span>
-                .<span class="ident">batch_verify_aggregated_signature</span>(<span class="ident">random_hash</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
+                .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
     }

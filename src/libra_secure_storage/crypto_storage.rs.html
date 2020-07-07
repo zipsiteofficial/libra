@@ -66,16 +66,17 @@
 <span id="66">66</span>
 <span id="67">67</span>
 <span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Error</span>;
 <span class="kw">use</span> <span class="ident">enum_dispatch</span>::<span class="ident">enum_dispatch</span>;
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::{
-    <span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>},
-    <span class="ident">HashValue</span>,
-};
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
 <span class="doccomment">/// CryptoStorage provides an abstraction for secure generation and handling of cryptographic keys.</span>
@@ -114,16 +115,23 @@
     <span class="doccomment">/// the version. At most two versions are expected to be retained.</span>
     <span class="kw">fn</span> <span class="ident">rotate_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span>;
 
-    <span class="doccomment">/// Signs the provided message using the &#39;named&#39; private key.</span>
-    <span class="kw">fn</span> <span class="ident">sign_message</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// Signs the provided securely-hashable struct, using the &#39;named&#39; private</span>
+    <span class="doccomment">/// key.</span>
+    <span class="comment">// The FQDNs on the next line help macros don&#39;t remove them</span>
+    <span class="kw">fn</span> <span class="ident">sign</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">CryptoHash</span> <span class="op">+</span> <span class="ident">serde</span>::<span class="ident">Serialize</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span>;
 
-    <span class="doccomment">/// Signs the provided message using the &#39;named&#39; and &#39;versioned&#39; private key. This may fail</span>
+    <span class="doccomment">/// Signs the provided securely-hashable struct, using the &#39;named&#39; and &#39;versioned&#39; private key. This may fail</span>
     <span class="doccomment">/// even if the &#39;named&#39; key exists but the version is not present.</span>
-    <span class="kw">fn</span> <span class="ident">sign_message_using_version</span>(
+    <span class="comment">// The FQDNs on the next line help macros, don&#39;t remove them</span>
+    <span class="kw">fn</span> <span class="ident">sign_using_version</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">CryptoHash</span> <span class="op">+</span> <span class="ident">serde</span>::<span class="ident">Serialize</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">version</span>: <span class="ident">Ed25519PublicKey</span>,
-        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">HashValue</span>,
+        <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span>;
 }
 

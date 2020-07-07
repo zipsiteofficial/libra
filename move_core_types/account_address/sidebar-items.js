@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["AccountAddress","A struct that represents an account address."],["AccountAddressHasher",""]]});
+initSidebarItems({"struct":[["AccountAddress","A struct that represents an account address."],["AccountAddressHasher","Cryptographic hasher for an LCS-serializable #item"]]});

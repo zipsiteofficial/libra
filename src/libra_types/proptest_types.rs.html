@@ -1008,11 +1008,6 @@
 <span id="1008">1008</span>
 <span id="1009">1009</span>
 <span id="1010">1010</span>
-<span id="1011">1011</span>
-<span id="1012">1012</span>
-<span id="1013">1013</span>
-<span id="1014">1014</span>
-<span id="1015">1015</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1042,7 +1037,6 @@
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
     <span class="ident">ed25519</span>::{<span class="self">self</span>, <span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>},
-    <span class="ident">hash</span>::<span class="ident">CryptoHash</span>,
     <span class="ident">test_utils</span>::<span class="ident">KeyPair</span>,
     <span class="ident">traits</span>::<span class="kw-2">*</span>,
     <span class="ident">HashValue</span>,
@@ -1500,6 +1494,12 @@
     }
 }
 
+<span class="macro">prop_compose</span><span class="macro">!</span> {
+    <span class="kw">fn</span> <span class="ident">arb_pubkey</span>()(<span class="ident">keypair</span> <span class="kw">in</span> <span class="ident">ed25519</span>::<span class="ident">keypair_strategy</span>()) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountAddress</span> {
+            <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">keypair</span>.<span class="ident">public_key</span>)
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">Arbitrary</span> <span class="kw">for</span> <span class="ident">TransactionStatus</span> {
     <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> ();
     <span class="kw">fn</span> <span class="ident">arbitrary_with</span>(<span class="ident">_args</span>: <span class="self">Self</span>::<span class="ident">Parameters</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Strategy</span> {
@@ -1555,11 +1555,11 @@
 }
 
 <span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">fn</span> <span class="ident">arb_validator_signature_for_hash</span>(<span class="ident">hash</span>: <span class="ident">HashValue</span>)(
-        <span class="ident">hash</span> <span class="kw">in</span> <span class="ident">Just</span>(<span class="ident">hash</span>),
+    <span class="kw">fn</span> <span class="ident">arb_validator_signature_for_ledger_info</span>(<span class="ident">ledger_info</span>: <span class="ident">LedgerInfo</span>)(
+        <span class="ident">ledger_info</span> <span class="kw">in</span> <span class="ident">Just</span>(<span class="ident">ledger_info</span>),
         <span class="ident">keypair</span> <span class="kw">in</span> <span class="ident">ed25519</span>::<span class="ident">keypair_strategy</span>(),
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountAddress</span>, <span class="ident">Ed25519Signature</span>) {
-        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">keypair</span>.<span class="ident">private_key</span>.<span class="ident">sign_message</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>);
+        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">keypair</span>.<span class="ident">private_key</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">ledger_info</span>);
         (<span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">keypair</span>.<span class="ident">public_key</span>), <span class="ident">signature</span>)
     }
 }
@@ -1569,11 +1569,10 @@
     <span class="kw">fn</span> <span class="ident">arbitrary_with</span>(<span class="ident">num_validators_range</span>: <span class="self">Self</span>::<span class="ident">Parameters</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Strategy</span> {
         (<span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>(), <span class="ident">Just</span>(<span class="ident">num_validators_range</span>))
             .<span class="ident">prop_flat_map</span>(<span class="op">|</span>(<span class="ident">ledger_info</span>, <span class="ident">num_validators_range</span>)<span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">ledger_info</span>.<span class="ident">hash</span>();
                 (
-                    <span class="ident">Just</span>(<span class="ident">ledger_info</span>),
+                    <span class="ident">Just</span>(<span class="ident">ledger_info</span>.<span class="ident">clone</span>()),
                     <span class="ident">prop</span>::<span class="ident">collection</span>::<span class="ident">vec</span>(
-                        <span class="ident">arb_validator_signature_for_hash</span>(<span class="ident">hash</span>),
+                        <span class="ident">arb_validator_signature_for_ledger_info</span>(<span class="ident">ledger_info</span>),
                         <span class="ident">num_validators_range</span>,
                     ),
                 )
@@ -1885,26 +1884,18 @@
 <span class="kw">impl</span> <span class="ident">Arbitrary</span> <span class="kw">for</span> <span class="ident">BlockMetadata</span> {
     <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> <span class="ident">SizeRange</span>;
     <span class="kw">fn</span> <span class="ident">arbitrary_with</span>(<span class="ident">num_validators_range</span>: <span class="self">Self</span>::<span class="ident">Parameters</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Strategy</span> {
-        <span class="kw">let</span> <span class="ident">signature_strategy</span> <span class="op">=</span> (<span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>(), <span class="ident">Just</span>(<span class="ident">num_validators_range</span>)).<span class="ident">prop_flat_map</span>(
-            <span class="op">|</span>(<span class="ident">hash</span>, <span class="ident">num_validators_range</span>)<span class="op">|</span> {
-                <span class="ident">prop</span>::<span class="ident">collection</span>::<span class="ident">vec</span>(<span class="ident">arb_validator_signature_for_hash</span>(<span class="ident">hash</span>), <span class="ident">num_validators_range</span>)
-            },
-        );
+        <span class="kw">let</span> <span class="ident">addr_strategy</span> <span class="op">=</span> (<span class="ident">Just</span>(<span class="ident">num_validators_range</span>)).<span class="ident">prop_flat_map</span>(<span class="op">|</span><span class="ident">num_validator_range</span><span class="op">|</span> {
+            <span class="ident">prop</span>::<span class="ident">collection</span>::<span class="ident">vec</span>(<span class="ident">arb_pubkey</span>(), <span class="ident">num_validator_range</span>)
+        });
         (
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>(),
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
-            <span class="ident">signature_strategy</span>,
+            <span class="ident">addr_strategy</span>,
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;</span>(),
         )
-            .<span class="ident">prop_map</span>(<span class="op">|</span>(<span class="ident">id</span>, <span class="ident">round</span>, <span class="ident">timestamp</span>, <span class="ident">signatures</span>, <span class="ident">proposer</span>)<span class="op">|</span> {
-                <span class="ident">BlockMetadata</span>::<span class="ident">new</span>(
-                    <span class="ident">id</span>,
-                    <span class="ident">round</span>,
-                    <span class="ident">timestamp</span>,
-                    <span class="ident">signatures</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">addr</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">addr</span>).<span class="ident">collect</span>(),
-                    <span class="ident">proposer</span>,
-                )
+            .<span class="ident">prop_map</span>(<span class="op">|</span>(<span class="ident">id</span>, <span class="ident">round</span>, <span class="ident">timestamp</span>, <span class="ident">addresses</span>, <span class="ident">proposer</span>)<span class="op">|</span> {
+                <span class="ident">BlockMetadata</span>::<span class="ident">new</span>(<span class="ident">id</span>, <span class="ident">round</span>, <span class="ident">timestamp</span>, <span class="ident">addresses</span>, <span class="ident">proposer</span>)
             })
             .<span class="ident">boxed</span>()
     }
@@ -2015,13 +2006,12 @@
         <span class="ident">block_size</span>: <span class="ident">usize</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LedgerInfoWithSignatures</span> {
         <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_info_gen</span>.<span class="ident">materialize</span>(<span class="ident">universe</span>, <span class="ident">block_size</span>);
-        <span class="kw">let</span> <span class="ident">ledger_info_hash</span> <span class="op">=</span> <span class="ident">ledger_info</span>.<span class="ident">hash</span>();
         <span class="kw">let</span> <span class="ident">signatures</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">signers</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">signer_index</span><span class="op">|</span> {
                 <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">universe</span>.<span class="ident">get_account_info</span>(<span class="ident">signer_index</span>);
-                <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">account</span>.<span class="ident">private_key</span>.<span class="ident">sign_message</span>(<span class="kw-2">&amp;</span><span class="ident">ledger_info_hash</span>);
+                <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">account</span>.<span class="ident">private_key</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">ledger_info</span>);
                 (<span class="ident">account</span>.<span class="ident">address</span>, <span class="ident">signature</span>)
             })
             .<span class="ident">collect</span>();

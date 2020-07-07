@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["VoteData","VoteData keeps the information about the block, and its parent."],["VoteDataHasher",""]]});
+initSidebarItems({"struct":[["VoteData","VoteData keeps the information about the block, and its parent."],["VoteDataHasher","Cryptographic hasher for an LCS-serializable #item"]]});
