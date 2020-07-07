@@ -204,13 +204,6 @@
 <span id="204">204</span>
 <span id="205">205</span>
 <span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -222,52 +215,45 @@
 <span class="doccomment">//! the stack height by the number of values returned by the function as indicated in its</span>
 <span class="doccomment">//! signature. Additionally, the stack height must not dip below that at the beginning of the</span>
 <span class="doccomment">//! block for any basic block.</span>
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">control_flow_graph</span>::{<span class="ident">BlockId</span>, <span class="ident">ControlFlowGraph</span>, <span class="ident">VMControlFlowGraph</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">binary_views</span>::{<span class="ident">BinaryIndexedView</span>, <span class="ident">FunctionView</span>},
+    <span class="ident">control_flow_graph</span>::{<span class="ident">BlockId</span>, <span class="ident">ControlFlowGraph</span>},
+};
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
     <span class="ident">errors</span>::{<span class="ident">err_at_offset</span>, <span class="ident">VMResult</span>},
-    <span class="ident">file_format</span>::{
-        <span class="ident">Bytecode</span>, <span class="ident">CompiledModule</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionHandle</span>, <span class="ident">StructFieldInformation</span>,
-    },
+    <span class="ident">file_format</span>::{<span class="ident">Bytecode</span>, <span class="ident">CodeUnit</span>, <span class="ident">Signature</span>, <span class="ident">StructFieldInformation</span>},
 };
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StackUsageVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
-    <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>,
-    <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionHandle</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">StackUsageVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CodeUnit</span>,
+    <span class="ident">return_</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">StackUsageVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(
-        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
-        <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>,
-        <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">VMControlFlowGraph</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span>(
+        <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+        <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">function_definition</span>.<span class="ident">function</span>);
         <span class="kw">let</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="self">Self</span> {
-            <span class="ident">module</span>,
-            <span class="ident">function_definition</span>,
-            <span class="ident">function_handle</span>,
+            <span class="ident">resolver</span>,
+            <span class="ident">code</span>: <span class="ident">function_view</span>.<span class="ident">code</span>(),
+            <span class="ident">return_</span>: <span class="ident">function_view</span>.<span class="ident">return_</span>(),
         };
 
-        <span class="kw">for</span> <span class="ident">block_id</span> <span class="kw">in</span> <span class="ident">cfg</span>.<span class="ident">blocks</span>() {
-            <span class="ident">verifier</span>.<span class="ident">verify_block</span>(<span class="ident">block_id</span>, <span class="ident">cfg</span>)<span class="question-mark">?</span>
+        <span class="kw">for</span> <span class="ident">block_id</span> <span class="kw">in</span> <span class="ident">function_view</span>.<span class="ident">cfg</span>().<span class="ident">blocks</span>() {
+            <span class="ident">verifier</span>.<span class="ident">verify_block</span>(<span class="ident">block_id</span>, <span class="ident">function_view</span>.<span class="ident">cfg</span>())<span class="question-mark">?</span>
         }
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">fn</span> <span class="ident">verify_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">BlockId</span>, <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">ControlFlowGraph</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>
-            .<span class="ident">function_definition</span>
-            .<span class="ident">code</span>
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;Abstract interpreter should only run on non-native functions&quot;</span>)
-            .<span class="ident">code</span>;
+        <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">code</span>.<span class="ident">code</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stack_size_increment</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">block_start</span> <span class="op">=</span> <span class="ident">cfg</span>.<span class="ident">block_start</span>(<span class="ident">block_id</span>);
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="ident">block_start</span>..<span class="op">=</span><span class="ident">cfg</span>.<span class="ident">block_end</span>(<span class="ident">block_id</span>) {
-            <span class="kw">let</span> (<span class="ident">num_pops</span>, <span class="ident">num_pushes</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="ident">code</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>]);
+            <span class="kw">let</span> (<span class="ident">num_pops</span>, <span class="ident">num_pushes</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="ident">code</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>])<span class="question-mark">?</span>;
             <span class="comment">// Check that the stack height is sufficient to accomodate the number</span>
             <span class="comment">// of pops this instruction does</span>
             <span class="kw">if</span> <span class="ident">stack_size_increment</span> <span class="op">&lt;</span> <span class="ident">num_pops</span> {
@@ -293,8 +279,8 @@
     <span class="doccomment">/// The effect of an instruction is a tuple where the first element</span>
     <span class="doccomment">/// is the number of pops it does, and the second element is the number</span>
     <span class="doccomment">/// of pushes it does</span>
-    <span class="kw">fn</span> <span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instruction</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">u32</span>, <span class="ident">u32</span>) {
-        <span class="kw">match</span> <span class="ident">instruction</span> {
+    <span class="kw">fn</span> <span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instruction</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">instruction</span> {
             <span class="comment">// Instructions that pop, but don&#39;t push</span>
             <span class="ident">Bytecode</span>::<span class="ident">Pop</span>
             <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="kw">_</span>)
@@ -362,28 +348,28 @@
 
             <span class="comment">// Return performs `return_count` pops</span>
             <span class="ident">Bytecode</span>::<span class="ident">Ret</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="self">self</span>.<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="ident">len</span>();
+                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">return_</span>.<span class="ident">len</span>();
                 (<span class="ident">return_count</span> <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">0</span>)
             }
 
             <span class="comment">// Call performs `arg_count` pops and `return_count` pushes</span>
             <span class="ident">Bytecode</span>::<span class="ident">Call</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-                <span class="kw">let</span> <span class="ident">arg_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
-                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+                <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">function_handle_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+                <span class="kw">let</span> <span class="ident">arg_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
                 (<span class="ident">arg_count</span>, <span class="ident">return_count</span>)
             }
             <span class="ident">Bytecode</span>::<span class="ident">CallGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">func_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-                <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">func_inst</span>.<span class="ident">handle</span>);
-                <span class="kw">let</span> <span class="ident">arg_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
-                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+                <span class="kw">let</span> <span class="ident">func_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">function_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+                <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">function_handle_at</span>(<span class="ident">func_inst</span>.<span class="ident">handle</span>);
+                <span class="kw">let</span> <span class="ident">arg_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+                <span class="kw">let</span> <span class="ident">return_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>;
                 (<span class="ident">arg_count</span>, <span class="ident">return_count</span>)
             }
 
             <span class="comment">// Pack performs `num_fields` pops and one push</span>
             <span class="ident">Bytecode</span>::<span class="ident">Pack</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">field_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">field_information</span> {
                     <span class="comment">// &#39;Native&#39; here is an error that will be caught by the bytecode verifier later</span>
                     <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
@@ -392,8 +378,8 @@
                 (<span class="ident">field_count</span> <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">1</span>)
             }
             <span class="ident">Bytecode</span>::<span class="ident">PackGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
+                <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">field_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">field_information</span> {
                     <span class="comment">// &#39;Native&#39; here is an error that will be caught by the bytecode verifier later</span>
                     <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
@@ -404,7 +390,7 @@
 
             <span class="comment">// Unpack performs one pop and `num_fields` pushes</span>
             <span class="ident">Bytecode</span>::<span class="ident">Unpack</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">field_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">field_information</span> {
                     <span class="comment">// &#39;Native&#39; here is an error that will be caught by the bytecode verifier later</span>
                     <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
@@ -413,8 +399,8 @@
                 (<span class="number">1</span>, <span class="ident">field_count</span> <span class="kw">as</span> <span class="ident">u32</span>)
             }
             <span class="ident">Bytecode</span>::<span class="ident">UnpackGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
+                <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">field_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">field_information</span> {
                     <span class="comment">// &#39;Native&#39; here is an error that will be caught by the bytecode verifier later</span>
                     <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
@@ -422,7 +408,7 @@
                 };
                 (<span class="number">1</span>, <span class="ident">field_count</span> <span class="kw">as</span> <span class="ident">u32</span>)
             }
-        }
+        })
     }
 }
 </pre></div>

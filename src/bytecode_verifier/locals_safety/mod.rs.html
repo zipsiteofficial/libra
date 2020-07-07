@@ -182,10 +182,6 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -199,26 +195,22 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">absint</span>::{<span class="ident">AbstractInterpreter</span>, <span class="ident">BlockInvariant</span>, <span class="ident">BlockPostcondition</span>, <span class="ident">TransferFunctions</span>},
-    <span class="ident">control_flow_graph</span>::<span class="ident">VMControlFlowGraph</span>,
+    <span class="ident">binary_views</span>::{<span class="ident">BinaryIndexedView</span>, <span class="ident">FunctionView</span>},
 };
 <span class="kw">use</span> <span class="ident">abstract_state</span>::{<span class="ident">AbstractState</span>, <span class="ident">LocalState</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">errors</span>::{<span class="ident">err_at_offset</span>, <span class="ident">VMResult</span>},
-    <span class="ident">file_format</span>::{<span class="ident">Bytecode</span>, <span class="ident">CompiledModule</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">Kind</span>},
-    <span class="ident">views</span>::<span class="ident">FunctionDefinitionView</span>,
+    <span class="ident">file_format</span>::{<span class="ident">Bytecode</span>, <span class="ident">Kind</span>},
 };
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(
-    <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-    <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-    <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="ident">VMControlFlowGraph</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+    <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="ident">BinaryIndexedView</span>,
+    <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">initial_state</span> <span class="op">=</span> <span class="ident">AbstractState</span>::<span class="ident">new</span>(<span class="ident">module</span>, <span class="ident">function_definition</span>);
-    <span class="kw">let</span> <span class="ident">function_definition_view</span> <span class="op">=</span> <span class="ident">FunctionDefinitionView</span>::<span class="ident">new</span>(<span class="ident">module</span>, <span class="ident">function_definition</span>);
-    <span class="kw">let</span> <span class="ident">inv_map</span> <span class="op">=</span>
-        <span class="ident">LocalsSafetyAnalysis</span>().<span class="ident">analyze_function</span>(<span class="ident">initial_state</span>, <span class="kw-2">&amp;</span><span class="ident">function_definition_view</span>, <span class="ident">cfg</span>);
+    <span class="kw">let</span> <span class="ident">initial_state</span> <span class="op">=</span> <span class="ident">AbstractState</span>::<span class="ident">new</span>(<span class="ident">resolver</span>, <span class="ident">function_view</span>);
+    <span class="kw">let</span> <span class="ident">inv_map</span> <span class="op">=</span> <span class="ident">LocalsSafetyAnalysis</span>().<span class="ident">analyze_function</span>(<span class="ident">initial_state</span>, <span class="kw-2">&amp;</span><span class="ident">function_view</span>);
     <span class="comment">// Report all the join failures</span>
     <span class="kw">for</span> (<span class="ident">_block_id</span>, <span class="ident">BlockInvariant</span> { <span class="ident">post</span>, .. }) <span class="kw">in</span> <span class="ident">inv_map</span> {
         <span class="kw">match</span> <span class="ident">post</span> {

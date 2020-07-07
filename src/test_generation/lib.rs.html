@@ -452,6 +452,7 @@
 <span id="452">452</span>
 <span id="453">453</span>
 <span id="454">454</span>
+<span id="455">455</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -472,7 +473,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">config</span>::{<span class="ident">Args</span>, <span class="ident">EXECUTE_UNVERIFIED_MODULE</span>, <span class="ident">RUN_ON_VM</span>};
 <span class="kw">use</span> <span class="ident">bytecode_generator</span>::<span class="ident">BytecodeGenerator</span>;
-<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::<span class="ident">VerifiedModule</span>;
+<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::<span class="ident">verify_module</span>;
 <span class="kw">use</span> <span class="ident">crossbeam_channel</span>::{<span class="ident">bounded</span>, <span class="ident">unbounded</span>, <span class="ident">Receiver</span>, <span class="ident">Sender</span>};
 <span class="kw">use</span> <span class="ident">getrandom</span>::<span class="ident">getrandom</span>;
 <span class="kw">use</span> <span class="ident">language_e2e_tests</span>::<span class="ident">executor</span>::<span class="ident">FakeExecutor</span>;
@@ -499,12 +500,13 @@
 
 <span class="doccomment">/// This function calls the Bytecode verifier to test it</span>
 <span class="kw">fn</span> <span class="ident">run_verifier</span>(<span class="ident">module</span>: <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledModule</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">verifier_panic</span> <span class="op">=</span> <span class="ident">panic</span>::<span class="ident">catch_unwind</span>(<span class="op">|</span><span class="op">|</span> {
-        <span class="ident">VerifiedModule</span>::<span class="ident">new</span>(<span class="ident">module</span>)
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">verified_module</span><span class="op">|</span> <span class="ident">verified_module</span>.<span class="ident">into_inner</span>())
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Module verification failed: {:#?}&quot;</span>, <span class="ident">err</span>))
-    });
-    <span class="ident">verifier_panic</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Verifier panic: {:#?}&quot;</span>, <span class="ident">err</span>)))
+    <span class="kw">match</span> <span class="ident">panic</span>::<span class="ident">catch_unwind</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)) {
+        <span class="prelude-val">Ok</span>(<span class="ident">res</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">res</span> {
+            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">module</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Module verification failed: {:#?}&quot;</span>, <span class="ident">err</span>)),
+        },
+        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Verifier panic: {:#?}&quot;</span>, <span class="ident">err</span>)),
+    }
 }
 
 <span class="doccomment">/// This function runs a verified module in the VM runtime</span>

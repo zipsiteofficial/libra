@@ -52,6 +52,40 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -60,51 +94,85 @@
 <span class="doccomment">//! The overall verification is split between stack_usage_verifier.rs and</span>
 <span class="doccomment">//! abstract_interpreter.rs. CodeUnitVerifier simply orchestrates calls into these two files.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">acquires_list_verifier</span>::<span class="ident">AcquiresVerifier</span>, <span class="ident">control_flow</span>, <span class="ident">control_flow_graph</span>::<span class="ident">VMControlFlowGraph</span>,
-    <span class="ident">locals_safety</span>, <span class="ident">reference_safety</span>, <span class="ident">stack_usage_verifier</span>::<span class="ident">StackUsageVerifier</span>, <span class="ident">type_safety</span>,
+    <span class="ident">acquires_list_verifier</span>::<span class="ident">AcquiresVerifier</span>,
+    <span class="ident">binary_views</span>::{<span class="ident">BinaryIndexedView</span>, <span class="ident">FunctionView</span>},
+    <span class="ident">control_flow</span>, <span class="ident">locals_safety</span>, <span class="ident">reference_safety</span>,
+    <span class="ident">stack_usage_verifier</span>::<span class="ident">StackUsageVerifier</span>,
+    <span class="ident">type_safety</span>,
 };
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashMap</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
     <span class="ident">errors</span>::{<span class="ident">append_err_info</span>, <span class="ident">VMResult</span>},
-    <span class="ident">file_format</span>::{<span class="ident">CompiledModule</span>, <span class="ident">FunctionDefinition</span>},
+    <span class="ident">file_format</span>::{
+        <span class="ident">CompiledModule</span>, <span class="ident">CompiledScript</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionDefinitionIndex</span>,
+        <span class="ident">IdentifierIndex</span>,
+    },
     <span class="ident">IndexKind</span>,
 };
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CodeUnitVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
+    <span class="ident">resolver</span>: <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">function_view</span>: <span class="ident">FunctionView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">name_def_map</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">IdentifierIndex</span>, <span class="ident">FunctionDefinitionIndex</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">CodeUnitVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="self">Self</span> { <span class="ident">module</span> };
-        <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">function_definition</span>) <span class="kw">in</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="ident">verifier</span>
-                .<span class="ident">verify_function</span>(<span class="ident">function_definition</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">function_definition</span>) <span class="kw">in</span> <span class="ident">module</span>.<span class="ident">function_defs</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+            <span class="self">Self</span>::<span class="ident">verify_function</span>(<span class="ident">function_definition</span>, <span class="ident">module</span>)
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">append_err_info</span>(<span class="ident">err</span>, <span class="ident">IndexKind</span>::<span class="ident">FunctionDefinition</span>, <span class="ident">idx</span>))<span class="question-mark">?</span>
         }
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">verify_function</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">function_definition</span>.<span class="ident">code</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">code</span>.<span class="ident">code</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="comment">// create `FunctionView` and `BinaryIndexedView`</span>
+        <span class="kw">let</span> <span class="ident">function_view</span> <span class="op">=</span> <span class="ident">FunctionView</span>::<span class="ident">script</span>(<span class="ident">script</span>);
+        <span class="kw">let</span> <span class="ident">resolver</span> <span class="op">=</span> <span class="ident">BinaryIndexedView</span>::<span class="ident">Script</span>(<span class="ident">script</span>);
+        <span class="comment">//verify</span>
+        <span class="kw">let</span> <span class="ident">code_unit_verifier</span> <span class="op">=</span> <span class="ident">CodeUnitVerifier</span> {
+            <span class="ident">resolver</span>,
+            <span class="ident">function_view</span>,
+            <span class="ident">name_def_map</span>: <span class="ident">HashMap</span>::<span class="ident">new</span>(),
         };
-
-        <span class="ident">control_flow</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">verify_function_inner</span>(<span class="ident">function_definition</span>, <span class="kw-2">&amp;</span><span class="ident">VMControlFlowGraph</span>::<span class="ident">new</span>(<span class="ident">code</span>))
+        <span class="ident">code_unit_verifier</span>.<span class="ident">verify_common</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">verify_function_inner</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-        <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="ident">VMControlFlowGraph</span>,
+    <span class="kw">fn</span> <span class="ident">verify_function</span>(
+        <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>,
+        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">StackUsageVerifier</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>, <span class="ident">cfg</span>)<span class="question-mark">?</span>;
-        <span class="ident">AcquiresVerifier</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>)<span class="question-mark">?</span>;
-        <span class="ident">type_safety</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>, <span class="ident">cfg</span>)<span class="question-mark">?</span>;
-        <span class="ident">locals_safety</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>, <span class="ident">cfg</span>)<span class="question-mark">?</span>;
-        <span class="ident">reference_safety</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">module</span>, <span class="ident">function_definition</span>, <span class="ident">cfg</span>)
+        <span class="comment">// nothing to verify for native function</span>
+        <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">function_definition</span>.<span class="ident">code</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">code</span>,
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
+        };
+        <span class="comment">// create `FunctionView` and `BinaryIndexedView`</span>
+        <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">function_definition</span>.<span class="ident">function</span>);
+        <span class="kw">let</span> <span class="ident">function_view</span> <span class="op">=</span> <span class="ident">FunctionView</span>::<span class="ident">function</span>(<span class="ident">module</span>, <span class="ident">code</span>, <span class="ident">function_handle</span>);
+        <span class="kw">let</span> <span class="ident">resolver</span> <span class="op">=</span> <span class="ident">BinaryIndexedView</span>::<span class="ident">Module</span>(<span class="ident">module</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">name_def_map</span> <span class="op">=</span> <span class="ident">HashMap</span>::<span class="ident">new</span>();
+        <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">func_def</span>) <span class="kw">in</span> <span class="ident">module</span>.<span class="ident">function_defs</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+            <span class="kw">let</span> <span class="ident">fh</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">func_def</span>.<span class="ident">function</span>);
+            <span class="ident">name_def_map</span>.<span class="ident">insert</span>(<span class="ident">fh</span>.<span class="ident">name</span>, <span class="ident">FunctionDefinitionIndex</span>(<span class="ident">idx</span> <span class="kw">as</span> <span class="ident">u16</span>));
+        }
+        <span class="comment">// verify</span>
+        <span class="kw">let</span> <span class="ident">code_unit_verifier</span> <span class="op">=</span> <span class="ident">CodeUnitVerifier</span> {
+            <span class="ident">resolver</span>,
+            <span class="ident">function_view</span>,
+            <span class="ident">name_def_map</span>,
+        };
+        <span class="ident">code_unit_verifier</span>.<span class="ident">verify_common</span>()<span class="question-mark">?</span>;
+        <span class="ident">AcquiresVerifier</span>::<span class="ident">verify</span>(<span class="ident">module</span>, <span class="ident">function_definition</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">verify_common</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="ident">control_flow</span>::<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">function_view</span>.<span class="ident">code</span>())<span class="question-mark">?</span>;
+        <span class="ident">StackUsageVerifier</span>::<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resolver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_view</span>)<span class="question-mark">?</span>;
+        <span class="ident">type_safety</span>::<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resolver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_view</span>)<span class="question-mark">?</span>;
+        <span class="ident">locals_safety</span>::<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resolver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_view</span>)<span class="question-mark">?</span>;
+        <span class="ident">reference_safety</span>::<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">resolver</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_view</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name_def_map</span>)
     }
 }
 </pre></div>

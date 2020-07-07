@@ -78,6 +78,14 @@
 <span id="78">78</span>
 <span id="79">79</span>
 <span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -86,7 +94,7 @@
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">transaction_scripts</span>;
 
-<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::{<span class="ident">batch_verify_modules</span>, <span class="ident">VerifiedModule</span>};
+<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::{<span class="ident">verify_module</span>, <span class="ident">DependencyChecker</span>};
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">stdlib</span>::<span class="ident">build_stdlib</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">file_format</span>::<span class="ident">CompiledModule</span>;
@@ -95,7 +103,7 @@
 
 <span class="comment">// The current stdlib that is freshly built. This will never be used in deployment so we don&#39;t need</span>
 <span class="comment">// to pull the same trick here in order to include this in the Rust binary.</span>
-<span class="kw">static</span> <span class="ident">FRESH_MOVELANG_STDLIB</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VerifiedModule</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="ident">build_stdlib</span>);
+<span class="kw">static</span> <span class="ident">FRESH_MOVELANG_STDLIB</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="ident">build_stdlib</span>);
 
 <span class="comment">// This needs to be a string literal due to restrictions imposed by include_bytes.</span>
 <span class="doccomment">/// The compiled library needs to be included in the Rust binary due to Docker deployment issues.</span>
@@ -111,13 +119,21 @@
 <span class="comment">// regenerate genesis). The compiled version of the stdlib/scripts are used unless otherwise</span>
 <span class="comment">// specified either by the MOVE_NO_USE_COMPILED env var, or by passing the &quot;StdLibOptions::Fresh&quot;</span>
 <span class="comment">// option to `stdlib_modules`.</span>
-<span class="kw">static</span> <span class="ident">COMPILED_MOVELANG_STDLIB</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VerifiedModule</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
-    <span class="kw">let</span> <span class="ident">modules</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">COMPILED_STDLIB_BYTES</span>)
+<span class="kw">static</span> <span class="ident">COMPILED_MOVELANG_STDLIB</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="kw">let</span> <span class="ident">modules</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">COMPILED_STDLIB_BYTES</span>)
         .<span class="ident">unwrap</span>()
         .<span class="ident">into_iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">bytes</span><span class="op">|</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>())
         .<span class="ident">collect</span>();
-    <span class="ident">batch_verify_modules</span>(<span class="ident">modules</span>)
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">verified_modules</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+    <span class="kw">for</span> <span class="ident">module</span> <span class="kw">in</span> <span class="ident">modules</span> {
+        <span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>).<span class="ident">expect</span>(<span class="string">&quot;stdlib module failed to verify&quot;</span>);
+        <span class="ident">DependencyChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="kw-2">&amp;</span><span class="ident">verified_modules</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;stdlib module dependency failed to verify&quot;</span>);
+        <span class="ident">verified_modules</span>.<span class="ident">push</span>(<span class="ident">module</span>)
+    }
+    <span class="ident">verified_modules</span>
 });
 
 <span class="doccomment">/// An enum specifying whether the compiled stdlib/scripts should be used or freshly built versions</span>
@@ -131,7 +147,7 @@
 <span class="doccomment">/// Returns a reference to the standard library. Depending upon the `option` flag passed in</span>
 <span class="doccomment">/// either a compiled version of the standard library will be returned or a new freshly built stdlib</span>
 <span class="doccomment">/// will be used.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">stdlib_modules</span>(<span class="ident">option</span>: <span class="ident">StdLibOptions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">VerifiedModule</span>] {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">stdlib_modules</span>(<span class="ident">option</span>: <span class="ident">StdLibOptions</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">CompiledModule</span>] {
     <span class="kw">match</span> <span class="ident">option</span> {
         <span class="ident">StdLibOptions</span>::<span class="ident">Compiled</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">COMPILED_MOVELANG_STDLIB</span>,
         <span class="ident">StdLibOptions</span>::<span class="ident">Fresh</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">FRESH_MOVELANG_STDLIB</span>,
@@ -144,7 +160,7 @@
 <span class="doccomment">/// The order the modules are presented in is important: later modules depend on earlier ones.</span>
 <span class="doccomment">/// The defualt is to return a compiled version of the stdlib unless it is otherwise specified by the</span>
 <span class="doccomment">/// `MOVE_NO_USE_COMPILED` environment variable.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">env_stdlib_modules</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">VerifiedModule</span>] {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">env_stdlib_modules</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> [<span class="ident">CompiledModule</span>] {
     <span class="kw">let</span> <span class="ident">option</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">use_compiled</span>() {
         <span class="ident">StdLibOptions</span>::<span class="ident">Compiled</span>
     } <span class="kw">else</span> {

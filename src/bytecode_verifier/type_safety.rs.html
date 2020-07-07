@@ -813,18 +813,6 @@
 <span id="813">813</span>
 <span id="814">814</span>
 <span id="815">815</span>
-<span id="816">816</span>
-<span id="817">817</span>
-<span id="818">818</span>
-<span id="819">819</span>
-<span id="820">820</span>
-<span id="821">821</span>
-<span id="822">822</span>
-<span id="823">823</span>
-<span id="824">824</span>
-<span id="825">825</span>
-<span id="826">826</span>
-<span id="827">827</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -833,39 +821,30 @@
 <span class="doccomment">//! It does not utilize control flow, but does check each block independently</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">control_flow_graph</span>::{<span class="ident">ControlFlowGraph</span>, <span class="ident">VMControlFlowGraph</span>},
-    <span class="ident">kind</span>,
+    <span class="ident">binary_views</span>::{<span class="ident">BinaryIndexedView</span>, <span class="ident">FunctionView</span>},
+    <span class="ident">control_flow_graph</span>::<span class="ident">ControlFlowGraph</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
     <span class="ident">errors</span>::{<span class="ident">err_at_offset</span>, <span class="ident">VMResult</span>},
     <span class="ident">file_format</span>::{
-        <span class="ident">Bytecode</span>, <span class="ident">CompiledModule</span>, <span class="ident">FieldHandleIndex</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionHandle</span>, <span class="ident">Kind</span>,
-        <span class="ident">LocalIndex</span>, <span class="ident">Signature</span>, <span class="ident">SignatureToken</span>, <span class="ident">SignatureToken</span> <span class="kw">as</span> <span class="ident">ST</span>, <span class="ident">StructDefinition</span>,
-        <span class="ident">StructDefinitionIndex</span>, <span class="ident">StructFieldInformation</span>, <span class="ident">StructHandleIndex</span>,
+        <span class="ident">Bytecode</span>, <span class="ident">FieldHandleIndex</span>, <span class="ident">FunctionHandle</span>, <span class="ident">Kind</span>, <span class="ident">LocalIndex</span>, <span class="ident">Signature</span>, <span class="ident">SignatureToken</span>,
+        <span class="ident">SignatureToken</span> <span class="kw">as</span> <span class="ident">ST</span>, <span class="ident">StructDefinition</span>, <span class="ident">StructDefinitionIndex</span>, <span class="ident">StructFieldInformation</span>,
+        <span class="ident">StructHandleIndex</span>,
     },
 };
 
 <span class="kw">struct</span> <span class="ident">Locals</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="ident">param_count</span>: <span class="ident">usize</span>,
-    <span class="ident">parameters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">SignatureToken</span>],
-    <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">SignatureToken</span>],
+    <span class="ident">parameters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>,
+    <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Locals</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
-        <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionHandle</span>,
-        <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">parameters</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>).<span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">param_count</span> <span class="op">=</span> <span class="ident">parameters</span>.<span class="ident">len</span>();
-        <span class="kw">let</span> <span class="ident">locals_idx</span> <span class="op">=</span> <span class="ident">function_definition</span>.<span class="ident">code</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">locals</span>;
-        <span class="kw">let</span> <span class="ident">locals</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">locals_idx</span>).<span class="number">0</span>;
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">parameters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>, <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">param_count</span>,
+            <span class="ident">param_count</span>: <span class="ident">parameters</span>.<span class="ident">len</span>(),
             <span class="ident">parameters</span>,
             <span class="ident">locals</span>,
         }
@@ -874,53 +853,45 @@
     <span class="kw">fn</span> <span class="ident">local_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">LocalIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span> {
         <span class="kw">let</span> <span class="ident">idx</span> <span class="op">=</span> <span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="kw">if</span> <span class="ident">idx</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">param_count</span> {
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">parameters</span>[<span class="ident">idx</span>]
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">parameters</span>.<span class="number">0</span>[<span class="ident">idx</span>]
         } <span class="kw">else</span> {
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">locals</span>[<span class="ident">idx</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">param_count</span>]
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">locals</span>.<span class="number">0</span>[<span class="ident">idx</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">param_count</span>]
         }
     }
 }
 
 <span class="kw">struct</span> <span class="ident">TypeSafetyChecker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
-    <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionHandle</span>,
-    <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>,
-    <span class="ident">signature</span>: <span class="ident">Locals</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">locals</span>: <span class="ident">Locals</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
     <span class="ident">stack</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignatureToken</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TypeSafetyChecker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>, <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">function_definition</span>.<span class="ident">function</span>);
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">locals</span> <span class="op">=</span> <span class="ident">Locals</span>::<span class="ident">new</span>(<span class="ident">function_view</span>.<span class="ident">parameters</span>(), <span class="ident">function_view</span>.<span class="ident">locals</span>());
         <span class="self">Self</span> {
-            <span class="ident">module</span>,
-            <span class="ident">function_handle</span>,
-            <span class="ident">function_definition</span>,
-            <span class="ident">signature</span>: <span class="ident">Locals</span>::<span class="ident">new</span>(<span class="ident">module</span>, <span class="ident">function_handle</span>, <span class="ident">function_definition</span>),
+            <span class="ident">resolver</span>,
+            <span class="ident">function_view</span>,
+            <span class="ident">locals</span>,
             <span class="ident">stack</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }
     }
 
-    <span class="doccomment">/// Gives the current constraints on the type formals in the current function.</span>
-    <span class="kw">fn</span> <span class="ident">type_parameters</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Kind</span>] {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_handle</span>.<span class="ident">type_parameters</span>
-    }
-
     <span class="kw">fn</span> <span class="ident">local_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">LocalIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span> {
-        <span class="self">self</span>.<span class="ident">signature</span>.<span class="ident">local_at</span>(<span class="ident">i</span>)
+        <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">local_at</span>(<span class="ident">i</span>)
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(
-    <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-    <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-    <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="ident">VMControlFlowGraph</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+    <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">TypeSafetyChecker</span>::<span class="ident">new</span>(<span class="ident">module</span>, <span class="ident">function_definition</span>);
+    <span class="kw">let</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">TypeSafetyChecker</span>::<span class="ident">new</span>(<span class="ident">resolver</span>, <span class="ident">function_view</span>);
 
-    <span class="kw">for</span> <span class="ident">block_id</span> <span class="kw">in</span> <span class="ident">cfg</span>.<span class="ident">blocks</span>() {
-        <span class="kw">for</span> <span class="ident">offset</span> <span class="kw">in</span> <span class="ident">cfg</span>.<span class="ident">instr_indexes</span>(<span class="ident">block_id</span>) {
-            <span class="kw">let</span> <span class="ident">instr</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">function_definition</span>.<span class="ident">code</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">code</span>[<span class="ident">offset</span> <span class="kw">as</span> <span class="ident">usize</span>];
+    <span class="kw">for</span> <span class="ident">block_id</span> <span class="kw">in</span> <span class="ident">function_view</span>.<span class="ident">cfg</span>().<span class="ident">blocks</span>() {
+        <span class="kw">for</span> <span class="ident">offset</span> <span class="kw">in</span> <span class="ident">function_view</span>.<span class="ident">cfg</span>().<span class="ident">instr_indexes</span>(<span class="ident">block_id</span>) {
+            <span class="kw">let</span> <span class="ident">instr</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">code</span>().<span class="ident">code</span>[<span class="ident">offset</span> <span class="kw">as</span> <span class="ident">usize</span>];
             <span class="ident">verify_instr</span>(<span class="ident">verifier</span>, <span class="ident">instr</span>, <span class="ident">offset</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>
         }
     }
@@ -948,8 +919,8 @@
     <span class="comment">// check the reference on the stack is the expected type.</span>
     <span class="comment">// Load the type that owns the field according to the instruction.</span>
     <span class="comment">// For generic fields access, this step materializes that type</span>
-    <span class="kw">let</span> <span class="ident">field_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">field_handle_at</span>(<span class="ident">field_handle_index</span>);
-    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">field_handle</span>.<span class="ident">owner</span>);
+    <span class="kw">let</span> <span class="ident">field_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">field_handle_at</span>(<span class="ident">field_handle_index</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">field_handle</span>.<span class="ident">owner</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">expected_type</span> <span class="op">=</span> <span class="ident">materialize_type</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>, <span class="ident">type_args</span>);
     <span class="kw">match</span> <span class="ident">operand</span> {
         <span class="ident">ST</span>::<span class="ident">Reference</span>(<span class="ident">inner</span>) <span class="op">|</span> <span class="ident">ST</span>::<span class="ident">MutableReference</span>(<span class="ident">inner</span>) <span class="kw">if</span> <span class="ident">expected_type</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">inner</span> <span class="op">=</span><span class="op">&gt;</span> (),
@@ -1021,8 +992,8 @@
         ));
     }
 
-    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">idx</span>);
-    <span class="kw">let</span> <span class="ident">struct_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_handle_at</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>);
+    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">idx</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">struct_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_handle_at</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>);
     <span class="kw">if</span> <span class="op">!</span><span class="ident">struct_handle</span>.<span class="ident">is_nominal_resource</span> {
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(
             <span class="ident">StatusCode</span>::<span class="ident">BORROWGLOBAL_NO_RESOURCE_ERROR</span>,
@@ -1045,14 +1016,14 @@
     <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>,
     <span class="ident">type_actuals</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">parameters</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>);
+    <span class="kw">let</span> <span class="ident">parameters</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">parameters</span>);
     <span class="kw">for</span> <span class="ident">parameter</span> <span class="kw">in</span> <span class="ident">parameters</span>.<span class="number">0</span>.<span class="ident">iter</span>().<span class="ident">rev</span>() {
         <span class="kw">let</span> <span class="ident">arg</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
         <span class="kw">if</span> <span class="ident">arg</span> <span class="op">!</span><span class="op">=</span> <span class="ident">instantiate</span>(<span class="ident">parameter</span>, <span class="ident">type_actuals</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(<span class="ident">StatusCode</span>::<span class="ident">CALL_TYPE_MISMATCH_ERROR</span>, <span class="ident">offset</span>));
         }
     }
-    <span class="kw">for</span> <span class="ident">return_type</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="number">0</span> {
+    <span class="kw">for</span> <span class="ident">return_type</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>).<span class="number">0</span> {
         <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">push</span>(<span class="ident">instantiate</span>(<span class="ident">return_type</span>, <span class="ident">type_actuals</span>))
     }
     <span class="prelude-val">Ok</span>(())
@@ -1128,7 +1099,7 @@
     <span class="ident">struct_def</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="op">!</span><span class="ident">verifier</span>
-        .<span class="ident">module</span>
+        .<span class="ident">resolver</span>
         .<span class="ident">struct_handle_at</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>)
         .<span class="ident">is_nominal_resource</span>
     {
@@ -1157,9 +1128,9 @@
     <span class="ident">def_idx</span>: <span class="ident">StructDefinitionIndex</span>,
     <span class="ident">type_args</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">def_idx</span>);
+    <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">def_idx</span>)<span class="question-mark">?</span>;
     <span class="kw">if</span> <span class="op">!</span><span class="ident">verifier</span>
-        .<span class="ident">module</span>
+        .<span class="ident">resolver</span>
         .<span class="ident">struct_handle_at</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>)
         .<span class="ident">is_nominal_resource</span>
     {
@@ -1189,7 +1160,7 @@
     <span class="ident">type_args</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="op">!</span><span class="ident">verifier</span>
-        .<span class="ident">module</span>
+        .<span class="ident">resolver</span>
         .<span class="ident">struct_handle_at</span>(<span class="ident">struct_def</span>.<span class="ident">struct_handle</span>)
         .<span class="ident">is_nominal_resource</span>
     {
@@ -1228,7 +1199,9 @@
     <span class="kw">match</span> <span class="ident">bytecode</span> {
         <span class="ident">Bytecode</span>::<span class="ident">Pop</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">operand</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">kind</span>(<span class="ident">verifier</span>.<span class="ident">module</span>, <span class="kw-2">&amp;</span><span class="ident">operand</span>, <span class="ident">verifier</span>.<span class="ident">type_parameters</span>());
+            <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">verifier</span>
+                .<span class="ident">resolver</span>
+                .<span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="ident">operand</span>, <span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">type_parameters</span>());
             <span class="kw">if</span> <span class="ident">kind</span> <span class="op">!</span><span class="op">=</span> <span class="ident">Kind</span>::<span class="ident">Copyable</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(<span class="ident">StatusCode</span>::<span class="ident">POP_RESOURCE_ERROR</span>, <span class="ident">offset</span>));
             }
@@ -1256,10 +1229,7 @@
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">Ret</span> <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">return_</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>
-                .<span class="ident">module</span>
-                .<span class="ident">signature_at</span>(<span class="ident">verifier</span>.<span class="ident">function_handle</span>.<span class="ident">return_</span>)
-                .<span class="number">0</span>;
+            <span class="kw">let</span> <span class="ident">return_</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">return_</span>().<span class="number">0</span>;
             <span class="kw">for</span> <span class="ident">return_type</span> <span class="kw">in</span> <span class="ident">return_</span>.<span class="ident">iter</span>().<span class="ident">rev</span>() {
                 <span class="kw">let</span> <span class="ident">operand</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
                 <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">operand</span> <span class="op">!</span><span class="op">=</span> <span class="ident">return_type</span> {
@@ -1292,8 +1262,10 @@
         )<span class="question-mark">?</span>,
 
         <span class="ident">Bytecode</span>::<span class="ident">MutBorrowFieldGeneric</span>(<span class="ident">field_inst_index</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">field_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">field_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">field_inst_index</span>);
-            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">field_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">field_inst</span> <span class="op">=</span> <span class="ident">verifier</span>
+                .<span class="ident">resolver</span>
+                .<span class="ident">field_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">field_inst_index</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">field_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">borrow_field</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="bool-val">true</span>, <span class="ident">field_inst</span>.<span class="ident">handle</span>, <span class="ident">type_inst</span>)<span class="question-mark">?</span>
         }
 
@@ -1306,8 +1278,10 @@
         )<span class="question-mark">?</span>,
 
         <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowFieldGeneric</span>(<span class="ident">field_inst_index</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">field_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">field_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">field_inst_index</span>);
-            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">field_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">field_inst</span> <span class="op">=</span> <span class="ident">verifier</span>
+                .<span class="ident">resolver</span>
+                .<span class="ident">field_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">field_inst_index</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">field_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">borrow_field</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="bool-val">false</span>, <span class="ident">field_inst</span>.<span class="ident">handle</span>, <span class="ident">type_inst</span>)<span class="question-mark">?</span>
         }
 
@@ -1324,7 +1298,7 @@
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">LdConst</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">constant_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>).<span class="ident">type_</span>.<span class="ident">clone</span>();
+            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">constant_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>).<span class="ident">type_</span>.<span class="ident">clone</span>();
             <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">push</span>(<span class="ident">signature</span>);
         }
 
@@ -1334,11 +1308,10 @@
 
         <span class="ident">Bytecode</span>::<span class="ident">CopyLoc</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">local_signature</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">local_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>).<span class="ident">clone</span>();
-            <span class="kw">match</span> <span class="ident">kind</span>(
-                <span class="ident">verifier</span>.<span class="ident">module</span>,
-                <span class="kw-2">&amp;</span><span class="ident">local_signature</span>,
-                <span class="ident">verifier</span>.<span class="ident">type_parameters</span>(),
-            ) {
+            <span class="kw">match</span> <span class="ident">verifier</span>
+                .<span class="ident">resolver</span>
+                .<span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="ident">local_signature</span>, <span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">type_parameters</span>())
+            {
                 <span class="ident">Kind</span>::<span class="ident">Resource</span> <span class="op">|</span> <span class="ident">Kind</span>::<span class="ident">All</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(<span class="ident">StatusCode</span>::<span class="ident">COPYLOC_RESOURCE_ERROR</span>, <span class="ident">offset</span>))
                 }
@@ -1356,38 +1329,38 @@
         <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowLoc</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">borrow_loc</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="bool-val">false</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>,
 
         <span class="ident">Bytecode</span>::<span class="ident">Call</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">function_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">function_handle_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
             <span class="ident">call</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">function_handle</span>, <span class="kw-2">&amp;</span><span class="ident">Signature</span>(<span class="macro">vec</span><span class="macro">!</span>[]))<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">CallGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">func_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">function_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">func_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">func_inst</span>.<span class="ident">handle</span>);
-            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">func_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">func_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">function_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">func_handle</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">function_handle_at</span>(<span class="ident">func_inst</span>.<span class="ident">handle</span>);
+            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">func_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">call</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">func_handle</span>, <span class="ident">type_args</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">Pack</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
             <span class="ident">pack</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_definition</span>, <span class="kw-2">&amp;</span><span class="ident">Signature</span>(<span class="macro">vec</span><span class="macro">!</span>[]))<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">PackGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
-            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">pack</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>, <span class="ident">type_args</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">Unpack</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">struct_definition</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
             <span class="ident">unpack</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_definition</span>, <span class="kw-2">&amp;</span><span class="ident">Signature</span>(<span class="macro">vec</span><span class="macro">!</span>[]))<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">UnpackGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
-            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">unpack</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>, <span class="ident">type_args</span>)<span class="question-mark">?</span>
         }
 
@@ -1395,7 +1368,9 @@
             <span class="kw">let</span> <span class="ident">operand</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
             <span class="kw">match</span> <span class="ident">operand</span> {
                 <span class="ident">ST</span>::<span class="ident">Reference</span>(<span class="ident">inner</span>) <span class="op">|</span> <span class="ident">ST</span>::<span class="ident">MutableReference</span>(<span class="ident">inner</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">kind</span>(<span class="ident">verifier</span>.<span class="ident">module</span>, <span class="kw-2">&amp;</span><span class="ident">inner</span>, <span class="ident">verifier</span>.<span class="ident">type_parameters</span>());
+                    <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">verifier</span>
+                        .<span class="ident">resolver</span>
+                        .<span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="ident">inner</span>, <span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">type_parameters</span>());
                     <span class="kw">if</span> <span class="ident">kind</span> <span class="op">!</span><span class="op">=</span> <span class="ident">Kind</span>::<span class="ident">Copyable</span> {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(<span class="ident">StatusCode</span>::<span class="ident">READREF_RESOURCE_ERROR</span>, <span class="ident">offset</span>));
                     }
@@ -1422,10 +1397,9 @@
                     ))
                 }
             };
-            <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">kind</span>(
-                <span class="ident">verifier</span>.<span class="ident">module</span>,
+            <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">kind</span>(
                 <span class="kw-2">&amp;</span><span class="ident">ref_inner_signature</span>,
-                <span class="ident">verifier</span>.<span class="ident">type_parameters</span>(),
+                <span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">type_parameters</span>(),
             );
             <span class="kw">match</span> <span class="ident">kind</span> {
                 <span class="ident">Kind</span>::<span class="ident">Resource</span> <span class="op">|</span> <span class="ident">Kind</span>::<span class="ident">All</span> <span class="op">=</span><span class="op">&gt;</span> {
@@ -1533,7 +1507,9 @@
         <span class="ident">Bytecode</span>::<span class="ident">Eq</span> <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">Neq</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">operand1</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">operand2</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">kind1</span> <span class="op">=</span> <span class="ident">kind</span>(<span class="ident">verifier</span>.<span class="ident">module</span>, <span class="kw-2">&amp;</span><span class="ident">operand1</span>, <span class="ident">verifier</span>.<span class="ident">type_parameters</span>());
+            <span class="kw">let</span> <span class="ident">kind1</span> <span class="op">=</span> <span class="ident">verifier</span>
+                .<span class="ident">resolver</span>
+                .<span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="ident">operand1</span>, <span class="ident">verifier</span>.<span class="ident">function_view</span>.<span class="ident">type_parameters</span>());
             <span class="kw">let</span> <span class="ident">is_copyable</span> <span class="op">=</span> <span class="ident">kind1</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Kind</span>::<span class="ident">Copyable</span>;
             <span class="kw">if</span> <span class="ident">is_copyable</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">operand1</span> <span class="op">=</span><span class="op">=</span> <span class="ident">operand2</span> {
                 <span class="ident">verifier</span>.<span class="ident">stack</span>.<span class="ident">push</span>(<span class="ident">ST</span>::<span class="ident">Bool</span>);
@@ -1563,8 +1539,8 @@
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">MutBorrowGlobalGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">borrow_global</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="bool-val">true</span>, <span class="ident">struct_inst</span>.<span class="ident">def</span>, <span class="ident">type_inst</span>)<span class="question-mark">?</span>
         }
 
@@ -1573,39 +1549,39 @@
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowGlobalGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">borrow_global</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="bool-val">false</span>, <span class="ident">struct_inst</span>.<span class="ident">def</span>, <span class="ident">type_inst</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">Exists</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
             <span class="ident">exists</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">ExistsGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
             <span class="ident">exists</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">MoveFrom</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">move_from</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="kw-2">*</span><span class="ident">idx</span>, <span class="kw-2">&amp;</span><span class="ident">Signature</span>(<span class="macro">vec</span><span class="macro">!</span>[]))<span class="question-mark">?</span>,
 
         <span class="ident">Bytecode</span>::<span class="ident">MoveFromGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">move_from</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_inst</span>.<span class="ident">def</span>, <span class="ident">type_args</span>)<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">MoveTo</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
             <span class="ident">move_to</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>, <span class="kw-2">&amp;</span><span class="ident">Signature</span>(<span class="macro">vec</span><span class="macro">!</span>[]))<span class="question-mark">?</span>
         }
 
         <span class="ident">Bytecode</span>::<span class="ident">MoveToGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>);
-            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>);
-            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">verifier</span>.<span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
+            <span class="kw">let</span> <span class="ident">struct_inst</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_instantiation_at</span>(<span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">struct_def</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">struct_def_at</span>(<span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">verifier</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>);
             <span class="ident">move_to</span>(<span class="ident">verifier</span>, <span class="ident">offset</span>, <span class="ident">struct_def</span>, <span class="ident">type_args</span>)<span class="question-mark">?</span>
         }
     };

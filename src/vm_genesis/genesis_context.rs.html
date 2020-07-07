@@ -253,7 +253,6 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-<span id="256">256</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -261,7 +260,6 @@
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
-<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::<span class="ident">VerifiedModule</span>;
 <span class="kw">use</span> <span class="ident">libra_state_view</span>::<span class="ident">StateView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">access_path</span>::<span class="ident">AccessPath</span>,
@@ -288,7 +286,7 @@
     <span class="ident">values</span>::{<span class="ident">GlobalValue</span>, <span class="ident">Value</span>},
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::{<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>};
-<span class="kw">use</span> <span class="ident">vm</span>::{<span class="ident">access</span>::<span class="ident">ModuleAccess</span>, <span class="ident">errors</span>::<span class="ident">VMResult</span>};
+<span class="kw">use</span> <span class="ident">vm</span>::{<span class="ident">errors</span>::<span class="ident">VMResult</span>, <span class="ident">CompiledModule</span>};
 
 <span class="doccomment">/// A context that holds state for generating the genesis write set</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">GenesisContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -299,7 +297,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">GenesisContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">MoveVM</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_store</span> <span class="op">=</span> <span class="ident">GenesisDataCache</span>::<span class="ident">new</span>(<span class="ident">data_cache</span>);
         <span class="ident">data_store</span>.<span class="ident">initialize_code</span>(<span class="ident">stdlib_modules</span>);
@@ -395,7 +393,7 @@
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">add_module</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>, <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">VerifiedModule</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">add_module</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>, <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) {
         <span class="kw">let</span> <span class="ident">access_path</span> <span class="op">=</span> <span class="ident">AccessPath</span>::<span class="ident">from</span>(<span class="ident">module_id</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="ident">module</span>
@@ -438,7 +436,7 @@
     <span class="comment">// that any code reference during execution can be resolved.</span>
     <span class="comment">// The modules will not be published in the final `WriteSet`, and one</span>
     <span class="comment">// could think of them as the startup code.</span>
-    <span class="kw">fn</span> <span class="ident">initialize_code</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>]) {
+    <span class="kw">fn</span> <span class="ident">initialize_code</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>]) {
         <span class="kw">for</span> <span class="ident">module</span> <span class="kw">in</span> <span class="ident">stdlib_modules</span> {
             <span class="kw">let</span> <span class="ident">module_id</span>: <span class="ident">ModuleId</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">self_id</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];

@@ -133,40 +133,19 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
-<span id="136">136</span>
-<span id="137">137</span>
-<span id="138">138</span>
-<span id="139">139</span>
-<span id="140">140</span>
-<span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! This module defines the abstract state for the local safety analysis.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">absint</span>::{<span class="ident">AbstractDomain</span>, <span class="ident">JoinResult</span>},
-    <span class="ident">kind</span>,
-};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">absint</span>::{<span class="ident">AbstractDomain</span>, <span class="ident">JoinResult</span>};
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::{<span class="ident">checked_precondition</span>, <span class="ident">checked_verify</span>};
-<span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
-    <span class="ident">file_format</span>::{<span class="ident">CompiledModule</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">Kind</span>, <span class="ident">LocalIndex</span>},
-};
+<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">file_format</span>::{<span class="ident">Kind</span>, <span class="ident">LocalIndex</span>};
 
 <span class="doccomment">/// LocalState represents the current assignment state of a local</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">LocalState</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">LocalState</span> {
     <span class="doccomment">/// The local does not have a value</span>
     <span class="ident">Unavailable</span>,
     <span class="doccomment">/// The local was assigned a resource in at least one control flow path, but was `Unavailable`</span>
@@ -175,39 +154,30 @@
     <span class="doccomment">/// The local has a value</span>
     <span class="ident">Available</span>,
 }
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">binary_views</span>::{<span class="ident">BinaryIndexedView</span>, <span class="ident">FunctionView</span>};
 <span class="kw">use</span> <span class="ident">LocalState</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AbstractState</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">AbstractState</span> {
     <span class="ident">local_kinds</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Kind</span><span class="op">&gt;</span>,
     <span class="ident">local_states</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LocalState</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">AbstractState</span> {
     <span class="doccomment">/// create a new abstract state</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">func_handle</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">function_definition</span>.<span class="ident">function</span>);
-        <span class="kw">let</span> <span class="ident">parameter_types</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">func_handle</span>.<span class="ident">parameters</span>).<span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">additional_local_types</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">module</span>
-            .<span class="ident">signature_at</span>(
-                <span class="ident">function_definition</span>
-                    .<span class="ident">code</span>
-                    .<span class="ident">as_ref</span>()
-                    .<span class="ident">expect</span>(<span class="string">&quot;Abstract interpreter should only run on non-native functions&quot;</span>)
-                    .<span class="ident">locals</span>,
-            )
-            .<span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">num_locals</span> <span class="op">=</span> <span class="ident">parameter_types</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="ident">additional_local_types</span>.<span class="ident">len</span>();
-
-        <span class="kw">let</span> <span class="ident">num_args</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">func_handle</span>.<span class="ident">parameters</span>).<span class="number">0</span>.<span class="ident">len</span>();
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="ident">BinaryIndexedView</span>, <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionView</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">num_args</span> <span class="op">=</span> <span class="ident">function_view</span>.<span class="ident">parameters</span>().<span class="ident">len</span>();
+        <span class="kw">let</span> <span class="ident">num_locals</span> <span class="op">=</span> <span class="ident">num_args</span> <span class="op">+</span> <span class="ident">function_view</span>.<span class="ident">locals</span>().<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">local_states</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_locals</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="kw">if</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">num_args</span> { <span class="ident">Available</span> } <span class="kw">else</span> { <span class="ident">Unavailable</span> })
             .<span class="ident">collect</span>();
 
-        <span class="kw">let</span> <span class="ident">local_kinds</span> <span class="op">=</span> <span class="ident">parameter_types</span>
+        <span class="kw">let</span> <span class="ident">local_kinds</span> <span class="op">=</span> <span class="ident">function_view</span>
+            .<span class="ident">parameters</span>()
+            .<span class="number">0</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">chain</span>(<span class="ident">additional_local_types</span>.<span class="ident">iter</span>())
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">st</span><span class="op">|</span> <span class="ident">kind</span>(<span class="ident">module</span>, <span class="ident">st</span>, <span class="kw-2">&amp;</span><span class="ident">func_handle</span>.<span class="ident">type_parameters</span>))
+            .<span class="ident">chain</span>(<span class="ident">function_view</span>.<span class="ident">locals</span>().<span class="number">0</span>.<span class="ident">iter</span>())
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">st</span><span class="op">|</span> <span class="ident">resolver</span>.<span class="ident">kind</span>(<span class="ident">st</span>, <span class="kw-2">&amp;</span><span class="ident">function_view</span>.<span class="ident">type_parameters</span>()))
             .<span class="ident">collect</span>();
 
         <span class="self">Self</span> {

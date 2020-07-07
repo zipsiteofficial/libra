@@ -391,7 +391,6 @@
 <span id="391">391</span>
 <span id="392">392</span>
 <span id="393">393</span>
-<span id="394">394</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -405,7 +404,6 @@
     <span class="ident">genesis_context</span>::{<span class="ident">GenesisContext</span>, <span class="ident">GenesisStateView</span>},
     <span class="ident">genesis_gas_schedule</span>::<span class="ident">INITIAL_GAS_SCHEDULE</span>,
 };
-<span class="kw">use</span> <span class="ident">bytecode_verifier</span>::<span class="ident">VerifiedModule</span>;
 <span class="kw">use</span> <span class="ident">compiled_stdlib</span>::{<span class="ident">stdlib_modules</span>, <span class="ident">transaction_scripts</span>::<span class="ident">StdlibScript</span>, <span class="ident">StdLibOptions</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::{<span class="ident">NodeConfig</span>, <span class="ident">HANDSHAKE_VERSION</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
@@ -426,7 +424,7 @@
 <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>, <span class="ident">convert</span>::<span class="ident">TryFrom</span>};
 <span class="kw">use</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_create_designated_dealer_script</span>;
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">access</span>::<span class="ident">ModuleAccess</span>;
+<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">CompiledModule</span>;
 
 <span class="comment">// The seed is arbitrarily picked to produce a consistent key. XXX make this more formal?</span>
 <span class="kw">const</span> <span class="ident">GENESIS_SEED</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">42</span>; <span class="number">32</span>];
@@ -459,7 +457,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_genesis_change_set</span>(
     <span class="ident">public_key</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>,
     <span class="ident">validators</span>: <span class="kw-2">&amp;</span>[<span class="ident">ValidatorRegistration</span>],
-    <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>],
+    <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
     <span class="ident">vm_publishing_option</span>: <span class="ident">VMPublishingOption</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">ChangeSet</span>, <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">FatStructType</span><span class="op">&gt;</span>) {
     <span class="comment">// create a data view for move_vm</span>
@@ -510,7 +508,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_genesis_transaction</span>(
     <span class="ident">public_key</span>: <span class="ident">Ed25519PublicKey</span>,
     <span class="ident">validators</span>: <span class="kw-2">&amp;</span>[<span class="ident">ValidatorRegistration</span>],
-    <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>],
+    <span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
     <span class="ident">vm_publishing_option</span>: <span class="ident">VMPublishingOption</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Transaction</span> {
     <span class="ident">Transaction</span>::<span class="ident">WaypointWriteSet</span>(
@@ -668,14 +666,14 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">remove_genesis</span>(<span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">VerifiedModule</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">remove_genesis</span>(<span class="ident">stdlib_modules</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
     <span class="ident">stdlib_modules</span>
         .<span class="ident">iter</span>()
         .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">module</span><span class="op">|</span> <span class="ident">module</span>.<span class="ident">self_id</span>().<span class="ident">name</span>().<span class="ident">as_str</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">GENESIS_MODULE_NAME</span>)
 }
 
 <span class="doccomment">/// Publish the standard library.</span>
-<span class="kw">fn</span> <span class="ident">publish_stdlib</span>(<span class="ident">interpreter_context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">DataStore</span>, <span class="ident">stdlib</span>: <span class="kw-2">&amp;</span>[<span class="ident">VerifiedModule</span>]) {
+<span class="kw">fn</span> <span class="ident">publish_stdlib</span>(<span class="ident">interpreter_context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">DataStore</span>, <span class="ident">stdlib</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>]) {
     <span class="kw">for</span> <span class="ident">module</span> <span class="kw">in</span> <span class="ident">remove_genesis</span>(<span class="ident">stdlib</span>) {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">module</span>.<span class="ident">self_id</span>().<span class="ident">name</span>().<span class="ident">as_str</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">GENESIS_MODULE_NAME</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module_vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
