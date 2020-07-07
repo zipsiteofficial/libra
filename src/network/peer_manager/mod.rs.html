@@ -982,6 +982,13 @@
 <span id="982">982</span>
 <span id="983">983</span>
 <span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1074,9 +1081,14 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ConnectionNotification</span> {
     <span class="doccomment">/// Connection with a new peer has been established.</span>
-    <span class="ident">NewPeer</span>(<span class="ident">PeerId</span>, <span class="ident">NetworkAddress</span>, <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>),
+    <span class="ident">NewPeer</span>(
+        <span class="ident">PeerId</span>,
+        <span class="ident">NetworkAddress</span>,
+        <span class="ident">ConnectionOrigin</span>,
+        <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
+    ),
     <span class="doccomment">/// Connection to a peer has been terminated. This could have been triggered from either end.</span>
-    <span class="ident">LostPeer</span>(<span class="ident">PeerId</span>, <span class="ident">NetworkAddress</span>, <span class="ident">DisconnectReason</span>),
+    <span class="ident">LostPeer</span>(<span class="ident">PeerId</span>, <span class="ident">NetworkAddress</span>, <span class="ident">ConnectionOrigin</span>, <span class="ident">DisconnectReason</span>),
 }
 
 <span class="doccomment">/// Convenience wrapper which makes it easy to issue communication requests and await the responses</span>
@@ -1418,6 +1430,7 @@
                     <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">LostPeer</span>(
                         <span class="ident">peer_id</span>,
                         <span class="ident">lost_conn_metadata</span>.<span class="ident">addr</span>().<span class="ident">clone</span>(),
+                        <span class="ident">lost_conn_metadata</span>.<span class="ident">origin</span>(),
                         <span class="ident">reason</span>,
                     );
                     <span class="self">self</span>.<span class="ident">send_conn_notification</span>(<span class="ident">peer_id</span>, <span class="ident">notif</span>);
@@ -1623,6 +1636,7 @@
             <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">NewPeer</span>(
                 <span class="ident">peer_id</span>,
                 <span class="ident">conn_meta</span>.<span class="ident">addr</span>().<span class="ident">clone</span>(),
+                <span class="ident">conn_meta</span>.<span class="ident">origin</span>(),
                 <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">clone</span>(),
             );
             <span class="self">self</span>.<span class="ident">send_conn_notification</span>(<span class="ident">peer_id</span>, <span class="ident">notif</span>);

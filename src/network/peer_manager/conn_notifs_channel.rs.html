@@ -75,6 +75,14 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -105,18 +113,25 @@
     <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">executor</span>::<span class="ident">block_on</span>, <span class="ident">future</span>::<span class="ident">FutureExt</span>, <span class="ident">stream</span>::<span class="ident">StreamExt</span>};
     <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
     <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
+    <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 
     <span class="kw">fn</span> <span class="ident">send_new_peer</span>(<span class="ident">sender</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Sender</span>, <span class="ident">peer_id</span>: <span class="ident">PeerId</span>) {
         <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">NewPeer</span>(
             <span class="ident">peer_id</span>,
             <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>(),
+            <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>,
             <span class="ident">NetworkContext</span>::<span class="ident">mock</span>(),
         );
         <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">peer_id</span>, <span class="ident">notif</span>).<span class="ident">unwrap</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">send_lost_peer</span>(<span class="ident">sender</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Sender</span>, <span class="ident">peer_id</span>: <span class="ident">PeerId</span>, <span class="ident">reason</span>: <span class="ident">DisconnectReason</span>) {
-        <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">LostPeer</span>(<span class="ident">peer_id</span>, <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>(), <span class="ident">reason</span>);
+        <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">LostPeer</span>(
+            <span class="ident">peer_id</span>,
+            <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>(),
+            <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>,
+            <span class="ident">reason</span>,
+        );
         <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">peer_id</span>, <span class="ident">notif</span>).<span class="ident">unwrap</span>()
     }
 
@@ -135,6 +150,7 @@
             <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">ConnectionNotification</span>::<span class="ident">LostPeer</span>(
                 <span class="ident">peer_id_a</span>,
                 <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>(),
+                <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>,
                 <span class="ident">DisconnectReason</span>::<span class="ident">Requested</span>,
             );
             <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">receiver</span>.<span class="ident">select_next_some</span>().<span class="kw">await</span>, <span class="ident">notif</span>,);
