@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["account",""],["account_limits",""],["account_type",""],["addresses",""],["coins",""],["debug",""],["event",""],["lbr",""],["libra",""]]});
+initSidebarItems({"mod":[["account",""],["addresses",""],["coins",""],["event",""],["libra",""]]});

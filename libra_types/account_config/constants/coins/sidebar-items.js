@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["COIN1_NAME",""],["COIN2_NAME",""]],"fn":[["coin1_tag",""]]});
+initSidebarItems({"constant":[["COIN1_NAME",""],["COIN2_NAME",""],["LBR_NAME",""]],"fn":[["coin1_tag",""],["lbr_type_tag",""]],"static":[["LBR_MODULE",""],["LBR_STRUCT_NAME",""]]});
