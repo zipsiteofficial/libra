@@ -696,6 +696,11 @@
 <span id="696">696</span>
 <span id="697">697</span>
 <span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -841,6 +846,7 @@
     <span class="kw">fn</span> <span class="ident">validator_spec</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">u32</span>,
+        <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">num_validators</span>: <span class="ident">u32</span>,
         <span class="ident">num_fullnodes</span>: <span class="ident">u32</span>,
         <span class="ident">enable_lsr</span>: <span class="ident">bool</span>,
@@ -858,6 +864,7 @@
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
             <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;validator_spec_template.yaml&quot;</span>),
             <span class="ident">index</span> <span class="op">=</span> <span class="ident">index</span>,
+            <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,
             <span class="ident">num_validators</span> <span class="op">=</span> <span class="ident">num_validators</span>,
             <span class="ident">num_fullnodes</span> <span class="op">=</span> <span class="ident">num_fullnodes</span>,
             <span class="ident">enable_lsr</span> <span class="op">=</span> <span class="ident">enable_lsr</span>,
@@ -1155,7 +1162,8 @@
         <span class="kw">let</span> (<span class="ident">p</span>, <span class="ident">s</span>): (<span class="ident">Pod</span>, <span class="ident">Service</span>) <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="ident">application_config</span> {
             <span class="ident">Validator</span>(<span class="ident">validator_config</span>) <span class="op">=</span><span class="op">&gt;</span> (
                 <span class="self">self</span>.<span class="ident">validator_spec</span>(
-                    <span class="ident">instance_config</span>.<span class="ident">validator_group</span>,
+                    <span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index</span>,
+                    <span class="ident">pod_name</span>.<span class="ident">as_str</span>(),
                     <span class="ident">validator_config</span>.<span class="ident">num_validators</span>,
                     <span class="ident">validator_config</span>.<span class="ident">num_fullnodes</span>,
                     <span class="ident">validator_config</span>.<span class="ident">enable_lsr</span>,
@@ -1164,24 +1172,26 @@
                     <span class="kw-2">&amp;</span><span class="ident">validator_config</span>.<span class="ident">config_overrides</span>.<span class="ident">iter</span>().<span class="ident">join</span>(<span class="string">&quot;,&quot;</span>),
                     <span class="ident">delete_data</span>,
                 )<span class="question-mark">?</span>,
-                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">instance_config</span>.<span class="ident">pod_name</span>()),
+                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
             ),
             <span class="ident">Fullnode</span>(<span class="ident">fullnode_config</span>) <span class="op">=</span><span class="op">&gt;</span> (
                 <span class="self">self</span>.<span class="ident">fullnode_spec</span>(
                     <span class="ident">fullnode_config</span>.<span class="ident">fullnode_index</span>,
                     <span class="ident">fullnode_config</span>.<span class="ident">num_fullnodes_per_validator</span>,
-                    <span class="ident">instance_config</span>.<span class="ident">validator_group</span>,
+                    <span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index_only</span>(),
                     <span class="ident">fullnode_config</span>.<span class="ident">num_validators</span>,
                     <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
                     <span class="kw-2">&amp;</span><span class="ident">fullnode_config</span>.<span class="ident">image_tag</span>,
                     <span class="kw-2">&amp;</span><span class="ident">fullnode_config</span>.<span class="ident">config_overrides</span>.<span class="ident">iter</span>().<span class="ident">join</span>(<span class="string">&quot;,&quot;</span>),
                     <span class="ident">delete_data</span>,
                 )<span class="question-mark">?</span>,
-                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">instance_config</span>.<span class="ident">pod_name</span>()),
+                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
             ),
-            <span class="ident">Vault</span>(<span class="ident">_vault_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">vault_spec</span>(<span class="ident">instance_config</span>.<span class="ident">validator_group</span>, <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)<span class="question-mark">?</span>,
+            <span class="ident">Vault</span>(<span class="ident">_vault_config</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">vault_spec</span>(<span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index_only</span>(), <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)<span class="question-mark">?</span>
+            }
             <span class="ident">LSR</span>(<span class="ident">lsr_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">lsr_spec</span>(
-                <span class="ident">instance_config</span>.<span class="ident">validator_group</span>,
+                <span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index_only</span>(),
                 <span class="ident">lsr_config</span>.<span class="ident">num_validators</span>,
                 <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
                 <span class="kw-2">&amp;</span><span class="ident">lsr_config</span>.<span class="ident">image_tag</span>,
@@ -1227,7 +1237,7 @@
         }
         <span class="kw">let</span> <span class="ident">ac_port</span> <span class="op">=</span> <span class="ident">DEFAULT_JSON_RPC_PORT</span> <span class="kw">as</span> <span class="ident">u32</span>;
         <span class="kw">let</span> <span class="ident">instance</span> <span class="op">=</span> <span class="ident">Instance</span>::<span class="ident">new_k8s</span>(
-            <span class="ident">pod_name</span>,
+            <span class="ident">pod_name</span>.<span class="ident">clone</span>(),
             <span class="ident">node</span>.<span class="ident">internal_ip</span>,
             <span class="ident">ac_port</span>,
             <span class="ident">node</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
