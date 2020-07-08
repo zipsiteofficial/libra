@@ -89,6 +89,13 @@
 <span id="89">89</span>
 <span id="90">90</span>
 <span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -177,8 +184,15 @@
         ))
         .<span class="ident">unwrap</span>();
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">status</span>(), <span class="number">500</span>);
-        <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://127.0.0.1:{}/state_snapshot/1&quot;</span>, <span class="ident">port</span>,)).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://127.0.0.1:{}/latest_state_root&quot;</span>, <span class="ident">port</span>,)).<span class="ident">unwrap</span>();
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">status</span>(), <span class="number">500</span>);
+
+        <span class="comment">// a endpoint handled by `reply_with_async_channel_writer&#39; always returns 200,</span>
+        <span class="comment">// connection terminates prematurely when the channel writer errors.</span>
+        <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://127.0.0.1:{}/state_snapshot/1&quot;</span>, <span class="ident">port</span>,)).<span class="ident">unwrap</span>();
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">status</span>(), <span class="number">200</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">content_length</span>(), <span class="prelude-val">None</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">bytes</span>().<span class="ident">is_err</span>());
     }
 }
 </pre></div>
