@@ -138,12 +138,19 @@
 <span id="138">138</span>
 <span id="139">139</span>
 <span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
+<span class="kw">mod</span> <span class="ident">compatibility_test</span>;
 <span class="kw">mod</span> <span class="ident">cpu_flamegraph</span>;
 <span class="kw">mod</span> <span class="ident">packet_loss_random_validators</span>;
 <span class="kw">mod</span> <span class="ident">performance_benchmark</span>;
@@ -153,8 +160,13 @@
 <span class="kw">mod</span> <span class="ident">twin_validator</span>;
 <span class="kw">mod</span> <span class="ident">versioning_test</span>;
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashSet</span>, <span class="ident">fmt</span>::<span class="ident">Display</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+    <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
+    <span class="ident">fmt</span>::<span class="ident">Display</span>,
+    <span class="ident">time</span>::<span class="ident">Duration</span>,
+};
 
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">compatibility_test</span>::{<span class="ident">ComaptiblityTestParams</span>, <span class="ident">CompatibilityTest</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">packet_loss_random_validators</span>::{
     <span class="ident">PacketLossRandomValidators</span>, <span class="ident">PacketLossRandomValidatorsParams</span>,
 };
@@ -180,7 +192,6 @@
 };
 <span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">cpu_flamegraph</span>::{<span class="ident">CpuFlamegraph</span>, <span class="ident">CpuFlamegraphParams</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashMap</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::{<span class="ident">clap</span>::<span class="ident">AppSettings</span>, <span class="ident">StructOpt</span>};
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
@@ -275,6 +286,7 @@
     <span class="ident">known_experiments</span>.<span class="ident">insert</span>(<span class="string">&quot;twin&quot;</span>, <span class="ident">f</span>::<span class="op">&lt;</span><span class="ident">TwinValidatorsParams</span><span class="op">&gt;</span>());
     <span class="ident">known_experiments</span>.<span class="ident">insert</span>(<span class="string">&quot;generate_cpu_flamegraph&quot;</span>, <span class="ident">f</span>::<span class="op">&lt;</span><span class="ident">CpuFlamegraphParams</span><span class="op">&gt;</span>());
     <span class="ident">known_experiments</span>.<span class="ident">insert</span>(<span class="string">&quot;versioning_testing&quot;</span>, <span class="ident">f</span>::<span class="op">&lt;</span><span class="ident">ValidatorVersioningParams</span><span class="op">&gt;</span>());
+    <span class="ident">known_experiments</span>.<span class="ident">insert</span>(<span class="string">&quot;compatibility_test&quot;</span>, <span class="ident">f</span>::<span class="op">&lt;</span><span class="ident">ComaptiblityTestParams</span><span class="op">&gt;</span>());
 
     <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">known_experiments</span>.<span class="ident">get</span>(<span class="ident">name</span>).<span class="ident">expect</span>(<span class="string">&quot;Experiment not found&quot;</span>);
     <span class="ident">builder</span>(<span class="ident">args</span>, <span class="ident">cluster</span>)
