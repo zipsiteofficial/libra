@@ -1065,6 +1065,33 @@
 <span id="1065">1065</span>
 <span id="1066">1066</span>
 <span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1732,7 +1759,6 @@
     <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
     <span class="ident">sent_events</span>: <span class="ident">EventHandle</span>,
     <span class="ident">received_events</span>: <span class="ident">EventHandle</span>,
-    <span class="ident">is_frozen</span>: <span class="ident">bool</span>,
 
     <span class="ident">balances</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Identifier</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
     <span class="ident">event_generator</span>: <span class="ident">EventHandleGenerator</span>,
@@ -1793,7 +1819,6 @@
             <span class="number">0</span>,
             <span class="number">0</span>,
             <span class="ident">account_specifier</span>,
-            <span class="bool-val">false</span>,
         )
     }
 
@@ -1825,7 +1850,6 @@
         <span class="ident">sent_events_count</span>: <span class="ident">u64</span>,
         <span class="ident">received_events_count</span>: <span class="ident">u64</span>,
         <span class="ident">account_specifier</span>: <span class="ident">AccountRoleSpecifier</span>,
-        <span class="ident">is_frozen</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">balances</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
         <span class="ident">balances</span>.<span class="ident">insert</span>(<span class="ident">balance_currency_code</span>, <span class="ident">Balance</span>::<span class="ident">new</span>(<span class="ident">balance</span>));
@@ -1837,7 +1861,6 @@
             <span class="ident">account</span>,
             <span class="ident">balances</span>,
             <span class="ident">sequence_number</span>,
-            <span class="ident">is_frozen</span>,
             <span class="ident">sent_events</span>: <span class="ident">new_event_handle</span>(<span class="ident">sent_events_count</span>),
             <span class="ident">received_events</span>: <span class="ident">new_event_handle</span>(<span class="ident">received_events_count</span>),
         }
@@ -1917,7 +1940,6 @@
                     <span class="ident">Box</span>::<span class="ident">new</span>(<span class="self">Self</span>::<span class="ident">received_payment_event_type</span>()),
                 )))),
                 <span class="ident">FatType</span>::<span class="ident">U64</span>,
-                <span class="ident">FatType</span>::<span class="ident">Bool</span>,
             ],
         }
     }
@@ -1958,7 +1980,6 @@
                     <span class="bool-val">true</span>,
                 )),
                 <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="self">self</span>.<span class="ident">sequence_number</span>),
-                <span class="ident">Value</span>::<span class="ident">bool</span>(<span class="self">self</span>.<span class="ident">is_frozen</span>),
             ],
             <span class="bool-val">true</span>,
         ));
@@ -2005,6 +2026,17 @@
                 .<span class="ident">unwrap</span>();
             <span class="ident">write_set</span>.<span class="ident">push</span>((<span class="self">self</span>.<span class="ident">make_balance_access_path</span>(<span class="ident">code</span>), <span class="ident">WriteOp</span>::<span class="ident">Value</span>(<span class="ident">balance</span>)));
         }
+
+        <span class="kw">let</span> <span class="ident">freezing_bit</span> <span class="op">=</span> <span class="ident">FreezingBit</span>::<span class="ident">value</span>()
+            .<span class="ident">value_as</span>::<span class="op">&lt;</span><span class="ident">Struct</span><span class="op">&gt;</span>()
+            .<span class="ident">unwrap</span>()
+            .<span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="ident">FreezingBit</span>::<span class="ident">type_</span>())
+            .<span class="ident">unwrap</span>();
+        <span class="ident">write_set</span>.<span class="ident">push</span>((
+            <span class="self">self</span>.<span class="ident">account</span>
+                .<span class="ident">make_access_path</span>(<span class="ident">account_config</span>::<span class="ident">FreezingBit</span>::<span class="ident">struct_tag</span>()),
+            <span class="ident">WriteOp</span>::<span class="ident">Value</span>(<span class="ident">freezing_bit</span>),
+        ));
 
         <span class="kw">let</span> <span class="ident">role_id</span> <span class="op">=</span> <span class="ident">role_id_blob</span>
             .<span class="ident">value_as</span>::<span class="op">&lt;</span><span class="ident">Struct</span><span class="op">&gt;</span>()
@@ -2131,6 +2163,28 @@
             <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Value</span>::<span class="ident">address</span>(<span class="self">self</span>.<span class="ident">account_address</span>)],
             <span class="bool-val">true</span>,
         ))])
+    }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FreezingBit</span> {
+    <span class="ident">is_frozen</span>: <span class="ident">bool</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">FreezingBit</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">type_</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FatStructType</span> {
+        <span class="ident">FatStructType</span> {
+            <span class="ident">address</span>: <span class="ident">account_config</span>::<span class="ident">CORE_CODE_ADDRESS</span>,
+            <span class="ident">module</span>: <span class="ident">account_config</span>::<span class="ident">FreezingBit</span>::<span class="ident">module_identifier</span>(),
+            <span class="ident">name</span>: <span class="ident">account_config</span>::<span class="ident">FreezingBit</span>::<span class="ident">struct_identifier</span>(),
+            <span class="ident">is_resource</span>: <span class="bool-val">true</span>,
+            <span class="ident">ty_args</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="ident">layout</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">FatType</span>::<span class="ident">Bool</span>],
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">value</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Value</span> {
+        <span class="ident">Value</span>::<span class="ident">struct_</span>(<span class="ident">Struct</span>::<span class="ident">pack</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Value</span>::<span class="ident">bool</span>(<span class="bool-val">false</span>)], <span class="bool-val">true</span>))
     }
 }
 </pre></div>
