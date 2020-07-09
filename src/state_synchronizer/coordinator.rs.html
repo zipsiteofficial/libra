@@ -1038,16 +1038,6 @@
 <span id="1038">1038</span>
 <span id="1039">1039</span>
 <span id="1040">1040</span>
-<span id="1041">1041</span>
-<span id="1042">1042</span>
-<span id="1043">1043</span>
-<span id="1044">1044</span>
-<span id="1045">1045</span>
-<span id="1046">1046</span>
-<span id="1047">1047</span>
-<span id="1048">1048</span>
-<span id="1049">1049</span>
-<span id="1050">1050</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1206,7 +1196,7 @@
     <span class="ident">role</span>: <span class="ident">RoleType</span>,
     <span class="comment">// An initial waypoint: for as long as the local version is less than a version determined by</span>
     <span class="comment">// waypoint a node is not going to be abl</span>
-    <span class="ident">waypoint</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span>,
+    <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
     <span class="comment">// network senders - (k, v) = (network ID, network sender)</span>
     <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
     <span class="comment">// peers used for synchronization</span>
@@ -1230,7 +1220,7 @@
         <span class="ident">state_sync_to_mempool_sender</span>: <span class="ident">mpsc</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">CommitNotification</span><span class="op">&gt;</span>,
         <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
         <span class="ident">role</span>: <span class="ident">RoleType</span>,
-        <span class="ident">waypoint</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span>,
+        <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
         <span class="ident">config</span>: <span class="ident">StateSyncConfig</span>,
         <span class="ident">upstream_config</span>: <span class="ident">UpstreamConfig</span>,
         <span class="ident">executor_proxy</span>: <span class="ident">T</span>,
@@ -1375,9 +1365,7 @@
 
     <span class="doccomment">/// In case waypoint is set verify that the local LI has reached the waypoint version.</span>
     <span class="kw">fn</span> <span class="ident">is_initialized</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="bool-val">true</span>, <span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
-            <span class="ident">w</span>.<span class="ident">version</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>()
-        })
+        <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">set_initialization_listener</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cb_sender</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>) {
@@ -1899,16 +1887,11 @@
                     <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()
                 }
             });
-        <span class="kw">if</span> <span class="ident">new_version</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">version</span>()) {
+        <span class="kw">if</span> <span class="ident">new_version</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>() {
             <span class="self">self</span>.<span class="ident">send_chunk_request</span>(<span class="ident">new_version</span>, <span class="ident">new_epoch</span>)<span class="question-mark">?</span>;
         }
 
-        <span class="self">self</span>.<span class="ident">waypoint</span>
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;No waypoint found to process a response with a waypoint LI&quot;</span>)
-            })
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">verify</span>(<span class="ident">waypoint_li</span>.<span class="ident">ledger_info</span>()))<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">verify</span>(<span class="ident">waypoint_li</span>.<span class="ident">ledger_info</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">validate_and_store_chunk</span>(<span class="ident">txn_list_with_proof</span>, <span class="ident">waypoint_li</span>, <span class="ident">end_of_epoch_li</span>)
     }
 
@@ -2002,10 +1985,7 @@
             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;No peers found for chunk request.&quot;</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_initialized</span>() {
-            <span class="kw">let</span> <span class="ident">waypoint_version</span> <span class="op">=</span>
-                <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">version</span>()).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;No waypoint found but coordinator is not initialized.&quot;</span>)
-                })<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">waypoint_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>();
             <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">waypoint_version</span>)
         } <span class="kw">else</span> {
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_ref</span>() {
