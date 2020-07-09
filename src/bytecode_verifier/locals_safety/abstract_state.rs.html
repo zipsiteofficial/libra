@@ -133,6 +133,22 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -141,7 +157,11 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">absint</span>::{<span class="ident">AbstractDomain</span>, <span class="ident">JoinResult</span>};
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::{<span class="ident">checked_precondition</span>, <span class="ident">checked_verify</span>};
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">file_format</span>::{<span class="ident">Kind</span>, <span class="ident">LocalIndex</span>};
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
+<span class="kw">use</span> <span class="ident">vm</span>::{
+    <span class="ident">errors</span>::<span class="ident">PartialVMError</span>,
+    <span class="ident">file_format</span>::{<span class="ident">CodeOffset</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">Kind</span>, <span class="ident">LocalIndex</span>},
+};
 
 <span class="doccomment">/// LocalState represents the current assignment state of a local</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
@@ -159,6 +179,7 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">AbstractState</span> {
+    <span class="ident">current_function</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FunctionDefinitionIndex</span><span class="op">&gt;</span>,
     <span class="ident">local_kinds</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Kind</span><span class="op">&gt;</span>,
     <span class="ident">local_states</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LocalState</span><span class="op">&gt;</span>,
 }
@@ -181,6 +202,7 @@
             .<span class="ident">collect</span>();
 
         <span class="self">Self</span> {
+            <span class="ident">current_function</span>: <span class="ident">function_view</span>.<span class="ident">index</span>(),
             <span class="ident">local_states</span>,
             <span class="ident">local_kinds</span>,
         }
@@ -211,9 +233,18 @@
         <span class="self">self</span>.<span class="ident">local_states</span>[<span class="ident">idx</span> <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">=</span> <span class="ident">Unavailable</span>
     }
 
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">status</span>: <span class="ident">StatusCode</span>, <span class="ident">offset</span>: <span class="ident">CodeOffset</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMError</span> {
+        <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">status</span>).<span class="ident">at_code_offset</span>(
+            <span class="self">self</span>.<span class="ident">current_function</span>.<span class="ident">unwrap_or</span>(<span class="ident">FunctionDefinitionIndex</span>(<span class="number">0</span>)),
+            <span class="ident">offset</span>,
+        )
+    }
+
     <span class="kw">fn</span> <span class="ident">join_</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="macro">checked_precondition</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">current_function</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">current_function</span>);
         <span class="macro">checked_precondition</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">local_kinds</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">local_kinds</span>.<span class="ident">len</span>());
         <span class="macro">checked_precondition</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">local_states</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">local_states</span>.<span class="ident">len</span>());
+        <span class="kw">let</span> <span class="ident">current_function</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">current_function</span>;
         <span class="kw">let</span> <span class="ident">local_kinds</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_kinds</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">local_states</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">local_states</span>
@@ -245,6 +276,7 @@
             .<span class="ident">collect</span>();
 
         <span class="self">Self</span> {
+            <span class="ident">current_function</span>,
             <span class="ident">local_states</span>,
             <span class="ident">local_kinds</span>,
         }

@@ -401,20 +401,72 @@
 <span id="401">401</span>
 <span id="402">402</span>
 <span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">libra_proptest_helpers</span>::<span class="ident">pick_slice_idxs</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">proptest</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">sample</span>::<span class="ident">Index</span> <span class="kw">as</span> <span class="ident">PropIndex</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">errors</span>::{<span class="ident">append_err_info</span>, <span class="ident">bytecode_offset_err</span>},
+    <span class="ident">errors</span>::{<span class="ident">offset_out_of_bounds</span>, <span class="ident">PartialVMError</span>},
     <span class="ident">file_format</span>::{
         <span class="ident">Bytecode</span>, <span class="ident">CodeOffset</span>, <span class="ident">CompiledModuleMut</span>, <span class="ident">ConstantPoolIndex</span>, <span class="ident">FieldHandleIndex</span>,
-        <span class="ident">FieldInstantiationIndex</span>, <span class="ident">FunctionHandleIndex</span>, <span class="ident">FunctionInstantiationIndex</span>, <span class="ident">LocalIndex</span>,
-        <span class="ident">StructDefInstantiationIndex</span>, <span class="ident">StructDefinitionIndex</span>, <span class="ident">TableIndex</span>,
+        <span class="ident">FieldInstantiationIndex</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">FunctionHandleIndex</span>,
+        <span class="ident">FunctionInstantiationIndex</span>, <span class="ident">LocalIndex</span>, <span class="ident">StructDefInstantiationIndex</span>, <span class="ident">StructDefinitionIndex</span>,
+        <span class="ident">TableIndex</span>,
     },
     <span class="ident">internals</span>::<span class="ident">ModuleIndex</span>,
     <span class="ident">IndexKind</span>,
@@ -454,68 +506,72 @@
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">new_bytecode</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>: <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
-        <span class="kw">let</span> <span class="ident">dst_len</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>;
-        <span class="kw">let</span> <span class="ident">new_idx</span> <span class="op">=</span> (<span class="ident">dst_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>) <span class="kw">as</span> <span class="ident">TableIndex</span>;
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">kind</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>:<span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+        <span class="kw">let</span> <span class="ident">dst_len</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>;
+        <span class="kw">let</span> <span class="ident">new_idx</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">dst_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>;
         (
-            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">new</span>(<span class="ident">new_idx</span>)),
-            <span class="ident">bytecode_offset_err</span>(
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">KIND</span>,
-                <span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">usize</span>,
-                <span class="ident">dst_len</span>,
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">kind</span>::<span class="ident">new</span>(<span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>)),
+            <span class="ident">offset_out_of_bounds</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">kind</span>::<span class="ident">KIND</span>,
+                <span class="ident">new_idx</span>,
+                <span class="ident">dst_len</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
             ),
         )
     }};
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">struct_bytecode</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>: <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>: <span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
         <span class="kw">let</span> <span class="ident">dst_len</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">dst_len</span>;
-        <span class="kw">let</span> <span class="ident">new_idx</span> <span class="op">=</span> (<span class="ident">dst_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>) <span class="kw">as</span> <span class="ident">TableIndex</span>;
+        <span class="kw">let</span> <span class="ident">new_idx</span> <span class="op">=</span> <span class="ident">dst_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>;
         (
-            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">new</span>(<span class="ident">new_idx</span>)),
-            <span class="ident">bytecode_offset_err</span>(
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">KIND</span>,
-                <span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">usize</span>,
-                <span class="ident">dst_len</span>,
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>,
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">new</span>(<span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>)),
+            <span class="ident">offset_out_of_bounds</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">idx_type</span>::<span class="ident">KIND</span>,
+                <span class="ident">new_idx</span>,
+                <span class="ident">dst_len</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
             ),
         )
     }};
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">code_bytecode</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">code_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">code_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
         <span class="kw">let</span> <span class="ident">code_len</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">code_len</span>;
         <span class="kw">let</span> <span class="ident">new_idx</span> <span class="op">=</span> <span class="ident">code_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>;
         (
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>),
-            <span class="ident">bytecode_offset_err</span>(
+            <span class="ident">offset_out_of_bounds</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">CodeDefinition</span>,
                 <span class="ident">new_idx</span>,
                 <span class="ident">code_len</span>,
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>,
-                <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
             ),
         )
     }};
 }
 
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">locals_bytecode</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">locals_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">locals_len</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>: <span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>: <span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> {{
         <span class="kw">let</span> <span class="ident">locals_len</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">locals_len</span>;
         <span class="kw">let</span> <span class="ident">new_idx</span> <span class="op">=</span> <span class="ident">locals_len</span> <span class="op">+</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">offset</span>;
         (
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_ident</span>(<span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">LocalIndex</span>),
-            <span class="ident">bytecode_offset_err</span>(
+            <span class="ident">offset_out_of_bounds</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">LocalPool</span>,
                 <span class="ident">new_idx</span>,
                 <span class="ident">locals_len</span>,
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bytecode_idx</span>,
-                <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fidx</span>,
+                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bcidx</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
             ),
         )
     }};
@@ -529,7 +585,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartialVMError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">function_def_len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>.<span class="ident">len</span>();
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mutation_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
@@ -553,9 +609,14 @@
         <span class="ident">results</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">apply_one</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">idx</span>: <span class="ident">usize</span>, <span class="ident">mutations</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CodeUnitBoundsMutation</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">apply_one</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">fidx</span>: <span class="ident">usize</span>,
+        <span class="ident">mutations</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CodeUnitBoundsMutation</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartialVMError</span><span class="op">&gt;</span> {
         <span class="comment">// For this function def, find all the places where a bounds mutation can be applied.</span>
-        <span class="kw">let</span> <span class="ident">func_def</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>[<span class="ident">idx</span>];
+        <span class="kw">let</span> <span class="ident">func_def</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>[<span class="ident">fidx</span>];
+        <span class="kw">let</span> <span class="ident">current_fdef</span> <span class="op">=</span> <span class="ident">FunctionDefinitionIndex</span>(<span class="ident">fidx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>);
         <span class="kw">let</span> <span class="ident">func_handle</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handles</span>[<span class="ident">func_def</span>.<span class="ident">function</span>.<span class="ident">into_index</span>()];
         <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">func_def</span>.<span class="ident">code</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">locals_len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signatures</span>[<span class="ident">func_handle</span>.<span class="ident">parameters</span>.<span class="ident">into_index</span>()].<span class="ident">len</span>()
@@ -588,6 +649,7 @@
                 <span class="kw">let</span> (<span class="ident">new_bytecode</span>, <span class="ident">err</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">code</span>[<span class="ident">bytecode_idx</span>] {
                     <span class="ident">LdConst</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">new_bytecode</span><span class="macro">!</span>(
                         <span class="ident">constant_pool_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">ConstantPoolIndex</span>,
@@ -595,6 +657,7 @@
                     ),
                     <span class="ident">ImmBorrowField</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">new_bytecode</span><span class="macro">!</span>(
                         <span class="ident">field_handle_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FieldHandleIndex</span>,
@@ -602,6 +665,7 @@
                     ),
                     <span class="ident">ImmBorrowFieldGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">new_bytecode</span><span class="macro">!</span>(
                         <span class="ident">field_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FieldInstantiationIndex</span>,
@@ -609,6 +673,7 @@
                     ),
                     <span class="ident">MutBorrowField</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">new_bytecode</span><span class="macro">!</span>(
                         <span class="ident">field_handle_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FieldHandleIndex</span>,
@@ -616,6 +681,7 @@
                     ),
                     <span class="ident">MutBorrowFieldGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">new_bytecode</span><span class="macro">!</span>(
                         <span class="ident">field_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FieldInstantiationIndex</span>,
@@ -623,6 +689,7 @@
                     ),
                     <span class="ident">Call</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">function_handles_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FunctionHandleIndex</span>,
@@ -630,6 +697,7 @@
                     ),
                     <span class="ident">CallGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">function_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">FunctionInstantiationIndex</span>,
@@ -637,6 +705,7 @@
                     ),
                     <span class="ident">Pack</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -644,6 +713,7 @@
                     ),
                     <span class="ident">PackGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -651,6 +721,7 @@
                     ),
                     <span class="ident">Unpack</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -658,6 +729,7 @@
                     ),
                     <span class="ident">UnpackGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -665,6 +737,7 @@
                     ),
                     <span class="ident">Exists</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -672,6 +745,7 @@
                     ),
                     <span class="ident">ExistsGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -679,6 +753,7 @@
                     ),
                     <span class="ident">MutBorrowGlobal</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -686,6 +761,7 @@
                     ),
                     <span class="ident">MutBorrowGlobalGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -693,6 +769,7 @@
                     ),
                     <span class="ident">ImmBorrowGlobal</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -700,6 +777,7 @@
                     ),
                     <span class="ident">ImmBorrowGlobalGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -707,6 +785,7 @@
                     ),
                     <span class="ident">MoveFrom</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -714,6 +793,7 @@
                     ),
                     <span class="ident">MoveFromGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
@@ -721,6 +801,7 @@
                     ),
                     <span class="ident">MoveTo</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_defs_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefinitionIndex</span>,
@@ -728,23 +809,44 @@
                     ),
                     <span class="ident">MoveToGeneric</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">struct_bytecode</span><span class="macro">!</span>(
                         <span class="ident">struct_inst_len</span>,
+                        <span class="ident">current_fdef</span>,
                         <span class="ident">bytecode_idx</span>,
                         <span class="ident">offset</span>,
                         <span class="ident">StructDefInstantiationIndex</span>,
                         <span class="ident">MoveToGeneric</span>
                     ),
-                    <span class="ident">BrTrue</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">BrTrue</span>),
-                    <span class="ident">BrFalse</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">BrFalse</span>),
-                    <span class="ident">Branch</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">Branch</span>),
-                    <span class="ident">CopyLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">CopyLoc</span>),
-                    <span class="ident">MoveLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">MoveLoc</span>),
-                    <span class="ident">StLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">StLoc</span>),
-                    <span class="ident">MutBorrowLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">MutBorrowLoc</span>)
+                    <span class="ident">BrTrue</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">BrTrue</span>)
                     }
-                    <span class="ident">ImmBorrowLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">ImmBorrowLoc</span>)
+                    <span class="ident">BrFalse</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">BrFalse</span>)
                     }
+                    <span class="ident">Branch</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">code_bytecode</span><span class="macro">!</span>(<span class="ident">code_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">Branch</span>)
+                    }
+                    <span class="ident">CopyLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">CopyLoc</span>)
+                    }
+                    <span class="ident">MoveLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">MoveLoc</span>)
+                    }
+                    <span class="ident">StLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">locals_bytecode</span><span class="macro">!</span>(<span class="ident">locals_len</span>, <span class="ident">current_fdef</span>, <span class="ident">bytecode_idx</span>, <span class="ident">offset</span>, <span class="ident">StLoc</span>)
+                    }
+                    <span class="ident">MutBorrowLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">locals_bytecode</span><span class="macro">!</span>(
+                        <span class="ident">locals_len</span>,
+                        <span class="ident">current_fdef</span>,
+                        <span class="ident">bytecode_idx</span>,
+                        <span class="ident">offset</span>,
+                        <span class="ident">MutBorrowLoc</span>
+                    ),
+                    <span class="ident">ImmBorrowLoc</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">locals_bytecode</span><span class="macro">!</span>(
+                        <span class="ident">locals_len</span>,
+                        <span class="ident">current_fdef</span>,
+                        <span class="ident">bytecode_idx</span>,
+                        <span class="ident">offset</span>,
+                        <span class="ident">ImmBorrowLoc</span>
+                    ),
 
                     <span class="comment">// List out the other options explicitly so there&#39;s a compile error if a new</span>
                     <span class="comment">// bytecode gets added.</span>
@@ -758,7 +860,7 @@
 
                 <span class="ident">code</span>[<span class="ident">bytecode_idx</span>] <span class="op">=</span> <span class="ident">new_bytecode</span>;
 
-                <span class="ident">append_err_info</span>(<span class="ident">err</span>, <span class="ident">IndexKind</span>::<span class="ident">FunctionDefinition</span>, <span class="ident">idx</span>)
+                <span class="ident">err</span>.<span class="ident">at_index</span>(<span class="ident">IndexKind</span>::<span class="ident">FunctionDefinition</span>, <span class="ident">fidx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>)
             })
             .<span class="ident">collect</span>()
     }

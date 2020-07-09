@@ -323,21 +323,36 @@
 <span id="323">323</span>
 <span id="324">324</span>
 <span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! This module contains the public APIs supported by the bytecode verifier.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">binary_views</span>::<span class="ident">BinaryIndexedView</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">move_core_types</span>::{<span class="ident">identifier</span>::<span class="ident">Identifier</span>, <span class="ident">language_storage</span>::<span class="ident">ModuleId</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>};
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">access</span>::{<span class="ident">ModuleAccess</span>, <span class="ident">ScriptAccess</span>},
-    <span class="ident">errors</span>::{<span class="ident">append_err_info</span>, <span class="ident">verification_error</span>, <span class="ident">VMResult</span>},
+    <span class="ident">errors</span>::{<span class="ident">verification_error</span>, <span class="ident">Location</span>, <span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>, <span class="ident">VMResult</span>},
     <span class="ident">file_format</span>::{
         <span class="ident">CompiledModule</span>, <span class="ident">CompiledScript</span>, <span class="ident">FunctionHandle</span>, <span class="ident">FunctionHandleIndex</span>, <span class="ident">ModuleHandle</span>,
-        <span class="ident">ModuleHandleIndex</span>, <span class="ident">SignatureToken</span>, <span class="ident">StructHandle</span>, <span class="ident">StructHandleIndex</span>,
+        <span class="ident">ModuleHandleIndex</span>, <span class="ident">SignatureToken</span>, <span class="ident">StructHandle</span>, <span class="ident">StructHandleIndex</span>, <span class="ident">TableIndex</span>,
     },
     <span class="ident">IndexKind</span>,
 };
@@ -357,6 +372,14 @@
         <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
         <span class="ident">dependencies</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">Self</span>::<span class="ident">verify_module_impl</span>(<span class="ident">module</span>, <span class="ident">dependencies</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">module</span>.<span class="ident">self_id</span>())))
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module_impl</span>(
+        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>,
+        <span class="ident">dependencies</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">module_id</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">self_id</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependency_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">dependency</span> <span class="kw">in</span> <span class="ident">dependencies</span> {
@@ -384,6 +407,13 @@
         <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>,
         <span class="ident">dependencies</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">Self</span>::<span class="ident">verify_script_impl</span>(<span class="ident">script</span>, <span class="ident">dependencies</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>))
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script_impl</span>(
+        <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>,
+        <span class="ident">dependencies</span>: <span class="kw">impl</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependency_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">dependency</span> <span class="kw">in</span> <span class="ident">dependencies</span> {
             <span class="kw">let</span> <span class="ident">dependency_id</span> <span class="op">=</span> <span class="ident">dependency</span>.<span class="ident">self_id</span>();
@@ -430,16 +460,16 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">module_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>],
         <span class="ident">self_module</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ModuleHandleIndex</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">module_handle</span>) <span class="kw">in</span> <span class="ident">module_handles</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">module_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">module_id_for_handle</span>(<span class="ident">module_handle</span>);
             <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">ModuleHandleIndex</span>(<span class="ident">idx</span> <span class="kw">as</span> <span class="ident">u16</span>)) <span class="op">!</span><span class="op">=</span> <span class="ident">self_module</span>
                 <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">dependency_map</span>.<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">module_id</span>)
             {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                    <span class="ident">IndexKind</span>::<span class="ident">ModuleHandle</span>,
-                    <span class="ident">idx</span>,
                     <span class="ident">StatusCode</span>::<span class="ident">MISSING_DEPENDENCY</span>,
+                    <span class="ident">IndexKind</span>::<span class="ident">ModuleHandle</span>,
+                    <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                 ));
             }
         }
@@ -450,7 +480,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">struct_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>],
         <span class="ident">self_module</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ModuleHandleIndex</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">struct_handle</span>) <span class="kw">in</span> <span class="ident">struct_handles</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">struct_handle</span>.<span class="ident">module</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">self_module</span> {
                 <span class="kw">continue</span>;
@@ -471,17 +501,17 @@
                         <span class="op">|</span><span class="op">|</span> <span class="ident">struct_handle</span>.<span class="ident">type_parameters</span> <span class="op">!</span><span class="op">=</span> <span class="ident">def_handle</span>.<span class="ident">type_parameters</span>
                     {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                            <span class="ident">IndexKind</span>::<span class="ident">StructHandle</span>,
-                            <span class="ident">idx</span>,
                             <span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>,
+                            <span class="ident">IndexKind</span>::<span class="ident">StructHandle</span>,
+                            <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                         ));
                     }
                 }
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                        <span class="ident">IndexKind</span>::<span class="ident">StructHandle</span>,
-                        <span class="ident">idx</span>,
                         <span class="ident">StatusCode</span>::<span class="ident">LOOKUP_FAILED</span>,
+                        <span class="ident">IndexKind</span>::<span class="ident">StructHandle</span>,
+                        <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                     ))
                 }
             }
@@ -493,7 +523,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">function_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>],
         <span class="ident">self_module</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ModuleHandleIndex</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">function_handle</span>) <span class="kw">in</span> <span class="ident">function_handles</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">function_handle</span>.<span class="ident">module</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">self_module</span> {
                 <span class="kw">continue</span>;
@@ -513,9 +543,9 @@
                     <span class="comment">// same type parameter constraints</span>
                     <span class="kw">if</span> <span class="ident">function_handle</span>.<span class="ident">type_parameters</span> <span class="op">!</span><span class="op">=</span> <span class="ident">def_handle</span>.<span class="ident">type_parameters</span> {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                            <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
-                            <span class="ident">idx</span>,
                             <span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>,
+                            <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
+                            <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                         ));
                     }
                     <span class="comment">// same parameters</span>
@@ -524,9 +554,9 @@
                         <span class="prelude-val">Some</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">def_handle</span>.<span class="ident">parameters</span>),
                         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                                <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
-                                <span class="ident">idx</span>,
                                 <span class="ident">StatusCode</span>::<span class="ident">LOOKUP_FAILED</span>,
+                                <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
+                                <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                             ))
                         }
                     };
@@ -535,7 +565,7 @@
                         <span class="kw-2">&amp;</span><span class="ident">def_params</span>.<span class="number">0</span>,
                         <span class="ident">owner_module</span>,
                     )
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">append_err_info</span>(<span class="ident">err</span>, <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>, <span class="ident">idx</span>))<span class="question-mark">?</span>;
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">at_index</span>(<span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>, <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>))<span class="question-mark">?</span>;
 
                     <span class="comment">// same return_</span>
                     <span class="kw">let</span> <span class="ident">handle_return</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">signature_at</span>(<span class="ident">function_handle</span>.<span class="ident">return_</span>);
@@ -543,9 +573,9 @@
                         <span class="prelude-val">Some</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">module</span>.<span class="ident">signature_at</span>(<span class="ident">def_handle</span>.<span class="ident">return_</span>),
                         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                                <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
-                                <span class="ident">idx</span>,
                                 <span class="ident">StatusCode</span>::<span class="ident">LOOKUP_FAILED</span>,
+                                <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
+                                <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                             ))
                         }
                     };
@@ -554,13 +584,13 @@
                         <span class="kw-2">&amp;</span><span class="ident">def_return</span>.<span class="number">0</span>,
                         <span class="ident">owner_module</span>,
                     )
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">append_err_info</span>(<span class="ident">err</span>, <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>, <span class="ident">idx</span>))<span class="question-mark">?</span>;
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">at_index</span>(<span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>, <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>))<span class="question-mark">?</span>;
                 }
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
-                        <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
-                        <span class="ident">idx</span>,
                         <span class="ident">StatusCode</span>::<span class="ident">LOOKUP_FAILED</span>,
+                        <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
+                        <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
                     ));
                 }
             }
@@ -573,9 +603,9 @@
         <span class="ident">handle_sig</span>: <span class="kw-2">&amp;</span>[<span class="ident">SignatureToken</span>],
         <span class="ident">def_sig</span>: <span class="kw-2">&amp;</span>[<span class="ident">SignatureToken</span>],
         <span class="ident">def_module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">handle_sig</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">def_sig</span>.<span class="ident">len</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>));
         }
         <span class="kw">for</span> (<span class="ident">handle_type</span>, <span class="ident">def_type</span>) <span class="kw">in</span> <span class="ident">handle_sig</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">def_sig</span>) {
             <span class="self">self</span>.<span class="ident">compare_types</span>(<span class="ident">handle_type</span>, <span class="ident">def_type</span>, <span class="ident">def_module</span>)<span class="question-mark">?</span>;
@@ -588,7 +618,7 @@
         <span class="ident">handle_type</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
         <span class="ident">def_type</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
         <span class="ident">def_module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> (<span class="ident">handle_type</span>, <span class="ident">def_type</span>) {
             (<span class="ident">SignatureToken</span>::<span class="ident">Bool</span>, <span class="ident">SignatureToken</span>::<span class="ident">Bool</span>)
             <span class="op">|</span> (<span class="ident">SignatureToken</span>::<span class="ident">U8</span>, <span class="ident">SignatureToken</span>::<span class="ident">U8</span>)
@@ -615,12 +645,12 @@
             }
             (<span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx1</span>), <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx2</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="ident">idx1</span> <span class="op">!</span><span class="op">=</span> <span class="ident">idx2</span> {
-                    <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>))
+                    <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>))
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Ok</span>(())
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>)),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>)),
         }
     }
 
@@ -629,7 +659,7 @@
         <span class="ident">idx1</span>: <span class="ident">StructHandleIndex</span>,
         <span class="ident">idx2</span>: <span class="ident">StructHandleIndex</span>,
         <span class="ident">def_module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// grab ModuleId and struct name for the module being verified</span>
         <span class="kw">let</span> <span class="ident">struct_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">struct_handle_at</span>(<span class="ident">idx1</span>);
         <span class="kw">let</span> <span class="ident">module_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolver</span>.<span class="ident">module_handle_at</span>(<span class="ident">struct_handle</span>.<span class="ident">module</span>);
@@ -643,7 +673,7 @@
         <span class="kw">let</span> <span class="ident">def_struct_name</span> <span class="op">=</span> <span class="ident">def_module</span>.<span class="ident">identifier_at</span>(<span class="ident">def_struct_handle</span>.<span class="ident">name</span>);
 
         <span class="kw">if</span> <span class="ident">module_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">def_module_id</span> <span class="op">|</span><span class="op">|</span> <span class="ident">struct_name</span> <span class="op">!</span><span class="op">=</span> <span class="ident">def_struct_name</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>))
+            <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>))
         } <span class="kw">else</span> {
             <span class="prelude-val">Ok</span>(())
         }

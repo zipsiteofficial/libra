@@ -597,12 +597,44 @@
 <span id="597">597</span>
 <span id="598">598</span>
 <span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">unit_arg</span>)]</span>
 
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -706,86 +738,78 @@
 
 <span class="kw">impl</span> <span class="ident">VMStatus</span> {
     <span class="doccomment">/// Create a new VM status with major status `major_status`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_status</span>: <span class="ident">StatusCode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_status</span>: <span class="ident">StatusCode</span>, <span class="ident">sub_status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">major_status</span>,
-            <span class="ident">sub_status</span>: <span class="prelude-val">None</span>,
-            <span class="ident">message</span>: <span class="prelude-val">None</span>,
+            <span class="ident">sub_status</span>,
+            <span class="ident">message</span>,
         }
     }
 
-    <span class="doccomment">/// Adds a sub status to the VM status.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_sub_status</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">sub_status</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">sub_status</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">sub_status</span>);
-        <span class="self">self</span>
-    }
-
-    <span class="doccomment">/// Adds a message to the VM status.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_message</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">message</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>);
-        <span class="self">self</span>
-    }
-
-    <span class="doccomment">/// Append the message `message` to the message field of the VM status, and insert a seperator</span>
-    <span class="doccomment">/// if the original message is non-empty.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">append_message_with_separator</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">separator</span>: <span class="ident">char</span>, <span class="ident">message</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">msg</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">message</span> {
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">msg</span>.<span class="ident">is_empty</span>() {
-                <span class="ident">msg</span>.<span class="ident">push</span>(<span class="ident">separator</span>);
-            }
-            <span class="ident">msg</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
-        } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>);
-        }
-        <span class="self">self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">executed</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
     }
 
     <span class="doccomment">/// Return the status type for this VMStatus. This is solely determined by the `major_status`</span>
     <span class="doccomment">/// field.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusType</span> {
-        <span class="kw">let</span> <span class="ident">major_status_number</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">major_status</span>.<span class="ident">into</span>();
-        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">VALIDATION_STATUS_MIN_CODE</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">VALIDATION_STATUS_MAX_CODE</span>
-        {
-            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Validation</span>;
-        }
-
-        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">VERIFICATION_STATUS_MIN_CODE</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">VERIFICATION_STATUS_MAX_CODE</span>
-        {
-            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Verification</span>;
-        }
-
-        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">INVARIANT_VIOLATION_STATUS_MIN_CODE</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">INVARIANT_VIOLATION_STATUS_MAX_CODE</span>
-        {
-            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">InvariantViolation</span>;
-        }
-
-        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">DESERIALIZATION_STATUS_MIN_CODE</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">DESERIALIZATION_STATUS_MAX_CODE</span>
-        {
-            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Deserialization</span>;
-        }
-
-        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">EXECUTION_STATUS_MIN_CODE</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">EXECUTION_STATUS_MAX_CODE</span>
-        {
-            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Execution</span>;
-        }
-
-        <span class="ident">StatusType</span>::<span class="ident">Unknown</span>
+        <span class="self">self</span>.<span class="ident">major_status</span>.<span class="ident">status_type</span>()
     }
 
     <span class="doccomment">/// Determine if the VMStatus has status type `status_type`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">status_type</span>: <span class="ident">StatusType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">status_type</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">status_type</span>
     }
+}
 
-    <span class="doccomment">/// Append two VMStatuses together. The major status is kept from the caller.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">append</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">other</span>);
-        <span class="self">self</span>.<span class="ident">append_message_with_separator</span>(<span class="string">&#39;\n&#39;</span>, <span class="ident">msg</span>)
+<span class="doccomment">/// Error codes that can be emitted by the prologue. These have special significance to the VM when</span>
+<span class="doccomment">/// they are raised during the prologue. However, they can also be raised by user code during</span>
+<span class="doccomment">/// execution of a transaction script. They have no significance to the VM in that case.</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EACCOUNT_FROZEN</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>; <span class="comment">// sending account is frozen</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EBAD_ACCOUNT_AUTHENTICATION_KEY</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>; <span class="comment">// auth key in transaction is invalid</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ESEQUENCE_NUMBER_TOO_OLD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">2</span>; <span class="comment">// transaction sequence number is too old</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ESEQUENCE_NUMBER_TOO_NEW</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">3</span>; <span class="comment">// transaction sequence number is too new</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EACCOUNT_DOES_NOT_EXIST</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">4</span>; <span class="comment">// transaction sender&#39;s account does not exist</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ECANT_PAY_GAS_DEPOSIT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">5</span>; <span class="comment">// insufficient balance to pay for gas deposit</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ETRANSACTION_EXPIRED</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">6</span>; <span class="comment">// transaction expiration time exceeds block time.</span>
+
+<span class="doccomment">/// Generic error codes. These codes don&#39;t have any special meaning for the VM, but they are useful</span>
+<span class="doccomment">/// conventions for debugging</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EINSUFFICIENT_BALANCE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">10</span>; <span class="comment">// withdrawing more than an account contains</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EINSUFFICIENT_PRIVILEGES</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">11</span>; <span class="comment">// user lacks the credentials to do something</span>
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EASSERT_ERROR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">42</span>; <span class="comment">// catch-all error code for assert failures</span>
+
+<span class="comment">// FUTURE: At the moment we can&#39;t pass transaction metadata or the signed transaction due to</span>
+<span class="comment">// restrictions in the two places that this function is called. We therefore just pass through what</span>
+<span class="comment">// we need at the moment---the sender address---but we may want/need to pass more data later on.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="ident">err</span>: <span class="ident">VMStatus</span>, <span class="ident">txn_sender</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMStatus</span> {
+    <span class="kw">if</span> <span class="ident">err</span>.<span class="ident">major_status</span> <span class="op">=</span><span class="op">=</span> <span class="ident">StatusCode</span>::<span class="ident">ABORTED</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="ident">new_major_status</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">err</span>.<span class="ident">sub_status</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">EACCOUNT_FROZEN</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_FROZEN</span>,
+            <span class="comment">// Invalid authentication key</span>
+            <span class="prelude-val">Some</span>(<span class="ident">EBAD_ACCOUNT_AUTHENTICATION_KEY</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INVALID_AUTH_KEY</span>,
+            <span class="comment">// Sequence number too old</span>
+            <span class="prelude-val">Some</span>(<span class="ident">ESEQUENCE_NUMBER_TOO_OLD</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>,
+            <span class="comment">// Sequence number too new</span>
+            <span class="prelude-val">Some</span>(<span class="ident">ESEQUENCE_NUMBER_TOO_NEW</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_NEW</span>,
+            <span class="comment">// Sequence number too new</span>
+            <span class="prelude-val">Some</span>(<span class="ident">EACCOUNT_DOES_NOT_EXIST</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;sender address: {}&quot;</span>, <span class="ident">txn_sender</span>));
+                <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_DOES_NOT_EXIST</span>
+            }
+            <span class="comment">// Can&#39;t pay for transaction gas deposit/fee</span>
+            <span class="prelude-val">Some</span>(<span class="ident">ECANT_PAY_GAS_DEPOSIT</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">ETRANSACTION_EXPIRED</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">TRANSACTION_EXPIRED</span>,
+
+            <span class="ident">sub_status</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">return</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">err</span>.<span class="ident">major_status</span>, <span class="ident">sub_status</span>, <span class="ident">err</span>.<span class="ident">message</span>);
+            }
+        };
+        <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">new_major_status</span>, <span class="prelude-val">None</span>, <span class="ident">message</span>)
+    } <span class="kw">else</span> {
+        <span class="ident">err</span>
     }
 }
 
@@ -971,7 +995,7 @@
     <span class="ident">DUPLICATE_ACQUIRES_RESOURCE_ANNOTATION_ERROR</span> <span class="op">=</span> <span class="number">1072</span>,
     <span class="ident">INVALID_ACQUIRES_RESOURCE_ANNOTATION_ERROR</span> <span class="op">=</span> <span class="number">1073</span>,
     <span class="ident">GLOBAL_REFERENCE_ERROR</span> <span class="op">=</span> <span class="number">1074</span>,
-    <span class="ident">CONTRAINT_KIND_MISMATCH</span> <span class="op">=</span> <span class="number">1075</span>,
+    <span class="ident">CONSTRAINT_KIND_MISMATCH</span> <span class="op">=</span> <span class="number">1075</span>,
     <span class="ident">NUMBER_OF_TYPE_ARGUMENTS_MISMATCH</span> <span class="op">=</span> <span class="number">1076</span>,
     <span class="ident">LOOP_IN_INSTANTIATION_GRAPH</span> <span class="op">=</span> <span class="number">1077</span>,
     <span class="ident">UNUSED_LOCALS_SIGNATURE</span> <span class="op">=</span> <span class="number">1078</span>,
@@ -1073,6 +1097,44 @@
     <span class="comment">// this is std::u64::MAX, but we can&#39;t pattern match on that, so put the hardcoded value in</span>
     <span class="ident">UNKNOWN_STATUS</span> <span class="op">=</span> <span class="number">18446744073709551615</span>,
 }
+}
+
+<span class="kw">impl</span> <span class="ident">StatusCode</span> {
+    <span class="doccomment">/// Return the status type for this status code</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status_type</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusType</span> {
+        <span class="kw">let</span> <span class="ident">major_status_number</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">into</span>();
+        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">VALIDATION_STATUS_MIN_CODE</span>
+            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">VALIDATION_STATUS_MAX_CODE</span>
+        {
+            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Validation</span>;
+        }
+
+        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">VERIFICATION_STATUS_MIN_CODE</span>
+            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">VERIFICATION_STATUS_MAX_CODE</span>
+        {
+            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Verification</span>;
+        }
+
+        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">INVARIANT_VIOLATION_STATUS_MIN_CODE</span>
+            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">INVARIANT_VIOLATION_STATUS_MAX_CODE</span>
+        {
+            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">InvariantViolation</span>;
+        }
+
+        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">DESERIALIZATION_STATUS_MIN_CODE</span>
+            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">DESERIALIZATION_STATUS_MAX_CODE</span>
+        {
+            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Deserialization</span>;
+        }
+
+        <span class="kw">if</span> <span class="ident">major_status_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">EXECUTION_STATUS_MIN_CODE</span>
+            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">major_status_number</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">EXECUTION_STATUS_MAX_CODE</span>
+        {
+            <span class="kw">return</span> <span class="ident">StatusType</span>::<span class="ident">Execution</span>;
+        }
+
+        <span class="ident">StatusType</span>::<span class="ident">Unknown</span>
+    }
 }
 
 <span class="comment">// TODO(#1307)</span>

@@ -1894,6 +1894,10 @@
 <span id="1894">1894</span>
 <span id="1895">1895</span>
 <span id="1896">1896</span>
+<span id="1897">1897</span>
+<span id="1898">1898</span>
+<span id="1899">1899</span>
+<span id="1900">1900</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1924,7 +1928,10 @@
 <span class="doccomment">//! those structs translate to tables and table specifications.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">access</span>::<span class="ident">ModuleAccess</span>, <span class="ident">check_bounds</span>::<span class="ident">BoundsChecker</span>, <span class="ident">errors</span>::<span class="ident">VMResult</span>, <span class="ident">internals</span>::<span class="ident">ModuleIndex</span>,
+    <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
+    <span class="ident">check_bounds</span>::<span class="ident">BoundsChecker</span>,
+    <span class="ident">errors</span>::{<span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>},
+    <span class="ident">internals</span>::<span class="ident">ModuleIndex</span>,
     <span class="ident">IndexKind</span>, <span class="ident">SignatureTokenKind</span>,
 };
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
@@ -1932,7 +1939,7 @@
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
     <span class="ident">identifier</span>::{<span class="ident">IdentStr</span>, <span class="ident">Identifier</span>},
     <span class="ident">language_storage</span>::<span class="ident">ModuleId</span>,
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
 <span class="kw">use</span> <span class="ident">num_variants</span>::<span class="ident">NumVariants</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
@@ -2248,10 +2255,10 @@
 }
 
 <span class="kw">impl</span> <span class="ident">StructDefinition</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">declared_field_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MemberCount</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">declared_field_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MemberCount</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">field_information</span> {
             <span class="comment">// TODO we might want a more informative error here</span>
-            <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
+            <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
                 .<span class="ident">with_message</span>(<span class="string">&quot;Looking for field in native structure&quot;</span>.<span class="ident">to_string</span>())),
             <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">fields</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u16</span>),
         }
@@ -3272,7 +3279,7 @@
     <span class="doccomment">/// Converts this instance into `CompiledScript` after verifying it for basic internal</span>
     <span class="doccomment">/// consistency. This includes bounds checks but no others.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">deprecated</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledScript</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">CompiledScript</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">info</span>, <span class="ident">fake_module</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">into_module</span>();
         <span class="prelude-val">Ok</span>(<span class="ident">fake_module</span>.<span class="ident">freeze</span>()<span class="question-mark">?</span>.<span class="ident">into_script</span>(<span class="ident">info</span>))
     }
@@ -3583,7 +3590,8 @@
 
     <span class="doccomment">/// Converts this instance into `CompiledModule` after verifying it for basic internal</span>
     <span class="doccomment">/// consistency. This includes bounds checks but no others.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+        <span class="comment">// Impossible to access self_id for location as it might not be safe due to bounds failing</span>
         <span class="ident">BoundsChecker</span>::<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">CompiledModule</span>(<span class="self">self</span>))
     }

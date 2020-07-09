@@ -620,6 +620,9 @@
 <span id="620">620</span>
 <span id="621">621</span>
 <span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -645,7 +648,7 @@
         <span class="ident">Module</span> <span class="kw">as</span> <span class="ident">TransactionModule</span>, <span class="ident">RawTransaction</span>, <span class="ident">Script</span> <span class="kw">as</span> <span class="ident">TransactionScript</span>,
         <span class="ident">SignedTransaction</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">LibraTransaction</span>, <span class="ident">TransactionOutput</span>, <span class="ident">TransactionStatus</span>,
     },
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="ident">checked_verify</span>;
 <span class="kw">use</span> <span class="ident">move_core_types</span>::{
@@ -658,6 +661,7 @@
     <span class="ident">time</span>::<span class="ident">Duration</span>,
 };
 <span class="kw">use</span> <span class="ident">vm</span>::{
+    <span class="ident">errors</span>::{<span class="ident">Location</span>, <span class="ident">VMError</span>},
     <span class="ident">file_format</span>::{<span class="ident">CompiledModule</span>, <span class="ident">CompiledScript</span>},
     <span class="ident">views</span>::<span class="ident">ModuleView</span>,
 };
@@ -865,7 +869,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script</span>(
     <span class="ident">script</span>: <span class="ident">CompiledScript</span>,
     <span class="ident">deps</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledScript</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledScript</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
     <span class="ident">bytecode_verifier</span>::<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>)<span class="question-mark">?</span>;
     <span class="ident">DependencyChecker</span>::<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>, <span class="ident">deps</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">script</span>)
@@ -875,7 +879,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(
     <span class="ident">module</span>: <span class="ident">CompiledModule</span>,
     <span class="ident">deps</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledModule</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledModule</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
     <span class="ident">bytecode_verifier</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
     <span class="ident">DependencyChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="ident">deps</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">module</span>)
@@ -1023,7 +1027,8 @@
 <span class="kw">fn</span> <span class="ident">serialize_and_deserialize_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">script_blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">script</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">script_blob</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">deserialized_script</span> <span class="op">=</span> <span class="ident">CompiledScript</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">script_blob</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">deserialized_script</span> <span class="op">=</span> <span class="ident">CompiledScript</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">script_blob</span>)
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>).<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
     <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">script</span> <span class="op">!</span><span class="op">=</span> <span class="ident">deserialized_script</span> {
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(
@@ -1039,7 +1044,8 @@
 <span class="kw">fn</span> <span class="ident">serialize_and_deserialize_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module_blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">module</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">module_blob</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">deserialized_module</span> <span class="op">=</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">module_blob</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">deserialized_module</span> <span class="op">=</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">module_blob</span>)
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>).<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
     <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">module</span> <span class="op">!</span><span class="op">=</span> <span class="ident">deserialized_module</span> {
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(
@@ -1101,7 +1107,7 @@
             <span class="kw">let</span> <span class="ident">compiled_script</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">verify_script</span>(<span class="ident">compiled_script</span>, <span class="kw-2">&amp;</span><span class="ident">deps</span>) {
                 <span class="prelude-val">Ok</span>(<span class="ident">script</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">script</span>,
                 <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>).<span class="ident">into</span>();
+                    <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>.<span class="ident">into_vm_status</span>()).<span class="ident">into</span>();
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">err</span>)));
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>);
                 }
@@ -1139,7 +1145,7 @@
             <span class="kw">let</span> <span class="ident">compiled_module</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">verify_module</span>(<span class="ident">compiled_module</span>, <span class="kw-2">&amp;</span><span class="ident">deps</span>) {
                 <span class="prelude-val">Ok</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">module</span>,
                 <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>).<span class="ident">into</span>();
+                    <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>.<span class="ident">into_vm_status</span>()).<span class="ident">into</span>();
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">err</span>)));
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>);
                 }

@@ -1336,6 +1336,61 @@
 <span id="1336">1336</span>
 <span id="1337">1337</span>
 <span id="1338">1338</span>
+<span id="1339">1339</span>
+<span id="1340">1340</span>
+<span id="1341">1341</span>
+<span id="1342">1342</span>
+<span id="1343">1343</span>
+<span id="1344">1344</span>
+<span id="1345">1345</span>
+<span id="1346">1346</span>
+<span id="1347">1347</span>
+<span id="1348">1348</span>
+<span id="1349">1349</span>
+<span id="1350">1350</span>
+<span id="1351">1351</span>
+<span id="1352">1352</span>
+<span id="1353">1353</span>
+<span id="1354">1354</span>
+<span id="1355">1355</span>
+<span id="1356">1356</span>
+<span id="1357">1357</span>
+<span id="1358">1358</span>
+<span id="1359">1359</span>
+<span id="1360">1360</span>
+<span id="1361">1361</span>
+<span id="1362">1362</span>
+<span id="1363">1363</span>
+<span id="1364">1364</span>
+<span id="1365">1365</span>
+<span id="1366">1366</span>
+<span id="1367">1367</span>
+<span id="1368">1368</span>
+<span id="1369">1369</span>
+<span id="1370">1370</span>
+<span id="1371">1371</span>
+<span id="1372">1372</span>
+<span id="1373">1373</span>
+<span id="1374">1374</span>
+<span id="1375">1375</span>
+<span id="1376">1376</span>
+<span id="1377">1377</span>
+<span id="1378">1378</span>
+<span id="1379">1379</span>
+<span id="1380">1380</span>
+<span id="1381">1381</span>
+<span id="1382">1382</span>
+<span id="1383">1383</span>
+<span id="1384">1384</span>
+<span id="1385">1385</span>
+<span id="1386">1386</span>
+<span id="1387">1387</span>
+<span id="1388">1388</span>
+<span id="1389">1389</span>
+<span id="1390">1390</span>
+<span id="1391">1391</span>
+<span id="1392">1392</span>
+<span id="1393">1393</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1365,7 +1420,7 @@
         <span class="ident">TransactionArgument</span>, <span class="ident">TransactionOutput</span>, <span class="ident">TransactionPayload</span>, <span class="ident">TransactionStatus</span>,
         <span class="ident">VMValidatorResult</span>,
     },
-    <span class="ident">vm_status</span>::{<span class="ident">sub_status</span>, <span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::{<span class="ident">convert_prologue_runtime_error</span>, <span class="ident">sub_status</span>, <span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
 };
 <span class="kw">use</span> <span class="ident">move_core_types</span>::{
@@ -1390,7 +1445,6 @@
     <span class="ident">convert</span>::<span class="ident">TryFrom</span>,
     <span class="ident">sync</span>::<span class="ident">Arc</span>,
 };
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::{<span class="ident">convert_prologue_runtime_error</span>, <span class="ident">VMResult</span>};
 
 <span class="doccomment">/// Any transation sent from an account with a role id below this cutoff will be priorited over</span>
 <span class="doccomment">/// other transactions.</span>
@@ -1411,8 +1465,11 @@
             .<span class="ident">as_ref</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">gas_schedule</span>)
             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
-                    .<span class="ident">with_sub_status</span>(<span class="ident">sub_status</span>::<span class="ident">VSF_GAS_SCHEDULE_NOT_FOUND</span>)
+                <span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                    <span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>,
+                    <span class="prelude-val">Some</span>(<span class="ident">sub_status</span>::<span class="ident">VSF_GAS_SCHEDULE_NOT_FOUND</span>),
+                    <span class="prelude-val">None</span>,
+                )
             })
     };
 }
@@ -1448,10 +1505,10 @@
         <span class="self">self</span>.<span class="ident">load_configs_impl</span>(<span class="kw-2">&amp;</span><span class="ident">RemoteStorage</span>::<span class="ident">new</span>(<span class="ident">state</span>))
     }
 
-    <span class="kw">fn</span> <span class="ident">on_chain_config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMConfig</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">on_chain_config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMConfig</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">on_chain_config</span>
             .<span class="ident">as_ref</span>()
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>))
+            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))
     }
 
     <span class="kw">fn</span> <span class="ident">load_configs_impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">ConfigStorage</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
@@ -1459,18 +1516,21 @@
         <span class="self">self</span>.<span class="ident">version</span> <span class="op">=</span> <span class="ident">LibraVersion</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="macro">gas_schedule</span><span class="macro">!</span>(<span class="self">self</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_libra_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">LibraVersion</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_libra_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LibraVersion</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">version</span>.<span class="ident">clone</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-            <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
-                .<span class="ident">with_sub_status</span>(<span class="ident">sub_status</span>::<span class="ident">VSF_LIBRA_VERSION_NOT_FOUND</span>)
+            <span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">sub_status</span>::<span class="ident">VSF_LIBRA_VERSION_NOT_FOUND</span>),
+                <span class="prelude-val">None</span>,
+            )
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">check_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_constants</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>.<span class="ident">gas_constants</span>;
         <span class="kw">let</span> <span class="ident">raw_bytes_len</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>::<span class="ident">new</span>(<span class="ident">txn</span>.<span class="ident">raw_txn_bytes_len</span>() <span class="kw">as</span> <span class="ident">GasCarrier</span>);
         <span class="comment">// The transaction is too large.</span>
@@ -1485,9 +1545,11 @@
                 <span class="ident">raw_bytes_len</span>.<span class="ident">get</span>(),
                 <span class="ident">gas_constants</span>.<span class="ident">max_transaction_size_in_bytes</span>
             );
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXCEEDED_MAX_TRANSACTION_SIZE</span>).<span class="ident">with_message</span>(<span class="ident">error_str</span>)
-            );
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">EXCEEDED_MAX_TRANSACTION_SIZE</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">error_str</span>),
+            ));
         }
 
         <span class="comment">// Check is performed on `txn.raw_txn_bytes_len()` which is the same as</span>
@@ -1508,10 +1570,11 @@
                 <span class="ident">gas_constants</span>.<span class="ident">maximum_number_of_gas_units</span>.<span class="ident">get</span>(),
                 <span class="ident">txn</span>.<span class="ident">max_gas_amount</span>()
             );
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_EXCEEDS_MAX_GAS_UNITS_BOUND</span>)
-                    .<span class="ident">with_message</span>(<span class="ident">error_str</span>),
-            );
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_EXCEEDS_MAX_GAS_UNITS_BOUND</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">error_str</span>),
+            ));
         }
 
         <span class="comment">// The submitted transactions max gas units needs to be at least enough to cover the</span>
@@ -1529,10 +1592,11 @@
                 <span class="ident">min_txn_fee</span>.<span class="ident">get</span>(),
                 <span class="ident">txn</span>.<span class="ident">max_gas_amount</span>()
             );
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS</span>)
-                    .<span class="ident">with_message</span>(<span class="ident">error_str</span>),
-            );
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">error_str</span>),
+            ));
         }
 
         <span class="comment">// The submitted gas price is less than the minimum gas unit price set by the VM.</span>
@@ -1551,9 +1615,11 @@
                 <span class="ident">gas_constants</span>.<span class="ident">min_price_per_gas_unit</span>.<span class="ident">get</span>(),
                 <span class="ident">txn</span>.<span class="ident">gas_unit_price</span>()
             );
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_BELOW_MIN_BOUND</span>).<span class="ident">with_message</span>(<span class="ident">error_str</span>)
-            );
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_BELOW_MIN_BOUND</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">error_str</span>),
+            ));
         }
 
         <span class="comment">// The submitted gas price is greater than the maximum gas unit price set by the VM.</span>
@@ -1568,9 +1634,11 @@
                 <span class="ident">gas_constants</span>.<span class="ident">max_price_per_gas_unit</span>.<span class="ident">get</span>(),
                 <span class="ident">txn</span>.<span class="ident">gas_unit_price</span>()
             );
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_ABOVE_MAX_BOUND</span>).<span class="ident">with_message</span>(<span class="ident">error_str</span>)
-            );
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_ABOVE_MAX_BOUND</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">error_str</span>),
+            ));
         }
         <span class="prelude-val">Ok</span>(())
     }
@@ -1581,7 +1649,7 @@
         <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>,
         <span class="ident">txn_data</span>: <span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="self">self</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>
@@ -1590,7 +1658,7 @@
             .<span class="ident">is_allowed_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">code</span>())
         {
             <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;[VM] Custom scripts not allowed: {:?}&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">code</span>());
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_SCRIPT</span>));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_SCRIPT</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>));
         };
         <span class="self">self</span>.<span class="ident">run_prologue</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
@@ -1611,14 +1679,18 @@
         <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">Module</span>,
         <span class="ident">txn_data</span>: <span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="self">self</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
         <span class="kw">if</span> <span class="op">!</span><span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">on_chain_config</span>()<span class="question-mark">?</span>.<span class="ident">publishing_option</span>.<span class="ident">is_open</span>()
             <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">can_publish_modules</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>(), <span class="ident">remote_cache</span>)
         {
             <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;[VM] Custom modules not allowed&quot;</span>);
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_PUBLISHER</span>));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_PUBLISHER</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">None</span>,
+            ));
         };
         <span class="self">self</span>.<span class="ident">run_prologue</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
@@ -1634,7 +1706,7 @@
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
         <span class="ident">_change_set</span>: <span class="kw-2">&amp;</span><span class="ident">ChangeSet</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
         <span class="self">self</span>.<span class="ident">run_writeset_prologue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
@@ -1645,7 +1717,7 @@
         <span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureCheckedTransaction</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VerifiedTransactionPayload</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">check_gas</span>(<span class="ident">transaction</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="ident">transaction</span>);
         <span class="kw">match</span> <span class="ident">transaction</span>.<span class="ident">payload</span>() {
@@ -1655,7 +1727,9 @@
             <span class="ident">TransactionPayload</span>::<span class="ident">Module</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">verify_module</span>(<span class="ident">remote_cache</span>, <span class="ident">module</span>, <span class="ident">txn_data</span>, <span class="ident">account_currency_symbol</span>)
             }
-            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>)),
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))
+            }
         }
     }
 
@@ -1664,7 +1738,7 @@
         <span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureCheckedTransaction</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="ident">transaction</span>);
         <span class="kw">match</span> <span class="ident">transaction</span>.<span class="ident">payload</span>() {
             <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">script</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -1695,7 +1769,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">transaction</span>(<span class="ident">gas_schedule</span>, <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
 
-        <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">unwrap_or_fail</span> {
+        <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">unwrap_or_fail_status</span> {
             (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">match</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span> {
                     <span class="prelude-val">Ok</span>(<span class="ident">x</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">x</span>,
@@ -1712,11 +1786,16 @@
                 }
             };
         }
+        <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">unwrap_or_fail</span> {
+            (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">unwrap_or_fail_status</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>()))
+            };
+        }
 
         <span class="kw">match</span> <span class="ident">payload</span> {
             <span class="ident">VerifiedTransactionPayload</span>::<span class="ident">Module</span>(<span class="ident">m</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">unwrap_or_fail</span><span class="macro">!</span>(<span class="ident">cost_strategy</span>.<span class="ident">charge_intrinsic_gas</span>(<span class="ident">txn_data</span>.<span class="ident">transaction_size</span>()));
-                <span class="kw">let</span> <span class="ident">module_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="macro">unwrap_or_fail</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">on_chain_config</span>())
+                <span class="kw">let</span> <span class="ident">module_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="macro">unwrap_or_fail_status</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">on_chain_config</span>())
                     .<span class="ident">publishing_option</span>
                     .<span class="ident">is_open</span>()
                 {
@@ -1744,18 +1823,18 @@
         }
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="ident">gas_schedule</span>, <span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>());
-        <span class="macro">unwrap_or_fail</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">run_success_epilogue</span>(
+        <span class="macro">unwrap_or_fail_status</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">run_success_epilogue</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
             <span class="ident">txn_data</span>,
             <span class="ident">account_currency_symbol</span>,
         ));
-        <span class="macro">unwrap_or_fail</span><span class="macro">!</span>(<span class="ident">get_transaction_output</span>(
+        <span class="macro">unwrap_or_fail_status</span><span class="macro">!</span>(<span class="ident">get_transaction_output</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">ap_cache</span>,
             <span class="ident">session</span>,
             <span class="kw-2">&amp;</span><span class="ident">cost_strategy</span>,
             <span class="ident">txn_data</span>,
-            <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>),
+            <span class="ident">VMStatus</span>::<span class="ident">executed</span>()
         ))
     }
 
@@ -1808,7 +1887,7 @@
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="ident">txn</span>);
         <span class="kw">let</span> <span class="ident">account_currency_symbol</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">from_currency_code_string</span>(<span class="ident">txn</span>.<span class="ident">gas_currency_code</span>())
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_GAS_SPECIFIER</span>));
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_GAS_SPECIFIER</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>));
         <span class="kw">let</span> <span class="ident">verified_payload</span> <span class="op">=</span> <span class="ident">account_currency_symbol</span>.<span class="ident">clone</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">currency_code</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_VERIFICATION_SECONDS</span>.<span class="ident">start_timer</span>();
             <span class="self">self</span>.<span class="ident">verify_user_transaction_impl</span>(<span class="ident">txn</span>, <span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">currency_code</span>)
@@ -1836,13 +1915,13 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">write_set</span>: <span class="kw-2">&amp;</span><span class="ident">WriteSet</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="comment">// All Move executions satisfy the read-before-write property. Thus we need to read each</span>
         <span class="comment">// access path that the write set is going to update.</span>
         <span class="kw">for</span> (<span class="ident">ap</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="ident">write_set</span>.<span class="ident">iter</span>() {
             <span class="ident">remote_cache</span>
                 .<span class="ident">get</span>(<span class="ident">ap</span>)
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">STORAGE_ERROR</span>))<span class="question-mark">?</span>;
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">STORAGE_ERROR</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(())
     }
@@ -1851,7 +1930,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">change_set</span>: <span class="ident">ChangeSet</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">write_set</span>, <span class="ident">events</span>) <span class="op">=</span> <span class="ident">change_set</span>.<span class="ident">into_inner</span>();
         <span class="self">self</span>.<span class="ident">read_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">write_set</span>)<span class="question-mark">?</span>;
         <span class="ident">remote_cache</span>.<span class="ident">push_write_set</span>(<span class="kw-2">&amp;</span><span class="ident">write_set</span>);
@@ -1860,7 +1939,7 @@
             <span class="ident">write_set</span>,
             <span class="ident">events</span>,
             <span class="number">0</span>,
-            <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>).<span class="ident">into</span>(),
+            <span class="ident">VMStatus</span>::<span class="ident">executed</span>().<span class="ident">into</span>(),
         ))
     }
 
@@ -1868,7 +1947,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">block_metadata</span>: <span class="ident">BlockMetadata</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="comment">// TODO: How should we setup the metadata here? A couple of thoughts here:</span>
         <span class="comment">// 1. We might make the txn_data to be poisoned so that reading anything will result in a panic.</span>
         <span class="comment">// 2. The most important consideration is figuring out the sender address.  Having a notion of a</span>
@@ -1881,7 +1960,9 @@
 
         <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="ident">zero_cost_schedule</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">transaction</span>(<span class="kw-2">&amp;</span><span class="ident">gas_schedule</span>, <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>());
-        <span class="ident">cost_strategy</span>.<span class="ident">charge_intrinsic_gas</span>(<span class="ident">txn_data</span>.<span class="ident">transaction_size</span>())<span class="question-mark">?</span>;
+        <span class="ident">cost_strategy</span>
+            .<span class="ident">charge_intrinsic_gas</span>(<span class="ident">txn_data</span>.<span class="ident">transaction_size</span>())
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>((<span class="ident">round</span>, <span class="ident">timestamp</span>, <span class="ident">previous_vote</span>, <span class="ident">proposer</span>)) <span class="op">=</span> <span class="ident">block_metadata</span>.<span class="ident">into_inner</span>() {
@@ -1892,16 +1973,18 @@
                 <span class="ident">Value</span>::<span class="ident">vector_address</span>(<span class="ident">previous_vote</span>),
                 <span class="ident">Value</span>::<span class="ident">address</span>(<span class="ident">proposer</span>),
             ];
-            <span class="ident">session</span>.<span class="ident">execute_function</span>(
-                <span class="kw-2">&amp;</span><span class="ident">LIBRA_BLOCK_MODULE</span>,
-                <span class="kw-2">&amp;</span><span class="ident">BLOCK_PROLOGUE</span>,
-                <span class="macro">vec</span><span class="macro">!</span>[],
-                <span class="ident">args</span>,
-                <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
-            )<span class="question-mark">?</span>
+            <span class="ident">session</span>
+                .<span class="ident">execute_function</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">LIBRA_BLOCK_MODULE</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">BLOCK_PROLOGUE</span>,
+                    <span class="macro">vec</span><span class="macro">!</span>[],
+                    <span class="ident">args</span>,
+                    <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                )
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>
         } <span class="kw">else</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MALFORMED</span>));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MALFORMED</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>));
         };
 
         <span class="ident">get_transaction_output</span>(
@@ -1909,7 +1992,7 @@
             <span class="ident">session</span>,
             <span class="kw-2">&amp;</span><span class="ident">cost_strategy</span>,
             <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
-            <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>),
+            <span class="ident">VMStatus</span>::<span class="ident">executed</span>(),
         )
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">output</span><span class="op">|</span> {
             <span class="ident">remote_cache</span>.<span class="ident">push_write_set</span>(<span class="ident">output</span>.<span class="ident">write_set</span>());
@@ -1921,12 +2004,14 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">txn</span>: <span class="ident">SignedTransaction</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn</span>.<span class="ident">check_signature</span>() {
             <span class="prelude-val">Ok</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>,
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
                     <span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>,
+                    <span class="prelude-val">None</span>,
+                    <span class="prelude-val">None</span>,
                 )))
             }
         };
@@ -1935,7 +2020,11 @@
             <span class="ident">change_set</span>
         } <span class="kw">else</span> {
             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] UNREACHABLE&quot;</span>);
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>)));
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">None</span>,
+            )));
         };
 
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>);
@@ -1950,16 +2039,18 @@
         <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="ident">zero_cost_schedule</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">gas_schedule</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
 
-        <span class="ident">session</span>.<span class="ident">execute_function</span>(
-            <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">BUMP_SEQUENCE_NUMBER_NAME</span>,
-            <span class="macro">vec</span><span class="macro">!</span>[],
-            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(
+        <span class="ident">session</span>
+            .<span class="ident">execute_function</span>(
+                <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
+                <span class="kw-2">&amp;</span><span class="ident">BUMP_SEQUENCE_NUMBER_NAME</span>,
+                <span class="macro">vec</span><span class="macro">!</span>[],
+                <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(
+                    <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+                )],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-            )],
-            <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
-        )<span class="question-mark">?</span>;
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+            )
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
         <span class="comment">// Emit the reconfiguration event</span>
         <span class="self">self</span>.<span class="ident">run_writeset_epilogue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="ident">change_set</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>)<span class="question-mark">?</span>;
@@ -1968,7 +2059,7 @@
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">e</span>));
         };
 
-        <span class="kw">let</span> <span class="ident">effects</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">effects</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">epilogue_writeset</span>, <span class="ident">epilogue_events</span>) <span class="op">=</span>
             <span class="ident">txn_effects_to_writeset_and_events_cached</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">ap_cache</span>, <span class="ident">effects</span>)<span class="question-mark">?</span>;
 
@@ -1987,6 +2078,8 @@
         {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INVALID_WRITE_SET</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">None</span>,
             )));
         }
         <span class="kw">if</span> <span class="op">!</span><span class="ident">epilogue_events</span>
@@ -2003,6 +2096,8 @@
         {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INVALID_WRITE_SET</span>,
+                <span class="prelude-val">None</span>,
+                <span class="prelude-val">None</span>,
             )));
         }
 
@@ -2014,7 +2109,7 @@
                 .<span class="ident">collect</span>(),
         )
         .<span class="ident">freeze</span>()
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_WRITE_SET</span>))<span class="question-mark">?</span>;
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_WRITE_SET</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">change_set</span>
             .<span class="ident">events</span>()
             .<span class="ident">iter</span>()
@@ -2026,7 +2121,7 @@
             <span class="ident">write_set</span>,
             <span class="ident">events</span>,
             <span class="number">0</span>,
-            <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>)),
+            <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">VMStatus</span>::<span class="ident">executed</span>()),
         ))
     }
 
@@ -2038,7 +2133,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
         <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
@@ -2063,7 +2158,7 @@
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="ident">cost_strategy</span>,
             )
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>.<span class="ident">sender</span>))
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="ident">e</span>.<span class="ident">into_vm_status</span>(), <span class="kw-2">&amp;</span><span class="ident">txn_data</span>.<span class="ident">sender</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `EPILOGUE_NAME` function stored</span>
@@ -2074,7 +2169,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
         <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
@@ -2082,20 +2177,22 @@
         <span class="kw">let</span> <span class="ident">txn_max_gas_units</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>();
         <span class="kw">let</span> <span class="ident">gas_remaining</span> <span class="op">=</span> <span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>().<span class="ident">get</span>();
         <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_EPILOGUE_SECONDS</span>.<span class="ident">start_timer</span>();
-        <span class="ident">session</span>.<span class="ident">execute_function</span>(
-            <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">SUCCESS_EPILOGUE_NAME</span>,
-            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
-            <span class="macro">vec</span><span class="macro">!</span>[
-                <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_sequence_number</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_gas_price</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_max_gas_units</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">gas_remaining</span>),
-            ],
-            <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-            <span class="ident">cost_strategy</span>,
-        )
+        <span class="ident">session</span>
+            .<span class="ident">execute_function</span>(
+                <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
+                <span class="kw-2">&amp;</span><span class="ident">SUCCESS_EPILOGUE_NAME</span>,
+                <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
+                <span class="macro">vec</span><span class="macro">!</span>[
+                    <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_sequence_number</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_gas_price</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_max_gas_units</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">gas_remaining</span>),
+                ],
+                <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+                <span class="ident">cost_strategy</span>,
+            )
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())
     }
 
     <span class="doccomment">/// Run the failure epilogue of a transaction by calling into `FAILURE_EPILOGUE_NAME` function</span>
@@ -2106,7 +2203,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
         <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
@@ -2114,20 +2211,22 @@
         <span class="kw">let</span> <span class="ident">txn_max_gas_units</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>();
         <span class="kw">let</span> <span class="ident">gas_remaining</span> <span class="op">=</span> <span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>().<span class="ident">get</span>();
         <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_EPILOGUE_SECONDS</span>.<span class="ident">start_timer</span>();
-        <span class="ident">session</span>.<span class="ident">execute_function</span>(
-            <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">FAILURE_EPILOGUE_NAME</span>,
-            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
-            <span class="macro">vec</span><span class="macro">!</span>[
-                <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_sequence_number</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_gas_price</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_max_gas_units</span>),
-                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">gas_remaining</span>),
-            ],
-            <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-            <span class="ident">cost_strategy</span>,
-        )
+        <span class="ident">session</span>
+            .<span class="ident">execute_function</span>(
+                <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
+                <span class="kw-2">&amp;</span><span class="ident">FAILURE_EPILOGUE_NAME</span>,
+                <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
+                <span class="macro">vec</span><span class="macro">!</span>[
+                    <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_sequence_number</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_gas_price</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_max_gas_units</span>),
+                    <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">gas_remaining</span>),
+                ],
+                <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+                <span class="ident">cost_strategy</span>,
+            )
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())
     }
 
     <span class="doccomment">/// Run the prologue of a transaction by calling into `PROLOGUE_NAME` function stored</span>
@@ -2136,7 +2235,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
         <span class="kw">let</span> <span class="ident">txn_public_key</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">authentication_key_preimage</span>().<span class="ident">to_vec</span>();
         <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="ident">zero_cost_schedule</span>();
@@ -2155,7 +2254,7 @@
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
             )
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>.<span class="ident">sender</span>))
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="ident">e</span>.<span class="ident">into_vm_status</span>(), <span class="kw-2">&amp;</span><span class="ident">txn_data</span>.<span class="ident">sender</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `WRITESET_EPILOGUE_NAME` function stored</span>
@@ -2165,31 +2264,33 @@
         <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
         <span class="ident">change_set</span>: <span class="kw-2">&amp;</span><span class="ident">ChangeSet</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">change_set_bytes</span> <span class="op">=</span>
-            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="ident">change_set</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_DATA</span>))<span class="question-mark">?</span>;
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">change_set_bytes</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="ident">change_set</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_DATA</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="ident">zero_cost_schedule</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">gas_schedule</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
 
         <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_EPILOGUE_SECONDS</span>.<span class="ident">start_timer</span>();
-        <span class="ident">session</span>.<span class="ident">execute_function</span>(
-            <span class="kw-2">&amp;</span><span class="ident">LIBRA_WRITESET_MANAGER_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">WRITESET_EPILOGUE_NAME</span>,
-            <span class="macro">vec</span><span class="macro">!</span>[],
-            <span class="macro">vec</span><span class="macro">!</span>[
-                <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
-                <span class="ident">Value</span>::<span class="ident">vector_u8</span>(<span class="ident">change_set_bytes</span>),
-            ],
-            <span class="ident">txn_data</span>.<span class="ident">sender</span>,
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
-        )
+        <span class="ident">session</span>
+            .<span class="ident">execute_function</span>(
+                <span class="kw-2">&amp;</span><span class="ident">LIBRA_WRITESET_MANAGER_MODULE</span>,
+                <span class="kw-2">&amp;</span><span class="ident">WRITESET_EPILOGUE_NAME</span>,
+                <span class="macro">vec</span><span class="macro">!</span>[],
+                <span class="macro">vec</span><span class="macro">!</span>[
+                    <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
+                    <span class="ident">Value</span>::<span class="ident">vector_u8</span>(<span class="ident">change_set_bytes</span>),
+                ],
+                <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+            )
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())
     }
 
     <span class="kw">fn</span> <span class="ident">execute_block_impl</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
         <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">transactions</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="ident">blocks</span> <span class="op">=</span> <span class="ident">chunk_block_transactions</span>(<span class="ident">transactions</span>);
@@ -2238,7 +2339,7 @@
         <span class="ident">txn_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>,
         <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">load_configs_impl</span>(<span class="ident">data_cache</span>);
         <span class="kw">let</span> <span class="ident">signature_verified_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignatureCheckedTransaction</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
         {
@@ -2247,7 +2348,7 @@
                 .<span class="ident">into_par_iter</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">txn</span><span class="op">|</span> {
                     <span class="ident">txn</span>.<span class="ident">check_signature</span>()
-                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>))
+                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))
                 })
                 .<span class="ident">collect</span>();
         }
@@ -2317,7 +2418,7 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">code</span>,
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">return</span> <span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(
-                        <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_GAS_SPECIFIER</span>)),
+                        <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_GAS_SPECIFIER</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)),
                         <span class="ident">gas_price</span>,
                         <span class="bool-val">false</span>,
                     )
@@ -2329,7 +2430,7 @@
             <span class="ident">t</span>
         } <span class="kw">else</span> {
             <span class="kw">return</span> <span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(
-                <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>)),
+                <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)),
                 <span class="ident">gas_price</span>,
                 <span class="bool-val">false</span>,
             );
@@ -2353,7 +2454,7 @@
                     <span class="prelude-val">None</span>
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Some</span>(<span class="ident">convert_prologue_runtime_error</span>(
-                        <span class="kw-2">&amp;</span><span class="ident">err</span>,
+                        <span class="ident">err</span>,
                         <span class="kw-2">&amp;</span><span class="ident">signature_verified_txn</span>.<span class="ident">sender</span>(),
                     ))
                 }
@@ -2383,7 +2484,7 @@
     <span class="kw">fn</span> <span class="ident">execute_block</span>(
         <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
         <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">new</span>();
         <span class="ident">vm</span>.<span class="ident">execute_block_impl</span>(<span class="ident">transactions</span>, <span class="ident">state_view</span>)
     }
@@ -2400,12 +2501,12 @@
     }
 
     <span class="doccomment">/// Returns the internal gas schedule if it has been loaded, or an error if it hasn&#39;t.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gas_schedule</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gas_schedule</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>()
     }
 
     <span class="doccomment">/// Returns the version of Move Runtime.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">libra_version</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">LibraVersion</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">libra_version</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LibraVersion</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_libra_version</span>()
     }
 
@@ -2448,16 +2549,19 @@
     <span class="ident">gas_price</span>: <span class="ident">u64</span>,
     <span class="ident">currency_code</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
     <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">currency_info_path</span> <span class="op">=</span>
         <span class="ident">account_config</span>::<span class="ident">CurrencyInfoResource</span>::<span class="ident">resource_path_for</span>(<span class="ident">currency_code</span>.<span class="ident">to_owned</span>());
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">blob</span>)) <span class="op">=</span> <span class="ident">remote_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">currency_info_path</span>) {
         <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">account_config</span>::<span class="ident">CurrencyInfoResource</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">CURRENCY_INFO_DOES_NOT_EXIST</span>))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">CURRENCY_INFO_DOES_NOT_EXIST</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">x</span>.<span class="ident">convert_to_lbr</span>(<span class="ident">gas_price</span>))
     } <span class="kw">else</span> {
-        <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MISSING_DATA</span>)
-            .<span class="ident">with_message</span>(<span class="string">&quot;Cannot find curency info in gas price normalization&quot;</span>.<span class="ident">to_string</span>()))
+        <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+            <span class="ident">StatusCode</span>::<span class="ident">MISSING_DATA</span>,
+            <span class="prelude-val">None</span>,
+            <span class="prelude-val">Some</span>(<span class="string">&quot;Cannot find curency info in gas price normalization&quot;</span>.<span class="ident">to_owned</span>()),
+        ))
     }
 }
 
@@ -2585,7 +2689,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">txn_effects_to_writeset_and_events_cached</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">AccessPathCache</span><span class="op">&gt;</span>(
     <span class="ident">ap_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span>,
     <span class="ident">effects</span>: <span class="ident">TransactionEffects</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>(<span class="ident">WriteSet</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">WriteSet</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="comment">//println!(&quot;effects&quot;);</span>
     <span class="comment">// TODO: Cache access path computations if necessary.</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ops</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -2594,15 +2698,21 @@
         <span class="kw">for</span> (<span class="ident">ty_tag</span>, <span class="ident">val_opt</span>) <span class="kw">in</span> <span class="ident">vals</span> {
             <span class="kw">let</span> <span class="ident">struct_tag</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ty_tag</span> {
                 <span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">struct_tag</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">struct_tag</span>,
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VALUE_SERIALIZATION_ERROR</span>)),
+                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                        <span class="ident">StatusCode</span>::<span class="ident">VALUE_SERIALIZATION_ERROR</span>,
+                        <span class="prelude-val">None</span>,
+                        <span class="prelude-val">None</span>,
+                    ))
+                }
             };
             <span class="kw">let</span> <span class="ident">ap</span> <span class="op">=</span> <span class="ident">ap_cache</span>.<span class="ident">get_resource_path</span>(<span class="ident">addr</span>, <span class="ident">struct_tag</span>);
             <span class="kw">let</span> <span class="ident">op</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">val_opt</span> {
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">WriteOp</span>::<span class="ident">Deletion</span>,
                 <span class="prelude-val">Some</span>((<span class="ident">ty_layout</span>, <span class="ident">val</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">blob</span> <span class="op">=</span> <span class="ident">val</span>
-                        .<span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="ident">ty_layout</span>)
-                        .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VALUE_SERIALIZATION_ERROR</span>))<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="ident">blob</span> <span class="op">=</span> <span class="ident">val</span>.<span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="ident">ty_layout</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                        <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VALUE_SERIALIZATION_ERROR</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+                    })<span class="question-mark">?</span>;
 
                     <span class="ident">WriteOp</span>::<span class="ident">Value</span>(<span class="ident">blob</span>)
                 }
@@ -2617,7 +2727,7 @@
 
     <span class="kw">let</span> <span class="ident">ws</span> <span class="op">=</span> <span class="ident">WriteSetMut</span>::<span class="ident">new</span>(<span class="ident">ops</span>)
         .<span class="ident">freeze</span>()
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">DATA_FORMAT_ERROR</span>))<span class="question-mark">?</span>;
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">DATA_FORMAT_ERROR</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">effects</span>
         .<span class="ident">events</span>
@@ -2625,12 +2735,12 @@
         .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty_tag</span>, <span class="ident">ty_layout</span>, <span class="ident">val</span>)<span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">val</span>
                 .<span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="ident">ty_layout</span>)
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">DATA_FORMAT_ERROR</span>))<span class="question-mark">?</span>;
+                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">DATA_FORMAT_ERROR</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">EventKey</span>::<span class="ident">try_from</span>(<span class="ident">guid</span>.<span class="ident">as_slice</span>())
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EVENT_KEY_MISMATCH</span>))<span class="question-mark">?</span>;
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EVENT_KEY_MISMATCH</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>(<span class="ident">ContractEvent</span>::<span class="ident">new</span>(<span class="ident">key</span>, <span class="ident">seq_num</span>, <span class="ident">ty_tag</span>, <span class="ident">msg</span>))
         })
-        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>((<span class="ident">ws</span>, <span class="ident">events</span>))
 }
@@ -2641,13 +2751,13 @@
     <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="ident">CostStrategy</span>,
     <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
     <span class="ident">status</span>: <span class="ident">VMStatus</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">gas_used</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">txn_data</span>
         .<span class="ident">max_gas_amount</span>()
         .<span class="ident">sub</span>(<span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>())
         .<span class="ident">get</span>();
 
-    <span class="kw">let</span> <span class="ident">effects</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">effects</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">write_set</span>, <span class="ident">events</span>) <span class="op">=</span> <span class="ident">txn_effects_to_writeset_and_events_cached</span>(<span class="ident">ap_cache</span>, <span class="ident">effects</span>)<span class="question-mark">?</span>;
 
     <span class="ident">TXN_TOTAL_GAS_USAGE</span>.<span class="ident">observe</span>(<span class="ident">gas_used</span> <span class="kw">as</span> <span class="ident">f64</span>);
@@ -2661,7 +2771,7 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">txn_effects_to_writeset_and_events</span>(
     <span class="ident">effects</span>: <span class="ident">TransactionEffects</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>(<span class="ident">WriteSet</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">WriteSet</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="ident">txn_effects_to_writeset_and_events_cached</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> (), <span class="ident">effects</span>)
 }
 

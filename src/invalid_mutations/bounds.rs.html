@@ -361,14 +361,14 @@
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">libra_proptest_helpers</span>::<span class="ident">pick_slice_idxs</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">proptest</span>::{
     <span class="ident">prelude</span>::<span class="kw-2">*</span>,
     <span class="ident">sample</span>::{<span class="self">self</span>, <span class="ident">Index</span> <span class="kw">as</span> <span class="ident">PropIndex</span>},
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">errors</span>::{<span class="ident">append_err_info</span>, <span class="ident">bounds_error</span>},
+    <span class="ident">errors</span>::{<span class="ident">bounds_error</span>, <span class="ident">PartialVMError</span>},
     <span class="ident">file_format</span>::{
         <span class="ident">AddressIdentifierIndex</span>, <span class="ident">CompiledModule</span>, <span class="ident">CompiledModuleMut</span>, <span class="ident">FunctionHandleIndex</span>,
         <span class="ident">IdentifierIndex</span>, <span class="ident">ModuleHandleIndex</span>, <span class="ident">SignatureIndex</span>, <span class="ident">StructDefinitionIndex</span>,
@@ -538,7 +538,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">CompiledModuleMut</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VMStatus</span><span class="op">&gt;</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">CompiledModuleMut</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartialVMError</span><span class="op">&gt;</span>) {
         <span class="comment">// This is a map from (source kind, dest kind) to the actual mutations -- this is done to</span>
         <span class="comment">// figure out how many mutations to do for a particular pair, which is required for</span>
         <span class="comment">// pick_slice_idxs below.</span>
@@ -569,7 +569,7 @@
         <span class="ident">src_kind</span>: <span class="ident">IndexKind</span>,
         <span class="ident">dst_kind</span>: <span class="ident">IndexKind</span>,
         <span class="ident">mutations</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OutOfBoundsMutation</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PartialVMError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">src_count</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src_kind</span> {
             <span class="ident">IndexKind</span>::<span class="ident">Signature</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">sig_structs</span>.<span class="ident">len</span>(),
             <span class="comment">// For the other sorts it&#39;s always possible to change an index.</span>
@@ -607,16 +607,16 @@
         <span class="ident">dst_kind</span>: <span class="ident">IndexKind</span>,
         <span class="ident">dst_count</span>: <span class="ident">usize</span>,
         <span class="ident">new_idx</span>: <span class="ident">TableIndex</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PartialVMError</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">IndexKind</span>::<span class="kw-2">*</span>;
 
         <span class="comment">// These are default values, but some of the match arms below mutate them.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">src_idx</span> <span class="op">=</span> <span class="ident">src_idx</span>;
         <span class="kw">let</span> <span class="ident">err</span> <span class="op">=</span> <span class="ident">bounds_error</span>(
-            <span class="ident">dst_kind</span>,
-            <span class="ident">new_idx</span> <span class="kw">as</span> <span class="ident">usize</span>,
-            <span class="ident">dst_count</span>,
             <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+            <span class="ident">dst_kind</span>,
+            <span class="ident">new_idx</span>,
+            <span class="ident">dst_count</span>,
         );
 
         <span class="comment">// A dynamic type system would be able to express this next block of code far more</span>
@@ -671,7 +671,7 @@
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Invalid pointer kind: {:?} -&gt; {:?}&quot;</span>, <span class="ident">src_kind</span>, <span class="ident">dst_kind</span>),
         }
 
-        <span class="prelude-val">Some</span>(<span class="ident">append_err_info</span>(<span class="ident">err</span>, <span class="ident">src_kind</span>, <span class="ident">src_idx</span>))
+        <span class="prelude-val">Some</span>(<span class="ident">err</span>.<span class="ident">at_index</span>(<span class="ident">src_kind</span>, <span class="ident">src_idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>))
     }
 
     <span class="doccomment">/// Returns the indexes of locals signatures that contain struct handles inside them.</span>

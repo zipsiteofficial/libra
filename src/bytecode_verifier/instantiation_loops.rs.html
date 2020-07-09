@@ -288,6 +288,10 @@
 <span id="288">288</span>
 <span id="289">289</span>
 <span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -303,7 +307,7 @@
 <span class="doccomment">//! instances. We do reject recursive functions that create a new type upon each call but do</span>
 <span class="doccomment">//! terminate eventually.</span>
 
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">petgraph</span>::{
     <span class="ident">algo</span>::<span class="ident">tarjan_scc</span>,
     <span class="ident">graph</span>::{<span class="ident">EdgeIndex</span>, <span class="ident">NodeIndex</span>},
@@ -313,7 +317,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::{<span class="ident">hash_map</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>};
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
-    <span class="ident">errors</span>::<span class="ident">VMResult</span>,
+    <span class="ident">errors</span>::{<span class="ident">Location</span>, <span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>, <span class="ident">VMResult</span>},
     <span class="ident">file_format</span>::{
         <span class="ident">Bytecode</span>, <span class="ident">CompiledModule</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">FunctionHandleIndex</span>,
         <span class="ident">SignatureIndex</span>, <span class="ident">SignatureToken</span>, <span class="ident">TypeParameterIndex</span>,
@@ -376,6 +380,10 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">Self</span>::<span class="ident">verify_module_impl</span>(<span class="ident">module</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">module</span>.<span class="ident">self_id</span>())))
+    }
+
+    <span class="kw">fn</span> <span class="ident">verify_module_impl</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">checker</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">new</span>(<span class="ident">module</span>);
         <span class="ident">checker</span>.<span class="ident">build_graph</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">components</span> <span class="op">=</span> <span class="ident">checker</span>.<span class="ident">find_non_trivial_components</span>();
@@ -402,7 +410,7 @@
                     <span class="string">&quot;edges with constructors: [{}], nodes: [{}]&quot;</span>,
                     <span class="ident">msg_edges</span>, <span class="ident">msg_nodes</span>
                 );
-                <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LOOP_IN_INSTANTIATION_GRAPH</span>).<span class="ident">with_message</span>(<span class="ident">msg</span>))
+                <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LOOP_IN_INSTANTIATION_GRAPH</span>).<span class="ident">with_message</span>(<span class="ident">msg</span>))
             }
         }
     }

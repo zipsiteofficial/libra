@@ -302,8 +302,6 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -313,17 +311,14 @@
 <span class="doccomment">//! It is important to note that the cost schedule defined in this file does not track hashing</span>
 <span class="doccomment">//! operations or other native operations; the cost of each native operation will be returned by the</span>
 <span class="doccomment">//! native function itself.</span>
-<span class="kw">use</span> <span class="ident">libra_types</span>::{
-    <span class="ident">transaction</span>::<span class="ident">MAX_TRANSACTION_SIZE_IN_BYTES</span>,
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
-};
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">transaction</span>::<span class="ident">MAX_TRANSACTION_SIZE_IN_BYTES</span>, <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>};
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::{
     <span class="ident">words_in</span>, <span class="ident">AbstractMemorySize</span>, <span class="ident">CostTable</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasConstants</span>, <span class="ident">GasCost</span>,
     <span class="ident">GasUnits</span>,
 };
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">errors</span>::<span class="ident">VMResult</span>,
+    <span class="ident">errors</span>::{<span class="ident">Location</span>, <span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>, <span class="ident">VMResult</span>},
     <span class="ident">file_format</span>::{
         <span class="ident">Bytecode</span>, <span class="ident">ConstantPoolIndex</span>, <span class="ident">FieldHandleIndex</span>, <span class="ident">FieldInstantiationIndex</span>,
         <span class="ident">FunctionHandleIndex</span>, <span class="ident">FunctionInstantiationIndex</span>, <span class="ident">StructDefInstantiationIndex</span>,
@@ -380,7 +375,7 @@
     }
 
     <span class="doccomment">/// Charge a given amount of gas and fail if not enough gas units are left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deduct_gas</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deduct_gas</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">charge</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
@@ -393,7 +388,7 @@
         } <span class="kw">else</span> {
             <span class="comment">// Zero out the internal gas state</span>
             <span class="self">self</span>.<span class="ident">gas_left</span> <span class="op">=</span> <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>);
-            <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">OUT_OF_GAS</span>))
+            <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">OUT_OF_GAS</span>))
         }
     }
 
@@ -402,7 +397,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">opcode</span>: <span class="ident">Opcodes</span>,
         <span class="ident">size</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">deduct_gas</span>(
             <span class="self">self</span>.<span class="ident">cost_table</span>
                 .<span class="ident">instruction_cost</span>(<span class="ident">opcode</span> <span class="kw">as</span> <span class="ident">u8</span>)
@@ -412,7 +407,7 @@
     }
 
     <span class="doccomment">/// Charge an instruction and fail if not enough gas units are left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">charge_instr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">opcode</span>: <span class="ident">Opcodes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">charge_instr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">opcode</span>: <span class="ident">Opcodes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">deduct_gas</span>(<span class="self">self</span>.<span class="ident">cost_table</span>.<span class="ident">instruction_cost</span>(<span class="ident">opcode</span> <span class="kw">as</span> <span class="ident">u8</span>).<span class="ident">total</span>())
     }
 
@@ -424,6 +419,7 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">calculate_intrinsic_gas</span>(<span class="ident">instrinsic_cost</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cost_table</span>.<span class="ident">gas_constants</span>);
         <span class="self">self</span>.<span class="ident">deduct_gas</span>(<span class="ident">cost</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>))
     }
 }
 

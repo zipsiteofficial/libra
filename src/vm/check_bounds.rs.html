@@ -473,35 +473,91 @@
 <span id="473">473</span>
 <span id="474">474</span>
 <span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">errors</span>::{<span class="ident">append_err_info</span>, <span class="ident">bounds_error</span>, <span class="ident">bytecode_offset_err</span>, <span class="ident">verification_error</span>, <span class="ident">VMResult</span>},
+    <span class="ident">errors</span>::{
+        <span class="ident">bounds_error</span>, <span class="ident">offset_out_of_bounds</span> <span class="kw">as</span> <span class="ident">offset_out_of_bounds_error</span>, <span class="ident">verification_error</span>,
+        <span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>,
+    },
     <span class="ident">file_format</span>::{
-        <span class="ident">Bytecode</span>, <span class="ident">CompiledModuleMut</span>, <span class="ident">Constant</span>, <span class="ident">FieldHandle</span>, <span class="ident">FieldInstantiation</span>, <span class="ident">FunctionDefinition</span>,
-        <span class="ident">FunctionHandle</span>, <span class="ident">FunctionInstantiation</span>, <span class="ident">ModuleHandle</span>, <span class="ident">Signature</span>, <span class="ident">SignatureToken</span>,
-        <span class="ident">StructDefInstantiation</span>, <span class="ident">StructDefinition</span>, <span class="ident">StructFieldInformation</span>, <span class="ident">StructHandle</span>,
+        <span class="ident">Bytecode</span>, <span class="ident">CodeOffset</span>, <span class="ident">CompiledModuleMut</span>, <span class="ident">Constant</span>, <span class="ident">FieldHandle</span>, <span class="ident">FieldInstantiation</span>,
+        <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">FunctionHandle</span>, <span class="ident">FunctionInstantiation</span>,
+        <span class="ident">ModuleHandle</span>, <span class="ident">Signature</span>, <span class="ident">SignatureToken</span>, <span class="ident">StructDefInstantiation</span>, <span class="ident">StructDefinition</span>,
+        <span class="ident">StructFieldInformation</span>, <span class="ident">StructHandle</span>, <span class="ident">TableIndex</span>,
     },
     <span class="ident">internals</span>::<span class="ident">ModuleIndex</span>,
     <span class="ident">IndexKind</span>,
 };
-<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">u8</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BoundsChecker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModuleMut</span>,
+    <span class="ident">current_function</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FunctionDefinitionIndex</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">BoundsChecker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModuleMut</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">bounds_check</span> <span class="op">=</span> <span class="self">Self</span> { <span class="ident">module</span> };
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModuleMut</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bounds_check</span> <span class="op">=</span> <span class="self">Self</span> {
+            <span class="ident">module</span>,
+            <span class="ident">current_function</span>: <span class="prelude-val">None</span>,
+        };
         <span class="comment">// TODO: this will not be true once we change CompiledScript and remove the</span>
         <span class="comment">// FunctionDefinition for `main`</span>
         <span class="kw">if</span> <span class="ident">bounds_check</span>.<span class="ident">module</span>.<span class="ident">module_handles</span>.<span class="ident">is_empty</span>() {
             <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span>
-                <span class="ident">verification_error</span>(<span class="ident">IndexKind</span>::<span class="ident">ModuleHandle</span>, <span class="number">0</span>, <span class="ident">StatusCode</span>::<span class="ident">NO_MODULE_HANDLES</span>);
+                <span class="ident">verification_error</span>(<span class="ident">StatusCode</span>::<span class="ident">NO_MODULE_HANDLES</span>, <span class="ident">IndexKind</span>::<span class="ident">ModuleHandle</span>, <span class="number">0</span>);
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">status</span>);
         }
 
@@ -542,17 +598,17 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_module_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_handle</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_module_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_handle</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">address_identifiers</span>, <span class="ident">module_handle</span>.<span class="ident">address</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">identifiers</span>, <span class="ident">module_handle</span>.<span class="ident">name</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">check_struct_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">struct_handle</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_struct_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">struct_handle</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">module_handles</span>, <span class="ident">struct_handle</span>.<span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">identifiers</span>, <span class="ident">struct_handle</span>.<span class="ident">name</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">check_function_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_function_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">module_handles</span>, <span class="ident">function_handle</span>.<span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">identifiers</span>, <span class="ident">function_handle</span>.<span class="ident">name</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signatures</span>, <span class="ident">function_handle</span>.<span class="ident">parameters</span>)<span class="question-mark">?</span>;
@@ -580,7 +636,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_field_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">field_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_field_handle</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">field_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>, <span class="ident">field_handle</span>.<span class="ident">owner</span>)<span class="question-mark">?</span>;
         <span class="comment">// field offset must be in bounds, struct def just checked above must exist</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_def</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>.<span class="ident">get</span>(<span class="ident">field_handle</span>.<span class="ident">owner</span>.<span class="ident">into_index</span>()) {
@@ -590,10 +646,10 @@
             };
             <span class="kw">if</span> <span class="ident">field_handle</span>.<span class="ident">field</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">fields_count</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">bounds_error</span>(
-                    <span class="ident">IndexKind</span>::<span class="ident">MemberCount</span>,
-                    <span class="ident">field_handle</span>.<span class="ident">field</span> <span class="kw">as</span> <span class="ident">usize</span>,
-                    <span class="ident">fields_count</span>,
                     <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                    <span class="ident">IndexKind</span>::<span class="ident">MemberCount</span>,
+                    <span class="ident">field_handle</span>.<span class="ident">field</span>,
+                    <span class="ident">fields_count</span>,
                 ));
             }
         }
@@ -603,7 +659,7 @@
     <span class="kw">fn</span> <span class="ident">check_struct_instantiation</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">struct_instantiation</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefInstantiation</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>, <span class="ident">struct_instantiation</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signatures</span>,
@@ -614,7 +670,7 @@
     <span class="kw">fn</span> <span class="ident">check_function_instantiation</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">function_instantiation</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionInstantiation</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handles</span>, <span class="ident">function_instantiation</span>.<span class="ident">handle</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signatures</span>,
@@ -622,23 +678,26 @@
         )
     }
 
-    <span class="kw">fn</span> <span class="ident">check_field_instantiation</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">field_instantiation</span>: <span class="kw-2">&amp;</span><span class="ident">FieldInstantiation</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_field_instantiation</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">field_instantiation</span>: <span class="kw-2">&amp;</span><span class="ident">FieldInstantiation</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_handles</span>, <span class="ident">field_instantiation</span>.<span class="ident">handle</span>)<span class="question-mark">?</span>;
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">signatures</span>, <span class="ident">field_instantiation</span>.<span class="ident">type_parameters</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">check_signature</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_signature</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="number">0</span> {
             <span class="self">self</span>.<span class="ident">check_type</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>
         }
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_constant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">constant</span>: <span class="kw-2">&amp;</span><span class="ident">Constant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_constant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">constant</span>: <span class="kw-2">&amp;</span><span class="ident">Constant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">check_type</span>(<span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">type_</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">check_struct_def</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">struct_def</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_struct_def</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">struct_def</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>, <span class="ident">struct_def</span>.<span class="ident">struct_handle</span>)<span class="question-mark">?</span>;
         <span class="comment">// check signature (type) and type parameter for the field type</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_def</span>.<span class="ident">field_information</span> {
@@ -658,10 +717,11 @@
     }
 
     <span class="kw">fn</span> <span class="ident">check_function_def</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">function_def_idx</span>: <span class="ident">usize</span>,
         <span class="ident">function_def</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">current_function</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">FunctionDefinitionIndex</span>(<span class="ident">function_def_idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>));
         <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handles</span>, <span class="ident">function_def</span>.<span class="ident">function</span>)<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">function_def</span>.<span class="ident">acquires_global_resources</span> {
             <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>, <span class="kw-2">*</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
@@ -673,7 +733,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">function_def_idx</span>: <span class="ident">usize</span>,
         <span class="ident">function_def</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">code_unit</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">function_def</span>.<span class="ident">code</span> {
             <span class="prelude-val">Some</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">code</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
@@ -699,10 +759,10 @@
         <span class="kw">let</span> <span class="ident">locals_count</span> <span class="op">=</span> <span class="ident">locals</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="ident">parameters</span>.<span class="ident">len</span>();
 
         <span class="kw">if</span> <span class="ident">locals_count</span> <span class="op">&gt;</span> (<span class="ident">u8</span>::<span class="ident">MAX</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">+</span> <span class="number">1</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">append_err_info</span>(
-                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TOO_MANY_LOCALS</span>),
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">TOO_MANY_LOCALS</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">FunctionDefinition</span>,
-                <span class="ident">function_def_idx</span>,
+                <span class="ident">function_def_idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
             ));
         }
 
@@ -717,17 +777,21 @@
             <span class="kw">use</span> <span class="self">self</span>::<span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
 
             <span class="kw">match</span> <span class="ident">bytecode</span> {
-                <span class="ident">LdConst</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">constant_pool</span>, <span class="ident">bytecode_offset</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>
-                }
-                <span class="ident">MutBorrowField</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">ImmBorrowField</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_handles</span>, <span class="ident">bytecode_offset</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>
-                }
+                <span class="ident">LdConst</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">constant_pool</span>,
+                    <span class="kw-2">*</span><span class="ident">idx</span>,
+                    <span class="ident">bytecode_offset</span>,
+                )<span class="question-mark">?</span>,
+                <span class="ident">MutBorrowField</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">ImmBorrowField</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_handles</span>,
+                    <span class="kw-2">*</span><span class="ident">idx</span>,
+                    <span class="ident">bytecode_offset</span>,
+                )<span class="question-mark">?</span>,
                 <span class="ident">MutBorrowFieldGeneric</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">ImmBorrowFieldGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(
+                    <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_instantiations</span>,
-                        <span class="ident">bytecode_offset</span>,
                         <span class="kw-2">*</span><span class="ident">idx</span>,
+                        <span class="ident">bytecode_offset</span>,
                     )<span class="question-mark">?</span>;
                     <span class="comment">// check type parameters in borrow are bound to the function type parameters</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">field_inst</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_instantiations</span>.<span class="ident">get</span>(<span class="ident">idx</span>.<span class="ident">into_index</span>())
@@ -743,16 +807,16 @@
                         }
                     }
                 }
-                <span class="ident">Call</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">check_code_unit_bounds_impl</span>(
+                <span class="ident">Call</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
                     <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handles</span>,
-                    <span class="ident">bytecode_offset</span>,
                     <span class="kw-2">*</span><span class="ident">idx</span>,
+                    <span class="ident">bytecode_offset</span>,
                 )<span class="question-mark">?</span>,
                 <span class="ident">CallGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(
+                    <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_instantiations</span>,
-                        <span class="ident">bytecode_offset</span>,
                         <span class="kw-2">*</span><span class="ident">idx</span>,
+                        <span class="ident">bytecode_offset</span>,
                     )<span class="question-mark">?</span>;
                     <span class="comment">// check type parameters in call are bound to the function type parameters</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">func_inst</span>) <span class="op">=</span>
@@ -770,9 +834,8 @@
                     }
                 }
                 <span class="ident">Pack</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">Unpack</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">Exists</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">ImmBorrowGlobal</span>(<span class="ident">idx</span>)
-                <span class="op">|</span> <span class="ident">MutBorrowGlobal</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">MoveFrom</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">MoveTo</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>, <span class="ident">bytecode_offset</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>
-                }
+                <span class="op">|</span> <span class="ident">MutBorrowGlobal</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">MoveFrom</span>(<span class="ident">idx</span>) <span class="op">|</span> <span class="ident">MoveTo</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>
+                    .<span class="ident">check_code_unit_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>, <span class="kw-2">*</span><span class="ident">idx</span>, <span class="ident">bytecode_offset</span>)<span class="question-mark">?</span>,
                 <span class="ident">PackGeneric</span>(<span class="ident">idx</span>)
                 <span class="op">|</span> <span class="ident">UnpackGeneric</span>(<span class="ident">idx</span>)
                 <span class="op">|</span> <span class="ident">ExistsGeneric</span>(<span class="ident">idx</span>)
@@ -780,10 +843,10 @@
                 <span class="op">|</span> <span class="ident">MutBorrowGlobalGeneric</span>(<span class="ident">idx</span>)
                 <span class="op">|</span> <span class="ident">MoveFromGeneric</span>(<span class="ident">idx</span>)
                 <span class="op">|</span> <span class="ident">MoveToGeneric</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">check_code_unit_bounds_impl</span>(
+                    <span class="self">self</span>.<span class="ident">check_code_unit_bounds_impl</span>(
                         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_def_instantiations</span>,
-                        <span class="ident">bytecode_offset</span>,
                         <span class="kw-2">*</span><span class="ident">idx</span>,
+                        <span class="ident">bytecode_offset</span>,
                     )<span class="question-mark">?</span>;
                     <span class="comment">// check type parameters in type operations are bound to the function type parameters</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_inst</span>) <span class="op">=</span>
@@ -804,12 +867,12 @@
                 <span class="ident">BrTrue</span>(<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">BrFalse</span>(<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">Branch</span>(<span class="ident">offset</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">offset</span> <span class="kw">as</span> <span class="ident">usize</span>;
                     <span class="kw">if</span> <span class="ident">offset</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">code_len</span> {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">bytecode_offset_err</span>(
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">offset_out_of_bounds</span>(
+                            <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
                             <span class="ident">IndexKind</span>::<span class="ident">CodeDefinition</span>,
                             <span class="ident">offset</span>,
                             <span class="ident">code_len</span>,
-                            <span class="ident">bytecode_offset</span>,
-                            <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                            <span class="ident">bytecode_offset</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
                         ));
                     }
                 }
@@ -818,12 +881,12 @@
                 <span class="op">|</span> <span class="ident">ImmBorrowLoc</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">idx</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">idx</span> <span class="kw">as</span> <span class="ident">usize</span>;
                     <span class="kw">if</span> <span class="ident">idx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">locals_count</span> {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">bytecode_offset_err</span>(
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">offset_out_of_bounds</span>(
+                            <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
                             <span class="ident">IndexKind</span>::<span class="ident">LocalPool</span>,
                             <span class="ident">idx</span>,
                             <span class="ident">locals_count</span>,
-                            <span class="ident">bytecode_offset</span>,
-                            <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                            <span class="ident">bytecode_offset</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
                         ));
                     }
                 }
@@ -839,7 +902,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">SignatureToken</span>::<span class="kw-2">*</span>;
 
         <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="ident">ty</span>.<span class="ident">preorder_traversal</span>() {
@@ -850,7 +913,7 @@
                     <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sh</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>.<span class="ident">get</span>(<span class="ident">idx</span>.<span class="ident">into_index</span>()) {
                         <span class="kw">if</span> <span class="op">!</span><span class="ident">sh</span>.<span class="ident">type_parameters</span>.<span class="ident">is_empty</span>() {
-                            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(
                                 <span class="ident">StatusCode</span>::<span class="ident">NUMBER_OF_TYPE_ARGUMENTS_MISMATCH</span>,
                             )
                             .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(
@@ -864,7 +927,7 @@
                     <span class="ident">check_bounds_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sh</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>.<span class="ident">get</span>(<span class="ident">idx</span>.<span class="ident">into_index</span>()) {
                         <span class="kw">if</span> <span class="ident">sh</span>.<span class="ident">type_parameters</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">type_params</span>.<span class="ident">len</span>() {
-                            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(
                                 <span class="ident">StatusCode</span>::<span class="ident">NUMBER_OF_TYPE_ARGUMENTS_MISMATCH</span>,
                             )
                             .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(
@@ -880,7 +943,11 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_type_parameter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>, <span class="ident">type_param_count</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_type_parameter</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
+        <span class="ident">type_param_count</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="self">self</span>::<span class="ident">SignatureToken</span>::<span class="kw-2">*</span>;
 
         <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="ident">ty</span>.<span class="ident">preorder_traversal</span>() {
@@ -888,10 +955,10 @@
                 <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">idx</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">type_param_count</span> {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">bounds_error</span>(
-                            <span class="ident">IndexKind</span>::<span class="ident">TypeParameter</span>,
-                            <span class="kw-2">*</span><span class="ident">idx</span> <span class="kw">as</span> <span class="ident">usize</span>,
-                            <span class="ident">type_param_count</span>,
                             <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                            <span class="ident">IndexKind</span>::<span class="ident">TypeParameter</span>,
+                            <span class="kw-2">*</span><span class="ident">idx</span>,
+                            <span class="ident">type_param_count</span>,
                         ));
                     }
                 }
@@ -911,9 +978,57 @@
         }
         <span class="prelude-val">Ok</span>(())
     }
+
+    <span class="kw">fn</span> <span class="ident">check_code_unit_bounds_impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>],
+        <span class="ident">idx</span>: <span class="ident">I</span>,
+        <span class="ident">bytecode_offset</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+    <span class="kw">where</span>
+        <span class="ident">I</span>: <span class="ident">ModuleIndex</span>,
+    {
+        <span class="kw">let</span> <span class="ident">idx</span> <span class="op">=</span> <span class="ident">idx</span>.<span class="ident">into_index</span>();
+        <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">pool</span>.<span class="ident">len</span>();
+        <span class="kw">if</span> <span class="ident">idx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">len</span> {
+            <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">offset_out_of_bounds</span>(
+                <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
+                <span class="ident">I</span>::<span class="ident">KIND</span>,
+                <span class="ident">idx</span>,
+                <span class="ident">len</span>,
+                <span class="ident">bytecode_offset</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>,
+            ))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>(())
+        }
+    }
+
+    <span class="kw">fn</span> <span class="ident">offset_out_of_bounds</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">status</span>: <span class="ident">StatusCode</span>,
+        <span class="ident">kind</span>: <span class="ident">IndexKind</span>,
+        <span class="ident">target_offset</span>: <span class="ident">usize</span>,
+        <span class="ident">target_pool_len</span>: <span class="ident">usize</span>,
+        <span class="ident">cur_bytecode_offset</span>: <span class="ident">CodeOffset</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMError</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">current_function</span> {
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Indexing into bytecode {} during bounds checking but &#39;current_function&#39; was not set&quot;</span>, <span class="ident">cur_bytecode_offset</span>);
+                <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>).<span class="ident">with_message</span>(<span class="ident">msg</span>)
+            }
+            <span class="prelude-val">Some</span>(<span class="ident">current_function_index</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">offset_out_of_bounds_error</span>(
+                <span class="ident">status</span>,
+                <span class="ident">kind</span>,
+                <span class="ident">target_offset</span>,
+                <span class="ident">target_pool_len</span>,
+                <span class="ident">current_function_index</span>,
+                <span class="ident">cur_bytecode_offset</span>,
+            ),
+        }
+    }
 }
 
-<span class="kw">fn</span> <span class="ident">check_bounds_impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">idx</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+<span class="kw">fn</span> <span class="ident">check_bounds_impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">idx</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">I</span>: <span class="ident">ModuleIndex</span>,
 {
@@ -921,29 +1036,10 @@
     <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">pool</span>.<span class="ident">len</span>();
     <span class="kw">if</span> <span class="ident">idx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">len</span> {
         <span class="prelude-val">Err</span>(<span class="ident">bounds_error</span>(
-            <span class="ident">I</span>::<span class="ident">KIND</span>,
-            <span class="ident">idx</span>,
-            <span class="ident">len</span>,
             <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
-        ))
-    } <span class="kw">else</span> {
-        <span class="prelude-val">Ok</span>(())
-    }
-}
-
-<span class="kw">fn</span> <span class="ident">check_code_unit_bounds_impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">T</span>], <span class="ident">bytecode_offset</span>: <span class="ident">usize</span>, <span class="ident">idx</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">I</span>: <span class="ident">ModuleIndex</span>,
-{
-    <span class="kw">let</span> <span class="ident">idx</span> <span class="op">=</span> <span class="ident">idx</span>.<span class="ident">into_index</span>();
-    <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">pool</span>.<span class="ident">len</span>();
-    <span class="kw">if</span> <span class="ident">idx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">len</span> {
-        <span class="prelude-val">Err</span>(<span class="ident">bytecode_offset_err</span>(
             <span class="ident">I</span>::<span class="ident">KIND</span>,
-            <span class="ident">idx</span>,
+            <span class="ident">idx</span> <span class="kw">as</span> <span class="ident">TableIndex</span>,
             <span class="ident">len</span>,
-            <span class="ident">bytecode_offset</span>,
-            <span class="ident">StatusCode</span>::<span class="ident">INDEX_OUT_OF_BOUNDS</span>,
         ))
     } <span class="kw">else</span> {
         <span class="prelude-val">Ok</span>(())

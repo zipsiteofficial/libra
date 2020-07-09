@@ -101,6 +101,11 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -113,7 +118,7 @@
 <span class="doccomment">//!     context: &amp;mut impl NativeContext,</span>
 <span class="doccomment">//!     ty_args: Vec&lt;Type&gt;,</span>
 <span class="doccomment">//!     mut arguments: VecDeque&lt;Value&gt;,</span>
-<span class="doccomment">//! ) -&gt; VMResult&lt;NativeResult&gt;;`</span>
+<span class="doccomment">//! ) -&gt; PartialVMResult&lt;NativeResult&gt;;`</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! arguments are passed with first argument at position 0 and so forth.</span>
 <span class="doccomment">//! Popping values from `arguments` gives the aguments in reverse order (last first).</span>
@@ -125,12 +130,11 @@
     <span class="ident">loaded_data</span>::{<span class="ident">runtime_types</span>::<span class="ident">Type</span>, <span class="ident">types</span>::<span class="ident">FatType</span>},
     <span class="ident">values</span>::<span class="ident">Value</span>,
 };
-<span class="kw">use</span> <span class="ident">move_core_types</span>::{
-    <span class="ident">gas_schedule</span>::{<span class="ident">AbstractMemorySize</span>, <span class="ident">CostTable</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>},
-    <span class="ident">vm_status</span>::<span class="ident">VMStatus</span>,
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::{
+    <span class="ident">AbstractMemorySize</span>, <span class="ident">CostTable</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Write</span>;
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="ident">VMResult</span>;
+<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::{<span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>};
 
 <span class="doccomment">/// `NativeContext` - Native function context.</span>
 <span class="doccomment">///</span>
@@ -140,22 +144,28 @@
 <span class="doccomment">/// runtime.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">NativeContext</span> {
     <span class="doccomment">/// Prints stack trace.</span>
-    <span class="kw">fn</span> <span class="ident">print_stack_trace</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Write</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">print_stack_trace</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">Write</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">buf</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">B</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
     <span class="doccomment">/// Gets cost table ref.</span>
     <span class="kw">fn</span> <span class="ident">cost_table</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">CostTable</span>;
     <span class="doccomment">/// Saves contract event.</span>
-    <span class="kw">fn</span> <span class="ident">save_event</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">guid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">count</span>: <span class="ident">u64</span>, <span class="ident">ty</span>: <span class="ident">Type</span>, <span class="ident">val</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">save_event</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">guid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">count</span>: <span class="ident">u64</span>,
+        <span class="ident">ty</span>: <span class="ident">Type</span>,
+        <span class="ident">val</span>: <span class="ident">Value</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
     <span class="doccomment">/// Converts types to fet types.</span>
-    <span class="kw">fn</span> <span class="ident">convert_to_fat_types</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">types</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FatType</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">convert_to_fat_types</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">types</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FatType</span><span class="op">&gt;</span><span class="op">&gt;</span>;
     <span class="doccomment">/// Whether a type is a resource or not.</span>
-    <span class="kw">fn</span> <span class="ident">is_resource</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">is_resource</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// Result of a native function execution requires charges for execution cost.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// An execution that causes an invariant violation would not return a `NativeResult` but</span>
-<span class="doccomment">/// return a `VMResult` error directly.</span>
-<span class="doccomment">/// All native functions must return a `VMResult&lt;NativeResult&gt;` where an `Err` is returned</span>
+<span class="doccomment">/// return a `PartialVMError` error directly.</span>
+<span class="doccomment">/// All native functions must return a `PartialVMResult&lt;NativeResult&gt;` where an `Err` is returned</span>
 <span class="doccomment">/// when an error condition is met that should not charge for the execution. A common example</span>
 <span class="doccomment">/// is a VM invariant violation which should have been forbidden by the verifier.</span>
 <span class="doccomment">/// Errors (typically user errors and aborts) that are logically part of the function execution</span>
@@ -164,7 +174,7 @@
     <span class="doccomment">/// The cost for running that function, whether successfully or not.</span>
     <span class="kw">pub</span> <span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Result of execution. This is either the return values or the error to report.</span>
-    <span class="kw">pub</span> <span class="ident">result</span>: <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">result</span>: <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">NativeResult</span> {
@@ -177,8 +187,8 @@
     }
 
     <span class="doccomment">/// `VMStatus` of a failed execution. The failure is a runtime failure in the function</span>
-    <span class="doccomment">/// and not an invariant failure of the VM which would raise a `VMResult` error directly.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span>(<span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>, <span class="ident">err</span>: <span class="ident">VMStatus</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="doccomment">/// and not an invariant failure of the VM which would raise a `PartialVMError` error directly.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span>(<span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>, <span class="ident">err</span>: <span class="ident">PartialVMError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">NativeResult</span> {
             <span class="ident">cost</span>,
             <span class="ident">result</span>: <span class="prelude-val">Err</span>(<span class="ident">err</span>),

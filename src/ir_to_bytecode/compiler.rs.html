@@ -1954,6 +1954,11 @@
 <span id="1954">1954</span>
 <span id="1955">1955</span>
 <span id="1956">1956</span>
+<span id="1957">1957</span>
+<span id="1958">1958</span>
+<span id="1959">1959</span>
+<span id="1960">1960</span>
+<span id="1961">1961</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1980,6 +1985,7 @@
 };
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
+    <span class="ident">errors</span>::<span class="ident">Location</span> <span class="kw">as</span> <span class="ident">VMErrorLocation</span>,
     <span class="ident">file_format</span>::{
         <span class="ident">Bytecode</span>, <span class="ident">CodeOffset</span>, <span class="ident">CodeUnit</span>, <span class="ident">CompiledModule</span>, <span class="ident">CompiledModuleMut</span>, <span class="ident">CompiledScript</span>,
         <span class="ident">CompiledScriptMut</span>, <span class="ident">Constant</span>, <span class="ident">FieldDefinition</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionSignature</span>, <span class="ident">Kind</span>,
@@ -2418,7 +2424,9 @@
     };
     <span class="ident">compiled_script</span>
         .<span class="ident">freeze</span>()
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">InternalCompilerError</span>::<span class="ident">BoundsCheckErrors</span>(<span class="ident">err</span>).<span class="ident">into</span>())
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+            <span class="ident">InternalCompilerError</span>::<span class="ident">BoundsCheckErrors</span>(<span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">VMErrorLocation</span>::<span class="ident">Undefined</span>)).<span class="ident">into</span>()
+        })
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">frozen_script</span><span class="op">|</span> (<span class="ident">frozen_script</span>, <span class="ident">source_map</span>))
 }
 
@@ -2503,7 +2511,9 @@
     };
     <span class="ident">compiled_module</span>
         .<span class="ident">freeze</span>()
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">InternalCompilerError</span>::<span class="ident">BoundsCheckErrors</span>(<span class="ident">err</span>).<span class="ident">into</span>())
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+            <span class="ident">InternalCompilerError</span>::<span class="ident">BoundsCheckErrors</span>(<span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">VMErrorLocation</span>::<span class="ident">Undefined</span>)).<span class="ident">into</span>()
+        })
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">frozen_module</span><span class="op">|</span> (<span class="ident">frozen_module</span>, <span class="ident">source_map</span>))
 }
 

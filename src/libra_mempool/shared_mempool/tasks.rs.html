@@ -534,6 +534,7 @@
 <span id="534">534</span>
 <span id="535">535</span>
 <span id="536">536</span>
+<span id="537">537</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -856,32 +857,33 @@
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">get_account_sequence_number</span>(<span class="ident">smp</span>.<span class="ident">db</span>.<span class="ident">as_ref</span>(), <span class="ident">t</span>.<span class="ident">sender</span>()))
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
-    <span class="kw">let</span> <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span>
-        <span class="ident">transactions</span>
-            .<span class="ident">into_iter</span>()
-            .<span class="ident">enumerate</span>()
-            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">idx</span>, <span class="ident">t</span>)<span class="op">|</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>) <span class="op">=</span> <span class="ident">seq_numbers</span>[<span class="ident">idx</span>] {
-                    <span class="kw">if</span> <span class="ident">t</span>.<span class="ident">sequence_number</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">sequence_number</span> {
-                        <span class="kw">return</span> <span class="prelude-val">Some</span>((<span class="ident">t</span>, <span class="ident">sequence_number</span>));
-                    } <span class="kw">else</span> {
-                        <span class="ident">statuses</span>.<span class="ident">push</span>((
-                            <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                            <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>)),
-                        ));
-                    }
+    <span class="kw">let</span> <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">transactions</span>
+        .<span class="ident">into_iter</span>()
+        .<span class="ident">enumerate</span>()
+        .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">idx</span>, <span class="ident">t</span>)<span class="op">|</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>) <span class="op">=</span> <span class="ident">seq_numbers</span>[<span class="ident">idx</span>] {
+                <span class="kw">if</span> <span class="ident">t</span>.<span class="ident">sequence_number</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">sequence_number</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Some</span>((<span class="ident">t</span>, <span class="ident">sequence_number</span>));
                 } <span class="kw">else</span> {
-                    <span class="comment">// failed to get transaction</span>
                     <span class="ident">statuses</span>.<span class="ident">push</span>((
                         <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                        <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">RESOURCE_DOES_NOT_EXIST</span>).<span class="ident">with_message</span>(
-                            <span class="string">&quot;[shared mempool] failed to get account state&quot;</span>.<span class="ident">to_string</span>(),
-                        )),
+                        <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)),
                     ));
                 }
-                <span class="prelude-val">None</span>
-            })
-            .<span class="ident">collect</span>();
+            } <span class="kw">else</span> {
+                <span class="comment">// failed to get transaction</span>
+                <span class="ident">statuses</span>.<span class="ident">push</span>((
+                    <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
+                    <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(
+                        <span class="ident">RESOURCE_DOES_NOT_EXIST</span>,
+                        <span class="prelude-val">None</span>,
+                        <span class="prelude-val">Some</span>(<span class="string">&quot;[shared mempool] failed to get account state&quot;</span>.<span class="ident">to_string</span>()),
+                    )),
+                ));
+            }
+            <span class="prelude-val">None</span>
+        })
+        .<span class="ident">collect</span>();
 
     <span class="kw">let</span> <span class="ident">validation_results</span> <span class="op">=</span> <span class="ident">transactions</span>
         .<span class="ident">iter</span>()

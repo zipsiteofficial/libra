@@ -204,6 +204,12 @@
 <span id="204">204</span>
 <span id="205">205</span>
 <span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -221,12 +227,13 @@
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">vm_status</span>::<span class="ident">StatusCode</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
-    <span class="ident">errors</span>::{<span class="ident">err_at_offset</span>, <span class="ident">VMResult</span>},
-    <span class="ident">file_format</span>::{<span class="ident">Bytecode</span>, <span class="ident">CodeUnit</span>, <span class="ident">Signature</span>, <span class="ident">StructFieldInformation</span>},
+    <span class="ident">errors</span>::{<span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>},
+    <span class="ident">file_format</span>::{<span class="ident">Bytecode</span>, <span class="ident">CodeUnit</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">Signature</span>, <span class="ident">StructFieldInformation</span>},
 };
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">StackUsageVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
+    <span class="ident">current_function</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FunctionDefinitionIndex</span><span class="op">&gt;</span>,
     <span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CodeUnit</span>,
     <span class="ident">return_</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Signature</span>,
 }
@@ -235,9 +242,10 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span>(
         <span class="ident">resolver</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BinaryIndexedView</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
         <span class="ident">function_view</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FunctionView</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">verifier</span> <span class="op">=</span> <span class="self">Self</span> {
             <span class="ident">resolver</span>,
+            <span class="ident">current_function</span>: <span class="ident">function_view</span>.<span class="ident">index</span>(),
             <span class="ident">code</span>: <span class="ident">function_view</span>.<span class="ident">code</span>(),
             <span class="ident">return_</span>: <span class="ident">function_view</span>.<span class="ident">return_</span>(),
         };
@@ -248,7 +256,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">verify_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">BlockId</span>, <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">ControlFlowGraph</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">verify_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">BlockId</span>, <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">ControlFlowGraph</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">code</span>.<span class="ident">code</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stack_size_increment</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">block_start</span> <span class="op">=</span> <span class="ident">cfg</span>.<span class="ident">block_start</span>(<span class="ident">block_id</span>);
@@ -257,10 +265,10 @@
             <span class="comment">// Check that the stack height is sufficient to accomodate the number</span>
             <span class="comment">// of pops this instruction does</span>
             <span class="kw">if</span> <span class="ident">stack_size_increment</span> <span class="op">&lt;</span> <span class="ident">num_pops</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(
-                    <span class="ident">StatusCode</span>::<span class="ident">NEGATIVE_STACK_SIZE_WITHIN_BLOCK</span>,
-                    <span class="ident">block_start</span> <span class="kw">as</span> <span class="ident">usize</span>,
-                ));
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(
+                    <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">NEGATIVE_STACK_SIZE_WITHIN_BLOCK</span>)
+                        .<span class="ident">at_code_offset</span>(<span class="self">self</span>.<span class="ident">current_function</span>(), <span class="ident">block_start</span>),
+                );
             }
             <span class="ident">stack_size_increment</span> <span class="op">-</span><span class="op">=</span> <span class="ident">num_pops</span>;
             <span class="ident">stack_size_increment</span> <span class="op">+</span><span class="op">=</span> <span class="ident">num_pushes</span>;
@@ -269,17 +277,17 @@
         <span class="kw">if</span> <span class="ident">stack_size_increment</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="prelude-val">Ok</span>(())
         } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">err_at_offset</span>(
-                <span class="ident">StatusCode</span>::<span class="ident">POSITIVE_STACK_SIZE_AT_BLOCK_END</span>,
-                <span class="ident">block_start</span> <span class="kw">as</span> <span class="ident">usize</span>,
-            ))
+            <span class="prelude-val">Err</span>(
+                <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">POSITIVE_STACK_SIZE_AT_BLOCK_END</span>)
+                    .<span class="ident">at_code_offset</span>(<span class="self">self</span>.<span class="ident">current_function</span>(), <span class="ident">block_start</span>),
+            )
         }
     }
 
     <span class="doccomment">/// The effect of an instruction is a tuple where the first element</span>
     <span class="doccomment">/// is the number of pops it does, and the second element is the number</span>
     <span class="doccomment">/// of pushes it does</span>
-    <span class="kw">fn</span> <span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instruction</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">instruction_effect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instruction</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>(<span class="ident">u32</span>, <span class="ident">u32</span>)<span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">instruction</span> {
             <span class="comment">// Instructions that pop, but don&#39;t push</span>
             <span class="ident">Bytecode</span>::<span class="ident">Pop</span>
@@ -409,6 +417,10 @@
                 (<span class="number">1</span>, <span class="ident">field_count</span> <span class="kw">as</span> <span class="ident">u32</span>)
             }
         })
+    }
+
+    <span class="kw">fn</span> <span class="ident">current_function</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FunctionDefinitionIndex</span> {
+        <span class="self">self</span>.<span class="ident">current_function</span>.<span class="ident">unwrap_or</span>(<span class="ident">FunctionDefinitionIndex</span>(<span class="number">0</span>))
     }
 }
 </pre></div>
