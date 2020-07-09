@@ -1,1 +1,1 @@
-initSidebarItems({"macro":[["trace",""]],"mod":[["data_cache",""],["move_vm",""]]});
+initSidebarItems({"macro":[["trace",""]],"mod":[["data_cache",""],["move_vm",""],["session",""]]});

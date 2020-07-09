@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MoveTypeLayout",""],["MoveValue",""]],"struct":[["MoveStruct",""],["MoveStructLayout",""]]});
+initSidebarItems({"enum":[["MoveKind",""],["MoveKindInfo",""],["MoveTypeLayout",""],["MoveValue",""]],"struct":[["MoveStruct",""],["MoveStructLayout",""]]});

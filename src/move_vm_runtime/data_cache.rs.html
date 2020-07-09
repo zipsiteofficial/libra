@@ -213,37 +213,77 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">libra_types</span>::{
-    <span class="ident">access_path</span>::<span class="ident">AccessPath</span>,
-    <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>,
-    <span class="ident">on_chain_config</span>::<span class="ident">ConfigStorage</span>,
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">loader</span>::<span class="ident">Loader</span>;
+
+<span class="kw">use</span> <span class="ident">move_core_types</span>::{
+    <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
+    <span class="ident">identifier</span>::<span class="ident">Identifier</span>,
+    <span class="ident">language_storage</span>::{<span class="ident">ModuleId</span>, <span class="ident">TypeTag</span>},
+    <span class="ident">value</span>::<span class="ident">MoveTypeLayout</span>,
     <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
-    <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
 };
-<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">language_storage</span>::<span class="ident">ModuleId</span>;
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::{
     <span class="ident">data_store</span>::<span class="ident">DataStore</span>,
-    <span class="ident">loaded_data</span>::<span class="ident">types</span>::<span class="ident">FatStructType</span>,
-    <span class="ident">values</span>::{<span class="ident">GlobalValue</span>, <span class="ident">Struct</span>, <span class="ident">Value</span>},
+    <span class="ident">loaded_data</span>::<span class="ident">runtime_types</span>::<span class="ident">Type</span>,
+    <span class="ident">values</span>::{<span class="ident">GlobalValue</span>, <span class="ident">Value</span>},
 };
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>, <span class="ident">mem</span>::<span class="ident">replace</span>};
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>;
+<span class="kw">use</span> <span class="ident">vm</span>::{<span class="ident">errors</span>::<span class="kw-2">*</span>, <span class="ident">file_format</span>::<span class="ident">CompiledModule</span>};
 
 <span class="doccomment">/// Trait for the Move VM to abstract `StateView` operations.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Can be used to define a &quot;fake&quot; implementation of the remote cache.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">RemoteCache</span> {
-    <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">access_path</span>: <span class="kw-2">&amp;</span><span class="ident">AccessPath</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">get_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">get_resource</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>, <span class="ident">tag</span>: <span class="kw-2">&amp;</span><span class="ident">TypeTag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 }
 
-<span class="comment">// TODO deprecate this in favor of `MoveStorage`</span>
-<span class="kw">impl</span> <span class="ident">ConfigStorage</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">RemoteCache</span> {
-    <span class="kw">fn</span> <span class="ident">fetch_config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">access_path</span>: <span class="ident">AccessPath</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">access_path</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountDataCache</span> {
+    <span class="ident">data_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Type</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GlobalValue</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">module_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Identifier</span>, (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">CompiledModule</span>)<span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">AccountDataCache</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">data_map</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+            <span class="ident">module_map</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+        }
     }
 }
 
@@ -260,21 +300,30 @@
 <span class="doccomment">/// The Move VM takes a `DataStore` in input and this is the default and correct implementation</span>
 <span class="doccomment">/// for a data store related to a transaction. Clients should create an instance of this type</span>
 <span class="doccomment">/// and pass it to the Move VM.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;txn</span><span class="op">&gt;</span> {
-    <span class="ident">data_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccessPath</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">FatStructType</span>, <span class="ident">GlobalValue</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">module_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">ModuleId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">event_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>,
-    <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;txn</span> <span class="kw">dyn</span> <span class="ident">RemoteCache</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;l</span>, <span class="ident">R</span><span class="op">&gt;</span> {
+    <span class="ident">remote</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;r</span> <span class="ident">R</span>,
+    <span class="ident">loader</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;l</span> <span class="ident">Loader</span>,
+    <span class="ident">account_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">AccountDataCache</span><span class="op">&gt;</span>,
+    <span class="ident">event_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>, <span class="ident">Type</span>, <span class="ident">Value</span>)<span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;txn</span><span class="op">&gt;</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;txn</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionEffects</span> {
+    <span class="kw">pub</span> <span class="ident">resources</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(
+        <span class="ident">AccountAddress</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">TypeTag</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">MoveTypeLayout</span>, <span class="ident">Value</span>)<span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    )<span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">modules</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">ModuleId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">events</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>, <span class="ident">TypeTag</span>, <span class="ident">MoveTypeLayout</span>, <span class="ident">Value</span>)<span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;l</span>, <span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;l</span>, <span class="ident">R</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Create a `TransactionDataCache` with a `RemoteCache` that provides access to data</span>
     <span class="doccomment">/// not updated in the transaction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;txn</span> <span class="kw">dyn</span> <span class="ident">RemoteCache</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">remote</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;r</span> <span class="ident">R</span>, <span class="ident">loader</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;l</span> <span class="ident">Loader</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">TransactionDataCache</span> {
-            <span class="ident">data_cache</span>,
-            <span class="ident">data_map</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
-            <span class="ident">module_map</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+            <span class="ident">remote</span>,
+            <span class="ident">loader</span>,
+            <span class="ident">account_map</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">event_data</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }
     }
@@ -283,150 +332,163 @@
     <span class="doccomment">/// published modules.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Gives all proper guarantees on lifetime of global data as well.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">make_write_set</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">WriteSet</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">data_map</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="self">self</span>.<span class="ident">module_map</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">usize</span>::<span class="ident">max_value</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">vm_status</span>(<span class="ident">Location</span>::<span class="ident">new</span>(), <span class="ident">StatusCode</span>::<span class="ident">INVALID_DATA</span>));
-        }
-
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sorted_ws</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccessPath</span>, <span class="ident">WriteOp</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
-
-        <span class="kw">let</span> <span class="ident">data_map</span> <span class="op">=</span> <span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">data_map</span>, <span class="ident">BTreeMap</span>::<span class="ident">new</span>());
-        <span class="kw">for</span> (<span class="ident">key</span>, <span class="ident">global_val</span>) <span class="kw">in</span> <span class="ident">data_map</span> {
-            <span class="kw">match</span> <span class="ident">global_val</span> {
-                <span class="prelude-val">Some</span>((<span class="ident">layout</span>, <span class="ident">global_val</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">if</span> <span class="op">!</span><span class="ident">global_val</span>.<span class="ident">is_clean</span>()<span class="question-mark">?</span> {
-                        <span class="comment">// into_owned_struct will check if all references are properly released</span>
-                        <span class="comment">// at the end of a transaction</span>
-                        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">global_val</span>.<span class="ident">into_owned_struct</span>()<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">blob</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">data</span>.<span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="ident">layout</span>) {
-                            <span class="prelude-val">Some</span>(<span class="ident">blob</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">blob</span>,
-                            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">vm_status</span>(
-                                    <span class="ident">Location</span>::<span class="ident">new</span>(),
-                                    <span class="ident">StatusCode</span>::<span class="ident">VALUE_SERIALIZATION_ERROR</span>,
-                                ))
-                            }
-                        };
-                        <span class="ident">sorted_ws</span>.<span class="ident">insert</span>(<span class="ident">key</span>, <span class="ident">WriteOp</span>::<span class="ident">Value</span>(<span class="ident">blob</span>));
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">into_effects</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">TransactionEffects</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">modules</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resources</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">for</span> (<span class="ident">addr</span>, <span class="ident">account_cache</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">account_map</span> {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+            <span class="kw">for</span> (<span class="ident">ty</span>, <span class="ident">gv_opt</span>) <span class="kw">in</span> <span class="ident">account_cache</span>.<span class="ident">data_map</span> {
+                <span class="kw">match</span> <span class="ident">gv_opt</span> {
+                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+                        <span class="ident">vals</span>.<span class="ident">push</span>((<span class="ident">ty_tag</span>, <span class="prelude-val">None</span>));
                     }
-                }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">sorted_ws</span>.<span class="ident">insert</span>(<span class="ident">key</span>, <span class="ident">WriteOp</span>::<span class="ident">Deletion</span>);
-                }
+                    <span class="prelude-val">Some</span>(<span class="ident">gv</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">if</span> <span class="ident">gv</span>.<span class="ident">is_dirty</span>()<span class="question-mark">?</span> {
+                            <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+                            <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+                            <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">struct_</span>(<span class="ident">gv</span>.<span class="ident">into_owned_struct</span>()<span class="question-mark">?</span>);
+                            <span class="ident">vals</span>.<span class="ident">push</span>((<span class="ident">ty_tag</span>, <span class="prelude-val">Some</span>((<span class="ident">ty_layout</span>, <span class="ident">val</span>))));
+                        }
+                    }
+                };
             }
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">vals</span>.<span class="ident">is_empty</span>() {
+                <span class="ident">resources</span>.<span class="ident">push</span>((<span class="ident">addr</span>, <span class="ident">vals</span>));
+            }
+            <span class="ident">modules</span>.<span class="ident">extend</span>(
+                <span class="ident">account_cache</span>
+                    .<span class="ident">module_map</span>
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, (<span class="ident">blob</span>, <span class="ident">m</span>))<span class="op">|</span> (<span class="ident">m</span>.<span class="ident">self_id</span>(), <span class="ident">blob</span>)),
+            );
         }
 
-        <span class="kw">let</span> <span class="ident">module_map</span> <span class="op">=</span> <span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">module_map</span>, <span class="ident">BTreeMap</span>::<span class="ident">new</span>());
-        <span class="kw">for</span> (<span class="ident">module_id</span>, <span class="ident">module</span>) <span class="kw">in</span> <span class="ident">module_map</span> {
-            <span class="ident">sorted_ws</span>.<span class="ident">insert</span>((<span class="kw-2">&amp;</span><span class="ident">module_id</span>).<span class="ident">into</span>(), <span class="ident">WriteOp</span>::<span class="ident">Value</span>(<span class="ident">module</span>));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">for</span> (<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">val</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">event_data</span> {
+            <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+            <span class="ident">events</span>.<span class="ident">push</span>((<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty_tag</span>, <span class="ident">ty_layout</span>, <span class="ident">val</span>))
         }
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">write_set</span> <span class="op">=</span> <span class="ident">WriteSetMut</span>::<span class="ident">new</span>(<span class="ident">Vec</span>::<span class="ident">new</span>());
-        <span class="kw">for</span> (<span class="ident">key</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="ident">sorted_ws</span> {
-            <span class="ident">write_set</span>.<span class="ident">push</span>((<span class="ident">key</span>, <span class="ident">value</span>));
-        }
-        <span class="ident">write_set</span>
-            .<span class="ident">freeze</span>()
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">vm_status</span>(<span class="ident">Location</span>::<span class="ident">new</span>(), <span class="ident">StatusCode</span>::<span class="ident">DATA_FORMAT_ERROR</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">TransactionEffects</span> {
+            <span class="ident">resources</span>,
+            <span class="ident">modules</span>,
+            <span class="ident">events</span>,
+        })
     }
 
-    <span class="doccomment">/// Return the events that were published during the execution of the transaction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">event_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ContractEvent</span>] {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">event_data</span>
+    <span class="kw">fn</span> <span class="ident">get_mut_or_insert_with</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">K</span>, <span class="ident">V</span>, <span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">map</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">V</span><span class="op">&gt;</span>, <span class="ident">k</span>: <span class="kw-2">&amp;</span><span class="ident">K</span>, <span class="ident">gen</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">V</span>
+    <span class="kw">where</span>
+        <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">K</span>, <span class="ident">V</span>),
+        <span class="ident">K</span>: <span class="ident">Ord</span>,
+    {
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">map</span>.<span class="ident">contains_key</span>(<span class="ident">k</span>) {
+            <span class="kw">let</span> (<span class="ident">k</span>, <span class="ident">v</span>) <span class="op">=</span> <span class="ident">gen</span>();
+            <span class="ident">map</span>.<span class="ident">insert</span>(<span class="ident">k</span>, <span class="ident">v</span>);
+        }
+        <span class="ident">map</span>.<span class="ident">get_mut</span>(<span class="ident">k</span>).<span class="ident">unwrap</span>()
     }
 
     <span class="comment">// Retrieve data from the local cache or loads it from the remote cache into the local cache.</span>
     <span class="comment">// All operations on the global data are based on this API and they all load the data</span>
     <span class="comment">// into the cache.</span>
-    <span class="kw">fn</span> <span class="ident">load_data</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ap</span>: <span class="kw-2">&amp;</span><span class="ident">AccessPath</span>,
-        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">FatStructType</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">FatStructType</span>, <span class="ident">GlobalValue</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">data_map</span>.<span class="ident">contains_key</span>(<span class="ident">ap</span>) {
-            <span class="kw">match</span> <span class="self">self</span>.<span class="ident">data_cache</span>.<span class="ident">get</span>(<span class="ident">ap</span>)<span class="question-mark">?</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">bytes</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Struct</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>, <span class="ident">ty</span>)<span class="question-mark">?</span>;
-                    <span class="kw">let</span> <span class="ident">gr</span> <span class="op">=</span> <span class="ident">GlobalValue</span>::<span class="ident">new</span>(<span class="ident">Value</span>::<span class="ident">struct_</span>(<span class="ident">res</span>))<span class="question-mark">?</span>;
-                    <span class="self">self</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ap</span>.<span class="ident">clone</span>(), <span class="prelude-val">Some</span>((<span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="ident">gr</span>)));
-                }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                        <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MISSING_DATA</span>).<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(
-                            <span class="string">&quot;Cannot find {:?}::{}::{} for Access Path: {:?}&quot;</span>,
-                            <span class="kw-2">&amp;</span><span class="ident">ty</span>.<span class="ident">address</span>,
-                            <span class="kw-2">&amp;</span><span class="ident">ty</span>.<span class="ident">module</span>.<span class="ident">as_str</span>(),
-                            <span class="kw-2">&amp;</span><span class="ident">ty</span>.<span class="ident">name</span>.<span class="ident">as_str</span>(),
-                            <span class="ident">ap</span>
-                        )),
-                    );
-                }
-            };
+    <span class="kw">fn</span> <span class="ident">load_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">addr</span>: <span class="ident">AccountAddress</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GlobalValue</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">account_cache</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_mut_or_insert_with</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">account_map</span>, <span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="op">|</span><span class="op">|</span> {
+            (<span class="ident">addr</span>, <span class="ident">AccountDataCache</span>::<span class="ident">new</span>())
+        });
+
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">contains_key</span>(<span class="ident">ty</span>) {
+            <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+
+            <span class="kw">let</span> <span class="ident">blob</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_resource</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="kw-2">&amp;</span><span class="ident">ty_tag</span>)<span class="question-mark">?</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MISSING_DATA</span>)
+                    .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Cannot find resource of type {}&quot;</span>, <span class="ident">ty_tag</span>))
+            })<span class="question-mark">?</span>;
+
+            <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">ty_kind_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_kind_info</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>, <span class="kw-2">&amp;</span><span class="ident">ty_kind_info</span>, <span class="kw-2">&amp;</span><span class="ident">ty_layout</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">gv</span> <span class="op">=</span> <span class="ident">GlobalValue</span>::<span class="ident">new</span>(<span class="ident">val</span>)<span class="question-mark">?</span>;
+
+            <span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="prelude-val">Some</span>(<span class="ident">gv</span>));
         }
-        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">data_map</span>.<span class="ident">get_mut</span>(<span class="ident">ap</span>).<span class="ident">expect</span>(<span class="string">&quot;data must exist&quot;</span>))
+
+        <span class="prelude-val">Ok</span>(<span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">get_mut</span>(<span class="ident">ty</span>).<span class="ident">unwrap</span>())
     }
 }
 
 <span class="comment">// `DataStore` implementation for the `TransactionDataCache`</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">DataStore</span> <span class="kw">for</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">publish_resource</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ap</span>: <span class="kw-2">&amp;</span><span class="ident">AccessPath</span>,
-        <span class="ident">g</span>: (<span class="ident">FatStructType</span>, <span class="ident">GlobalValue</span>),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ap</span>.<span class="ident">clone</span>(), <span class="prelude-val">Some</span>(<span class="ident">g</span>));
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;l</span>, <span class="ident">C</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span> <span class="ident">DataStore</span> <span class="kw">for</span> <span class="ident">TransactionDataCache</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;l</span>, <span class="ident">C</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">publish_resource</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">addr</span>: <span class="ident">AccountAddress</span>, <span class="ident">ty</span>: <span class="ident">Type</span>, <span class="ident">g</span>: <span class="ident">GlobalValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">account_cache</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_mut_or_insert_with</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">account_map</span>, <span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="op">|</span><span class="op">|</span> {
+            (<span class="ident">addr</span>, <span class="ident">AccountDataCache</span>::<span class="ident">new</span>())
+        });
+
+        <span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>, <span class="prelude-val">Some</span>(<span class="ident">g</span>));
+
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">fn</span> <span class="ident">borrow_resource</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ap</span>: <span class="kw-2">&amp;</span><span class="ident">AccessPath</span>,
-        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">FatStructType</span>,
+        <span class="ident">addr</span>: <span class="ident">AccountAddress</span>,
+        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">GlobalValue</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">map_entry</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">load_data</span>(<span class="ident">ap</span>, <span class="ident">ty</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">map_entry</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">g</span>)<span class="op">|</span> <span class="ident">g</span>))
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">load_data</span>(<span class="ident">addr</span>, <span class="ident">ty</span>)<span class="question-mark">?</span>.<span class="ident">as_ref</span>())
     }
 
     <span class="kw">fn</span> <span class="ident">move_resource_from</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">ap</span>: <span class="kw-2">&amp;</span><span class="ident">AccessPath</span>,
-        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">FatStructType</span>,
+        <span class="ident">addr</span>: <span class="ident">AccountAddress</span>,
+        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GlobalValue</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">map_entry</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">load_data</span>(<span class="ident">ap</span>, <span class="ident">ty</span>)<span class="question-mark">?</span>;
         <span class="comment">// .take() means that the entry is removed from the data map -- this marks the</span>
         <span class="comment">// access path for deletion.</span>
-        <span class="prelude-val">Ok</span>(<span class="ident">map_entry</span>.<span class="ident">take</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">g</span>)<span class="op">|</span> <span class="ident">g</span>))
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">load_data</span>(<span class="ident">addr</span>, <span class="ident">ty</span>)<span class="question-mark">?</span>.<span class="ident">take</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">load_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">module_map</span>.<span class="ident">get</span>(<span class="ident">module</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">bytes</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">bytes</span>.<span class="ident">clone</span>()),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">ap</span> <span class="op">=</span> <span class="ident">AccessPath</span>::<span class="ident">from</span>(<span class="ident">module</span>);
-                <span class="self">self</span>.<span class="ident">data_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">ap</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">data</span><span class="op">|</span> {
-                    <span class="ident">data</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                        <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
-                            .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Cannot find {:?} in data cache&quot;</span>, <span class="ident">module</span>))
-                    })
-                })
+    <span class="comment">// REVIEW: The txn data cache isn&#39;t really caching the modules read from storage. Is this really desired?</span>
+    <span class="kw">fn</span> <span class="ident">load_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">account_cache</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">account_map</span>.<span class="ident">get</span>(<span class="ident">module_id</span>.<span class="ident">address</span>()) {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">m</span>)) <span class="op">=</span> <span class="ident">account_cache</span>.<span class="ident">module_map</span>.<span class="ident">get</span>(<span class="ident">module_id</span>.<span class="ident">name</span>()) {
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">m</span>.<span class="ident">clone</span>());
             }
         }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">bytes</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_module</span>(<span class="ident">module_id</span>)<span class="question-mark">?</span> {
+            <span class="kw">return</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>)
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">CODE_DESERIALIZATION_ERROR</span>));
+        }
+        <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
+            .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Cannot find {:?} in data cache&quot;</span>, <span class="ident">module_id</span>)))
     }
 
-    <span class="kw">fn</span> <span class="ident">publish_module</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">m</span>: <span class="ident">ModuleId</span>, <span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">module_map</span>.<span class="ident">insert</span>(<span class="ident">m</span>, <span class="ident">bytes</span>);
+    <span class="kw">fn</span> <span class="ident">publish_module</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">blob</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">module</span>: <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">module_id</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">self_id</span>();
+        <span class="kw">let</span> <span class="ident">account_cache</span> <span class="op">=</span>
+            <span class="self">Self</span>::<span class="ident">get_mut_or_insert_with</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">account_map</span>, <span class="ident">module_id</span>.<span class="ident">address</span>(), <span class="op">|</span><span class="op">|</span> {
+                (<span class="kw-2">*</span><span class="ident">module_id</span>.<span class="ident">address</span>(), <span class="ident">AccountDataCache</span>::<span class="ident">new</span>())
+            });
+
+        <span class="ident">account_cache</span>
+            .<span class="ident">module_map</span>
+            .<span class="ident">insert</span>(<span class="ident">module_id</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(), (<span class="ident">blob</span>, <span class="ident">module</span>));
+
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">fn</span> <span class="ident">exists_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">module_map</span>.<span class="ident">contains_key</span>(<span class="ident">m</span>) <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">ap</span> <span class="op">=</span> <span class="ident">AccessPath</span>::<span class="ident">from</span>(<span class="ident">m</span>);
-            <span class="macro">matches</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">data_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">ap</span>), <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)))
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">account_cache</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">account_map</span>.<span class="ident">get</span>(<span class="ident">m</span>.<span class="ident">address</span>()) {
+            <span class="kw">if</span> <span class="ident">account_cache</span>.<span class="ident">module_map</span>.<span class="ident">contains_key</span>(<span class="ident">m</span>.<span class="ident">name</span>()) {
+                <span class="kw">return</span> <span class="bool-val">true</span>;
+            }
         }
+        <span class="comment">// REVIEW: This seems very inefficient. Can we not load the contents of the module?</span>
+        <span class="macro">matches</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_module</span>(<span class="kw-2">&amp;</span><span class="ident">m</span>), <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)))
     }
 
-    <span class="kw">fn</span> <span class="ident">emit_event</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event</span>: <span class="ident">ContractEvent</span>) {
-        <span class="self">self</span>.<span class="ident">event_data</span>.<span class="ident">push</span>(<span class="ident">event</span>)
+    <span class="kw">fn</span> <span class="ident">emit_event</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">guid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">seq_num</span>: <span class="ident">u64</span>, <span class="ident">ty</span>: <span class="ident">Type</span>, <span class="ident">val</span>: <span class="ident">Value</span>) {
+        <span class="self">self</span>.<span class="ident">event_data</span>.<span class="ident">push</span>((<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">val</span>))
     }
 }
 </pre></div>
