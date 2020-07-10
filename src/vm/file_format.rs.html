@@ -1898,6 +1898,45 @@
 <span id="1898">1898</span>
 <span id="1899">1899</span>
 <span id="1900">1900</span>
+<span id="1901">1901</span>
+<span id="1902">1902</span>
+<span id="1903">1903</span>
+<span id="1904">1904</span>
+<span id="1905">1905</span>
+<span id="1906">1906</span>
+<span id="1907">1907</span>
+<span id="1908">1908</span>
+<span id="1909">1909</span>
+<span id="1910">1910</span>
+<span id="1911">1911</span>
+<span id="1912">1912</span>
+<span id="1913">1913</span>
+<span id="1914">1914</span>
+<span id="1915">1915</span>
+<span id="1916">1916</span>
+<span id="1917">1917</span>
+<span id="1918">1918</span>
+<span id="1919">1919</span>
+<span id="1920">1920</span>
+<span id="1921">1921</span>
+<span id="1922">1922</span>
+<span id="1923">1923</span>
+<span id="1924">1924</span>
+<span id="1925">1925</span>
+<span id="1926">1926</span>
+<span id="1927">1927</span>
+<span id="1928">1928</span>
+<span id="1929">1929</span>
+<span id="1930">1930</span>
+<span id="1931">1931</span>
+<span id="1932">1932</span>
+<span id="1933">1933</span>
+<span id="1934">1934</span>
+<span id="1935">1935</span>
+<span id="1936">1936</span>
+<span id="1937">1937</span>
+<span id="1938">1938</span>
+<span id="1939">1939</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2497,6 +2536,37 @@
     }
 }
 
+<span class="doccomment">/// Alternative preorder traversal iterator for SignatureToken that also returns the depth at each node.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SignatureTokenPreorderTraversalIterWithDepth</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="ident">stack</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureToken</span>, <span class="ident">usize</span>)<span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">SignatureTokenPreorderTraversalIterWithDepth</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">SignatureToken</span>, <span class="ident">usize</span>);
+
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
+        <span class="kw">use</span> <span class="ident">SignatureToken</span>::<span class="kw-2">*</span>;
+
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">stack</span>.<span class="ident">pop</span>() {
+            <span class="prelude-val">Some</span>((<span class="ident">tok</span>, <span class="ident">depth</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">match</span> <span class="ident">tok</span> {
+                    <span class="ident">Reference</span>(<span class="ident">inner_tok</span>) <span class="op">|</span> <span class="ident">MutableReference</span>(<span class="ident">inner_tok</span>) <span class="op">|</span> <span class="ident">Vector</span>(<span class="ident">inner_tok</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="self">self</span>.<span class="ident">stack</span>.<span class="ident">push</span>((<span class="ident">inner_tok</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>))
+                    }
+
+                    <span class="ident">StructInstantiation</span>(<span class="kw">_</span>, <span class="ident">inner_toks</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>
+                        .<span class="ident">stack</span>
+                        .<span class="ident">extend</span>(<span class="ident">inner_toks</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">tok</span><span class="op">|</span> (<span class="ident">tok</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)).<span class="ident">rev</span>()),
+
+                    <span class="ident">Signer</span> <span class="op">|</span> <span class="ident">Bool</span> <span class="op">|</span> <span class="ident">Address</span> <span class="op">|</span> <span class="ident">U8</span> <span class="op">|</span> <span class="ident">U64</span> <span class="op">|</span> <span class="ident">U128</span> <span class="op">|</span> <span class="ident">Struct</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TypeParameter</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+                }
+                <span class="prelude-val">Some</span>((<span class="ident">tok</span>, <span class="ident">depth</span>))
+            }
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+        }
+    }
+}
+
 <span class="doccomment">/// `Arbitrary` for `SignatureToken` cannot be derived automatically as it&#39;s a recursive type.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">impl</span> <span class="ident">Arbitrary</span> <span class="kw">for</span> <span class="ident">SignatureToken</span> {
@@ -2626,6 +2696,14 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">preorder_traversal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignatureTokenPreorderTraversalIter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
         <span class="ident">SignatureTokenPreorderTraversalIter</span> { <span class="ident">stack</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="self">self</span>] }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">preorder_traversal_with_depth</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignatureTokenPreorderTraversalIterWithDepth</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureTokenPreorderTraversalIterWithDepth</span> {
+            <span class="ident">stack</span>: <span class="macro">vec</span><span class="macro">!</span>[(<span class="self">self</span>, <span class="number">1</span>)],
+        }
     }
 }
 

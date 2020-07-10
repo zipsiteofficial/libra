@@ -1387,6 +1387,12 @@
 <span id="1387">1387</span>
 <span id="1388">1388</span>
 <span id="1389">1389</span>
+<span id="1390">1390</span>
+<span id="1391">1391</span>
+<span id="1392">1392</span>
+<span id="1393">1393</span>
+<span id="1394">1394</span>
+<span id="1395">1395</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2209,7 +2215,9 @@
 }
 
 <span class="doccomment">/// Deserializes a `SignatureToken`.</span>
-<span class="kw">fn</span> <span class="ident">load_signature_token</span>(<span class="ident">cursor</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Cursor</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">SignatureToken</span><span class="op">&gt;</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load_signature_token</span>(
+    <span class="ident">cursor</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Cursor</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">SignatureToken</span><span class="op">&gt;</span> {
     <span class="comment">// The following algorithm works by storing partially constructed types on a stack.</span>
     <span class="comment">//</span>
     <span class="comment">// Example:</span>
@@ -2331,6 +2339,10 @@
     };
 
     <span class="kw">loop</span> {
+        <span class="kw">if</span> <span class="ident">stack</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">SIGNATURE_TOKEN_DEPTH_MAX</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">MALFORMED</span>)
+                .<span class="ident">with_message</span>(<span class="string">&quot;Maximum recursion depth reached&quot;</span>.<span class="ident">to_string</span>()));
+        }
         <span class="kw">if</span> <span class="ident">stack</span>.<span class="ident">last</span>().<span class="ident">unwrap</span>().<span class="ident">is_saturated</span>() {
             <span class="kw">let</span> <span class="ident">tok</span> <span class="op">=</span> <span class="ident">stack</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>().<span class="ident">unwrap_saturated</span>();
             <span class="kw">match</span> <span class="ident">stack</span>.<span class="ident">pop</span>() {

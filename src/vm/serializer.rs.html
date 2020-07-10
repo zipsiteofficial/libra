@@ -1256,6 +1256,29 @@
 <span id="1256">1256</span>
 <span id="1257">1257</span>
 <span id="1258">1258</span>
+<span id="1259">1259</span>
+<span id="1260">1260</span>
+<span id="1261">1261</span>
+<span id="1262">1262</span>
+<span id="1263">1263</span>
+<span id="1264">1264</span>
+<span id="1265">1265</span>
+<span id="1266">1266</span>
+<span id="1267">1267</span>
+<span id="1268">1268</span>
+<span id="1269">1269</span>
+<span id="1270">1270</span>
+<span id="1271">1271</span>
+<span id="1272">1272</span>
+<span id="1273">1273</span>
+<span id="1274">1274</span>
+<span id="1275">1275</span>
+<span id="1276">1276</span>
+<span id="1277">1277</span>
+<span id="1278">1278</span>
+<span id="1279">1279</span>
+<span id="1280">1280</span>
+<span id="1281">1281</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1847,46 +1870,69 @@
     <span class="prelude-val">Ok</span>(())
 }
 
+<span class="kw">fn</span> <span class="ident">serialize_signature_token_single_node_impl</span>(
+    <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
+    <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">token</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">BOOL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U8</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U64</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U128</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">ADDRESS</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">SIGNER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Vector</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">VECTOR</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+        }
+        <span class="ident">SignatureToken</span>::<span class="ident">Struct</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+            <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
+        }
+        <span class="ident">SignatureToken</span>::<span class="ident">StructInstantiation</span>(<span class="ident">idx</span>, <span class="ident">type_params</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT_INST</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+            <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
+            <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>, <span class="ident">type_params</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
+        }
+        <span class="ident">SignatureToken</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+        }
+        <span class="ident">SignatureToken</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">MUTABLE_REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+        }
+        <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">TYPE_PARAMETER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
+            <span class="ident">serialize_type_parameter_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
+        }
+    }
+    <span class="prelude-val">Ok</span>(())
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">serialize_signature_token_unchecked</span>(
+    <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
+    <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">for</span> <span class="ident">token</span> <span class="kw">in</span> <span class="ident">token</span>.<span class="ident">preorder_traversal</span>() {
+        <span class="ident">serialize_signature_token_single_node_impl</span>(<span class="ident">binary</span>, <span class="ident">token</span>)<span class="question-mark">?</span>;
+    }
+    <span class="prelude-val">Ok</span>(())
+}
+
 <span class="doccomment">/// Serializes a `SignatureToken`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// A `SignatureToken` gets serialized as a variable size blob depending on composition.</span>
 <span class="doccomment">/// Values for types are defined in `SerializedType`.</span>
-<span class="kw">fn</span> <span class="ident">serialize_signature_token</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">serialize_signature_token</span>(
+    <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
+    <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="comment">// Non-recursive implementation to avoid overflowing the stack.</span>
-
-    <span class="kw">for</span> <span class="ident">token</span> <span class="kw">in</span> <span class="ident">token</span>.<span class="ident">preorder_traversal</span>() {
-        <span class="kw">match</span> <span class="ident">token</span> {
-            <span class="ident">SignatureToken</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">BOOL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U8</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U64</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U128</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">ADDRESS</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">SIGNER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-            <span class="ident">SignatureToken</span>::<span class="ident">Vector</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">VECTOR</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-            }
-            <span class="ident">SignatureToken</span>::<span class="ident">Struct</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-                <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
-            }
-            <span class="ident">SignatureToken</span>::<span class="ident">StructInstantiation</span>(<span class="ident">idx</span>, <span class="ident">type_params</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT_INST</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-                <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
-                <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>, <span class="ident">type_params</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
-            }
-            <span class="ident">SignatureToken</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-            }
-            <span class="ident">SignatureToken</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">MUTABLE_REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-            }
-            <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">TYPE_PARAMETER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
-                <span class="ident">serialize_type_parameter_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
-            }
+    <span class="kw">for</span> (<span class="ident">token</span>, <span class="ident">depth</span>) <span class="kw">in</span> <span class="ident">token</span>.<span class="ident">preorder_traversal_with_depth</span>() {
+        <span class="kw">if</span> <span class="ident">depth</span> <span class="op">&gt;</span> <span class="ident">SIGNATURE_TOKEN_DEPTH_MAX</span> {
+            <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;max recursion depth reached&quot;</span>)
         }
+        <span class="ident">serialize_signature_token_single_node_impl</span>(<span class="ident">binary</span>, <span class="ident">token</span>)<span class="question-mark">?</span>;
     }
-
     <span class="prelude-val">Ok</span>(())
 }
 
