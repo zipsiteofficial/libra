@@ -436,7 +436,6 @@
 <span id="436">436</span>
 <span id="437">437</span>
 <span id="438">438</span>
-<span id="439">439</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -662,11 +661,10 @@
 
     <span class="doccomment">/// Gets an iterator that yields `num_transaction_infos` transaction infos starting from</span>
     <span class="doccomment">/// `start_version`.</span>
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">get_transaction_info_iter</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transaction_info_iter</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">start_version</span>: <span class="ident">Version</span>,
-        <span class="ident">num_transaction_infos</span>: <span class="ident">u64</span>,
+        <span class="ident">num_transaction_infos</span>: <span class="ident">usize</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionInfoIter</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iter</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">db</span>
@@ -676,7 +674,7 @@
             <span class="ident">inner</span>: <span class="ident">iter</span>,
             <span class="ident">expected_next_version</span>: <span class="ident">start_version</span>,
             <span class="ident">end_version</span>: <span class="ident">start_version</span>
-                .<span class="ident">checked_add</span>(<span class="ident">num_transaction_infos</span>)
+                .<span class="ident">checked_add</span>(<span class="ident">num_transaction_infos</span> <span class="kw">as</span> <span class="ident">u64</span>)
                 .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Too many transaction infos requested.&quot;</span>))<span class="question-mark">?</span>,
         })
     }
@@ -790,7 +788,7 @@
     }
 }
 
-<span class="kw">type</span> <span class="ident">Accumulator</span> <span class="op">=</span> <span class="ident">MerkleAccumulator</span><span class="op">&lt;</span><span class="ident">LedgerStore</span>, <span class="ident">TransactionAccumulatorHasher</span><span class="op">&gt;</span>;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">type</span> <span class="ident">Accumulator</span> <span class="op">=</span> <span class="ident">MerkleAccumulator</span><span class="op">&lt;</span><span class="ident">LedgerStore</span>, <span class="ident">TransactionAccumulatorHasher</span><span class="op">&gt;</span>;
 
 <span class="kw">impl</span> <span class="ident">HashReader</span> <span class="kw">for</span> <span class="ident">LedgerStore</span> {
     <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">position</span>: <span class="ident">Position</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span> {

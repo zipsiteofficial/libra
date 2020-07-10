@@ -44,6 +44,9 @@
 <span id="44">44</span>
 <span id="45">45</span>
 <span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -53,6 +56,8 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::<span class="ident">Version</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
+<span class="doccomment">/// A chunk of a state snapshot manifest, representing accounts in the key range</span>
+<span class="doccomment">/// [`first_key`, `last_key`] (right side inclusive).</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StateSnapshotChunk</span> {
     <span class="doccomment">/// index of the first account in this chunk over all accounts.</span>
@@ -71,6 +76,7 @@
     <span class="kw">pub</span> <span class="ident">proof</span>: <span class="ident">FileHandle</span>,
 }
 
+<span class="doccomment">/// State snapshot backup manifest, representing a complete state view at specified version.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StateSnapshotBackup</span> {
     <span class="doccomment">/// Version at which this state snapshot is taken.</span>
@@ -79,16 +85,16 @@
     <span class="kw">pub</span> <span class="ident">root_hash</span>: <span class="ident">HashValue</span>,
     <span class="doccomment">/// All account blobs in chunks.</span>
     <span class="kw">pub</span> <span class="ident">chunks</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StateSnapshotChunk</span><span class="op">&gt;</span>,
-    <span class="comment">// LCS serialized</span>
-    <span class="comment">// `Tuple(TransactionInfoWithProof, LedgerInfoWithSignatures)`.</span>
-    <span class="comment">//   - The `TransactionInfoWithProof` is at `Version` above, and carries the same `root_hash`</span>
-    <span class="comment">// above; It proves that at specified version the root hash is as specified in a chain</span>
-    <span class="comment">// represented by the LedgerInfo below.</span>
-    <span class="comment">//   - The signatures on the `LedgerInfoWithSignatures` has a version greater than or equal to</span>
-    <span class="comment">// the version of this backup but is within the same epoch, so the signatures on it can be</span>
-    <span class="comment">// verified by the validator set in the same epoch, which can be provided by an</span>
-    <span class="comment">// `EpochStateBackup` recovered prior to this to the DB; Requiring it to be in the same epoch</span>
-    <span class="comment">// limits the requirement on such `EpochStateBackup` to no older than the same epoch.</span>
+    <span class="doccomment">/// LCS serialized</span>
+    <span class="doccomment">/// `Tuple(TransactionInfoWithProof, LedgerInfoWithSignatures)`.</span>
+    <span class="doccomment">///   - The `TransactionInfoWithProof` is at `Version` above, and carries the same `root_hash`</span>
+    <span class="doccomment">/// above; It proves that at specified version the root hash is as specified in a chain</span>
+    <span class="doccomment">/// represented by the LedgerInfo below.</span>
+    <span class="doccomment">///   - The signatures on the `LedgerInfoWithSignatures` has a version greater than or equal to</span>
+    <span class="doccomment">/// the version of this backup but is within the same epoch, so the signatures on it can be</span>
+    <span class="doccomment">/// verified by the validator set in the same epoch, which can be provided by an</span>
+    <span class="doccomment">/// `EpochStateBackup` recovered prior to this to the DB; Requiring it to be in the same epoch</span>
+    <span class="doccomment">/// limits the requirement on such `EpochStateBackup` to no older than the same epoch.</span>
     <span class="kw">pub</span> <span class="ident">proof</span>: <span class="ident">FileHandle</span>,
 }
 </pre></div>

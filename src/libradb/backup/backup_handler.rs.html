@@ -101,6 +101,38 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -108,16 +140,17 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">ledger_store</span>::{<span class="ident">EpochEndingLedgerInfoIter</span>, <span class="ident">LedgerStore</span>},
     <span class="ident">state_store</span>::<span class="ident">StateStore</span>,
-    <span class="ident">transaction_store</span>::{<span class="ident">TransactionIter</span>, <span class="ident">TransactionStore</span>},
+    <span class="ident">transaction_store</span>::<span class="ident">TransactionStore</span>,
 };
-<span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
+<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">zip_eq</span>;
 <span class="kw">use</span> <span class="ident">jellyfish_merkle</span>::<span class="ident">iterator</span>::<span class="ident">JellyfishMerkleIterator</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">HashValue</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_state_blob</span>::<span class="ident">AccountStateBlob</span>,
     <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
-    <span class="ident">proof</span>::{<span class="ident">SparseMerkleRangeProof</span>, <span class="ident">TransactionInfoWithProof</span>},
-    <span class="ident">transaction</span>::<span class="ident">Version</span>,
+    <span class="ident">proof</span>::{<span class="ident">SparseMerkleRangeProof</span>, <span class="ident">TransactionAccumulatorRangeProof</span>, <span class="ident">TransactionInfoWithProof</span>},
+    <span class="ident">transaction</span>::{<span class="ident">Transaction</span>, <span class="ident">TransactionInfo</span>, <span class="ident">Version</span>},
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 
@@ -143,13 +176,44 @@
     }
 
     <span class="doccomment">/// Gets an iterator that yields a range of transactions.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transaction_iter</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transaction_iter</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>,
         <span class="ident">start_version</span>: <span class="ident">Version</span>,
-        <span class="ident">num_transactions</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionIter</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">transaction_store</span>
-            .<span class="ident">get_transaction_iter</span>(<span class="ident">start_version</span>, <span class="ident">num_transactions</span>)
+        <span class="ident">num_transactions</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Transaction</span>, <span class="ident">TransactionInfo</span>)<span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">txn_iter</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">transaction_store</span>
+            .<span class="ident">get_transaction_iter</span>(<span class="ident">start_version</span>, <span class="ident">num_transactions</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">txn_info_iter</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">ledger_store</span>
+            .<span class="ident">get_transaction_info_iter</span>(<span class="ident">start_version</span>, <span class="ident">num_transactions</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">zipped</span> <span class="op">=</span> <span class="ident">zip_eq</span>(<span class="ident">txn_iter</span>, <span class="ident">txn_info_iter</span>)
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">txn_res</span>, <span class="ident">txn_info_res</span>)<span class="op">|</span> <span class="prelude-val">Ok</span>((<span class="ident">txn_res</span><span class="question-mark">?</span>, <span class="ident">txn_info_res</span><span class="question-mark">?</span>)));
+        <span class="prelude-val">Ok</span>(<span class="ident">zipped</span>)
+    }
+
+    <span class="doccomment">/// Gets the proof for a transaction chunk.</span>
+    <span class="doccomment">/// N.B. the `LedgerInfo` returned will always be in the same epoch of the `last_version`.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transaction_range_proof</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">first_version</span>: <span class="ident">Version</span>,
+        <span class="ident">last_version</span>: <span class="ident">Version</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransactionAccumulatorRangeProof</span>, <span class="ident">LedgerInfoWithSignatures</span>)<span class="op">&gt;</span> {
+        <span class="macro">ensure</span><span class="macro">!</span>(
+            <span class="ident">last_version</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">first_version</span>,
+            <span class="string">&quot;Bad transaction range: [{}, {}]&quot;</span>,
+            <span class="ident">first_version</span>,
+            <span class="ident">last_version</span>
+        );
+        <span class="kw">let</span> <span class="ident">num_transactions</span> <span class="op">=</span> <span class="ident">last_version</span> <span class="op">-</span> <span class="ident">first_version</span> <span class="op">+</span> <span class="number">1</span>;
+        <span class="kw">let</span> <span class="ident">epoch</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_epoch</span>(<span class="ident">last_version</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info_in_epoch</span>(<span class="ident">epoch</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">accumulator_proof</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_transaction_range_proof</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">first_version</span>),
+            <span class="ident">num_transactions</span>,
+            <span class="ident">ledger_info</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
+        )<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>((<span class="ident">accumulator_proof</span>, <span class="ident">ledger_info</span>))
     }
 
     <span class="doccomment">/// Gets an iterator which can yield all accounts in the state tree.</span>
