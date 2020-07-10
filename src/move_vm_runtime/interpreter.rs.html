@@ -1127,6 +1127,8 @@
 <span id="1127">1127</span>
 <span id="1128">1128</span>
 <span id="1129">1129</span>
+<span id="1130">1130</span>
+<span id="1131">1131</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1391,7 +1393,9 @@
         <span class="kw">let</span> <span class="ident">native_function</span> <span class="op">=</span> <span class="ident">function</span>.<span class="ident">get_native</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">native_function</span>.<span class="ident">dispatch</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">native_context</span>, <span class="ident">ty_args</span>, <span class="ident">arguments</span>)<span class="question-mark">?</span>;
         <span class="ident">cost_strategy</span>.<span class="ident">deduct_gas</span>(<span class="ident">result</span>.<span class="ident">cost</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">result</span>.<span class="ident">result</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">result</span>
+            .<span class="ident">result</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">code</span><span class="op">|</span> <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>).<span class="ident">with_sub_status</span>(<span class="ident">code</span>))<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">value</span> <span class="kw">in</span> <span class="ident">values</span> {
             <span class="self">self</span>.<span class="ident">operand_stack</span>.<span class="ident">push</span>(<span class="ident">value</span>)<span class="question-mark">?</span>;
         }

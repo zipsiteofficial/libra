@@ -106,6 +106,8 @@
 <span id="106">106</span>
 <span id="107">107</span>
 <span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -134,7 +136,7 @@
     <span class="ident">AbstractMemorySize</span>, <span class="ident">CostTable</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Write</span>;
-<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::{<span class="ident">PartialVMError</span>, <span class="ident">PartialVMResult</span>};
+<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="ident">PartialVMResult</span>;
 
 <span class="doccomment">/// `NativeContext` - Native function context.</span>
 <span class="doccomment">///</span>
@@ -174,7 +176,7 @@
     <span class="doccomment">/// The cost for running that function, whether successfully or not.</span>
     <span class="kw">pub</span> <span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Result of execution. This is either the return values or the error to report.</span>
-    <span class="kw">pub</span> <span class="ident">result</span>: <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span>, <span class="ident">u64</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">NativeResult</span> {
@@ -186,12 +188,14 @@
         }
     }
 
-    <span class="doccomment">/// `VMStatus` of a failed execution. The failure is a runtime failure in the function</span>
-    <span class="doccomment">/// and not an invariant failure of the VM which would raise a `PartialVMError` error directly.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span>(<span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>, <span class="ident">err</span>: <span class="ident">PartialVMError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="doccomment">/// Failed execution. The failure is a runtime failure in the function and not an invariant</span>
+    <span class="doccomment">/// failure of the VM which would raise a `PartialVMError` error directly.</span>
+    <span class="doccomment">/// The only thing the funciton can specify is its abort code, as if it had invoked the `Abort`</span>
+    <span class="doccomment">/// bytecode instruction</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">err</span>(<span class="ident">cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>, <span class="ident">abort_code</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">NativeResult</span> {
             <span class="ident">cost</span>,
-            <span class="ident">result</span>: <span class="prelude-val">Err</span>(<span class="ident">err</span>),
+            <span class="ident">result</span>: <span class="prelude-val">Err</span>(<span class="ident">abort_code</span>),
         }
     }
 }
