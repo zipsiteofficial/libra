@@ -1,0 +1,1 @@
+initSidebarItems({"static":[["STRUCT_LOG_COUNT","Count of the struct logs."]]});
