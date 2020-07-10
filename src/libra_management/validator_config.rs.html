@@ -133,6 +133,38 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -148,7 +180,12 @@
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
     <span class="ident">CONSENSUS_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_network_address</span>::{<span class="ident">NetworkAddress</span>, <span class="ident">RawNetworkAddress</span>};
+<span class="kw">use</span> <span class="ident">libra_network_address</span>::{
+    <span class="ident">encrypted</span>::{
+        <span class="ident">RawEncNetworkAddress</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
+    },
+    <span class="ident">NetworkAddress</span>, <span class="ident">RawNetworkAddress</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>, <span class="ident">Value</span>};
 <span class="kw">use</span> <span class="ident">libra_secure_time</span>::{<span class="ident">RealTimeService</span>, <span class="ident">TimeService</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
@@ -181,27 +218,58 @@
         <span class="kw">let</span> <span class="ident">validator_network_key</span> <span class="op">=</span> <span class="ident">x25519_from_storage</span>(<span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="kw-2">&amp;</span><span class="ident">local_storage</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">operator_key</span> <span class="op">=</span> <span class="ident">ed25519_from_storage</span>(<span class="ident">OPERATOR_KEY</span>, <span class="kw-2">&amp;</span><span class="ident">local_storage</span>)<span class="question-mark">?</span>;
 
+        <span class="comment">// TODO(davidiw): In genesis this is irrelevant -- afterward we need to obtain the</span>
+        <span class="comment">// current sequence number by querying the blockchain.</span>
+        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="number">0</span>;
+
+        <span class="comment">// TODO(davidiw): This is currently not supported</span>
+        <span class="comment">// let sender = self.owner_address;</span>
+        <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">operator_key</span>);
+
+        <span class="comment">// only supports one address for now</span>
+        <span class="kw">let</span> <span class="ident">addr_idx</span> <span class="op">=</span> <span class="number">0</span>;
+
         <span class="comment">// append ln-noise-ik and ln-handshake protocols to base network addresses</span>
+        <span class="comment">// and encrypt the validator address.</span>
 
         <span class="kw">let</span> <span class="ident">validator_address</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">validator_address</span>
             .<span class="ident">clone</span>()
             .<span class="ident">append_prod_protos</span>(<span class="ident">validator_network_key</span>, <span class="ident">HANDSHAKE_VERSION</span>);
-        <span class="kw">let</span> <span class="ident">raw_validator_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">validator_address</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;(raw_validator_address) {}&quot;</span>, <span class="ident">e</span>)))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">raw_validator_address</span> <span class="op">=</span>
+            <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">validator_address</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;error serializing validator address: \&quot;{}\&quot;, error: {}&quot;</span>,
+                    <span class="ident">validator_address</span>, <span class="ident">e</span>
+                ))
+            })<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">enc_validator_address</span> <span class="op">=</span> <span class="ident">raw_validator_address</span>.<span class="ident">encrypt</span>(
+            <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
+            <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
+            <span class="kw-2">&amp;</span><span class="ident">sender</span>,
+            <span class="ident">sequence_number</span>,
+            <span class="ident">addr_idx</span>,
+        );
+        <span class="kw">let</span> <span class="ident">raw_enc_validator_address</span> <span class="op">=</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_validator_address</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;error serializing encrypted validator address: {:?}, error: {}&quot;</span>,
+                    <span class="ident">enc_validator_address</span>, <span class="ident">e</span>
+                ))
+            })<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">fullnode_address</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">fullnode_address</span>
             .<span class="ident">clone</span>()
             .<span class="ident">append_prod_protos</span>(<span class="ident">fullnode_network_key</span>, <span class="ident">HANDSHAKE_VERSION</span>);
-        <span class="kw">let</span> <span class="ident">raw_fullnode_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">fullnode_address</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;(raw_fullnode_address) {}&quot;</span>, <span class="ident">e</span>)))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">raw_fullnode_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">fullnode_address</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+            <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;error serializing fullnode address: \&quot;{}\&quot;, error: {}&quot;</span>,
+                <span class="ident">fullnode_address</span>, <span class="ident">e</span>
+            ))
+        })<span class="question-mark">?</span>;
 
         <span class="comment">// Step 2) Generate transaction</span>
-
-        <span class="comment">// TODO(davidiw): This is currently not supported</span>
-        <span class="comment">// let sender = self.owner_address;</span>
-        <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">operator_key</span>);
 
         <span class="comment">// TODO(philiphayes): remove network identity pubkey field from struct when</span>
         <span class="comment">// transition complete</span>
@@ -209,14 +277,10 @@
             <span class="ident">sender</span>,
             <span class="ident">consensus_key</span>.<span class="ident">to_bytes</span>().<span class="ident">to_vec</span>(),
             <span class="ident">validator_network_key</span>.<span class="ident">to_bytes</span>(),
-            <span class="ident">raw_validator_address</span>.<span class="ident">into</span>(),
+            <span class="ident">raw_enc_validator_address</span>.<span class="ident">into</span>(),
             <span class="ident">fullnode_network_key</span>.<span class="ident">to_bytes</span>(),
             <span class="ident">raw_fullnode_address</span>.<span class="ident">into</span>(),
         );
-
-        <span class="comment">// TODO(davidiw): In genesis this is irrelevant -- afterward we need to obtain the</span>
-        <span class="comment">// current sequence number by querying the blockchain.</span>
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">expiration_time</span> <span class="op">=</span> <span class="ident">RealTimeService</span>::<span class="ident">new</span>().<span class="ident">now</span>() <span class="op">+</span> <span class="ident">constants</span>::<span class="ident">TXN_EXPIRATION_SECS</span>;
         <span class="kw">let</span> <span class="ident">raw_transaction</span> <span class="op">=</span> <span class="ident">RawTransaction</span>::<span class="ident">new_script</span>(
             <span class="ident">sender</span>,
