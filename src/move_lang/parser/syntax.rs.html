@@ -2186,6 +2186,37 @@
 <span id="2186">2186</span>
 <span id="2187">2187</span>
 <span id="2188">2188</span>
+<span id="2189">2189</span>
+<span id="2190">2190</span>
+<span id="2191">2191</span>
+<span id="2192">2192</span>
+<span id="2193">2193</span>
+<span id="2194">2194</span>
+<span id="2195">2195</span>
+<span id="2196">2196</span>
+<span id="2197">2197</span>
+<span id="2198">2198</span>
+<span id="2199">2199</span>
+<span id="2200">2200</span>
+<span id="2201">2201</span>
+<span id="2202">2202</span>
+<span id="2203">2203</span>
+<span id="2204">2204</span>
+<span id="2205">2205</span>
+<span id="2206">2206</span>
+<span id="2207">2207</span>
+<span id="2208">2208</span>
+<span id="2209">2209</span>
+<span id="2210">2210</span>
+<span id="2211">2211</span>
+<span id="2212">2212</span>
+<span id="2213">2213</span>
+<span id="2214">2214</span>
+<span id="2215">2215</span>
+<span id="2216">2216</span>
+<span id="2217">2217</span>
+<span id="2218">2218</span>
+<span id="2219">2219</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -3986,7 +4017,8 @@
 
 <span class="comment">// Parse a specification condition:</span>
 <span class="comment">//    SpecCondition =</span>
-<span class="comment">//        (&quot;assert&quot; | &quot;assume&quot; | &quot;decreases&quot; | &quot;aborts_if&quot; | &quot;ensures&quot; | &quot;requires&quot; ) &lt;Exp&gt; &quot;;&quot;</span>
+<span class="comment">//        (&quot;assert&quot; | &quot;assume&quot; | &quot;decreases&quot; | &quot;aborts_if&quot; | &quot;ensures&quot; | &quot;requires&quot; )</span>
+<span class="comment">//        &lt;ConditionProperties&gt; &lt;Exp&gt; &quot;;&quot;</span>
 <span class="kw">fn</span> <span class="ident">parse_condition</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>(<span class="ident">tokens</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Lexer</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SpecBlockMember</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">start_loc</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">start_loc</span>();
     <span class="kw">let</span> <span class="ident">kind</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">tokens</span>.<span class="ident">content</span>() {
@@ -4007,6 +4039,7 @@
         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
     };
     <span class="ident">tokens</span>.<span class="ident">advance</span>()<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="ident">parse_condition_properties</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="ident">parse_exp</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
     <span class="ident">consume_token</span>(<span class="ident">tokens</span>, <span class="ident">Tok</span>::<span class="ident">Semicolon</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">end_loc</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">previous_end_loc</span>();
@@ -4014,12 +4047,36 @@
         <span class="ident">tokens</span>.<span class="ident">file_name</span>(),
         <span class="ident">start_loc</span>,
         <span class="ident">end_loc</span>,
-        <span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> { <span class="ident">kind</span>, <span class="ident">exp</span> },
+        <span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> {
+            <span class="ident">kind</span>,
+            <span class="ident">properties</span>,
+            <span class="ident">exp</span>,
+        },
     ))
 }
 
+<span class="comment">// Parse properties in a condition.</span>
+<span class="comment">//   ConditionProperties = ( &quot;[&quot; Comma&lt;SpecPragmaProperty&gt; &quot;]&quot; )?</span>
+<span class="kw">fn</span> <span class="ident">parse_condition_properties</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>(
+    <span class="ident">tokens</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Lexer</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PragmaProperty</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">tokens</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Tok</span>::<span class="ident">LBracket</span> {
+        <span class="ident">parse_comma_list</span>(
+            <span class="ident">tokens</span>,
+            <span class="ident">Tok</span>::<span class="ident">LBracket</span>,
+            <span class="ident">Tok</span>::<span class="ident">RBracket</span>,
+            <span class="ident">parse_spec_property</span>,
+            <span class="string">&quot;a condition property&quot;</span>,
+        )<span class="question-mark">?</span>
+    } <span class="kw">else</span> {
+        <span class="macro">vec</span><span class="macro">!</span>[]
+    };
+    <span class="prelude-val">Ok</span>(<span class="ident">properties</span>)
+}
+
 <span class="comment">// Parse an invariant:</span>
-<span class="comment">//     Invariant = &quot;invariant&quot; ( &quot;update&quot; | &quot;pack&quot; | &quot;unpack&quot; | &quot;module&quot; )? &lt;Exp&gt; &quot;;&quot;</span>
+<span class="comment">//     Invariant = &quot;invariant&quot; ( &quot;update&quot; | &quot;pack&quot; | &quot;unpack&quot; | &quot;module&quot; )?</span>
+<span class="comment">//                 &lt;ConditionProperties&gt; &lt;Exp&gt; &quot;;&quot;</span>
 <span class="kw">fn</span> <span class="ident">parse_invariant</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>(<span class="ident">tokens</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Lexer</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SpecBlockMember</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">start_loc</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">start_loc</span>();
     <span class="ident">consume_token</span>(<span class="ident">tokens</span>, <span class="ident">Tok</span>::<span class="ident">Invariant</span>)<span class="question-mark">?</span>;
@@ -4050,13 +4107,18 @@
         }
         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">Invariant</span>,
     };
+    <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="ident">parse_condition_properties</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="ident">parse_exp</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
     <span class="ident">consume_token</span>(<span class="ident">tokens</span>, <span class="ident">Tok</span>::<span class="ident">Semicolon</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">spanned</span>(
         <span class="ident">tokens</span>.<span class="ident">file_name</span>(),
         <span class="ident">start_loc</span>,
         <span class="ident">tokens</span>.<span class="ident">previous_end_loc</span>(),
-        <span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> { <span class="ident">kind</span>, <span class="ident">exp</span> },
+        <span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> {
+            <span class="ident">kind</span>,
+            <span class="ident">properties</span>,
+            <span class="ident">exp</span>,
+        },
     ))
 }
 
@@ -4284,7 +4346,7 @@
         <span class="ident">start_loc</span>,
         <span class="ident">Tok</span>::<span class="ident">IdentifierValue</span>,
         <span class="ident">Tok</span>::<span class="ident">Semicolon</span>,
-        <span class="ident">parse_spec_pragma_property</span>,
+        <span class="ident">parse_spec_property</span>,
         <span class="string">&quot;a pragma property&quot;</span>,
     )<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">spanned</span>(
@@ -4297,7 +4359,7 @@
 
 <span class="comment">// Parse a specification pragma property:</span>
 <span class="comment">//    SpecPragmaProperty = &lt;Identifier&gt; ( &quot;=&quot; Value )?</span>
-<span class="kw">fn</span> <span class="ident">parse_spec_pragma_property</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>(<span class="ident">tokens</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Lexer</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PragmaProperty</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">parse_spec_property</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>(<span class="ident">tokens</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Lexer</span><span class="op">&lt;</span><span class="lifetime">&#39;input</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PragmaProperty</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">start_loc</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">start_loc</span>();
     <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">parse_identifier</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">tokens</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Tok</span>::<span class="ident">Equal</span> {
