@@ -104,7 +104,7 @@
     <span class="ident">on_chain_config</span>::{<span class="ident">LibraVersion</span>, <span class="ident">OnChainConfigPayload</span>, <span class="ident">VMConfig</span>},
     <span class="ident">transaction</span>::{<span class="ident">SignedTransaction</span>, <span class="ident">VMValidatorResult</span>},
 };
-<span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">LibraVM</span>;
+<span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">LibraVMValidator</span>;
 <span class="kw">use</span> <span class="ident">scratchpad</span>::<span class="ident">SparseMerkleTree</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">state_view</span>::<span class="ident">VerifiedStateView</span>, <span class="ident">DbReader</span>};
@@ -126,12 +126,12 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">VMValidator</span> {
     <span class="ident">db_reader</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>,
-    <span class="ident">vm</span>: <span class="ident">LibraVM</span>,
+    <span class="ident">vm</span>: <span class="ident">LibraVMValidator</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">VMValidator</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">db_reader</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">new</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVMValidator</span>::<span class="ident">new</span>();
         <span class="kw">let</span> (<span class="ident">version</span>, <span class="ident">state_root</span>) <span class="op">=</span> <span class="ident">db_reader</span>.<span class="ident">get_latest_state_root</span>().<span class="ident">expect</span>(<span class="string">&quot;Should not fail.&quot;</span>);
         <span class="kw">let</span> <span class="ident">smt</span> <span class="op">=</span> <span class="ident">SparseMerkleTree</span>::<span class="ident">new</span>(<span class="ident">state_root</span>);
         <span class="kw">let</span> <span class="ident">state_view</span> <span class="op">=</span> <span class="ident">VerifiedStateView</span>::<span class="ident">new</span>(
@@ -148,7 +148,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">TransactionValidation</span> <span class="kw">for</span> <span class="ident">VMValidator</span> {
-    <span class="kw">type</span> <span class="ident">ValidationInstance</span> <span class="op">=</span> <span class="ident">LibraVM</span>;
+    <span class="kw">type</span> <span class="ident">ValidationInstance</span> <span class="op">=</span> <span class="ident">LibraVMValidator</span>;
 
     <span class="kw">fn</span> <span class="ident">validate_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VMValidatorResult</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">VMValidator</span>;
@@ -175,7 +175,7 @@
         <span class="kw">let</span> <span class="ident">vm_config</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">VMConfig</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">LibraVersion</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">init_with_config</span>(<span class="ident">version</span>, <span class="ident">vm_config</span>);
+        <span class="self">self</span>.<span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVMValidator</span>::<span class="ident">init_with_config</span>(<span class="ident">version</span>, <span class="ident">vm_config</span>);
         <span class="prelude-val">Ok</span>(())
     }
 }
