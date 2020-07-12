@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `network/src/protocols/discovery/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../network/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `network/src/protocols/gossip_discovery/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../network/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -456,6 +456,9 @@
 <span id="456">456</span>
 <span id="457">457</span>
 <span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -466,7 +469,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Implementation</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! The discovery module is implemented as a stand-alone actor in the Network sub-system of the</span>
+<span class="doccomment">//! The gossip_discovery module is implemented as a stand-alone actor in the Network sub-system of the</span>
 <span class="doccomment">//! Libra stack. The actor participates in discovery by periodically sending its observed state of</span>
 <span class="doccomment">//! the network to a randomly chosen peer. Other peers are also expected to be running the same</span>
 <span class="doccomment">//! protocol. Therefore, in expectation, every peer expects to hear from 1 other peer in each</span>
@@ -531,21 +534,21 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// `DiscoveryNetworkEvents` is a `Stream` of `PeerManagerNotification` where the</span>
 <span class="doccomment">/// raw `Bytes` rpc messages are deserialized into</span>
-<span class="doccomment">/// `DiscoveryMsg` types. `DiscoveryNetworkEvents` is a thin wrapper</span>
+<span class="doccomment">/// `GossipDiscoveryMsg` types. `DiscoveryNetworkEvents` is a thin wrapper</span>
 <span class="doccomment">/// around a `channel::Receiver&lt;PeerManagerNotification&gt;`.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DiscoveryNetworkEvents</span> <span class="op">=</span> <span class="ident">NetworkEvents</span><span class="op">&lt;</span><span class="ident">DiscoveryMsg</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">GossipDiscoveryNetworkEvents</span> <span class="op">=</span> <span class="ident">NetworkEvents</span><span class="op">&lt;</span><span class="ident">GossipDiscoveryMsg</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// The interface from Discovery to Networking layer.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// This is a thin wrapper around a `NetworkSender&lt;Discoverymsg&gt;`, so it is</span>
+<span class="doccomment">/// This is a thin wrapper around a `NetworkSender&lt;GossipDiscoveryMsg&gt;`, so it is</span>
 <span class="doccomment">/// easy to clone and send off to a separate task. For example, the rpc requests</span>
 <span class="doccomment">/// return Futures that encapsulate the whole flow, from sending the request to</span>
 <span class="doccomment">/// remote, to finally receiving the response and deserializing. It therefore</span>
 <span class="doccomment">/// makes the most sense to make the rpc call on a separate async task, which</span>
 <span class="doccomment">/// requires the `DiscoveryNetworkSender` to be `Clone` and `Send`.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DiscoveryNetworkSender</span> {
-    <span class="ident">inner</span>: <span class="ident">NetworkSender</span><span class="op">&lt;</span><span class="ident">DiscoveryMsg</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GossipDiscoveryNetworkSender</span> {
+    <span class="ident">inner</span>: <span class="ident">NetworkSender</span><span class="op">&lt;</span><span class="ident">GossipDiscoveryMsg</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Configuration for the network endpoints to support Discovery.</span>
@@ -565,7 +568,7 @@
     )
 }
 
-<span class="kw">impl</span> <span class="ident">NewNetworkSender</span> <span class="kw">for</span> <span class="ident">DiscoveryNetworkSender</span> {
+<span class="kw">impl</span> <span class="ident">NewNetworkSender</span> <span class="kw">for</span> <span class="ident">GossipDiscoveryNetworkSender</span> {
     <span class="doccomment">/// Create a new Discovery sender</span>
     <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">peer_mgr_reqs_tx</span>: <span class="ident">PeerManagerRequestSender</span>,
@@ -576,16 +579,16 @@
         }
     }
 }
-<span class="kw">impl</span> <span class="ident">DiscoveryNetworkSender</span> {
-    <span class="doccomment">/// Send a DiscoveryMsg to a peer.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerId</span>, <span class="ident">msg</span>: <span class="ident">DiscoveryMsg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">NetworkError</span><span class="op">&gt;</span> {
+<span class="kw">impl</span> <span class="ident">GossipDiscoveryNetworkSender</span> {
+    <span class="doccomment">/// Send a GossipDiscoveryMsg to a peer.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerId</span>, <span class="ident">msg</span>: <span class="ident">GossipDiscoveryMsg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">NetworkError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>
             .<span class="ident">send_to</span>(<span class="ident">peer</span>, <span class="ident">ProtocolId</span>::<span class="ident">DiscoveryDirectSend</span>, <span class="ident">msg</span>)
     }
 }
 
-<span class="doccomment">/// The actor running the discovery protocol.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Discovery</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span> {
+<span class="doccomment">/// The actor running the gossip discovery protocol.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GossipDiscovery</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Note for self, which is prefixed with an underscore as this is not used but is in</span>
     <span class="doccomment">/// preparation for logic that changes the advertised Note while the validator is running.</span>
     <span class="ident">note</span>: <span class="ident">Note</span>,
@@ -601,16 +604,16 @@
     <span class="doccomment">/// fixed duration interval timer.</span>
     <span class="ident">ticker</span>: <span class="ident">TTicker</span>,
     <span class="doccomment">/// Handle to send requests to Network.</span>
-    <span class="ident">network_reqs_tx</span>: <span class="ident">DiscoveryNetworkSender</span>,
+    <span class="ident">network_reqs_tx</span>: <span class="ident">GossipDiscoveryNetworkSender</span>,
     <span class="doccomment">/// Handle to receive notifications from Network.</span>
-    <span class="ident">network_notifs_rx</span>: <span class="ident">DiscoveryNetworkEvents</span>,
+    <span class="ident">network_notifs_rx</span>: <span class="ident">GossipDiscoveryNetworkEvents</span>,
     <span class="doccomment">/// Channel to send requests to ConnectivityManager.</span>
     <span class="ident">conn_mgr_reqs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ConnectivityRequest</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Random-number generator.</span>
     <span class="ident">rng</span>: <span class="ident">SmallRng</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span> <span class="ident">Discovery</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span> <span class="ident">GossipDiscovery</span><span class="op">&lt;</span><span class="ident">TTicker</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">TTicker</span>: <span class="ident">Stream</span> <span class="op">+</span> <span class="ident">FusedStream</span> <span class="op">+</span> <span class="ident">Unpin</span>,
 {
@@ -618,8 +621,8 @@
         <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">self_addrs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>,
         <span class="ident">ticker</span>: <span class="ident">TTicker</span>,
-        <span class="ident">network_reqs_tx</span>: <span class="ident">DiscoveryNetworkSender</span>,
-        <span class="ident">network_notifs_rx</span>: <span class="ident">DiscoveryNetworkEvents</span>,
+        <span class="ident">network_reqs_tx</span>: <span class="ident">GossipDiscoveryNetworkSender</span>,
+        <span class="ident">network_notifs_rx</span>: <span class="ident">GossipDiscoveryNetworkEvents</span>,
         <span class="ident">conn_mgr_reqs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ConnectivityRequest</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="comment">// TODO(philiphayes): wire through config</span>
@@ -700,7 +703,10 @@
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_network_event</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">event</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="ident">DiscoveryMsg</span><span class="op">&gt;</span>, <span class="ident">NetworkError</span><span class="op">&gt;</span>) {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_network_event</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">event</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="ident">GossipDiscoveryMsg</span><span class="op">&gt;</span>, <span class="ident">NetworkError</span><span class="op">&gt;</span>,
+    ) {
         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{} Network event::{:?}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">event</span>);
         <span class="kw">match</span> <span class="ident">event</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -743,10 +749,10 @@
         }
     }
 
-    <span class="comment">// Creates DiscoveryMsg to be sent to some remote peer.</span>
-    <span class="kw">fn</span> <span class="ident">compose_discovery_msg</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DiscoveryMsg</span> {
+    <span class="comment">// Creates GossipDiscoveryMsg to be sent to some remote peer.</span>
+    <span class="kw">fn</span> <span class="ident">compose_discovery_msg</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GossipDiscoveryMsg</span> {
         <span class="kw">let</span> <span class="ident">notes</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">known_peers</span>.<span class="ident">values</span>().<span class="ident">cloned</span>().<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
-        <span class="ident">DiscoveryMsg</span> { <span class="ident">notes</span> }
+        <span class="ident">GossipDiscoveryMsg</span> { <span class="ident">notes</span> }
     }
 
     <span class="comment">// Updates local state by reconciling with notes received from some remote peer.</span>
@@ -843,7 +849,7 @@
 
 <span class="doccomment">/// A Discovery message contains notes collected from other peers within the system.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DiscoveryMsg</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GossipDiscoveryMsg</span> {
     <span class="ident">notes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Note</span><span class="op">&gt;</span>,
 }
 
