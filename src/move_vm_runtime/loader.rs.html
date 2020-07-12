@@ -1720,6 +1720,31 @@
 <span id="1720">1720</span>
 <span id="1721">1721</span>
 <span id="1722">1722</span>
+<span id="1723">1723</span>
+<span id="1724">1724</span>
+<span id="1725">1725</span>
+<span id="1726">1726</span>
+<span id="1727">1727</span>
+<span id="1728">1728</span>
+<span id="1729">1729</span>
+<span id="1730">1730</span>
+<span id="1731">1731</span>
+<span id="1732">1732</span>
+<span id="1733">1733</span>
+<span id="1734">1734</span>
+<span id="1735">1735</span>
+<span id="1736">1736</span>
+<span id="1737">1737</span>
+<span id="1738">1738</span>
+<span id="1739">1739</span>
+<span id="1740">1740</span>
+<span id="1741">1741</span>
+<span id="1742">1742</span>
+<span id="1743">1743</span>
+<span id="1744">1744</span>
+<span id="1745">1745</span>
+<span id="1746">1746</span>
+<span id="1747">1747</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -3196,6 +3221,8 @@
     <span class="ident">function</span>.<span class="ident">name</span>.<span class="ident">as_ident_str</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">name</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">function</span>.<span class="ident">module_id</span>() <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">module</span>)
 }
 
+<span class="kw">const</span> <span class="ident">VALUE_DEPTH_MAX</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">256</span>;
+
 <span class="kw">impl</span> <span class="ident">Loader</span> {
     <span class="kw">fn</span> <span class="ident">type_to_fat_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">FatType</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">Type</span>::<span class="kw-2">*</span>;
@@ -3282,6 +3309,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">gidx</span>: <span class="ident">usize</span>,
         <span class="ident">ty_args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Type</span>],
+        <span class="ident">depth</span>: <span class="ident">usize</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveStructLayout</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_map</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">type_cache</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">structs</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">gidx</span>) {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_info</span>) <span class="op">=</span> <span class="ident">struct_map</span>.<span class="ident">get</span>(<span class="ident">ty_args</span>) {
@@ -3299,7 +3327,7 @@
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">field_layouts</span> <span class="op">=</span> <span class="ident">field_tys</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>))
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">type_to_type_layout_impl</span>(<span class="ident">ty</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>))
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">struct_layout</span> <span class="op">=</span> <span class="ident">MoveStructLayout</span>::<span class="ident">new</span>(<span class="ident">field_layouts</span>);
 
@@ -3316,7 +3344,10 @@
         <span class="prelude-val">Ok</span>(<span class="ident">struct_layout</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveTypeLayout</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">type_to_type_layout_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>, <span class="ident">depth</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveTypeLayout</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">depth</span> <span class="op">&gt;</span> <span class="ident">VALUE_DEPTH_MAX</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_MAX_VALUE_DEPTH_REACHED</span>));
+        }
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">ty</span> {
             <span class="ident">Type</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">Bool</span>,
             <span class="ident">Type</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">U8</span>,
@@ -3324,12 +3355,14 @@
             <span class="ident">Type</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">U128</span>,
             <span class="ident">Type</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">Address</span>,
             <span class="ident">Type</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">Signer</span>,
-            <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveTypeLayout</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>)),
+            <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">MoveTypeLayout</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">type_to_type_layout_impl</span>(<span class="ident">ty</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>))
+            }
             <span class="ident">Type</span>::<span class="ident">Struct</span>(<span class="ident">gidx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">MoveTypeLayout</span>::<span class="ident">Struct</span>(<span class="self">self</span>.<span class="ident">struct_gidx_to_type_layout</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>)
+                <span class="ident">MoveTypeLayout</span>::<span class="ident">Struct</span>(<span class="self">self</span>.<span class="ident">struct_gidx_to_type_layout</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="kw-2">&amp;</span>[], <span class="ident">depth</span>)<span class="question-mark">?</span>)
             }
             <span class="ident">Type</span>::<span class="ident">StructInstantiation</span>(<span class="ident">gidx</span>, <span class="ident">ty_args</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">MoveTypeLayout</span>::<span class="ident">Struct</span>(<span class="self">self</span>.<span class="ident">struct_gidx_to_type_layout</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="ident">ty_args</span>)<span class="question-mark">?</span>)
+                <span class="ident">MoveTypeLayout</span>::<span class="ident">Struct</span>(<span class="self">self</span>.<span class="ident">struct_gidx_to_type_layout</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="ident">ty_args</span>, <span class="ident">depth</span>)<span class="question-mark">?</span>)
             }
             <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">TyParam</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(
@@ -3340,10 +3373,15 @@
         })
     }
 
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveTypeLayout</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">type_to_type_layout_impl</span>(<span class="ident">ty</span>, <span class="number">1</span>)
+    }
+
     <span class="kw">fn</span> <span class="ident">struct_gidx_to_kind_info</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">gidx</span>: <span class="ident">usize</span>,
         <span class="ident">ty_args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Type</span>],
+        <span class="ident">depth</span>: <span class="ident">usize</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>(<span class="ident">MoveKind</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">MoveKindInfo</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_map</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">type_cache</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">structs</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">gidx</span>) {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_info</span>) <span class="op">=</span> <span class="ident">struct_map</span>.<span class="ident">get</span>(<span class="ident">ty_args</span>) {
@@ -3370,7 +3408,7 @@
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">field_kind_info</span> <span class="op">=</span> <span class="ident">field_tys</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">type_to_kind_info</span>(<span class="ident">ty</span>))
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">type_to_kind_info_impl</span>(<span class="ident">ty</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>))
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">kind_info</span> <span class="op">=</span> (<span class="ident">MoveKind</span>::<span class="ident">from_bool</span>(<span class="ident">is_resource</span>), <span class="ident">field_kind_info</span>);
 
@@ -3387,23 +3425,31 @@
         <span class="prelude-val">Ok</span>(<span class="ident">kind_info</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">type_to_kind_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveKindInfo</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">type_to_kind_info_impl</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
+        <span class="ident">depth</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveKindInfo</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">depth</span> <span class="op">&gt;</span> <span class="ident">VALUE_DEPTH_MAX</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_MAX_VALUE_DEPTH_REACHED</span>));
+        }
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">ty</span> {
             <span class="ident">Type</span>::<span class="ident">Bool</span> <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">U8</span> <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">U64</span> <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">U128</span> <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">MoveKindInfo</span>::<span class="ident">Base</span>(<span class="ident">MoveKind</span>::<span class="ident">Copyable</span>)
             }
             <span class="ident">Type</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MoveKindInfo</span>::<span class="ident">Base</span>(<span class="ident">MoveKind</span>::<span class="ident">Resource</span>),
             <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">kind_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">type_to_kind_info</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">kind_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">type_to_kind_info_impl</span>(<span class="ident">ty</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>;
                 <span class="ident">MoveKindInfo</span>::<span class="ident">Vector</span>(<span class="ident">kind_info</span>.<span class="ident">kind</span>(), <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">kind_info</span>))
             }
             <span class="ident">Type</span>::<span class="ident">Struct</span>(<span class="ident">gidx</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> (<span class="ident">is_resource</span>, <span class="ident">field_kind_info</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">struct_gidx_to_kind_info</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
+                <span class="kw">let</span> (<span class="ident">is_resource</span>, <span class="ident">field_kind_info</span>) <span class="op">=</span>
+                    <span class="self">self</span>.<span class="ident">struct_gidx_to_kind_info</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="kw-2">&amp;</span>[], <span class="ident">depth</span>)<span class="question-mark">?</span>;
                 <span class="ident">MoveKindInfo</span>::<span class="ident">Struct</span>(<span class="ident">is_resource</span>, <span class="ident">field_kind_info</span>)
             }
             <span class="ident">Type</span>::<span class="ident">StructInstantiation</span>(<span class="ident">gidx</span>, <span class="ident">ty_args</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> (<span class="ident">is_resource</span>, <span class="ident">field_kind_info</span>) <span class="op">=</span>
-                    <span class="self">self</span>.<span class="ident">struct_gidx_to_kind_info</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="ident">ty_args</span>)<span class="question-mark">?</span>;
+                    <span class="self">self</span>.<span class="ident">struct_gidx_to_kind_info</span>(<span class="kw-2">*</span><span class="ident">gidx</span>, <span class="ident">ty_args</span>, <span class="ident">depth</span>)<span class="question-mark">?</span>;
                 <span class="ident">MoveKindInfo</span>::<span class="ident">Struct</span>(<span class="ident">is_resource</span>, <span class="ident">field_kind_info</span>)
             }
             <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">TyParam</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -3413,6 +3459,10 @@
                 )
             }
         })
+    }
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">type_to_kind_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">MoveKindInfo</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">type_to_kind_info_impl</span>(<span class="ident">ty</span>, <span class="number">1</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">struct_to_fat_struct</span>(

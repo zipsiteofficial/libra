@@ -75,6 +75,25 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -85,6 +104,8 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">loaded_data</span>::<span class="ident">types</span>::<span class="ident">FatType</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">file_format</span>::{<span class="ident">Kind</span>, <span class="ident">StructDefinitionIndex</span>};
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TYPE_DEPTH_MAX</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">256</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialEq</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">StructType</span> {
@@ -113,40 +134,57 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Type</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subst</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty_args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Type</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">clone_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">depth</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">apply_subst</span>(<span class="op">|</span><span class="ident">idx</span>, <span class="kw">_</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">Type</span>::<span class="ident">TyParam</span>(<span class="ident">idx</span>)), <span class="ident">depth</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">apply_subst</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">subst</span>: <span class="ident">F</span>, <span class="ident">depth</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>
+    <span class="kw">where</span>
+        <span class="ident">F</span>: <span class="ident">Fn</span>(<span class="ident">usize</span>, <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span>,
+    {
+        <span class="kw">if</span> <span class="ident">depth</span> <span class="op">&gt;</span> <span class="ident">TYPE_DEPTH_MAX</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_MAX_TYPE_DEPTH_REACHED</span>));
+        }
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Type</span>::<span class="ident">TyParam</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">ty_args</span>.<span class="ident">get</span>(<span class="kw-2">*</span><span class="ident">idx</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ty</span>.<span class="ident">clone</span>(),
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(
-                        <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>)
-                            .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(
-                                <span class="string">&quot;type substitution failed: index out of bounds -- len {} got {}&quot;</span>,
-                                <span class="ident">ty_args</span>.<span class="ident">len</span>(),
-                                <span class="ident">idx</span>
-                            )),
-                    );
-                }
-            },
+            <span class="ident">Type</span>::<span class="ident">TyParam</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">subst</span>(<span class="kw-2">*</span><span class="ident">idx</span>, <span class="ident">depth</span>)<span class="question-mark">?</span>,
             <span class="ident">Type</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Bool</span>,
             <span class="ident">Type</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U8</span>,
             <span class="ident">Type</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U64</span>,
             <span class="ident">Type</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U128</span>,
             <span class="ident">Type</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Address</span>,
             <span class="ident">Type</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Signer</span>,
-            <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">subst</span>(<span class="ident">ty_args</span>)<span class="question-mark">?</span>)),
-            <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">subst</span>(<span class="ident">ty_args</span>)<span class="question-mark">?</span>)),
-            <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">subst</span>(<span class="ident">ty_args</span>)<span class="question-mark">?</span>)),
+            <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">apply_subst</span>(<span class="ident">subst</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>)),
+            <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">apply_subst</span>(<span class="ident">subst</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>)),
+            <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ty</span>.<span class="ident">apply_subst</span>(<span class="ident">subst</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>))
+            }
             <span class="ident">Type</span>::<span class="ident">Struct</span>(<span class="ident">def_idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Struct</span>(<span class="kw-2">*</span><span class="ident">def_idx</span>),
             <span class="ident">Type</span>::<span class="ident">StructInstantiation</span>(<span class="ident">def_idx</span>, <span class="ident">instantiation</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inst</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
                 <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="ident">instantiation</span> {
-                    <span class="ident">inst</span>.<span class="ident">push</span>(<span class="ident">ty</span>.<span class="ident">subst</span>(<span class="ident">ty_args</span>)<span class="question-mark">?</span>)
+                    <span class="ident">inst</span>.<span class="ident">push</span>(<span class="ident">ty</span>.<span class="ident">apply_subst</span>(<span class="ident">subst</span>, <span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>)
                 }
                 <span class="ident">Type</span>::<span class="ident">StructInstantiation</span>(<span class="kw-2">*</span><span class="ident">def_idx</span>, <span class="ident">inst</span>)
             }
         };
         <span class="prelude-val">Ok</span>(<span class="ident">res</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subst</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ty_args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Type</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">apply_subst</span>(
+            <span class="op">|</span><span class="ident">idx</span>, <span class="ident">depth</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">ty_args</span>.<span class="ident">get</span>(<span class="ident">idx</span>) {
+                <span class="prelude-val">Some</span>(<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ty</span>.<span class="ident">clone_impl</span>(<span class="ident">depth</span>),
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(
+                    <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>)
+                        .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(
+                            <span class="string">&quot;type substitution failed: index out of bounds -- len {} got {}&quot;</span>,
+                            <span class="ident">ty_args</span>.<span class="ident">len</span>(),
+                            <span class="ident">idx</span>
+                        )),
+                ),
+            },
+            <span class="number">1</span>,
+        )
     }
 }
 
