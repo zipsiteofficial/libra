@@ -285,6 +285,24 @@
 <span id="285">285</span>
 <span id="286">286</span>
 <span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -295,7 +313,7 @@
 };
 <span class="kw">use</span> <span class="ident">move_core_types</span>::{
     <span class="ident">language_storage</span>::<span class="ident">ModuleId</span>,
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">StatusType</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::{<span class="self">self</span>, <span class="ident">StatusCode</span>, <span class="ident">StatusType</span>, <span class="ident">VMStatus</span>},
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
@@ -325,13 +343,31 @@
         <span class="kw">let</span> <span class="ident">VMError</span> {
             <span class="ident">major_status</span>,
             <span class="ident">sub_status</span>,
-            <span class="ident">message</span>,
+            <span class="ident">location</span>,
             ..
         } <span class="op">=</span> <span class="self">self</span>;
-        <span class="ident">VMStatus</span> {
-            <span class="ident">major_status</span>,
-            <span class="ident">sub_status</span>,
-            <span class="ident">message</span>,
+        <span class="kw">match</span> (<span class="ident">major_status</span>, <span class="ident">sub_status</span>, <span class="ident">location</span>) {
+            (<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>, <span class="ident">sub_status</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">sub_status</span>.<span class="ident">is_none</span>());
+                <span class="ident">VMStatus</span>::<span class="ident">Executed</span>
+            }
+            (<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>, <span class="prelude-val">Some</span>(<span class="ident">code</span>), <span class="ident">Location</span>::<span class="ident">Script</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">vm_status</span>::<span class="ident">AbortLocation</span>::<span class="ident">Script</span>, <span class="ident">code</span>)
+            }
+            (<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>, <span class="prelude-val">Some</span>(<span class="ident">code</span>), <span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">id</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">vm_status</span>::<span class="ident">AbortLocation</span>::<span class="ident">Module</span>(<span class="ident">id</span>), <span class="ident">code</span>)
+            }
+
+            (<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>, <span class="ident">sub_status</span>, <span class="ident">location</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">debug_assert</span><span class="macro">!</span>(
+                    <span class="bool-val">false</span>,
+                    <span class="string">&quot;Expected a code and module/script location with ABORTED, but got {:?} and {}&quot;</span>,
+                    <span class="ident">sub_status</span>, <span class="ident">location</span>
+                );
+                <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>)
+            }
+
+            (<span class="ident">major_status</span>, <span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">major_status</span>),
         }
     }
 
@@ -533,7 +569,7 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">vm_status_of_result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">result</span>: <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMStatus</span> {
     <span class="kw">match</span> <span class="ident">result</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">executed</span>(),
+        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Executed</span>,
         <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">err</span>.<span class="ident">into_vm_status</span>(),
     }
 }

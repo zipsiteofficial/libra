@@ -629,13 +629,44 @@
 <span id="629">629</span>
 <span id="630">630</span>
 <span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">unit_arg</span>)]</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">language_storage</span>::<span class="ident">ModuleId</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -674,22 +705,36 @@
 <span class="doccomment">/// The maximum status code for runtim statuses</span>
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">EXECUTION_STATUS_MAX_CODE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">4999</span>;
 
-<span class="doccomment">/// A `VMStatus` is represented as a required major status that is semantic coupled with with</span>
-<span class="doccomment">/// an optional sub status and message.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Debug</span>, <span class="ident">Hash</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="doccomment">/// A `VMStatus` is represented as either</span>
+<span class="doccomment">/// - `Executed` indicating successful execution</span>
+<span class="doccomment">/// - `Error` indicating an error from the VM itself</span>
+<span class="doccomment">/// - `MoveAbort` indicating an `abort` ocurred inside of a Move program</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">derive</span>(<span class="ident">Arbitrary</span>))]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">proptest</span>(<span class="ident">no_params</span>))]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">VMStatus</span> {
-    <span class="doccomment">/// The major status, e.g. ABORTED, OUT_OF_GAS, etc.</span>
-    <span class="kw">pub</span> <span class="ident">major_status</span>: <span class="ident">StatusCode</span>,
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">VMStatus</span> {
+    <span class="doccomment">/// The VM status corresponding to an EXECUTED status code</span>
+    <span class="ident">Executed</span>,
 
-    <span class="doccomment">/// The optional sub status. Used e.g. for things such as the abort code, or the arithmetic</span>
-    <span class="doccomment">/// error type for an ARITHMETIC_ERROR major status.</span>
-    <span class="kw">pub</span> <span class="ident">sub_status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Indicates an error from the VM, e.g. OUT_OF_GAS, INVALID_AUTH_KEY, RET_TYPE_MISMATCH_ERROR</span>
+    <span class="doccomment">/// etc.</span>
+    <span class="doccomment">/// The code will neither EXECUTED nor ABORTED</span>
+    <span class="ident">Error</span>(<span class="ident">StatusCode</span>),
 
-    <span class="doccomment">/// The optional message. Useful for verification errors, and for returning information in</span>
-    <span class="doccomment">/// validation.</span>
-    <span class="kw">pub</span> <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Indicates an `abort` from inside Move code. Contains the location of the abort and the code</span>
+    <span class="ident">MoveAbort</span>(<span class="ident">AbortLocation</span>, <span class="comment">/* code */</span> <span class="ident">u64</span>),
+}
+
+<span class="doccomment">/// An `AbortLocation` specifies where a Move program `abort` occurred, either in a function in</span>
+<span class="doccomment">/// a module, or in a script</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>, <span class="ident">Hash</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">derive</span>(<span class="ident">Arbitrary</span>))]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">proptest</span>(<span class="ident">no_params</span>))]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">AbortLocation</span> {
+    <span class="doccomment">/// Indicates `abort` occurred in the specified module</span>
+    <span class="ident">Module</span>(<span class="ident">ModuleId</span>),
+    <span class="doccomment">/// Indicates the `abort` occurred in a script</span>
+    <span class="ident">Script</span>,
 }
 
 <span class="doccomment">/// A status type is one of 5 different variants, along with a fallback variant in the case that we</span>
@@ -721,45 +766,67 @@
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">VMStatus</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">let</span> <span class="ident">status_type</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">status_type</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">status</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;status {:#?} of type {}&quot;</span>, <span class="self">self</span>.<span class="ident">major_status</span>, <span class="ident">status_type</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">status</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;status {:#?} of type {}&quot;</span>, <span class="self">self</span>.<span class="ident">status_code</span>(), <span class="ident">status_type</span>);
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sub_status</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sub_status</span> {
-            <span class="ident">status</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} with sub status {}&quot;</span>, <span class="ident">status</span>, <span class="ident">sub_status</span>);
-        }
-
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">msg</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">message</span> {
-            <span class="ident">status</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} and message {}&quot;</span>, <span class="ident">status</span>, <span class="ident">msg</span>);
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="kw">_</span>, <span class="ident">code</span>) <span class="op">=</span> <span class="self">self</span> {
+            <span class="ident">status</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} with sub status {}&quot;</span>, <span class="ident">status</span>, <span class="ident">code</span>);
         }
 
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">status</span>)
     }
 }
 
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">VMStatus</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;EXECUTED&quot;</span>),
+            <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;ERROR&quot;</span>).<span class="ident">field</span>(<span class="string">&quot;status_code&quot;</span>, <span class="ident">code</span>).<span class="ident">finish</span>(),
+            <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">f</span>
+                .<span class="ident">debug_struct</span>(<span class="string">&quot;ABORTED&quot;</span>)
+                .<span class="ident">field</span>(<span class="string">&quot;code&quot;</span>, <span class="ident">code</span>)
+                .<span class="ident">field</span>(<span class="string">&quot;location&quot;</span>, <span class="ident">location</span>)
+                .<span class="ident">finish</span>(),
+        }
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">AbortLocation</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">AbortLocation</span>::<span class="ident">Script</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Script&quot;</span>),
+            <span class="ident">AbortLocation</span>::<span class="ident">Module</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">id</span>),
+        }
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">for</span> <span class="ident">VMStatus</span> {}
 
 <span class="kw">impl</span> <span class="ident">VMStatus</span> {
-    <span class="doccomment">/// Create a new VM status with major status `major_status`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_status</span>: <span class="ident">StatusCode</span>, <span class="ident">sub_status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">major_status</span>,
-            <span class="ident">sub_status</span>,
-            <span class="ident">message</span>,
+    <span class="doccomment">/// Return the status code for the `VMStatus`</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status_code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusCode</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="self">Self</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>,
+            <span class="self">Self</span>::<span class="ident">MoveAbort</span>(<span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>,
+            <span class="self">Self</span>::<span class="ident">Error</span>(<span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">code</span>;
+                <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">code</span> <span class="op">!</span><span class="op">=</span> <span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>);
+                <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">code</span> <span class="op">!</span><span class="op">=</span> <span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>);
+                <span class="ident">code</span>
+            }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">executed</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EXECUTED</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+    <span class="doccomment">/// Returns the move abort code if the status is `MoveAbort`, and `None` otherwise</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">move_abort_code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="self">Self</span>::<span class="ident">MoveAbort</span>(<span class="kw">_</span>, <span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">code</span>),
+            <span class="self">Self</span>::<span class="ident">Error</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="self">Self</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+        }
     }
 
-    <span class="doccomment">/// Return the status type for this VMStatus. This is solely determined by the `major_status`</span>
-    <span class="doccomment">/// field.</span>
+    <span class="doccomment">/// Return the status type for this `VMStatus`. This is solely determined by the `status_code`</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusType</span> {
-        <span class="self">self</span>.<span class="ident">major_status</span>.<span class="ident">status_type</span>()
-    }
-
-    <span class="doccomment">/// Determine if the VMStatus has status type `status_type`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">status_type</span>: <span class="ident">StatusType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">status_type</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">status_type</span>
+        <span class="self">self</span>.<span class="ident">status_code</span>().<span class="ident">status_type</span>()
     }
 }
 
@@ -784,33 +851,28 @@
 <span class="comment">// FUTURE: At the moment we can&#39;t pass transaction metadata or the signed transaction due to</span>
 <span class="comment">// restrictions in the two places that this function is called. We therefore just pass through what</span>
 <span class="comment">// we need at the moment---the sender address---but we may want/need to pass more data later on.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="ident">err</span>: <span class="ident">VMStatus</span>, <span class="ident">txn_sender</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMStatus</span> {
-    <span class="kw">if</span> <span class="ident">err</span>.<span class="ident">major_status</span> <span class="op">=</span><span class="op">=</span> <span class="ident">StatusCode</span>::<span class="ident">ABORTED</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-        <span class="kw">let</span> <span class="ident">new_major_status</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">err</span>.<span class="ident">sub_status</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">EACCOUNT_FROZEN</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_FROZEN</span>,
-            <span class="comment">// Invalid authentication key</span>
-            <span class="prelude-val">Some</span>(<span class="ident">EBAD_ACCOUNT_AUTHENTICATION_KEY</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INVALID_AUTH_KEY</span>,
-            <span class="comment">// Sequence number too old</span>
-            <span class="prelude-val">Some</span>(<span class="ident">ESEQUENCE_NUMBER_TOO_OLD</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>,
-            <span class="comment">// Sequence number too new</span>
-            <span class="prelude-val">Some</span>(<span class="ident">ESEQUENCE_NUMBER_TOO_NEW</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_NEW</span>,
-            <span class="comment">// Sequence number too new</span>
-            <span class="prelude-val">Some</span>(<span class="ident">EACCOUNT_DOES_NOT_EXIST</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">message</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;sender address: {}&quot;</span>, <span class="ident">txn_sender</span>));
-                <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_DOES_NOT_EXIST</span>
-            }
-            <span class="comment">// Can&#39;t pay for transaction gas deposit/fee</span>
-            <span class="prelude-val">Some</span>(<span class="ident">ECANT_PAY_GAS_DEPOSIT</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">ETRANSACTION_EXPIRED</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">TRANSACTION_EXPIRED</span>,
-
-            <span class="ident">sub_status</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">return</span> <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">err</span>.<span class="ident">major_status</span>, <span class="ident">sub_status</span>, <span class="ident">err</span>.<span class="ident">message</span>);
-            }
-        };
-        <span class="ident">VMStatus</span>::<span class="ident">new</span>(<span class="ident">new_major_status</span>, <span class="prelude-val">None</span>, <span class="ident">message</span>)
-    } <span class="kw">else</span> {
-        <span class="ident">err</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_prologue_runtime_error</span>(<span class="ident">status</span>: <span class="ident">VMStatus</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMStatus</span> {
+    <span class="kw">match</span> <span class="ident">status</span> {
+        <span class="comment">// TODO look at location? or remove this function entirely</span>
+        <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="kw">let</span> <span class="ident">new_major_status</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">code</span> {
+                <span class="ident">EACCOUNT_FROZEN</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_FROZEN</span>,
+                <span class="comment">// Invalid authentication key</span>
+                <span class="ident">EBAD_ACCOUNT_AUTHENTICATION_KEY</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INVALID_AUTH_KEY</span>,
+                <span class="comment">// Sequence number too old</span>
+                <span class="ident">ESEQUENCE_NUMBER_TOO_OLD</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>,
+                <span class="comment">// Sequence number too new</span>
+                <span class="ident">ESEQUENCE_NUMBER_TOO_NEW</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_NEW</span>,
+                <span class="comment">// Sequence number too new</span>
+                <span class="ident">EACCOUNT_DOES_NOT_EXIST</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">SENDING_ACCOUNT_DOES_NOT_EXIST</span>,
+                <span class="comment">// Can&#39;t pay for transaction gas deposit/fee</span>
+                <span class="ident">ECANT_PAY_GAS_DEPOSIT</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>,
+                <span class="ident">ETRANSACTION_EXPIRED</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">TRANSACTION_EXPIRED</span>,
+                <span class="ident">code</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>),
+            };
+            <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">new_major_status</span>)
+        }
+        <span class="ident">status</span> @ <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">status</span> @ <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">status</span>,
     }
 }
 
