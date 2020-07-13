@@ -432,6 +432,19 @@
 <span id="432">432</span>
 <span id="433">433</span>
 <span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -514,6 +527,9 @@
     <span class="ident">direct_send_notifs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Flag to indicate if the actor is being shut down.</span>
     <span class="ident">state</span>: <span class="ident">State</span>,
+    <span class="doccomment">/// The maximum size of an inbound or outbound request frame</span>
+    <span class="doccomment">/// Currently, requests are only a single frame</span>
+    <span class="ident">max_frame_size</span>: <span class="ident">usize</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span> <span class="ident">Peer</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>
@@ -527,6 +543,7 @@
         <span class="ident">peer_notifs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
         <span class="ident">rpc_notifs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
         <span class="ident">direct_send_notifs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
+        <span class="ident">max_frame_size</span>: <span class="ident">usize</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">Connection</span> {
             <span class="ident">metadata</span>: <span class="ident">connection_metadata</span>,
@@ -541,6 +558,7 @@
             <span class="ident">rpc_notifs_tx</span>,
             <span class="ident">direct_send_notifs_tx</span>,
             <span class="ident">state</span>: <span class="ident">State</span>::<span class="ident">Connected</span>,
+            <span class="ident">max_frame_size</span>,
         }
     }
 
@@ -554,16 +572,24 @@
             <span class="string">&quot;Starting Peer actor for peer: {:?}&quot;</span>,
             <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>()
         );
+
         <span class="comment">// Split the connection into a ReadHalf and a WriteHalf.</span>
         <span class="kw">let</span> (<span class="ident">reader</span>, <span class="ident">writer</span>) <span class="op">=</span> <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">split</span>(<span class="ident">IoCompat</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">connection</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">codec_builder</span> <span class="op">=</span> <span class="ident">LengthDelimitedCodec</span>::<span class="ident">builder</span>();
+        <span class="ident">codec_builder</span>
+            .<span class="ident">max_frame_length</span>(<span class="self">self</span>.<span class="ident">max_frame_size</span>)
+            .<span class="ident">length_field_length</span>(<span class="number">4</span>)
+            .<span class="ident">big_endian</span>();
         <span class="comment">// Convert ReadHalf to Stream of length-delimited messages.</span>
-        <span class="kw">let</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">FramedRead</span>::<span class="ident">new</span>(<span class="ident">reader</span>, <span class="ident">LengthDelimitedCodec</span>::<span class="ident">new</span>()).<span class="ident">fuse</span>();
+
+        <span class="kw">let</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">FramedRead</span>::<span class="ident">new</span>(<span class="ident">reader</span>, <span class="ident">codec_builder</span>.<span class="ident">new_codec</span>()).<span class="ident">fuse</span>();
         <span class="comment">// Create a rate-limited stream of inbound messages.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">reader</span>
             .<span class="ident">ratelimit</span>(<span class="ident">MESSAGE_RATE_LIMIT_WINDOW</span>, <span class="ident">MESSAGE_RATE_LIMIT_COUNT</span>)
             .<span class="ident">fuse</span>();
+
         <span class="comment">// Convert WriteHalf to Sink of length-delimited messages.</span>
-        <span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">FramedWrite</span>::<span class="ident">new</span>(<span class="ident">writer</span>, <span class="ident">LengthDelimitedCodec</span>::<span class="ident">new</span>());
+        <span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">FramedWrite</span>::<span class="ident">new</span>(<span class="ident">writer</span>, <span class="ident">codec_builder</span>.<span class="ident">new_codec</span>());
         <span class="comment">// Start writer &quot;process&quot; as a separate task. We receive two handles to communicate with</span>
         <span class="comment">// the task:</span>
         <span class="comment">// `write_reqs_tx`: Instruction to send a NetworkMessage on the wire.</span>
@@ -611,7 +637,7 @@
                     <span class="comment">// task drops all pending outbound messages and closes the connection.</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">close_tx</span>.<span class="ident">send</span>(()) {
                         <span class="macro">info</span><span class="macro">!</span>(
-                            <span class="string">&quot;Failed to send close intruction to writer task. It must already be terminating/terminated. Error: {:?}&quot;</span>,
+                            <span class="string">&quot;Failed to send close instruction to writer task. It must already be terminating/terminated. Error: {:?}&quot;</span>,
                             <span class="ident">e</span>
                         );
                     }
@@ -671,7 +697,7 @@
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">writer</span>
                             .<span class="ident">send</span>(
                                 <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>)
-                                    .<span class="ident">expect</span>(<span class="string">&quot;Outboung message failed to serialize&quot;</span>)
+                                    .<span class="ident">expect</span>(<span class="string">&quot;Outbound message failed to serialize&quot;</span>)
                                     .<span class="ident">into</span>(),
                             )
                             .<span class="ident">map_ok</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ack_ch</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(())))
