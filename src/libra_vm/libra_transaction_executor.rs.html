@@ -663,19 +663,6 @@
 <span id="663">663</span>
 <span id="664">664</span>
 <span id="665">665</span>
-<span id="666">666</span>
-<span id="667">667</span>
-<span id="668">668</span>
-<span id="669">669</span>
-<span id="670">670</span>
-<span id="671">671</span>
-<span id="672">672</span>
-<span id="673">673</span>
-<span id="674">674</span>
-<span id="675">675</span>
-<span id="676">676</span>
-<span id="677">677</span>
-<span id="678">678</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -724,13 +711,8 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LibraVM</span>(<span class="ident">LibraVMImpl</span>);
 
 <span class="kw">impl</span> <span class="ident">LibraVM</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">new_without_default</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span>(<span class="ident">LibraVMImpl</span>::<span class="ident">new</span>())
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_configs</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">StateView</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">load_configs</span>(<span class="ident">state</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">StateView</span><span class="op">&gt;</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>(<span class="ident">LibraVMImpl</span>::<span class="ident">new</span>(<span class="ident">state</span>))
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internals</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LibraVMInternals</span> {
@@ -894,7 +876,6 @@
 
     <span class="kw">fn</span> <span class="ident">execute_user_transaction</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">_state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureCheckedTransaction</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionOutput</span> {
@@ -983,7 +964,6 @@
         <span class="kw">let</span> (<span class="ident">write_set</span>, <span class="ident">events</span>) <span class="op">=</span> <span class="ident">change_set</span>.<span class="ident">into_inner</span>();
         <span class="self">self</span>.<span class="ident">read_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">write_set</span>)<span class="question-mark">?</span>;
         <span class="ident">remote_cache</span>.<span class="ident">push_write_set</span>(<span class="kw-2">&amp;</span><span class="ident">write_set</span>);
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">load_configs_impl</span>(<span class="ident">remote_cache</span>);
         <span class="prelude-val">Ok</span>(<span class="ident">TransactionOutput</span>::<span class="ident">new</span>(
             <span class="ident">write_set</span>,
             <span class="ident">events</span>,
@@ -1160,37 +1140,32 @@
     <span class="kw">fn</span> <span class="ident">execute_block_impl</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
-        <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
+        <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">transactions</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="ident">blocks</span> <span class="op">=</span> <span class="ident">chunk_block_transactions</span>(<span class="ident">transactions</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data_cache</span> <span class="op">=</span> <span class="ident">StateViewCache</span>::<span class="ident">new</span>(<span class="ident">state_view</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">execute_block_trace_guard</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_block_id</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">zero</span>();
         <span class="kw">for</span> <span class="ident">block</span> <span class="kw">in</span> <span class="ident">blocks</span> {
             <span class="kw">match</span> <span class="ident">block</span> {
                 <span class="ident">TransactionBlock</span>::<span class="ident">UserTransaction</span>(<span class="ident">txns</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">outs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">execute_user_transactions</span>(
-                        <span class="ident">current_block_id</span>,
-                        <span class="ident">txns</span>,
-                        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_cache</span>,
-                        <span class="ident">state_view</span>,
-                    )<span class="question-mark">?</span>;
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">outs</span> <span class="op">=</span>
+                        <span class="self">self</span>.<span class="ident">execute_user_transactions</span>(<span class="ident">current_block_id</span>, <span class="ident">txns</span>, <span class="ident">data_cache</span>)<span class="question-mark">?</span>;
                     <span class="ident">result</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">outs</span>);
                 }
                 <span class="ident">TransactionBlock</span>::<span class="ident">BlockPrologue</span>(<span class="ident">block_metadata</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="ident">execute_block_trace_guard</span>.<span class="ident">clear</span>();
                     <span class="ident">current_block_id</span> <span class="op">=</span> <span class="ident">block_metadata</span>.<span class="ident">id</span>();
                     <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;libra_vm::execute_block_impl&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">current_block_id</span>}, <span class="ident">execute_block_trace_guard</span>);
-                    <span class="ident">result</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">process_block_prologue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_cache</span>, <span class="ident">block_metadata</span>)<span class="question-mark">?</span>)
+                    <span class="ident">result</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">process_block_prologue</span>(<span class="ident">data_cache</span>, <span class="ident">block_metadata</span>)<span class="question-mark">?</span>)
                 }
                 <span class="ident">TransactionBlock</span>::<span class="ident">WaypointWriteSet</span>(<span class="ident">change_set</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">result</span>.<span class="ident">push</span>(
-                    <span class="self">self</span>.<span class="ident">process_waypoint_change_set</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_cache</span>, <span class="ident">change_set</span>)
+                    <span class="self">self</span>.<span class="ident">process_waypoint_change_set</span>(<span class="ident">data_cache</span>, <span class="ident">change_set</span>)
                         .<span class="ident">unwrap_or_else</span>(<span class="ident">discard_error_output</span>),
                 ),
                 <span class="ident">TransactionBlock</span>::<span class="ident">WriteSet</span>(<span class="ident">txn</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">result</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">process_writeset_transaction</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data_cache</span>, <span class="kw-2">*</span><span class="ident">txn</span>)<span class="question-mark">?</span>)
+                    <span class="ident">result</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">process_writeset_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">*</span><span class="ident">txn</span>)<span class="question-mark">?</span>)
                 }
             }
         }
@@ -1209,9 +1184,7 @@
         <span class="ident">block_id</span>: <span class="ident">HashValue</span>,
         <span class="ident">txn_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>,
         <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
-        <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">load_configs_impl</span>(<span class="ident">data_cache</span>);
         <span class="kw">let</span> <span class="ident">signature_verified_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignatureCheckedTransaction</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
         {
             <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;libra_vm::verify_signatures&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">block_id</span>});
@@ -1229,7 +1202,7 @@
             <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">transaction</span> {
                 <span class="prelude-val">Ok</span>(<span class="ident">txn</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_TOTAL_SECONDS</span>.<span class="ident">start_timer</span>();
-                    <span class="self">self</span>.<span class="ident">execute_user_transaction</span>(<span class="ident">state_view</span>, <span class="ident">data_cache</span>, <span class="kw-2">&amp;</span><span class="ident">txn</span>)
+                    <span class="self">self</span>.<span class="ident">execute_user_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">&amp;</span><span class="ident">txn</span>)
                 }
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">discard_error_output</span>(<span class="ident">e</span>),
             };
@@ -1315,8 +1288,9 @@
         <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
         <span class="ident">state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">new</span>();
-        <span class="ident">vm</span>.<span class="ident">execute_block_impl</span>(<span class="ident">transactions</span>, <span class="ident">state_view</span>)
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state_view_cache</span> <span class="op">=</span> <span class="ident">StateViewCache</span>::<span class="ident">new</span>(<span class="ident">state_view</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">state_view_cache</span>);
+        <span class="ident">vm</span>.<span class="ident">execute_block_impl</span>(<span class="ident">transactions</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state_view_cache</span>)
     }
 }
 

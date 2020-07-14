@@ -505,14 +505,6 @@
 <span id="505">505</span>
 <span id="506">506</span>
 <span id="507">507</span>
-<span id="508">508</span>
-<span id="509">509</span>
-<span id="510">510</span>
-<span id="511">511</span>
-<span id="512">512</span>
-<span id="513">513</span>
-<span id="514">514</span>
-<span id="515">515</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -561,27 +553,17 @@
     <span class="ident">version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LibraVersion</span><span class="op">&gt;</span>,
 }
 
-<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">gas_schedule</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>.<span class="ident">on_chain_config</span>
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">gas_schedule</span>)
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. Gas Schedule Not Found&quot;</span>);
-                <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
-            })
-    };
-}
-
 <span class="kw">impl</span> <span class="ident">LibraVMImpl</span> {
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">new_without_default</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">StateView</span><span class="op">&gt;</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">MoveVM</span>::<span class="ident">new</span>();
-        <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vm</span> <span class="op">=</span> <span class="self">Self</span> {
             <span class="ident">move_vm</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">inner</span>),
             <span class="ident">on_chain_config</span>: <span class="prelude-val">None</span>,
             <span class="ident">version</span>: <span class="prelude-val">None</span>,
-        }
+        };
+        <span class="ident">vm</span>.<span class="ident">load_configs_impl</span>(<span class="kw-2">&amp;</span><span class="ident">RemoteStorage</span>::<span class="ident">new</span>(<span class="ident">state</span>));
+        <span class="ident">vm</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_with_config</span>(<span class="ident">version</span>: <span class="ident">LibraVersion</span>, <span class="ident">on_chain_config</span>: <span class="ident">VMConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
@@ -598,10 +580,6 @@
         <span class="ident">LibraVMInternals</span>(<span class="self">self</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_configs</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">StateView</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
-        <span class="self">self</span>.<span class="ident">load_configs_impl</span>(<span class="kw-2">&amp;</span><span class="ident">RemoteStorage</span>::<span class="ident">new</span>(<span class="ident">state</span>))
-    }
-
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">on_chain_config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMConfig</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">on_chain_config</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. On Chain Config Not Found&quot;</span>);
@@ -609,13 +587,19 @@
         })
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load_configs_impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">ConfigStorage</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
+    <span class="kw">fn</span> <span class="ident">load_configs_impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">ConfigStorage</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
         <span class="self">self</span>.<span class="ident">on_chain_config</span> <span class="op">=</span> <span class="ident">VMConfig</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
         <span class="self">self</span>.<span class="ident">version</span> <span class="op">=</span> <span class="ident">LibraVersion</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="macro">gas_schedule</span><span class="macro">!</span>(<span class="self">self</span>)
+        <span class="self">self</span>.<span class="ident">on_chain_config</span>
+            .<span class="ident">as_ref</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">gas_schedule</span>)
+            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. Gas Schedule Not Found&quot;</span>);
+                <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
+            })
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_libra_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LibraVersion</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
