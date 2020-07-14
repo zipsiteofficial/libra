@@ -67,6 +67,7 @@ ALIASES["libra_secure_time"] = {};
 ALIASES["libra_state_view"] = {};
 ALIASES["libra_swarm"] = {};
 ALIASES["libra_temppath"] = {};
+ALIASES["libra_trace"] = {};
 ALIASES["libra_transaction_scripts"] = {};
 ALIASES["libra_types"] = {};
 ALIASES["libra_vault_client"] = {};
