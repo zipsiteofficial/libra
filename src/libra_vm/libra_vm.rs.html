@@ -505,6 +505,28 @@
 <span id="505">505</span>
 <span id="506">506</span>
 <span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -544,6 +566,7 @@
     <span class="ident">values</span>::<span class="ident">Value</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
+<span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="ident">Location</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="doccomment">/// A wrapper to make VMRuntime standalone and thread safe.</span>
@@ -968,6 +991,27 @@
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>((<span class="ident">ws</span>, <span class="ident">events</span>))
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">charge_global_write_gas_usage</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(
+    <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
+    <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">total_cost</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">num_mutated_accounts</span>()
+        <span class="op">*</span> <span class="ident">cost_strategy</span>
+            .<span class="ident">cost_table</span>()
+            .<span class="ident">gas_constants</span>
+            .<span class="ident">global_memory_per_byte_write_cost</span>
+            .<span class="ident">mul</span>(
+                <span class="ident">cost_strategy</span>
+                    .<span class="ident">cost_table</span>()
+                    .<span class="ident">gas_constants</span>
+                    .<span class="ident">default_account_size</span>,
+            )
+            .<span class="ident">get</span>();
+    <span class="ident">cost_strategy</span>
+        .<span class="ident">deduct_gas</span>(<span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="ident">total_cost</span>))
+        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">p_err</span><span class="op">|</span> <span class="ident">p_err</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>).<span class="ident">into_vm_status</span>())
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_transaction_output</span><span class="op">&lt;</span><span class="ident">A</span>: <span class="ident">AccessPathCache</span>, <span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(

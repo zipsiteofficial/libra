@@ -266,6 +266,11 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -409,7 +414,7 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">WORD_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">8</span>);
 
 <span class="doccomment">/// The size in words for a non-string or address constant on the stack</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONST_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">1</span>);
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONST_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">16</span>);
 
 <span class="doccomment">/// The size in words for a reference on the stack</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">REFERENCE_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">8</span>);
@@ -417,20 +422,18 @@
 <span class="doccomment">/// The size of a struct in words</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">STRUCT_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">2</span>);
 
-<span class="doccomment">/// For V1 all accounts will be 32 words</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DEFAULT_ACCOUNT_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">32</span>);
+<span class="doccomment">/// For V1 all accounts will be ~800 bytes</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DEFAULT_ACCOUNT_SIZE</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">800</span>);
 
 <span class="doccomment">/// Any transaction over this size will be charged `INTRINSIC_GAS_PER_BYTE` per byte</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LARGE_TRANSACTION_CUTOFF</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">AbstractMemorySize</span>(<span class="number">600</span>);
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GasConstants</span> {
-    <span class="doccomment">/// The cost per-byte written to global storage.</span>
-    <span class="doccomment">/// TODO: Fill this in with a proper number once it&#39;s determined.</span>
+    <span class="doccomment">/// The cost per-byte read from global storage.</span>
     <span class="kw">pub</span> <span class="ident">global_memory_per_byte_cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// The cost per-byte written to storage.</span>
-    <span class="doccomment">/// TODO: Fill this in with a proper number once it&#39;s determined.</span>
     <span class="kw">pub</span> <span class="ident">global_memory_per_byte_write_cost</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// We charge one unit of gas per-byte for the first 600 bytes</span>
@@ -442,10 +445,12 @@
     <span class="doccomment">/// The units of gas that should be charged per byte for every transaction.</span>
     <span class="kw">pub</span> <span class="ident">instrinsic_gas_per_byte</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 
-    <span class="doccomment">/// 1 nanosecond should equal one unit of computational gas. We bound the maximum</span>
-    <span class="doccomment">/// computational time of any given transaction at 10 milliseconds. We want this number and</span>
+    <span class="doccomment">/// ~5000 nanoseconds should equal one unit of computational gas. We bound the maximum</span>
+    <span class="doccomment">/// computational time of any given transaction at  20 seconds. We want this number and</span>
     <span class="doccomment">/// `MAX_PRICE_PER_GAS_UNIT` to always satisfy the inequality that</span>
     <span class="doccomment">/// MAXIMUM_NUMBER_OF_GAS_UNITS * MAX_PRICE_PER_GAS_UNIT &lt; min(u64::MAX, GasUnits&lt;GasCarrier&gt;::MAX)</span>
+    <span class="doccomment">/// NB: The bound is set quite high since custom scripts aren&#39;t allowed except from predefined</span>
+    <span class="doccomment">/// and vetted senders.</span>
     <span class="kw">pub</span> <span class="ident">maximum_number_of_gas_units</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// The minimum gas price that a transaction can be submitted with.</span>
@@ -454,21 +459,26 @@
     <span class="doccomment">/// The maximum gas unit price that a transaction can be submitted with.</span>
     <span class="kw">pub</span> <span class="ident">max_price_per_gas_unit</span>: <span class="ident">GasPrice</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 
-    <span class="kw">pub</span> <span class="ident">max_transaction_size_in_bytes</span>: <span class="ident">u64</span>,
+    <span class="kw">pub</span> <span class="ident">max_transaction_size_in_bytes</span>: <span class="ident">GasCarrier</span>,
+
+    <span class="kw">pub</span> <span class="ident">gas_unit_scaling_factor</span>: <span class="ident">GasCarrier</span>,
+    <span class="kw">pub</span> <span class="ident">default_account_size</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">GasConstants</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">global_memory_per_byte_cost</span>: <span class="ident">GasUnits</span>(<span class="number">8</span>),
-            <span class="ident">global_memory_per_byte_write_cost</span>: <span class="ident">GasUnits</span>(<span class="number">8</span>),
+            <span class="ident">global_memory_per_byte_cost</span>: <span class="ident">GasUnits</span>(<span class="number">2</span>),
+            <span class="ident">global_memory_per_byte_write_cost</span>: <span class="ident">GasUnits</span>(<span class="number">5</span>),
             <span class="ident">min_transaction_gas_units</span>: <span class="ident">GasUnits</span>(<span class="number">600</span>),
-            <span class="ident">large_transaction_cutoff</span>: <span class="ident">AbstractMemorySize</span>(<span class="number">600</span>),
+            <span class="ident">large_transaction_cutoff</span>: <span class="ident">LARGE_TRANSACTION_CUTOFF</span>,
             <span class="ident">instrinsic_gas_per_byte</span>: <span class="ident">GasUnits</span>(<span class="number">8</span>),
-            <span class="ident">maximum_number_of_gas_units</span>: <span class="ident">GasUnits</span>(<span class="number">2_000_000</span>),
+            <span class="ident">maximum_number_of_gas_units</span>: <span class="ident">GasUnits</span>(<span class="number">4_000_000</span>),
             <span class="ident">min_price_per_gas_unit</span>: <span class="ident">GasPrice</span>(<span class="number">0</span>),
             <span class="ident">max_price_per_gas_unit</span>: <span class="ident">GasPrice</span>(<span class="number">10_000</span>),
             <span class="ident">max_transaction_size_in_bytes</span>: <span class="number">4096</span>,
+            <span class="ident">gas_unit_scaling_factor</span>: <span class="number">1000</span>,
+            <span class="ident">default_account_size</span>: <span class="ident">DEFAULT_ACCOUNT_SIZE</span>,
         }
     }
 }
@@ -491,7 +501,7 @@
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">native_index</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">GasCost</span> {
-        <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">native_index</span> <span class="kw">as</span> <span class="ident">u8</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">native_index</span> <span class="op">&lt;</span><span class="op">=</span> (<span class="self">self</span>.<span class="ident">native_table</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u8</span>));
+        <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">native_index</span> <span class="op">&lt;</span> (<span class="self">self</span>.<span class="ident">native_table</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u8</span>));
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">native_table</span>[<span class="ident">native_index</span> <span class="kw">as</span> <span class="ident">usize</span>]
     }
 }
