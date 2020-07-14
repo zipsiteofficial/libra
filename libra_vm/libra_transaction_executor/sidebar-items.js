@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["TransactionBlock","Transactions divided by transaction flow. Transaction flows are different across different types of transactions."]],"fn":[["chunk_block_transactions",""]],"struct":[["LibraVM",""]]});
+initSidebarItems({"struct":[["LibraVM",""]]});
