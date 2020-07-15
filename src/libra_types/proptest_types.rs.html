@@ -1011,6 +1011,15 @@
 <span id="1011">1011</span>
 <span id="1012">1012</span>
 <span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1034,7 +1043,7 @@
     <span class="ident">transaction</span>::{
         <span class="ident">ChangeSet</span>, <span class="ident">Module</span>, <span class="ident">RawTransaction</span>, <span class="ident">Script</span>, <span class="ident">SignatureCheckedTransaction</span>, <span class="ident">SignedTransaction</span>,
         <span class="ident">Transaction</span>, <span class="ident">TransactionArgument</span>, <span class="ident">TransactionListWithProof</span>, <span class="ident">TransactionPayload</span>,
-        <span class="ident">TransactionStatus</span>, <span class="ident">TransactionToCommit</span>, <span class="ident">Version</span>,
+        <span class="ident">TransactionStatus</span>, <span class="ident">TransactionToCommit</span>, <span class="ident">Version</span>, <span class="ident">WriteSetPayload</span>,
     },
     <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
@@ -1322,10 +1331,16 @@
             <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">expiration_time_secs</span>),
             <span class="ident">chain_id</span>,
         ),
-        <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">write_set</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">write_set</span>)) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="comment">// It&#39;s a bit unfortunate that max_gas_amount etc is generated but</span>
             <span class="comment">// not used, but it isn&#39;t a huge deal.</span>
             <span class="ident">RawTransaction</span>::<span class="ident">new_change_set</span>(<span class="ident">sender</span>, <span class="ident">sequence_number</span>, <span class="ident">write_set</span>, <span class="ident">chain_id</span>)
+        }
+        <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Script</span> {
+            <span class="ident">execute_as</span>: <span class="ident">signer</span>,
+            <span class="ident">script</span>,
+        }) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">RawTransaction</span>::<span class="ident">new_writeset_script</span>(<span class="ident">sender</span>, <span class="ident">sequence_number</span>, <span class="ident">script</span>, <span class="ident">signer</span>, <span class="ident">chain_id</span>)
         }
     }
 }
@@ -1485,13 +1500,16 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_set_strategy</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">WriteSet</span><span class="op">&gt;</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">ws</span><span class="op">|</span> <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">ChangeSet</span>::<span class="ident">new</span>(<span class="ident">ws</span>, <span class="macro">vec</span><span class="macro">!</span>[])))
+        <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">WriteSet</span><span class="op">&gt;</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">ws</span><span class="op">|</span> {
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">ChangeSet</span>::<span class="ident">new</span>(<span class="ident">ws</span>, <span class="macro">vec</span><span class="macro">!</span>[])))
+        })
     }
 
     <span class="doccomment">/// Similar to `write_set_strategy` except generates a valid write set for the genesis block.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">genesis_strategy</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="ident">WriteSet</span>::<span class="ident">genesis_strategy</span>()
-            .<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">ws</span><span class="op">|</span> <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">ChangeSet</span>::<span class="ident">new</span>(<span class="ident">ws</span>, <span class="macro">vec</span><span class="macro">!</span>[])))
+        <span class="ident">WriteSet</span>::<span class="ident">genesis_strategy</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">ws</span><span class="op">|</span> {
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">ChangeSet</span>::<span class="ident">new</span>(<span class="ident">ws</span>, <span class="macro">vec</span><span class="macro">!</span>[])))
+        })
     }
 }
 

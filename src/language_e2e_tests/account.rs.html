@@ -1021,6 +1021,16 @@
 <span id="1021">1021</span>
 <span id="1022">1022</span>
 <span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1041,7 +1051,7 @@
     <span class="ident">event</span>::<span class="ident">EventHandle</span>,
     <span class="ident">transaction</span>::{
         <span class="ident">authenticator</span>::<span class="ident">AuthenticationKey</span>, <span class="ident">ChangeSet</span>, <span class="ident">Module</span>, <span class="ident">RawTransaction</span>, <span class="ident">Script</span>,
-        <span class="ident">SignedTransaction</span>, <span class="ident">TransactionArgument</span>, <span class="ident">TransactionPayload</span>,
+        <span class="ident">SignedTransaction</span>, <span class="ident">TransactionArgument</span>, <span class="ident">TransactionPayload</span>, <span class="ident">WriteSetPayload</span>,
     },
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
 };
@@ -1233,9 +1243,19 @@
         <span class="ident">gas_currency_code</span>: <span class="ident">String</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RawTransaction</span> {
         <span class="kw">match</span> <span class="ident">payload</span> {
-            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">writeset</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">writeset</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">RawTransaction</span>::<span class="ident">new_change_set</span>(<span class="ident">address</span>, <span class="ident">sequence_number</span>, <span class="ident">writeset</span>, <span class="ident">ChainId</span>::<span class="ident">test</span>())
             }
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Script</span> {
+                <span class="ident">execute_as</span>: <span class="ident">signer</span>,
+                <span class="ident">script</span>,
+            }) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RawTransaction</span>::<span class="ident">new_writeset_script</span>(
+                <span class="ident">address</span>,
+                <span class="ident">sequence_number</span>,
+                <span class="ident">script</span>,
+                <span class="ident">signer</span>,
+                <span class="ident">ChainId</span>::<span class="ident">test</span>(),
+            ),
             <span class="ident">TransactionPayload</span>::<span class="ident">Module</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RawTransaction</span>::<span class="ident">new_module</span>(
                 <span class="ident">address</span>,
                 <span class="ident">sequence_number</span>,
@@ -1454,7 +1474,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_set</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">w</span>: <span class="ident">ChangeSet</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">program</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">w</span>));
+        <span class="self">self</span>.<span class="ident">program</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">w</span>)));
         <span class="self">self</span>
     }
 

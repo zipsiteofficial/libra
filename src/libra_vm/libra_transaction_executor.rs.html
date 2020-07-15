@@ -631,6 +631,29 @@
 <span id="631">631</span>
 <span id="632">632</span>
 <span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -644,7 +667,7 @@
     },
     <span class="ident">system_module_names</span>::<span class="kw-2">*</span>,
     <span class="ident">transaction_metadata</span>::<span class="ident">TransactionMetadata</span>,
-    <span class="ident">VMExecutor</span>,
+    <span class="ident">txn_effects_to_writeset_and_events</span>, <span class="ident">VMExecutor</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_state_view</span>::<span class="ident">StateView</span>;
@@ -654,7 +677,7 @@
     <span class="ident">block_metadata</span>::<span class="ident">BlockMetadata</span>,
     <span class="ident">transaction</span>::{
         <span class="ident">ChangeSet</span>, <span class="ident">Module</span>, <span class="ident">Script</span>, <span class="ident">SignatureCheckedTransaction</span>, <span class="ident">Transaction</span>, <span class="ident">TransactionArgument</span>,
-        <span class="ident">TransactionOutput</span>, <span class="ident">TransactionPayload</span>, <span class="ident">TransactionStatus</span>,
+        <span class="ident">TransactionOutput</span>, <span class="ident">TransactionPayload</span>, <span class="ident">TransactionStatus</span>, <span class="ident">WriteSetPayload</span>,
     },
     <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
     <span class="ident">write_set</span>::{<span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
@@ -881,9 +904,7 @@
                 <span class="ident">m</span>,
                 <span class="ident">account_currency_symbol</span>.<span class="ident">as_ident_str</span>(),
             ),
-            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">return</span> <span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>))
-            }
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>)),
         };
 
         <span class="kw">let</span> <span class="ident">gas_usage</span> <span class="op">=</span> <span class="ident">txn_data</span>
@@ -992,15 +1013,6 @@
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">txn</span>: <span class="ident">SignatureCheckedTransaction</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">change_set</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">change_set</span>) <span class="op">=</span> <span class="ident">txn</span>.<span class="ident">payload</span>() {
-            <span class="ident">change_set</span>
-        } <span class="kw">else</span> {
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] UNREACHABLE&quot;</span>);
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
-                <span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>,
-            )));
-        };
-
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
@@ -1026,9 +1038,43 @@
             )
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
+        <span class="kw">let</span> <span class="ident">change_set</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn</span>.<span class="ident">payload</span>() {
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Direct</span>(<span class="ident">change_set</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">change_set</span>.<span class="ident">clone</span>(),
+            <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>::<span class="ident">Script</span> {
+                <span class="ident">script</span>,
+                <span class="ident">execute_as</span>: <span class="ident">signer</span>,
+            }) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp_session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">effect</span>) <span class="op">=</span> <span class="ident">tmp_session</span>
+                    .<span class="ident">execute_script</span>(
+                        <span class="ident">script</span>.<span class="ident">code</span>().<span class="ident">to_vec</span>(),
+                        <span class="ident">script</span>.<span class="ident">ty_args</span>().<span class="ident">to_vec</span>(),
+                        <span class="ident">convert_txn_args</span>(<span class="ident">script</span>.<span class="ident">args</span>()),
+                        <span class="kw-2">*</span><span class="ident">signer</span>,
+                        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                    )
+                    .<span class="ident">and_then</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">tmp_session</span>.<span class="ident">finish</span>())
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())
+                {
+                    <span class="kw">let</span> (<span class="ident">cs</span>, <span class="ident">events</span>) <span class="op">=</span> <span class="ident">txn_effects_to_writeset_and_events</span>(<span class="ident">effect</span>)<span class="question-mark">?</span>;
+                    <span class="ident">ChangeSet</span>::<span class="ident">new</span>(<span class="ident">cs</span>, <span class="ident">events</span>)
+                } <span class="kw">else</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
+                        <span class="ident">StatusCode</span>::<span class="ident">INVALID_WRITE_SET</span>,
+                    )));
+                }
+            }
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] UNREACHABLE&quot;</span>);
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
+                    <span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>,
+                )));
+            }
+        };
+
         <span class="comment">// Emit the reconfiguration event</span>
         <span class="self">self</span>.<span class="number">0</span>
-            .<span class="ident">run_writeset_epilogue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="ident">change_set</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>)<span class="question-mark">?</span>;
+            .<span class="ident">run_writeset_epilogue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">change_set</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>)<span class="question-mark">?</span>;
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">change_set</span>.<span class="ident">write_set</span>()) {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_output</span>(<span class="ident">e</span>));
