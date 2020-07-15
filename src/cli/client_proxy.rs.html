@@ -1826,6 +1826,17 @@
 <span id="1826">1826</span>
 <span id="1827">1827</span>
 <span id="1828">1828</span>
+<span id="1829">1829</span>
+<span id="1830">1830</span>
+<span id="1831">1831</span>
+<span id="1832">1832</span>
+<span id="1833">1833</span>
+<span id="1834">1834</span>
+<span id="1835">1835</span>
+<span id="1836">1836</span>
+<span id="1837">1837</span>
+<span id="1838">1838</span>
+<span id="1839">1839</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1860,6 +1871,7 @@
         <span class="ident">type_tag_for_currency_code</span>, <span class="ident">ACCOUNT_RECEIVED_EVENT_PATH</span>, <span class="ident">ACCOUNT_SENT_EVENT_PATH</span>, <span class="ident">LBR_NAME</span>,
     },
     <span class="ident">account_state</span>::<span class="ident">AccountState</span>,
+    <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
     <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
     <span class="ident">on_chain_config</span>::<span class="ident">VMPublishingOption</span>,
     <span class="ident">transaction</span>::{
@@ -1931,6 +1943,8 @@
 
 <span class="doccomment">/// Proxy handling CLI commands/inputs.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClientProxy</span> {
+    <span class="doccomment">/// chain ID of the Libra network this client is interacting with</span>
+    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="doccomment">/// client for admission control interface.</span>
     <span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">LibraClient</span>,
     <span class="doccomment">/// Created accounts.</span>
@@ -1955,6 +1969,7 @@
 <span class="kw">impl</span> <span class="ident">ClientProxy</span> {
     <span class="doccomment">/// Construct a new TestClient.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
         <span class="ident">url</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">libra_root_account_file</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">testnet_designated_dealer_account_file</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
@@ -2011,6 +2026,7 @@
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">usize</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
         <span class="prelude-val">Ok</span>(<span class="ident">ClientProxy</span> {
+            <span class="ident">chain_id</span>,
             <span class="ident">client</span>,
             <span class="ident">accounts</span>,
             <span class="ident">address_to_ref_id</span>,
@@ -2677,6 +2693,7 @@
             <span class="ident">gas_unit_price</span>.<span class="ident">unwrap_or</span>(<span class="ident">GAS_UNIT_PRICE</span>),
             <span class="ident">gas_currency_code</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>()),
             <span class="ident">TX_EXPIRATION</span>,
+            <span class="self">self</span>.<span class="ident">chain_id</span>,
         ))
     }
 
@@ -3427,6 +3444,7 @@
             <span class="ident">gas_unit_price</span>.<span class="ident">unwrap_or</span>(<span class="ident">GAS_UNIT_PRICE</span>),
             <span class="ident">gas_currency_code</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>()),
             <span class="ident">TX_EXPIRATION</span>,
+            <span class="self">self</span>.<span class="ident">chain_id</span>,
         )
     }
 
@@ -3494,7 +3512,10 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">client_proxy</span>::{<span class="ident">parse_bool</span>, <span class="ident">AddressAndIndex</span>, <span class="ident">ClientProxy</span>};
     <span class="kw">use</span> <span class="ident">libra_temppath</span>::<span class="ident">TempPath</span>;
-    <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">ledger_info</span>::<span class="ident">LedgerInfo</span>, <span class="ident">on_chain_config</span>::<span class="ident">ValidatorSet</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
+    <span class="kw">use</span> <span class="ident">libra_types</span>::{
+        <span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfo</span>, <span class="ident">on_chain_config</span>::<span class="ident">ValidatorSet</span>,
+        <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>,
+    };
     <span class="kw">use</span> <span class="ident">libra_wallet</span>::<span class="ident">io_utils</span>;
     <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
@@ -3510,6 +3531,7 @@
         <span class="comment">// Note: `client_proxy` won&#39;t actually connect to URL - it will be used only to</span>
         <span class="comment">// generate random accounts</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client_proxy</span> <span class="op">=</span> <span class="ident">ClientProxy</span>::<span class="ident">new</span>(
+            <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             <span class="string">&quot;http://localhost:8080&quot;</span>,
             <span class="kw-2">&amp;</span><span class="string">&quot;&quot;</span>,
             <span class="kw-2">&amp;</span><span class="string">&quot;&quot;</span>,

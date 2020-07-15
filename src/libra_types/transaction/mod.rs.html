@@ -951,6 +951,26 @@
 <span id="951">951</span>
 <span id="952">952</span>
 <span id="953">953</span>
+<span id="954">954</span>
+<span id="955">955</span>
+<span id="956">956</span>
+<span id="957">957</span>
+<span id="958">958</span>
+<span id="959">959</span>
+<span id="960">960</span>
+<span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
+<span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -960,6 +980,7 @@
     <span class="ident">account_config</span>::<span class="ident">LBR_NAME</span>,
     <span class="ident">account_state_blob</span>::<span class="ident">AccountStateBlob</span>,
     <span class="ident">block_metadata</span>::<span class="ident">BlockMetadata</span>,
+    <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>,
     <span class="ident">ledger_info</span>::<span class="ident">LedgerInfo</span>,
     <span class="ident">proof</span>::{<span class="ident">accumulator</span>::<span class="ident">InMemoryAccumulator</span>, <span class="ident">TransactionInfoWithProof</span>, <span class="ident">TransactionListProof</span>},
@@ -1034,6 +1055,9 @@
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;serialize_duration&quot;</span>)]</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;deserialize_duration&quot;</span>)]</span>
     <span class="ident">expiration_time</span>: <span class="ident">Duration</span>,
+
+    <span class="comment">// chain ID of the Libra network this transaction is intended for</span>
+    <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
 }
 
 <span class="comment">// TODO(#1307)</span>
@@ -1080,6 +1104,7 @@
         <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
         <span class="ident">gas_currency_code</span>: <span class="ident">String</span>,
         <span class="ident">expiration_time</span>: <span class="ident">Duration</span>,
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RawTransaction</span> {
             <span class="ident">sender</span>,
@@ -1089,6 +1114,7 @@
             <span class="ident">gas_unit_price</span>,
             <span class="ident">gas_currency_code</span>,
             <span class="ident">expiration_time</span>,
+            <span class="ident">chain_id</span>,
         }
     }
 
@@ -1103,6 +1129,7 @@
         <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
         <span class="ident">gas_currency_code</span>: <span class="ident">String</span>,
         <span class="ident">expiration_time</span>: <span class="ident">Duration</span>,
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RawTransaction</span> {
             <span class="ident">sender</span>,
@@ -1112,6 +1139,7 @@
             <span class="ident">gas_unit_price</span>,
             <span class="ident">gas_currency_code</span>,
             <span class="ident">expiration_time</span>,
+            <span class="ident">chain_id</span>,
         }
     }
 
@@ -1127,6 +1155,7 @@
         <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
         <span class="ident">gas_currency_code</span>: <span class="ident">String</span>,
         <span class="ident">expiration_time</span>: <span class="ident">Duration</span>,
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RawTransaction</span> {
             <span class="ident">sender</span>,
@@ -1136,6 +1165,7 @@
             <span class="ident">gas_unit_price</span>,
             <span class="ident">gas_currency_code</span>,
             <span class="ident">expiration_time</span>,
+            <span class="ident">chain_id</span>,
         }
     }
 
@@ -1143,6 +1173,7 @@
         <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
         <span class="ident">write_set</span>: <span class="ident">WriteSet</span>,
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RawTransaction</span> {
             <span class="ident">sender</span>,
@@ -1154,6 +1185,7 @@
             <span class="ident">gas_currency_code</span>: <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>(),
             <span class="comment">// Write-set transactions are special and important and shouldn&#39;t expire.</span>
             <span class="ident">expiration_time</span>: <span class="ident">Duration</span>::<span class="ident">new</span>(<span class="ident">u64</span>::<span class="ident">max_value</span>(), <span class="number">0</span>),
+            <span class="ident">chain_id</span>,
         }
     }
 
@@ -1161,6 +1193,7 @@
         <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
         <span class="ident">change_set</span>: <span class="ident">ChangeSet</span>,
+        <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="ident">RawTransaction</span> {
             <span class="ident">sender</span>,
@@ -1172,6 +1205,7 @@
             <span class="ident">gas_currency_code</span>: <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>(),
             <span class="comment">// Write-set transactions are special and important and shouldn&#39;t expire.</span>
             <span class="ident">expiration_time</span>: <span class="ident">Duration</span>::<span class="ident">new</span>(<span class="ident">u64</span>::<span class="ident">max_value</span>(), <span class="number">0</span>),
+            <span class="ident">chain_id</span>,
         }
     }
 
@@ -1232,6 +1266,7 @@
              \tgas_unit_price: {}, \n\
              \tgas_currency_code: {}, \n\
              \texpiration_time: {:#?}, \n\
+             \tchain_id: {},
              }}&quot;</span>,
             <span class="self">self</span>.<span class="ident">sender</span>,
             <span class="self">self</span>.<span class="ident">sequence_number</span>,
@@ -1241,6 +1276,7 @@
             <span class="self">self</span>.<span class="ident">gas_unit_price</span>,
             <span class="self">self</span>.<span class="ident">gas_currency_code</span>,
             <span class="self">self</span>.<span class="ident">expiration_time</span>,
+            <span class="self">self</span>.<span class="ident">chain_id</span>,
         )
     }
     <span class="doccomment">/// Return the sender of this transaction.</span>
@@ -1353,6 +1389,10 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sequence_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">raw_txn</span>.<span class="ident">sequence_number</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainId</span> {
+        <span class="self">self</span>.<span class="ident">raw_txn</span>.<span class="ident">chain_id</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">payload</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">TransactionPayload</span> {
