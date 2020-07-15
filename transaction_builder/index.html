@@ -49,12 +49,31 @@ filled in with dummy information.</p>
 nonce for operation, see sliding_nonce.move for details.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_mint_lbr_script.html" title='transaction_builder::encode_mint_lbr_script fn'>encode_mint_lbr_script</a></td><td class='docblock-short'><p>Mint <code>amount_lbr</code> LBR from the sending account's constituent coins and deposits the
 resulting LBR into the sending account.</p>
-</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_modify_publishing_option_script.html" title='transaction_builder::encode_modify_publishing_option_script fn'>encode_modify_publishing_option_script</a></td><td class='docblock-short'></td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_peer_to_peer_with_metadata_script.html" title='transaction_builder::encode_peer_to_peer_with_metadata_script fn'>encode_peer_to_peer_with_metadata_script</a></td><td class='docblock-short'><p>Transfer <code>amount</code> coins to <code>recipient_address</code> with (optional) associated metadata
-<code>metadata</code> and (optional) <code>signature</code> on the metadata, amount, and sender address. The
-<code>metadata</code> and <code>signature</code> parameters are only required if <code>amount</code> &gt;= 1_000_000 micro
-LBR and the sender and recipient of the funds are two distinct VASPs. Fails if there
-is no account at the recipient address or if the sender's balance is lower than
-<code>amount</code>.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_modify_publishing_option_script.html" title='transaction_builder::encode_modify_publishing_option_script fn'>encode_modify_publishing_option_script</a></td><td class='docblock-short'></td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_peer_to_peer_with_metadata_script.html" title='transaction_builder::encode_peer_to_peer_with_metadata_script fn'>encode_peer_to_peer_with_metadata_script</a></td><td class='docblock-short'><p>Transfer <code>amount</code> coins of type <code>Currency</code> from <code>payer</code> to <code>payee</code> with (optional)
+associated <code>metadata</code> and an (optional) <code>metadata_signature</code> on the message <code>metadata</code>
+| <code>Signer::address_of(payer)</code> | <code>amount</code> | <code>DualAttestation::DOMAIN_SEPARATOR</code>. The
+<code>metadata</code> and <code>metadata_signature</code> parameters are only required if <code>amount</code> &gt;=
+<code>DualAttestation::get_cur_microlibra_limit</code> LBR and <code>payer</code> and <code>payee</code> are distinct
+entities (e.g., different VASPs, or a VASP and a DesignatedDealer). ## Events When
+this script executes without aborting, it emits two events: <code>SentPaymentEvent { amount, currency_code = Currency, payee, metadata }</code> on <code>payer</code>'s
+<code>LibraAccount::sent_events</code> handle, and <code>ReceivedPaymentEvent { amount, currency_code = Currency, payer, metadata }</code> on <code>payee</code>'s <code>LibraAccount::received_events</code> handle. ##
+Common Aborts These aborts can in occur in any payment. * Aborts with
+<code>LibraAccount::EINSUFFICIENT_BALANCE</code> if <code>amount</code> is greater than <code>payer</code>'s balance in
+<code>Currency</code>. * Aborts with <code>LibraAccount::ECOIN_DEPOSIT_IS_ZERO</code> if <code>amount</code> is zero. *
+Aborts with <code>LibraAccount::EPAYEE_DOES_NOT_EXIST</code> if no account exists at the address
+<code>payee</code>. * Aborts with <code>LibraAccount::EPAYEE_CANT_ACCEPT_CURRENCY_TYPE</code> if an account
+exists at <code>payee</code>, but it does not accept payments in <code>Currency</code>. ## Dual Attestation
+Aborts These aborts can occur in any payment subject to dual attestation. * Aborts
+with <code>DualAttestation::EMALFORMED_METADATA_SIGNATURE</code> if <code>metadata_signature</code>'s is not
+64 bytes. * Aborts with <code>DualAttestation:EINVALID_METADATA_SIGNATURE</code> if
+<code>metadata_signature</code> does not verify on the message <code>metadata</code> | <code>payer</code> | <code>value</code> |
+<code>DOMAIN_SEPARATOR</code> using the <code>compliance_public_key</code> published in the <code>payee</code>'s
+<code>DualAttestation::Credential</code> resource. ## Other Aborts These aborts should only
+happen when <code>payer</code> or <code>payee</code> have account limit restrictions or have been frozen by
+Libra administrators. * Aborts with <code>LibraAccount::EWITHDRAWAL_EXCEEDS_LIMITS</code> if
+<code>payer</code> has exceeded their daily withdrawal limits. * Aborts with
+<code>LibraAccount::EDEPOSIT_EXCEEDS_LIMITS</code> if <code>payee</code> has exceeded their daily deposit
+limits. * Aborts with <code>LibraAccount::EACCOUNT_FROZEN</code> if <code>payer</code>'s account is frozen.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_preburn_script.html" title='transaction_builder::encode_preburn_script fn'>encode_preburn_script</a></td><td class='docblock-short'><p>Preburn <code>amount</code> <code>Token</code>s from <code>account</code>. This will only succeed if <code>account</code> already
 has a published <code>Preburn&lt;Token&gt;</code> resource.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_publish_account_limit_definition_script.html" title='transaction_builder::encode_publish_account_limit_definition_script fn'>encode_publish_account_limit_definition_script</a></td><td class='docblock-short'><p>Publishes an unrestricted <code>LimitsDefintion&lt;CoinType&gt;</code> under <code>account</code>. Will abort if a

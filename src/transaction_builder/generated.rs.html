@@ -940,6 +940,27 @@
 <span id="940">940</span>
 <span id="941">941</span>
 <span id="942">942</span>
+<span id="943">943</span>
+<span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
+<span id="948">948</span>
+<span id="949">949</span>
+<span id="950">950</span>
+<span id="951">951</span>
+<span id="952">952</span>
+<span id="953">953</span>
+<span id="954">954</span>
+<span id="955">955</span>
+<span id="956">956</span>
+<span id="957">957</span>
+<span id="958">958</span>
+<span id="959">959</span>
+<span id="960">960</span>
+<span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1331,14 +1352,35 @@
     )
 }
 
-<span class="doccomment">/// Transfer `amount` coins to `recipient_address` with (optional) associated metadata</span>
-<span class="doccomment">/// `metadata` and (optional) `signature` on the metadata, amount, and sender address. The</span>
-<span class="doccomment">/// `metadata` and `signature` parameters are only required if `amount` &gt;= 1_000_000 micro</span>
-<span class="doccomment">/// LBR and the sender and recipient of the funds are two distinct VASPs. Fails if there</span>
-<span class="doccomment">/// is no account at the recipient address or if the sender&#39;s balance is lower than</span>
-<span class="doccomment">/// `amount`.</span>
+<span class="doccomment">/// Transfer `amount` coins of type `Currency` from `payer` to `payee` with (optional)</span>
+<span class="doccomment">/// associated `metadata` and an (optional) `metadata_signature` on the message `metadata`</span>
+<span class="doccomment">/// | `Signer::address_of(payer)` | `amount` | `DualAttestation::DOMAIN_SEPARATOR`. The</span>
+<span class="doccomment">/// `metadata` and `metadata_signature` parameters are only required if `amount` &gt;=</span>
+<span class="doccomment">/// `DualAttestation::get_cur_microlibra_limit` LBR and `payer` and `payee` are distinct</span>
+<span class="doccomment">/// entities (e.g., different VASPs, or a VASP and a DesignatedDealer). ## Events When</span>
+<span class="doccomment">/// this script executes without aborting, it emits two events: `SentPaymentEvent {</span>
+<span class="doccomment">/// amount, currency_code = Currency, payee, metadata }` on `payer`&#39;s</span>
+<span class="doccomment">/// `LibraAccount::sent_events` handle, and `ReceivedPaymentEvent { amount, currency_code</span>
+<span class="doccomment">/// = Currency, payer, metadata }` on `payee`&#39;s `LibraAccount::received_events` handle. ##</span>
+<span class="doccomment">/// Common Aborts These aborts can in occur in any payment. * Aborts with</span>
+<span class="doccomment">/// `LibraAccount::EINSUFFICIENT_BALANCE` if `amount` is greater than `payer`&#39;s balance in</span>
+<span class="doccomment">/// `Currency`. * Aborts with `LibraAccount::ECOIN_DEPOSIT_IS_ZERO` if `amount` is zero. *</span>
+<span class="doccomment">/// Aborts with `LibraAccount::EPAYEE_DOES_NOT_EXIST` if no account exists at the address</span>
+<span class="doccomment">/// `payee`. * Aborts with `LibraAccount::EPAYEE_CANT_ACCEPT_CURRENCY_TYPE` if an account</span>
+<span class="doccomment">/// exists at `payee`, but it does not accept payments in `Currency`. ## Dual Attestation</span>
+<span class="doccomment">/// Aborts These aborts can occur in any payment subject to dual attestation. * Aborts</span>
+<span class="doccomment">/// with `DualAttestation::EMALFORMED_METADATA_SIGNATURE` if `metadata_signature`&#39;s is not</span>
+<span class="doccomment">/// 64 bytes. * Aborts with `DualAttestation:EINVALID_METADATA_SIGNATURE` if</span>
+<span class="doccomment">/// `metadata_signature` does not verify on the message `metadata` | `payer` | `value` |</span>
+<span class="doccomment">/// `DOMAIN_SEPARATOR` using the `compliance_public_key` published in the `payee`&#39;s</span>
+<span class="doccomment">/// `DualAttestation::Credential` resource. ## Other Aborts These aborts should only</span>
+<span class="doccomment">/// happen when `payer` or `payee` have account limit restrictions or have been frozen by</span>
+<span class="doccomment">/// Libra administrators. * Aborts with `LibraAccount::EWITHDRAWAL_EXCEEDS_LIMITS` if</span>
+<span class="doccomment">/// `payer` has exceeded their daily withdrawal limits. * Aborts with</span>
+<span class="doccomment">/// `LibraAccount::EDEPOSIT_EXCEEDS_LIMITS` if `payee` has exceeded their daily deposit</span>
+<span class="doccomment">/// limits. * Aborts with `LibraAccount::EACCOUNT_FROZEN` if `payer`&#39;s account is frozen.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_peer_to_peer_with_metadata_script</span>(
-    <span class="ident">token</span>: <span class="ident">TypeTag</span>,
+    <span class="ident">currency</span>: <span class="ident">TypeTag</span>,
     <span class="ident">payee</span>: <span class="ident">AccountAddress</span>,
     <span class="ident">amount</span>: <span class="ident">u64</span>,
     <span class="ident">metadata</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
@@ -1358,7 +1400,7 @@
             <span class="number">4</span>, <span class="number">1</span>, <span class="number">12</span>, <span class="number">11</span>, <span class="number">0</span>, <span class="number">17</span>, <span class="number">0</span>, <span class="number">12</span>, <span class="number">5</span>, <span class="number">14</span>, <span class="number">5</span>, <span class="number">10</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">11</span>, <span class="number">3</span>, <span class="number">11</span>, <span class="number">4</span>, <span class="number">56</span>, <span class="number">0</span>, <span class="number">11</span>, <span class="number">5</span>, <span class="number">17</span>, <span class="number">2</span>,
             <span class="number">2</span>,
         ],
-        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">token</span>],
+        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">currency</span>],
         <span class="macro">vec</span><span class="macro">!</span>[
             <span class="ident">TransactionArgument</span>::<span class="ident">Address</span>(<span class="ident">payee</span>),
             <span class="ident">TransactionArgument</span>::<span class="ident">U64</span>(<span class="ident">amount</span>),
