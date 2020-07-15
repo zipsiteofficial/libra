@@ -4274,6 +4274,7 @@
 <span id="4274">4274</span>
 <span id="4275">4275</span>
 <span id="4276">4276</span>
+<span id="4277">4277</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -6288,9 +6289,9 @@
                 },
                 <span class="ident">rhs</span>,
             ) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">et</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">exp_translator_for_schema</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">context_type_params</span>, <span class="ident">vars</span>);
-                <span class="kw">let</span> <span class="ident">lhs_exp</span> <span class="op">=</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">lhs</span>, <span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>);
-                <span class="ident">et</span>.<span class="ident">finalize_types</span>();
+                <span class="kw">let</span> <span class="ident">lhs_exp</span> <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">exp_translator_for_schema</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">context_type_params</span>, <span class="ident">vars</span>)
+                    .<span class="ident">translate_exp</span>(<span class="ident">lhs</span>, <span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>);
                 <span class="kw">let</span> <span class="ident">path_cond</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">extend_path_condition</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">path_cond</span>, <span class="ident">lhs_exp</span>);
                 <span class="self">self</span>.<span class="ident">def_ana_schema_exp_oper</span>(
                     <span class="ident">context_type_params</span>,
@@ -6326,9 +6327,9 @@
                 );
             }
             <span class="ident">EA</span>::<span class="ident">Exp_</span>::<span class="ident">IfElse</span>(<span class="ident">c</span>, <span class="ident">t</span>, <span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">et</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">exp_translator_for_schema</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">context_type_params</span>, <span class="ident">vars</span>);
-                <span class="kw">let</span> <span class="ident">c_exp</span> <span class="op">=</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">c</span>, <span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>);
-                <span class="ident">et</span>.<span class="ident">finalize_types</span>();
+                <span class="kw">let</span> <span class="ident">c_exp</span> <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">exp_translator_for_schema</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">context_type_params</span>, <span class="ident">vars</span>)
+                    .<span class="ident">translate_exp</span>(<span class="ident">c</span>, <span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>);
                 <span class="kw">let</span> <span class="ident">t_path_cond</span> <span class="op">=</span>
                     <span class="self">self</span>.<span class="ident">extend_path_condition</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">path_cond</span>.<span class="ident">clone</span>(), <span class="ident">c_exp</span>.<span class="ident">clone</span>());
                 <span class="self">self</span>.<span class="ident">def_ana_schema_exp_oper</span>(
@@ -7217,7 +7218,7 @@
                     .<span class="ident">iter</span>()
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">finalize_type</span>(<span class="ident">node_id</span>, <span class="ident">ty</span>))
                     .<span class="ident">collect_vec</span>();
-                <span class="self">self</span>.<span class="ident">set_instantiation</span>(<span class="ident">node_id</span>, <span class="ident">inst</span>);
+                <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">instantiation_map</span>.<span class="ident">insert</span>(<span class="ident">node_id</span>, <span class="ident">inst</span>);
             }
         }
     }
@@ -8528,7 +8529,9 @@
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ty</span><span class="op">|</span> <span class="ident">ty</span>.<span class="ident">instantiate</span>(<span class="self">self</span>.<span class="ident">type_args</span>))
                 .<span class="ident">collect_vec</span>()
         });
-        <span class="kw">let</span> <span class="ident">new_node_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">new_node_id_with_type_loc</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>, <span class="kw-2">&amp;</span><span class="ident">loc</span>);
+        <span class="kw">let</span> <span class="ident">new_node_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">new_node_id</span>();
+        <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">loc_map</span>.<span class="ident">insert</span>(<span class="ident">new_node_id</span>, <span class="ident">loc</span>);
+        <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">type_map</span>.<span class="ident">insert</span>(<span class="ident">new_node_id</span>, <span class="ident">ty</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">instantiation</span>) <span class="op">=</span> <span class="ident">instantiation_opt</span> {
             <span class="self">self</span>.<span class="ident">parent</span>
                 .<span class="ident">instantiation_map</span>
@@ -8542,7 +8545,6 @@
 <span class="kw">fn</span> <span class="ident">extract_schema_access</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(<span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EA</span>::<span class="ident">Exp</span>, <span class="ident">res</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EA</span>::<span class="ident">ModuleAccess</span><span class="op">&gt;</span>) {
     <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">exp</span>.<span class="ident">value</span> {
         <span class="ident">EA</span>::<span class="ident">Exp_</span>::<span class="ident">Name</span>(<span class="ident">maccess</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">maccess</span>),
-        <span class="ident">EA</span>::<span class="ident">Exp_</span>::<span class="ident">Pack</span>(<span class="ident">maccess</span>, ..) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">maccess</span>),
         <span class="ident">EA</span>::<span class="ident">Exp_</span>::<span class="ident">BinopExp</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">rhs</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">extract_schema_access</span>(<span class="ident">rhs</span>, <span class="ident">res</span>),
         <span class="ident">EA</span>::<span class="ident">Exp_</span>::<span class="ident">IfElse</span>(<span class="kw">_</span>, <span class="ident">t</span>, <span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="ident">extract_schema_access</span>(<span class="ident">t</span>, <span class="ident">res</span>);
