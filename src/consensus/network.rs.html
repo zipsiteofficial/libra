@@ -286,6 +286,13 @@
 <span id="286">286</span>
 <span id="287">287</span>
 <span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -298,7 +305,7 @@
 <span class="kw">use</span> <span class="ident">bytes</span>::<span class="ident">Bytes</span>;
 <span class="kw">use</span> <span class="ident">channel</span>::{<span class="self">self</span>, <span class="ident">libra_channel</span>, <span class="ident">message_queues</span>::<span class="ident">QueueStyle</span>};
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{
-    <span class="ident">block_retrieval</span>::{<span class="ident">BlockRetrievalRequest</span>, <span class="ident">BlockRetrievalResponse</span>},
+    <span class="ident">block_retrieval</span>::{<span class="ident">BlockRetrievalRequest</span>, <span class="ident">BlockRetrievalResponse</span>, <span class="ident">MAX_BLOCKS_PER_REQUEST</span>},
     <span class="ident">common</span>::<span class="ident">Author</span>,
     <span class="ident">proposal_msg</span>::<span class="ident">ProposalMsg</span>,
     <span class="ident">sync_info</span>::<span class="ident">SyncInfo</span>,
@@ -552,6 +559,13 @@
                 <span class="ident">Event</span>::<span class="ident">RpcRequest</span>((<span class="ident">peer_id</span>, <span class="ident">msg</span>, <span class="ident">callback</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">msg</span> {
                     <span class="ident">ConsensusMsg</span>::<span class="ident">BlockRetrievalRequest</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Received block retrieval request {}&quot;</span>, <span class="ident">request</span>);
+                        <span class="kw">if</span> <span class="ident">request</span>.<span class="ident">num_blocks</span>() <span class="op">&gt;</span> <span class="ident">MAX_BLOCKS_PER_REQUEST</span> {
+                            <span class="macro">warn</span><span class="macro">!</span>(
+                                <span class="string">&quot;Ignore block retrieval with too many blocks: {}&quot;</span>,
+                                <span class="ident">request</span>.<span class="ident">num_blocks</span>()
+                            );
+                            <span class="kw">continue</span>;
+                        }
                         <span class="kw">let</span> <span class="ident">req_with_callback</span> <span class="op">=</span> <span class="ident">IncomingBlockRetrievalRequest</span> {
                             <span class="ident">req</span>: <span class="kw-2">*</span><span class="ident">request</span>,
                             <span class="ident">response_sender</span>: <span class="ident">callback</span>,
