@@ -473,7 +473,6 @@
 <span id="473">473</span>
 <span id="474">474</span>
 <span id="475">475</span>
-<span id="476">476</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -610,10 +609,6 @@
         <span class="kw">let</span> <span class="ident">two_chain_round</span> <span class="op">=</span> <span class="ident">quorum_cert</span>.<span class="ident">parent_block</span>().<span class="ident">round</span>();
 
         <span class="kw">if</span> <span class="ident">one_chain_round</span> <span class="op">&lt;</span> <span class="ident">preferred_round</span> {
-            <span class="macro">debug</span><span class="macro">!</span>(
-                <span class="string">&quot;QC round does not match preferred round {} &lt; {}&quot;</span>,
-                <span class="ident">one_chain_round</span>, <span class="ident">preferred_round</span>
-            );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">IncorrectPreferredRound</span>(
                 <span class="ident">one_chain_round</span>,
                 <span class="ident">preferred_round</span>,
@@ -624,10 +619,12 @@
             <span class="ident">Ordering</span>::<span class="ident">Greater</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>
                 .<span class="ident">persistent_storage</span>
                 .<span class="ident">set_preferred_round</span>(<span class="ident">two_chain_round</span>)<span class="question-mark">?</span>,
-            <span class="ident">Ordering</span>::<span class="ident">Less</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">Ordering</span>::<span class="ident">Less</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">trace</span><span class="macro">!</span>(
                 <span class="string">&quot;2-chain round {} is lower than preferred round {} but 1-chain round {} is higher.&quot;</span>,
                 <span class="ident">two_chain_round</span>, <span class="ident">preferred_round</span>, <span class="ident">one_chain_round</span>
-            ),
+            )
+            }
             <span class="ident">Ordering</span>::<span class="ident">Equal</span> <span class="op">=</span><span class="op">&gt;</span> (),
         }
         <span class="prelude-val">Ok</span>(())
@@ -663,11 +660,6 @@
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
 
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;Vote proposal is old {} &lt;= {}&quot;</span>,
-            <span class="ident">proposed_block</span>.<span class="ident">round</span>(),
-            <span class="ident">last_voted_round</span>
-        );
         <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">IncorrectLastVotedRound</span>(
             <span class="ident">proposed_block</span>.<span class="ident">round</span>(),
             <span class="ident">last_voted_round</span>,
@@ -696,8 +688,6 @@
     }
 
     <span class="kw">fn</span> <span class="ident">guarded_initialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">proof</span>: <span class="kw-2">&amp;</span><span class="ident">EpochChangeProof</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Initializing&quot;</span>);
-
         <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">waypoint</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">last_li</span> <span class="op">=</span> <span class="ident">proof</span>
             .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">waypoint</span>)
@@ -714,23 +704,31 @@
             <span class="kw">if</span> <span class="ident">curr_key</span> <span class="op">!</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">expected_key</span>.<span class="ident">clone</span>()) {
                 <span class="kw">let</span> <span class="ident">consensus_key</span> <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">persistent_storage</span>
-                    .<span class="ident">consensus_key_for_version</span>(<span class="ident">expected_key</span>.<span class="ident">clone</span>())
+                    .<span class="ident">consensus_key_for_version</span>(<span class="ident">expected_key</span>)
                     .<span class="ident">ok</span>()
                     .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Validator key not found!&quot;</span>);
+                        <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">logging</span>::<span class="ident">safety_log</span>(
+                            <span class="ident">LogEntry</span>::<span class="ident">KeyReconciliation</span>,
+                            <span class="ident">LogEvent</span>::<span class="ident">Error</span>
+                        )
+                        .<span class="ident">data</span>(<span class="ident">LogField</span>::<span class="ident">Message</span>.<span class="ident">as_str</span>(), <span class="string">&quot;Validator key not found&quot;</span>));
+
                         <span class="self">self</span>.<span class="ident">validator_signer</span> <span class="op">=</span> <span class="prelude-val">None</span>;
                         <span class="ident">Error</span>::<span class="ident">InternalError</span>(<span class="string">&quot;Validator key not found&quot;</span>.<span class="ident">into</span>())
                     })<span class="question-mark">?</span>;
-                <span class="macro">debug</span><span class="macro">!</span>(
-                    <span class="string">&quot;Reconciled pub key for signer {} [{:#?} -&gt; {}]&quot;</span>,
-                    <span class="ident">author</span>, <span class="ident">curr_key</span>, <span class="ident">expected_key</span>
-                );
+
                 <span class="self">self</span>.<span class="ident">validator_signer</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ValidatorSigner</span>::<span class="ident">new</span>(<span class="ident">author</span>, <span class="ident">consensus_key</span>));
-            } <span class="kw">else</span> {
-                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Validator key matches the key in validator set.&quot;</span>);
             }
+
+            <span class="macro">send_struct_log</span><span class="macro">!</span>(
+                <span class="ident">logging</span>::<span class="ident">safety_log</span>(<span class="ident">LogEntry</span>::<span class="ident">KeyReconciliation</span>, <span class="ident">LogEvent</span>::<span class="ident">Success</span>)
+                    .<span class="ident">data</span>(<span class="ident">LogField</span>::<span class="ident">Message</span>.<span class="ident">as_str</span>(), <span class="string">&quot;in set&quot;</span>)
+            );
         } <span class="kw">else</span> {
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;The validator is not in set!&quot;</span>);
+            <span class="macro">send_struct_log</span><span class="macro">!</span>(
+                <span class="ident">logging</span>::<span class="ident">safety_log</span>(<span class="ident">LogEntry</span>::<span class="ident">KeyReconciliation</span>, <span class="ident">LogEvent</span>::<span class="ident">Success</span>)
+                    .<span class="ident">data</span>(<span class="ident">LogField</span>::<span class="ident">Message</span>.<span class="ident">as_str</span>(), <span class="string">&quot;not in set&quot;</span>)
+            );
             <span class="self">self</span>.<span class="ident">validator_signer</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         }
 
