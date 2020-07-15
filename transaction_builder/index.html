@@ -8,9 +8,10 @@ parent does not have an <code>AccountLimits&lt;Currency&gt;</code> resource.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_add_recovery_rotation_capability_script.html" title='transaction_builder::encode_add_recovery_rotation_capability_script fn'>encode_add_recovery_rotation_capability_script</a></td><td class='docblock-short'><p>Add the <code>KeyRotationCapability</code> for <code>to_recover_account</code> to the <code>RecoveryAddress</code>
 resource under <code>recovery_address</code>. Aborts if <code>to_recovery_account</code> and
 <code>to_recovery_address belong to different VASPs, if </code>recovery_address<code>does not have a</code>RecoveryAddress<code>resource, or if</code>to_recover_account<code>has already extracted its</code>KeyRotationCapability`.</p>
-</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_add_validator_script.html" title='transaction_builder::encode_add_validator_script fn'>encode_add_validator_script</a></td><td class='docblock-short'><p>Add <code>new_validator</code> to the pending validator set. Fails if the <code>new_validator</code> address
-is already in the validator set or does not have a <code>ValidatorConfig</code> resource stored
-at the address.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_add_validator_script.html" title='transaction_builder::encode_add_validator_script fn'>encode_add_validator_script</a></td><td class='docblock-short'><p>Add <code>new_validator</code> to the validator set. Fails if the <code>new_validator</code> address is
+already in the validator set or does not have a <code>ValidatorConfig</code> resource stored at
+the address. Emits a NewEpochEvent. TODO(valerini): rename to
+add_validator_and_reconfigure?</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_block_prologue_script.html" title='transaction_builder::encode_block_prologue_script fn'>encode_block_prologue_script</a></td><td class='docblock-short'></td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_burn_script.html" title='transaction_builder::encode_burn_script fn'>encode_burn_script</a></td><td class='docblock-short'><p>Permanently destroy the <code>Token</code>s stored in the oldest burn request under the <code>Preburn</code>
 resource. This will only succeed if <code>account</code> has a <code>MintCapability&lt;Token&gt;</code>, a
 <code>Preburn&lt;Token&gt;</code> resource exists under <code>preburn_address</code>, and there is a pending burn
@@ -65,12 +66,16 @@ this limit at the time it is published.</p>
 containing a 32-byte ed25519 public key and the rotation capability of the sender
 under the sender's address. Aborts if the sender already has a
 <code>SharedEd25519PublicKey</code> resource. Aborts if the length of <code>new_public_key</code> is not 32.</p>
-</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_reconfigure_script.html" title='transaction_builder::encode_reconfigure_script fn'>encode_reconfigure_script</a></td><td class='docblock-short'><p>Update configs of all the validators and emit reconfiguration event.</p>
-</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_remove_validator_script.html" title='transaction_builder::encode_remove_validator_script fn'>encode_remove_validator_script</a></td><td class='docblock-short'><p>Adding <code>to_remove</code> to the set of pending validator removals. Fails if the <code>to_remove</code>
-address is already in the validator set or already in the pending removals. Callable
-by Validator's operator.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_remove_validator_script.html" title='transaction_builder::encode_remove_validator_script fn'>encode_remove_validator_script</a></td><td class='docblock-short'><p>Removes a validator from the validator set. Fails if the validator_address is not in
+the validator set. Emits a NewEpochEvent. TODO(valerini): rename to
+remove_validator_and_reconfigure?</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_rotate_authentication_key_script.html" title='transaction_builder::encode_rotate_authentication_key_script fn'>encode_rotate_authentication_key_script</a></td><td class='docblock-short'><p>Rotate the sender's authentication key to <code>new_key</code>. <code>new_key</code> should be a 256 bit
-sha3 hash of an ed25519 public key.</p>
+sha3 hash of an ed25519 public key. * Aborts with
+<code>LibraAccount::EKEY_ROTATION_CAPABILITY_ALREADY_EXTRACTED</code> if the
+<code>KeyRotationCapability</code> for <code>account</code> has already been extracted. * Aborts with <code>0</code> if
+the key rotation capability held by the account doesn't match the sender's address. *
+Aborts with <code>LibraAccount::EMALFORMED_AUTHENTICATION_KEY</code> if the length of <code>new_key</code>
+!= 32.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_rotate_authentication_key_with_nonce_script.html" title='transaction_builder::encode_rotate_authentication_key_with_nonce_script fn'>encode_rotate_authentication_key_with_nonce_script</a></td><td class='docblock-short'><p>Rotate the sender's authentication key to <code>new_key</code>. <code>new_key</code> should be a 256 bit
 sha3 hash of an ed25519 public key. This script also takes <code>sliding_nonce</code>, as a
 unique nonce for this operation. See sliding_nonce.move for details.</p>
@@ -85,7 +90,11 @@ a well-formed public key</p>
 <code>account</code>'s <code>SharedEd25519PublicKey</code> to a new value derived from <code>new_public_key</code>
 Aborts if <code>account</code> does not have a <code>SharedEd25519PublicKey</code> resource. Aborts if the
 length of <code>new_public_key</code> is not 32.</p>
-</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_set_validator_config_script.html" title='transaction_builder::encode_set_validator_config_script fn'>encode_set_validator_config_script</a></td><td class='docblock-short'><p>Set validator's config.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_set_validator_config_and_reconfigure_script.html" title='transaction_builder::encode_set_validator_config_and_reconfigure_script fn'>encode_set_validator_config_and_reconfigure_script</a></td><td class='docblock-short'><p>Set validator's config and updates the config in the validator set. NewEpochEvent is
+emitted.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_set_validator_config_script.html" title='transaction_builder::encode_set_validator_config_script fn'>encode_set_validator_config_script</a></td><td class='docblock-short'><p>Set validator's config locally. Does not emit NewEpochEvent, the config is NOT changed
+in the validator set. TODO(valerini): rename to register_validator_config to avoid
+confusion with set_validator_config_and_reconfigure script.</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_set_validator_operator_script.html" title='transaction_builder::encode_set_validator_operator_script fn'>encode_set_validator_operator_script</a></td><td class='docblock-short'><p>Set validator's operator</p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_stdlib_script.html" title='transaction_builder::encode_stdlib_script fn'>encode_stdlib_script</a></td><td class='docblock-short'><p>Encode <code>stdlib_script</code> with arguments <code>args</code>.
 Note: this is not type-safe; the individual type-safe wrappers below should be used when
