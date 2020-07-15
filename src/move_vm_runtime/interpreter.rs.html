@@ -1111,6 +1111,11 @@
 <span id="1111">1111</span>
 <span id="1112">1112</span>
 <span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
+<span id="1116">1116</span>
+<span id="1117">1117</span>
+<span id="1118">1118</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1345,7 +1350,9 @@
             <span class="ident">ty_args</span>,
         )
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">function</span>.<span class="ident">module_id</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">id</span>.<span class="ident">clone</span>())),
+            <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">e</span>
+                .<span class="ident">at_code_offset</span>(<span class="ident">function</span>.<span class="ident">index</span>(), <span class="number">0</span>)
+                .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">id</span>.<span class="ident">clone</span>())),
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">err</span> <span class="op">=</span> <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>)
                     .<span class="ident">with_message</span>(<span class="string">&quot;Unexpected native function not located in a module&quot;</span>.<span class="ident">to_owned</span>());
@@ -1757,7 +1764,10 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">ExitCode</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">execute_code_impl</span>(<span class="ident">resolver</span>, <span class="ident">interpreter</span>, <span class="ident">data_store</span>, <span class="ident">cost_strategy</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="self">self</span>.<span class="ident">location</span>()))
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">e</span>.<span class="ident">at_code_offset</span>(<span class="self">self</span>.<span class="ident">function</span>.<span class="ident">index</span>(), <span class="self">self</span>.<span class="ident">pc</span>)
+                    .<span class="ident">finish</span>(<span class="self">self</span>.<span class="ident">location</span>())
+            })
     }
 
     <span class="kw">fn</span> <span class="ident">execute_code_impl</span>(

@@ -1045,7 +1045,7 @@
         <span class="ident">Transaction</span>, <span class="ident">TransactionArgument</span>, <span class="ident">TransactionListWithProof</span>, <span class="ident">TransactionPayload</span>,
         <span class="ident">TransactionStatus</span>, <span class="ident">TransactionToCommit</span>, <span class="ident">Version</span>, <span class="ident">WriteSetPayload</span>,
     },
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::{<span class="ident">KeptVMStatus</span>, <span class="ident">VMStatus</span>},
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
@@ -1771,7 +1771,7 @@
     <span class="doccomment">/// Gas used.</span>
     <span class="ident">gas_used</span>: <span class="ident">u64</span>,
     <span class="doccomment">/// Transaction status</span>
-    <span class="ident">major_status</span>: <span class="ident">StatusCode</span>,
+    <span class="ident">status</span>: <span class="ident">KeptVMStatus</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">TransactionToCommitGen</span> {
@@ -1803,7 +1803,7 @@
             <span class="ident">account_states</span>,
             <span class="ident">events</span>,
             <span class="self">self</span>.<span class="ident">gas_used</span>,
-            <span class="self">self</span>.<span class="ident">major_status</span>,
+            <span class="self">self</span>.<span class="ident">status</span>,
         )
     }
 }
@@ -1828,10 +1828,10 @@
             ),
             <span class="ident">vec</span>((<span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">Index</span><span class="op">&gt;</span>(), <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">AccountStateBlobGen</span><span class="op">&gt;</span>()), <span class="number">0</span>..<span class="op">=</span><span class="number">1</span>),
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
-            <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">StatusCode</span><span class="op">&gt;</span>(),
+            <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">KeptVMStatus</span><span class="op">&gt;</span>(),
         )
             .<span class="ident">prop_map</span>(
-                <span class="op">|</span>(<span class="ident">sender</span>, <span class="ident">event_emitters</span>, <span class="kw-2">mut</span> <span class="ident">touched_accounts</span>, <span class="ident">gas_used</span>, <span class="ident">major_status</span>)<span class="op">|</span> {
+                <span class="op">|</span>(<span class="ident">sender</span>, <span class="ident">event_emitters</span>, <span class="kw-2">mut</span> <span class="ident">touched_accounts</span>, <span class="ident">gas_used</span>, <span class="ident">status</span>)<span class="op">|</span> {
                     <span class="comment">// To reflect change of account/event sequence numbers, txn sender account and</span>
                     <span class="comment">// event emitter accounts must be updated.</span>
                     <span class="kw">let</span> (<span class="ident">sender_index</span>, <span class="ident">sender_blob_gen</span>, <span class="ident">txn_gen</span>) <span class="op">=</span> <span class="ident">sender</span>;
@@ -1848,7 +1848,7 @@
                         <span class="ident">event_gens</span>,
                         <span class="ident">account_state_gens</span>: <span class="ident">touched_accounts</span>,
                         <span class="ident">gas_used</span>,
-                        <span class="ident">major_status</span>,
+                        <span class="ident">status</span>,
                     }
                 },
             )

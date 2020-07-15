@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["ACCOUNT_MODULE_NAME",""]],"static":[["ACCOUNT_MODULE","The ModuleId for the Account module."],["ACCOUNT_MODULE_IDENTIFIER",""]]});
+initSidebarItems({"constant":[["ACCOUNT_MODULE_NAME","The name of the Account module."]],"static":[["ACCOUNT_MODULE","The ModuleId for the Account module."],["ACCOUNT_MODULE_IDENTIFIER","The Identifier for the Account module."]]});

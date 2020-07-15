@@ -291,7 +291,7 @@
     <span class="ident">transaction</span>::{
         <span class="ident">Transaction</span>, <span class="ident">TransactionInfo</span>, <span class="ident">TransactionListWithProof</span>, <span class="ident">TransactionWithProof</span>, <span class="ident">Version</span>,
     },
-    <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
+    <span class="ident">vm_status</span>::<span class="ident">KeptVMStatus</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">net</span>::<span class="ident">SocketAddr</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">DbReader</span>, <span class="ident">StartupInfo</span>, <span class="ident">TreeState</span>};
@@ -312,7 +312,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">MockLibraDB</span> {
     <span class="kw">pub</span> <span class="ident">version</span>: <span class="ident">u64</span>,
     <span class="kw">pub</span> <span class="ident">all_accounts</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">AccountStateBlob</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">all_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Transaction</span>, <span class="ident">StatusCode</span>)<span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">all_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Transaction</span>, <span class="ident">KeptVMStatus</span>)<span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">events</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">ContractEvent</span>)<span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">account_state_with_proof</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountStateWithProof</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">timestamps</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
@@ -388,7 +388,7 @@
                         <span class="ident">Default</span>::<span class="ident">default</span>(),
                         <span class="ident">Default</span>::<span class="ident">default</span>(),
                         <span class="number">0</span>,
-                        <span class="kw-2">*</span><span class="ident">status</span>,
+                        <span class="ident">status</span>.<span class="ident">clone</span>(),
                     ),
                 ),
             }))
@@ -414,7 +414,7 @@
                     <span class="ident">Default</span>::<span class="ident">default</span>(),
                     <span class="ident">Default</span>::<span class="ident">default</span>(),
                     <span class="number">0</span>,
-                    <span class="kw-2">*</span><span class="ident">status</span>,
+                    <span class="ident">status</span>.<span class="ident">clone</span>(),
                 ));
             });
         <span class="kw">let</span> <span class="ident">first_transaction_version</span> <span class="op">=</span> <span class="ident">transactions</span>.<span class="ident">first</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">start_version</span>);

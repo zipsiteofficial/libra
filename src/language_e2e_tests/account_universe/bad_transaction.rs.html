@@ -172,15 +172,6 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -199,7 +190,7 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_config</span>::<span class="ident">LBR_NAME</span>,
     <span class="ident">transaction</span>::{<span class="ident">SignedTransaction</span>, <span class="ident">TransactionStatus</span>},
-    <span class="ident">vm_status</span>::{<span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
+    <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::{<span class="ident">AbstractMemorySize</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasConstants</span>};
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::<span class="ident">gas_schedule</span>::<span class="ident">calculate_intrinsic_gas</span>;
@@ -242,9 +233,9 @@
             <span class="ident">txn</span>,
             (
                 <span class="kw">if</span> <span class="ident">seq</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">sender</span>.<span class="ident">sequence_number</span> {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_NEW</span>))
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_NEW</span>)
                 } <span class="kw">else</span> {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>))
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>)
                 },
                 <span class="number">0</span>,
             ),
@@ -288,25 +279,19 @@
             <span class="ident">txn</span>,
             (
                 <span class="kw">if</span> <span class="ident">max_gas_unit</span> <span class="op">&gt;</span> <span class="ident">default_constants</span>.<span class="ident">maximum_number_of_gas_units</span>.<span class="ident">get</span>() {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(
                         <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_EXCEEDS_MAX_GAS_UNITS_BOUND</span>,
-                    ))
+                    )
                 } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">max_gas_unit</span> <span class="op">&lt;</span> <span class="ident">min_cost</span> {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(
                         <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS</span>,
-                    ))
+                    )
                 } <span class="kw">else</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gas_unit_price</span> <span class="op">&gt;</span> <span class="ident">default_constants</span>.<span class="ident">max_price_per_gas_unit</span>.<span class="ident">get</span>() {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
-                        <span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_ABOVE_MAX_BOUND</span>,
-                    ))
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_ABOVE_MAX_BOUND</span>)
                 } <span class="kw">else</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gas_unit_price</span> <span class="op">&lt;</span> <span class="ident">default_constants</span>.<span class="ident">min_price_per_gas_unit</span>.<span class="ident">get</span>() {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
-                        <span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_BELOW_MIN_BOUND</span>,
-                    ))
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_BELOW_MIN_BOUND</span>)
                 } <span class="kw">else</span> {
-                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
-                        <span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>,
-                    ))
+                    <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>)
                 },
                 <span class="number">0</span>,
             ),
@@ -350,10 +335,7 @@
 
         (
             <span class="ident">txn</span>,
-            (
-                <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_AUTH_KEY</span>)),
-                <span class="number">0</span>,
-            ),
+            (<span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_AUTH_KEY</span>), <span class="number">0</span>),
         )
     }
 }

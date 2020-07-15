@@ -528,9 +528,6 @@
 <span id="528">528</span>
 <span id="529">529</span>
 <span id="530">530</span>
-<span id="531">531</span>
-<span id="532">532</span>
-<span id="533">533</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -555,10 +552,7 @@
     <span class="ident">mempool_status</span>::{<span class="ident">MempoolStatus</span>, <span class="ident">MempoolStatusCode</span>},
     <span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>,
     <span class="ident">transaction</span>::<span class="ident">SignedTransaction</span>,
-    <span class="ident">vm_status</span>::{
-        <span class="ident">StatusCode</span>::{<span class="ident">RESOURCE_DOES_NOT_EXIST</span>, <span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>},
-        <span class="ident">VMStatus</span>,
-    },
+    <span class="ident">vm_status</span>::<span class="ident">DiscardedVMStatus</span>,
     <span class="ident">PeerId</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -863,14 +857,14 @@
                 } <span class="kw">else</span> {
                     <span class="ident">statuses</span>.<span class="ident">push</span>((
                         <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                        <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>)),
+                        <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>),
                     ));
                 }
             } <span class="kw">else</span> {
                 <span class="comment">// failed to get transaction</span>
                 <span class="ident">statuses</span>.<span class="ident">push</span>((
                     <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                    <span class="prelude-val">Some</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">RESOURCE_DOES_NOT_EXIST</span>)),
+                    <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">RESOURCE_DOES_NOT_EXIST</span>),
                 ));
             }
             <span class="prelude-val">None</span>
@@ -912,7 +906,7 @@
                     <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="ident">statuses</span>.<span class="ident">push</span>((
                             <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                            <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>.<span class="ident">clone</span>()),
+                            <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>),
                         ));
                     }
                 }

@@ -303,6 +303,45 @@
 <span id="303">303</span>
 <span id="304">304</span>
 <span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -344,6 +383,7 @@
             <span class="ident">major_status</span>,
             <span class="ident">sub_status</span>,
             <span class="ident">location</span>,
+            <span class="kw-2">mut</span> <span class="ident">offsets</span>,
             ..
         } <span class="op">=</span> <span class="self">self</span>;
         <span class="kw">match</span> (<span class="ident">major_status</span>, <span class="ident">sub_status</span>, <span class="ident">location</span>) {
@@ -365,6 +405,44 @@
                     <span class="ident">sub_status</span>, <span class="ident">location</span>
                 );
                 <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">ABORTED</span>)
+            }
+
+            <span class="comment">// TODO Errors for OUT_OF_GAS do not always have index set</span>
+            (<span class="ident">major_status</span>, <span class="ident">sub_status</span>, <span class="ident">location</span>)
+                <span class="kw">if</span> <span class="ident">major_status</span>.<span class="ident">status_type</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">StatusType</span>::<span class="ident">Execution</span> <span class="op">=</span><span class="op">&gt;</span>
+            {
+                <span class="macro">debug_assert</span><span class="macro">!</span>(
+                    <span class="ident">major_status</span>.<span class="ident">should_skip_checks_for_todo</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">offsets</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span>,
+                    <span class="string">&quot;Unexpected offsets. major_status: {:?}\
+                    sub_status: {:?}\
+                    location: {:?}\
+                    offsets: {:#?}&quot;</span>,
+                    <span class="ident">major_status</span>,
+                    <span class="ident">sub_status</span>,
+                    <span class="ident">location</span>,
+                    <span class="ident">offsets</span>
+                );
+                <span class="kw">let</span> <span class="ident">abort_location</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">location</span> {
+                    <span class="ident">Location</span>::<span class="ident">Script</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">vm_status</span>::<span class="ident">AbortLocation</span>::<span class="ident">Script</span>,
+                    <span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">vm_status</span>::<span class="ident">AbortLocation</span>::<span class="ident">Module</span>(<span class="ident">id</span>),
+                    <span class="ident">Location</span>::<span class="ident">Undefined</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">major_status</span>.<span class="ident">should_skip_checks_for_todo</span>());
+                        <span class="kw">return</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">major_status</span>);
+                    }
+                };
+                <span class="kw">let</span> (<span class="ident">function</span>, <span class="ident">code_offset</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">offsets</span>.<span class="ident">pop</span>() {
+                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">major_status</span>.<span class="ident">should_skip_checks_for_todo</span>());
+                        <span class="kw">return</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">major_status</span>);
+                    }
+                    <span class="prelude-val">Some</span>((<span class="ident">fdef_idx</span>, <span class="ident">code_offset</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">fdef_idx</span>.<span class="number">0</span>, <span class="ident">code_offset</span>),
+                };
+                <span class="ident">VMStatus</span>::<span class="ident">ExecutionFailure</span> {
+                    <span class="ident">status_code</span>: <span class="ident">major_status</span>,
+                    <span class="ident">location</span>: <span class="ident">abort_location</span>,
+                    <span class="ident">function</span>,
+                    <span class="ident">code_offset</span>,
+                }
             }
 
             (<span class="ident">major_status</span>, <span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">major_status</span>),
