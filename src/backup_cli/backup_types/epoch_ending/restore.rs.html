@@ -102,6 +102,27 @@
 <span id="102">102</span>
 <span id="103">103</span>
 <span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -109,14 +130,15 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::<span class="ident">epoch_ending</span>::<span class="ident">manifest</span>::<span class="ident">EpochEndingBackup</span>,
     <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
-    <span class="ident">utils</span>::<span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>,
+    <span class="ident">utils</span>::{<span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">GlobalRestoreOpt</span>},
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::{
+    <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>, <span class="ident">transaction</span>::<span class="ident">Version</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>,
+};
 <span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">backup</span>::<span class="ident">restore_handler</span>::<span class="ident">RestoreHandler</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">AsyncReadExt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EpochEndingRestoreOpt</span> {
@@ -128,11 +150,13 @@
     <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
     <span class="ident">restore_handler</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RestoreHandler</span><span class="op">&gt;</span>,
     <span class="ident">manifest_handle</span>: <span class="ident">FileHandle</span>,
+    <span class="ident">target_version</span>: <span class="ident">Version</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">EpochEndingRestoreController</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">opt</span>: <span class="ident">EpochEndingRestoreOpt</span>,
+        <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOpt</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
         <span class="ident">restore_handler</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RestoreHandler</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
@@ -140,17 +164,13 @@
             <span class="ident">storage</span>,
             <span class="ident">restore_handler</span>,
             <span class="ident">manifest_handle</span>: <span class="ident">opt</span>.<span class="ident">manifest_handle</span>,
+            <span class="ident">target_version</span>: <span class="ident">global_opt</span>.<span class="ident">target_version</span>,
         }
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">manifest_bytes</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
-        <span class="self">self</span>.<span class="ident">storage</span>
-            .<span class="ident">open_for_read</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manifest_handle</span>)
-            .<span class="kw">await</span><span class="question-mark">?</span>
-            .<span class="ident">read_to_end</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">manifest_bytes</span>)
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">manifest</span>: <span class="ident">EpochEndingBackup</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">manifest_bytes</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">manifest</span>: <span class="ident">EpochEndingBackup</span> <span class="op">=</span>
+            <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">load_json_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manifest_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">manifest</span>.<span class="ident">verify</span>()<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_epoch</span> <span class="op">=</span> <span class="ident">manifest</span>.<span class="ident">first_epoch</span>;
@@ -187,9 +207,31 @@
                 <span class="ident">next_epoch</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             }
 
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">end</span> <span class="op">=</span> <span class="ident">lis</span>.<span class="ident">len</span>(); <span class="comment">// To apply: &quot;[0, end)&quot;</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_end</span>) <span class="op">=</span> <span class="ident">lis</span>
+                .<span class="ident">iter</span>()
+                .<span class="ident">position</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_version</span>)
+            {
+                <span class="macro">println</span><span class="macro">!</span>(
+                    <span class="string">&quot;Ignoring epoch ending info beyond target_version. Epoch {} ends at {}, target_version: {}.&quot;</span>,
+                    <span class="ident">lis</span>[<span class="ident">_end</span>].<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(),
+                    <span class="ident">lis</span>[<span class="ident">_end</span>].<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
+                    <span class="self">self</span>.<span class="ident">target_version</span>,
+                );
+                <span class="ident">end</span> <span class="op">=</span> <span class="ident">_end</span>;
+            }
+
             <span class="comment">// write to db</span>
-            <span class="self">self</span>.<span class="ident">restore_handler</span>.<span class="ident">save_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="ident">lis</span>)<span class="question-mark">?</span>;
+            <span class="kw">if</span> <span class="ident">end</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+                <span class="self">self</span>.<span class="ident">restore_handler</span>.<span class="ident">save_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="ident">lis</span>[..<span class="ident">end</span>])<span class="question-mark">?</span>;
+            }
+
+            <span class="comment">// skip remaining chunks if beyond target_version</span>
+            <span class="kw">if</span> <span class="ident">end</span> <span class="op">&lt;</span> <span class="ident">lis</span>.<span class="ident">len</span>() {
+                <span class="kw">break</span>;
+            }
         }
+        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Finished restoring epoch ending info.&quot;</span>);
 
         <span class="prelude-val">Ok</span>(())
     }

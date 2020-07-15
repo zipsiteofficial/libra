@@ -436,6 +436,11 @@
 <span id="436">436</span>
 <span id="437">437</span>
 <span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -473,6 +478,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">ops</span>::<span class="ident">Deref</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">StartupInfo</span>, <span class="ident">TreeState</span>};
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">LedgerStore</span> {
     <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">DB</span><span class="op">&gt;</span>,
 
@@ -594,9 +600,13 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TreeState</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="ident">TreeState</span>::<span class="ident">new</span>(
             <span class="ident">num_transactions</span>,
-            <span class="ident">Accumulator</span>::<span class="ident">get_frozen_subtree_hashes</span>(<span class="self">self</span>, <span class="ident">num_transactions</span>)<span class="question-mark">?</span>,
+            <span class="self">self</span>.<span class="ident">get_frozen_subtree_hashes</span>(<span class="ident">num_transactions</span>)<span class="question-mark">?</span>,
             <span class="ident">transaction_info</span>.<span class="ident">state_root_hash</span>(),
         ))
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_frozen_subtree_hashes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">num_transactions</span>: <span class="ident">LeafCount</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">Accumulator</span>::<span class="ident">get_frozen_subtree_hashes</span>(<span class="self">self</span>, <span class="ident">num_transactions</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_startup_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StartupInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {

@@ -804,6 +804,14 @@
 <span id="804">804</span>
 <span id="805">805</span>
 <span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
+<span id="809">809</span>
+<span id="810">810</span>
+<span id="811">811</span>
+<span id="812">812</span>
+<span id="813">813</span>
+<span id="814">814</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -928,6 +936,7 @@
 
 <span class="doccomment">/// This holds a handle to the underlying DB responsible for physical storage and provides APIs for</span>
 <span class="doccomment">/// access to the core Libra data structures.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LibraDB</span> {
     <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">DB</span><span class="op">&gt;</span>,
     <span class="ident">ledger_store</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">LedgerStore</span><span class="op">&gt;</span>,
@@ -1091,16 +1100,6 @@
     <span class="doccomment">/// Gets an instance of `BackupHandler` for data backup purpose.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_backup_handler</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BackupHandler</span> {
         <span class="ident">BackupHandler</span>::<span class="ident">new</span>(
-            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ledger_store</span>),
-            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction_store</span>),
-            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_store</span>),
-        )
-    }
-
-    <span class="doccomment">/// Gets an instance of `RestoreHandler` for data restore purpose.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_restore_handler</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RestoreHandler</span> {
-        <span class="ident">RestoreHandler</span>::<span class="ident">new</span>(
-            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">db</span>),
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ledger_store</span>),
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction_store</span>),
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_store</span>),
@@ -1610,6 +1609,23 @@
     } <span class="kw">else</span> {
         (<span class="number">0</span>, <span class="ident">cursor</span> <span class="op">+</span> <span class="number">1</span>)
     })
+}
+
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">GetRestoreHandler</span> {
+    <span class="doccomment">/// Gets an instance of `RestoreHandler` for data restore purpose.</span>
+    <span class="kw">fn</span> <span class="ident">get_restore_handler</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RestoreHandler</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">GetRestoreHandler</span> <span class="kw">for</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">LibraDB</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_restore_handler</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RestoreHandler</span> {
+        <span class="ident">RestoreHandler</span>::<span class="ident">new</span>(
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">db</span>),
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="self">self</span>),
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ledger_store</span>),
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">transaction_store</span>),
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_store</span>),
+        )
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libradb";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
