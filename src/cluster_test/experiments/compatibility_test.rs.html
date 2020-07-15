@@ -186,6 +186,21 @@
 <span id="186">186</span>
 <span id="187">187</span>
 <span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -321,7 +336,8 @@
         <span class="ident">context</span>
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">fullnode_txn_job</span>.<span class="ident">clone</span>())
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to generate traffic: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
 
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;1. Changing the images for the first instance to validate storage&quot;</span>);
         <span class="kw">let</span> <span class="ident">first_node</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="self">self</span>.<span class="ident">first_node</span>.<span class="ident">clone</span>()];
@@ -332,28 +348,42 @@
                 <span class="ident">job_duration</span>,
                 <span class="ident">EmitJobRequest</span>::<span class="ident">for_instances</span>(<span class="ident">first_node</span>, <span class="ident">context</span>.<span class="ident">global_emit_job_request</span>),
             )
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Storage backwards compat broken: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+
+        <span class="ident">context</span>
+            .<span class="ident">report</span>
+            .<span class="ident">report_metric</span>(<span class="self">self</span>.<span class="ident">to_string</span>(), <span class="string">&quot;storage_compat&quot;</span>, <span class="number">1.0</span>);
 
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;2. Changing images for the first batch to test consensus&quot;</span>);
         <span class="ident">update_batch_instance</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">first_batch</span>, <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">context</span>
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">validator_txn_job</span>.<span class="ident">clone</span>())
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Consensus backwards compat broken: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+
+        <span class="ident">context</span>
+            .<span class="ident">report</span>
+            .<span class="ident">report_metric</span>(<span class="self">self</span>.<span class="ident">to_string</span>(), <span class="string">&quot;consensus_compat&quot;</span>, <span class="number">1.0</span>);
 
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;3. Changing images for the rest of the nodes&quot;</span>);
         <span class="ident">update_batch_instance</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">second_batch</span>, <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">context</span>
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">validator_txn_job</span>)
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to upgrade rest of validator images: {}&quot;</span>, <span class="ident">e</span>)
+            })<span class="question-mark">?</span>;
 
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;4. Changing images for full nodes&quot;</span>);
         <span class="ident">update_batch_instance</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">full_nodes</span>, <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">context</span>
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">fullnode_txn_job</span>)
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to upgrade full node images: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
