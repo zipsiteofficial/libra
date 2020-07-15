@@ -1393,6 +1393,9 @@
 <span id="1393">1393</span>
 <span id="1394">1394</span>
 <span id="1395">1395</span>
+<span id="1396">1396</span>
+<span id="1397">1397</span>
+<span id="1398">1398</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1646,12 +1649,13 @@
 
 <span class="doccomment">/// Module internal function that manages deserialization of transactions.</span>
 <span class="kw">fn</span> <span class="ident">deserialize_compiled_script</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">CompiledScriptMut</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">binary_len</span> <span class="op">=</span> <span class="ident">binary</span>.<span class="ident">len</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cursor</span> <span class="op">=</span> <span class="ident">Cursor</span>::<span class="ident">new</span>(<span class="ident">binary</span>);
     <span class="ident">check_binary</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">table_count</span> <span class="op">=</span> <span class="ident">load_table_count</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Table</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
     <span class="ident">read_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>, <span class="ident">table_count</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">content_len</span> <span class="op">=</span> <span class="ident">check_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">content_len</span> <span class="op">=</span> <span class="ident">check_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>, <span class="ident">binary_len</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">table_contents</span> <span class="op">=</span> <span class="ident">read_table_contents</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>, <span class="ident">content_len</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>;
 
@@ -1667,12 +1671,13 @@
 
 <span class="doccomment">/// Module internal function that manages deserialization of modules.</span>
 <span class="kw">fn</span> <span class="ident">deserialize_compiled_module</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">CompiledModuleMut</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">binary_len</span> <span class="op">=</span> <span class="ident">binary</span>.<span class="ident">len</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cursor</span> <span class="op">=</span> <span class="ident">Cursor</span>::<span class="ident">new</span>(<span class="ident">binary</span>);
     <span class="ident">check_binary</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">table_count</span> <span class="op">=</span> <span class="ident">load_table_count</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tables</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Table</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
     <span class="ident">read_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>, <span class="ident">table_count</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">content_len</span> <span class="op">=</span> <span class="ident">check_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">content_len</span> <span class="op">=</span> <span class="ident">check_tables</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tables</span>, <span class="ident">binary_len</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">table_contents</span> <span class="op">=</span> <span class="ident">read_table_contents</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cursor</span>, <span class="ident">content_len</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>;
 
@@ -1756,7 +1761,7 @@
 <span class="doccomment">/// Verify correctness of tables.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// Tables cannot have duplicates, must cover the entire blob and must be disjoint.</span>
-<span class="kw">fn</span> <span class="ident">check_tables</span>(<span class="ident">tables</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Table</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">check_tables</span>(<span class="ident">tables</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Table</span><span class="op">&gt;</span>, <span class="ident">binary_len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BinaryLoaderResult</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
     <span class="comment">// there is no real reason to pass a mutable reference but we are sorting next line</span>
     <span class="ident">tables</span>.<span class="ident">sort_by</span>(<span class="op">|</span><span class="ident">t1</span>, <span class="ident">t2</span><span class="op">|</span> <span class="ident">t1</span>.<span class="ident">offset</span>.<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">t2</span>.<span class="ident">offset</span>));
 
@@ -1769,15 +1774,16 @@
         <span class="kw">if</span> <span class="ident">table</span>.<span class="ident">count</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">BAD_HEADER_TABLE</span>));
         }
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">checked_offset</span>) <span class="op">=</span> <span class="ident">current_offset</span>.<span class="ident">checked_add</span>(<span class="ident">table</span>.<span class="ident">count</span>) {
-            <span class="ident">current_offset</span> <span class="op">=</span> <span class="ident">checked_offset</span>;
+        <span class="kw">match</span> <span class="ident">current_offset</span>.<span class="ident">checked_add</span>(<span class="ident">table</span>.<span class="ident">count</span>) {
+            <span class="prelude-val">Some</span>(<span class="ident">checked_offset</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">current_offset</span> <span class="op">=</span> <span class="ident">checked_offset</span>,
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">BAD_HEADER_TABLE</span>)),
         }
         <span class="kw">if</span> <span class="op">!</span><span class="ident">table_types</span>.<span class="ident">insert</span>(<span class="ident">table</span>.<span class="ident">kind</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_TABLE</span>));
         }
-    }
-    <span class="kw">if</span> <span class="ident">current_offset</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">&gt;</span> <span class="ident">TABLE_CONTENT_SIZE_MAX</span> {
-        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">BAD_HEADER_TABLE</span>));
+        <span class="kw">if</span> <span class="ident">current_offset</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span> <span class="ident">binary_len</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">BAD_HEADER_TABLE</span>));
+        }
     }
     <span class="prelude-val">Ok</span>(<span class="ident">current_offset</span>)
 }
