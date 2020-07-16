@@ -398,9 +398,9 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_faucet_client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Waypoint</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">configs</span>, <span class="ident">faucet_key</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">build_common</span>(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> (<span class="ident">configs</span>, <span class="ident">libra_root_key</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">build_common</span>(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((
-            <span class="ident">faucet_key</span>,
+            <span class="ident">libra_root_key</span>,
             <span class="ident">configs</span>[<span class="number">0</span>]
                 .<span class="ident">base</span>
                 .<span class="ident">waypoint</span>
@@ -422,7 +422,7 @@
             }
         );
 
-        <span class="kw">let</span> (<span class="ident">faucet_key</span>, <span class="ident">config_seed</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">build_faucet_key</span>();
+        <span class="kw">let</span> (<span class="ident">libra_root_key</span>, <span class="ident">config_seed</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">build_libra_root_key</span>();
         <span class="kw">let</span> <span class="ident">generator</span>::<span class="ident">ValidatorSwarm</span> { <span class="kw-2">mut</span> <span class="ident">nodes</span>, .. } <span class="op">=</span> <span class="ident">generator</span>::<span class="ident">validator_swarm</span>(
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">template</span>,
             <span class="self">self</span>.<span class="ident">num_nodes</span>,
@@ -443,7 +443,7 @@
         <span class="kw">let</span> <span class="ident">operator_registrations</span> <span class="op">=</span> <span class="ident">vm_genesis</span>::<span class="ident">operator_registrations</span>(<span class="kw-2">&amp;</span><span class="ident">nodes</span>[..<span class="ident">nodes_in_genesis</span>]);
 
         <span class="kw">let</span> <span class="ident">genesis</span> <span class="op">=</span> <span class="ident">vm_genesis</span>::<span class="ident">encode_genesis_transaction</span>(
-            <span class="ident">faucet_key</span>.<span class="ident">public_key</span>(),
+            <span class="ident">libra_root_key</span>.<span class="ident">public_key</span>(),
             <span class="kw-2">&amp;</span><span class="ident">operator_assignments</span>,
             <span class="kw-2">&amp;</span><span class="ident">operator_registrations</span>,
             <span class="self">self</span>.<span class="ident">template</span>
@@ -477,14 +477,14 @@
             <span class="ident">node</span>.<span class="ident">execution</span>.<span class="ident">genesis</span> <span class="op">=</span> <span class="ident">genesis</span>.<span class="ident">clone</span>();
         }
 
-        <span class="prelude-val">Ok</span>((<span class="ident">nodes</span>, <span class="ident">faucet_key</span>))
+        <span class="prelude-val">Ok</span>((<span class="ident">nodes</span>, <span class="ident">libra_root_key</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_faucet_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Ed25519PrivateKey</span>, [<span class="ident">u8</span>; <span class="number">32</span>]) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">faucet_rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="self">self</span>.<span class="ident">seed</span>);
-        <span class="kw">let</span> <span class="ident">faucet_key</span> <span class="op">=</span> <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_rng</span>);
-        <span class="kw">let</span> <span class="ident">config_seed</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> <span class="ident">faucet_rng</span>.<span class="ident">gen</span>();
-        (<span class="ident">faucet_key</span>, <span class="ident">config_seed</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_libra_root_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Ed25519PrivateKey</span>, [<span class="ident">u8</span>; <span class="number">32</span>]) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seeded_rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="self">self</span>.<span class="ident">seed</span>);
+        <span class="kw">let</span> <span class="ident">libra_root_key</span> <span class="op">=</span> <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seeded_rng</span>);
+        <span class="kw">let</span> <span class="ident">config_seed</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> <span class="ident">seeded_rng</span>.<span class="ident">gen</span>();
+        (<span class="ident">libra_root_key</span>, <span class="ident">config_seed</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">build_safety_rules</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">NodeConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
