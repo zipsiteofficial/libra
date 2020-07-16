@@ -60,12 +60,19 @@
 <span id="60">60</span>
 <span id="61">61</span>
 <span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">StorageLocation</span>::<span class="ident">RemoteStorage</span>, <span class="ident">SecureBackends</span>,
+    <span class="ident">constants</span>,
+    <span class="ident">error</span>::<span class="ident">Error</span>,
+    <span class="ident">secure_backend</span>::{<span class="ident">SharedBackend</span>, <span class="ident">ValidatorBackend</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::<span class="ident">OPERATOR_KEY</span>;
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">KVStorage</span>, <span class="ident">Value</span>};
@@ -76,7 +83,9 @@
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
     <span class="ident">operator_name</span>: <span class="ident">String</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">backends</span>: <span class="ident">SecureBackends</span>,
+    <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="ident">shared_backend</span>: <span class="ident">SharedBackend</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">ValidatorOperator</span> {
@@ -85,20 +94,20 @@
         <span class="kw">let</span> <span class="ident">operator_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_and_verify_operator_name</span>()<span class="question-mark">?</span>;
 
         <span class="comment">// Upload the operator name to shared storage</span>
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">backends</span>.<span class="ident">remote</span> {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">RemoteStorageMissing</span>),
-            <span class="prelude-val">Some</span>(<span class="ident">remote_config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">remote_storage</span> <span class="op">=</span> <span class="ident">remote_config</span>.<span class="ident">create_storage</span>(<span class="ident">RemoteStorage</span>)<span class="question-mark">?</span>;
-                <span class="ident">remote_storage</span>
-                    .<span class="ident">set</span>(
-                        <span class="ident">constants</span>::<span class="ident">VALIDATOR_OPERATOR</span>,
-                        <span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">operator_name</span>.<span class="ident">clone</span>()),
-                    )
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-                        <span class="ident">Error</span>::<span class="ident">RemoteStorageWriteError</span>(<span class="ident">constants</span>::<span class="ident">VALIDATOR_OPERATOR</span>, <span class="ident">e</span>.<span class="ident">to_string</span>())
-                    })<span class="question-mark">?</span>;
-            }
-        };
+        <span class="kw">let</span> <span class="ident">storage_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_backend</span>.<span class="ident">name</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_storage</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">shared_backend</span>
+            .<span class="ident">shared_backend</span>
+            .<span class="ident">create_storage</span>(<span class="ident">storage_name</span>)<span class="question-mark">?</span>;
+
+        <span class="ident">shared_storage</span>
+            .<span class="ident">set</span>(
+                <span class="ident">constants</span>::<span class="ident">VALIDATOR_OPERATOR</span>,
+                <span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">operator_name</span>.<span class="ident">clone</span>()),
+            )
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">Error</span>::<span class="ident">StorageWriteError</span>(<span class="ident">storage_name</span>, <span class="ident">constants</span>::<span class="ident">VALIDATOR_OPERATOR</span>, <span class="ident">e</span>.<span class="ident">to_string</span>())
+            })<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">operator_name</span>)
     }
@@ -107,20 +116,21 @@
     <span class="doccomment">/// If the named operator is not found (i.e., the operator has not uploaded a public key) return</span>
     <span class="doccomment">/// an error. Otherwise, return the operator name.</span>
     <span class="kw">fn</span> <span class="ident">get_and_verify_operator_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">backends</span>.<span class="ident">remote</span>.<span class="ident">clone</span>() {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">RemoteStorageMissing</span>),
-            <span class="prelude-val">Some</span>(<span class="ident">operator_config</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">operator_config</span> <span class="op">=</span> <span class="ident">operator_config</span>.<span class="ident">set_namespace</span>(<span class="self">self</span>.<span class="ident">operator_name</span>.<span class="ident">clone</span>());
-                <span class="kw">let</span> <span class="ident">operator_storage</span> <span class="op">=</span> <span class="ident">operator_config</span>.<span class="ident">create_storage</span>(<span class="ident">RemoteStorage</span>)<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">operator_storage</span>
-                    .<span class="ident">get</span>(<span class="ident">OPERATOR_KEY</span>)
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">RemoteStorageReadError</span>(<span class="ident">OPERATOR_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>
-                    .<span class="ident">value</span>
-                    .<span class="ident">ed25519_public_key</span>()
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">RemoteStorageReadError</span>(<span class="ident">OPERATOR_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">operator_name</span>.<span class="ident">clone</span>())
-            }
-        }
+        <span class="kw">let</span> <span class="ident">storage_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_backend</span>.<span class="ident">name</span>();
+        <span class="kw">let</span> <span class="ident">operator_storage</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">shared_backend</span>
+            .<span class="ident">shared_backend</span>
+            .<span class="ident">clone</span>()
+            .<span class="ident">set_namespace</span>(<span class="self">self</span>.<span class="ident">operator_name</span>.<span class="ident">clone</span>())
+            .<span class="ident">create_storage</span>(<span class="ident">storage_name</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">operator_storage</span>
+            .<span class="ident">get</span>(<span class="ident">OPERATOR_KEY</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="ident">storage_name</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>
+            .<span class="ident">value</span>
+            .<span class="ident">ed25519_public_key</span>()
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="ident">storage_name</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">operator_name</span>.<span class="ident">clone</span>())
     }
 }
 </pre></div>
