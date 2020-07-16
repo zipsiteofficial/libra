@@ -266,9 +266,6 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -312,9 +309,9 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_get_account_state_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">AccountAddress</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_get_account_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">AccountAddress</span>) {
         <span class="self">self</span>.<span class="ident">add_request</span>(
-            <span class="string">&quot;get_account_state&quot;</span>.<span class="ident">to_string</span>(),
+            <span class="string">&quot;get_account&quot;</span>.<span class="ident">to_string</span>(),
             <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">address</span>.<span class="ident">to_string</span>())],
         );
     }
@@ -412,13 +409,13 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_accounts_state</span>(
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_accounts</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>],
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">account</span> <span class="kw">in</span> <span class="ident">accounts</span> {
-            <span class="ident">batch</span>.<span class="ident">add_get_account_state_request</span>(<span class="kw-2">*</span><span class="ident">account</span>);
+            <span class="ident">batch</span>.<span class="ident">add_get_account_request</span>(<span class="kw-2">*</span><span class="ident">account</span>);
         }
         <span class="kw">let</span> <span class="ident">exec_results</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">execute</span>(<span class="ident">batch</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">results</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -427,10 +424,7 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">JsonRpcResponse</span>::<span class="ident">AccountResponse</span>(<span class="ident">r</span>) <span class="op">=</span> <span class="ident">exec_result</span> {
                 <span class="ident">results</span>.<span class="ident">push</span>(<span class="ident">r</span>);
             } <span class="kw">else</span> {
-                <span class="macro">panic</span><span class="macro">!</span>(
-                    <span class="string">&quot;Unexpected response for get_accounts_state {:?}&quot;</span>,
-                    <span class="ident">exec_result</span>
-                )
+                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Unexpected response for get_accounts {:?}&quot;</span>, <span class="ident">exec_result</span>)
             }
         }
         <span class="macro">ensure</span><span class="macro">!</span>(

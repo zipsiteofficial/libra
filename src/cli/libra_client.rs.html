@@ -464,16 +464,16 @@
         }
     }
 
-    <span class="doccomment">/// Retrieves account state</span>
+    <span class="doccomment">/// Retrieves account information</span>
     <span class="doccomment">/// - If `with_state_proof`, will also retrieve state proof from node and update trusted_state accordingly</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_state</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">with_state_proof</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">client_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_account_state_request</span>(<span class="ident">account</span>);
+        <span class="ident">batch</span>.<span class="ident">add_get_account_request</span>(<span class="ident">account</span>);
         <span class="kw">if</span> <span class="ident">with_state_proof</span> {
             <span class="ident">batch</span>.<span class="ident">add_get_state_proof_request</span>(<span class="ident">client_version</span>);
         }
@@ -490,7 +490,7 @@
                 <span class="prelude-val">Ok</span>((<span class="ident">account_view</span>, <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>()))
             }
             <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(
-                <span class="string">&quot;Failed to get account state for account address {} with error: {:?}&quot;</span>,
+                <span class="string">&quot;Failed to get account for account address {} with error: {:?}&quot;</span>,
                 <span class="ident">account</span>,
                 <span class="ident">e</span>
             ),
@@ -681,7 +681,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">get_sequence_number</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">account</span>: <span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account_state</span>(<span class="ident">account</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account</span>(<span class="ident">account</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No account found for address {:?}&quot;</span>, <span class="ident">account</span>),
             <span class="prelude-val">Some</span>(<span class="ident">account_view</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">account_view</span>.<span class="ident">sequence_number</span>),
         }
@@ -694,7 +694,7 @@
         <span class="ident">limit</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventView</span><span class="op">&gt;</span>, <span class="ident">AccountView</span>)<span class="op">&gt;</span> {
         <span class="comment">// get event key from access_path</span>
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account_state</span>(<span class="ident">access_path</span>.<span class="ident">address</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account</span>(<span class="ident">access_path</span>.<span class="ident">address</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No account found for address {:?}&quot;</span>, <span class="ident">access_path</span>.<span class="ident">address</span>),
             <span class="prelude-val">Some</span>(<span class="ident">account_view</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">access_path</span>.<span class="ident">path</span>;
