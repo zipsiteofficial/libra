@@ -1030,7 +1030,6 @@
 <span id="1030">1030</span>
 <span id="1031">1031</span>
 <span id="1032">1032</span>
-<span id="1033">1033</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1062,7 +1061,7 @@
     <span class="ident">value</span>::{<span class="ident">MoveStructLayout</span>, <span class="ident">MoveTypeLayout</span>},
 };
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::<span class="ident">values</span>::{<span class="ident">Struct</span>, <span class="ident">Value</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">str</span>::<span class="ident">FromStr</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">str</span>::<span class="ident">FromStr</span>};
 <span class="kw">use</span> <span class="ident">vm_genesis</span>::<span class="ident">GENESIS_KEYPAIR</span>;
 
 <span class="comment">// TTL is 86400s. Initial time was set to 0.</span>
@@ -1263,7 +1262,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">gas_currency_code</span>,
-                <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">DEFAULT_EXPIRATION_TIME</span>),
+                <span class="ident">DEFAULT_EXPIRATION_TIME</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             ),
             <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">script</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RawTransaction</span>::<span class="ident">new_script</span>(
@@ -1273,7 +1272,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">gas_currency_code</span>,
-                <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">DEFAULT_EXPIRATION_TIME</span>),
+                <span class="ident">DEFAULT_EXPIRATION_TIME</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             ),
         }
@@ -1419,7 +1418,7 @@
             <span class="ident">gas_unit_price</span>,
             <span class="ident">gas_currency_code</span>,
             <span class="comment">// TTL is 86400s. Initial time was set to 0.</span>
-            <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">DEFAULT_EXPIRATION_TIME</span>),
+            <span class="ident">DEFAULT_EXPIRATION_TIME</span>,
             <span class="ident">ChainId</span>::<span class="ident">test</span>(),
         )
     }
@@ -1442,7 +1441,7 @@
     <span class="kw">pub</span> <span class="ident">max_gas_amount</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">gas_unit_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">gas_currency_code</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">ttl</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">ttl</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">TransactionBuilder</span> {
@@ -1494,7 +1493,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ttl</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ttl</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">ttl</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">ttl</span>));
+        <span class="self">self</span>.<span class="ident">ttl</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ttl</span>);
         <span class="self">self</span>
     }
 
@@ -1508,8 +1507,7 @@
             <span class="self">self</span>.<span class="ident">gas_unit_price</span>.<span class="ident">unwrap_or</span>(<span class="number">0</span>),
             <span class="self">self</span>.<span class="ident">gas_currency_code</span>
                 .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>()),
-            <span class="self">self</span>.<span class="ident">ttl</span>
-                .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">DEFAULT_EXPIRATION_TIME</span>)),
+            <span class="self">self</span>.<span class="ident">ttl</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">DEFAULT_EXPIRATION_TIME</span>),
             <span class="ident">ChainId</span>::<span class="ident">test</span>(),
         )
         .<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">privkey</span>, <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">pubkey</span>)

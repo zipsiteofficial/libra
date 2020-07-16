@@ -1172,8 +1172,6 @@
 <span id="1172">1172</span>
 <span id="1173">1173</span>
 <span id="1174">1174</span>
-<span id="1175">1175</span>
-<span id="1176">1176</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1203,7 +1201,7 @@
         <span class="ident">SignedTransaction</span>, <span class="ident">TransactionArgument</span>, <span class="ident">TransactionPayload</span>,
     },
 };
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">ffi</span>::<span class="ident">CStr</span>, <span class="ident">slice</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">ffi</span>::<span class="ident">CStr</span>, <span class="ident">slice</span>};
 <span class="kw">use</span> <span class="ident">transaction_builder</span>::{
     <span class="ident">encode_add_currency_to_account_script</span>, <span class="ident">encode_peer_to_peer_with_metadata_script</span>,
     <span class="ident">encode_rotate_dual_attestation_info_script</span>, <span class="ident">get_transaction_name</span>,
@@ -1216,7 +1214,7 @@
     <span class="ident">max_gas_amount</span>: <span class="ident">u64</span>,
     <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
     <span class="ident">gas_identifier</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">i8</span>,
-    <span class="ident">expiration_time_secs</span>: <span class="ident">u64</span>,
+    <span class="ident">expiration_timestamp_secs</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">u8</span>,
     <span class="ident">script_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">script_len</span>: <span class="ident">usize</span>,
@@ -1255,7 +1253,6 @@
 
     <span class="kw">let</span> <span class="ident">public_key</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">public_key</span>();
     <span class="kw">let</span> <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">public_key</span>);
-    <span class="kw">let</span> <span class="ident">expiration_time</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">expiration_time_secs</span>);
 
     <span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">script</span>);
     <span class="kw">let</span> <span class="ident">raw_txn</span> <span class="op">=</span> <span class="ident">RawTransaction</span>::<span class="ident">new</span>(
@@ -1267,7 +1264,7 @@
         <span class="ident">CStr</span>::<span class="ident">from_ptr</span>(<span class="ident">gas_identifier</span>)
             .<span class="ident">to_string_lossy</span>()
             .<span class="ident">into_owned</span>(),
-        <span class="ident">expiration_time</span>,
+        <span class="ident">expiration_timestamp_secs</span>,
         <span class="ident">ChainId</span>::<span class="ident">new</span>(<span class="ident">chain_id</span>),
     );
 
@@ -1494,7 +1491,7 @@
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">max_gas_amount</span>: <span class="ident">u64</span>,
     <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
-    <span class="ident">expiration_time_secs</span>: <span class="ident">u64</span>,
+    <span class="ident">expiration_timestamp_secs</span>: <span class="ident">u64</span>,
     <span class="ident">metadata_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">metadata_len</span>: <span class="ident">usize</span>,
     <span class="ident">metadata_signature_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
@@ -1529,7 +1526,6 @@
             <span class="kw">return</span> <span class="ident">LibraStatus</span>::<span class="ident">InvalidArgument</span>;
         }
     };
-    <span class="kw">let</span> <span class="ident">expiration_time</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">expiration_time_secs</span>);
 
     <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">metadata_bytes</span>.<span class="ident">is_null</span>() {
         <span class="macro">vec</span><span class="macro">!</span>[]
@@ -1557,7 +1553,7 @@
         <span class="ident">max_gas_amount</span>,
         <span class="ident">gas_unit_price</span>,
         <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>(),
-        <span class="ident">expiration_time</span>,
+        <span class="ident">expiration_timestamp_secs</span>,
         <span class="ident">ChainId</span>::<span class="ident">new</span>(<span class="ident">chain_id</span>),
     );
 
@@ -1681,7 +1677,7 @@
     <span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">payload</span>();
     <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">max_gas_amount</span>();
     <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">gas_unit_price</span>();
-    <span class="kw">let</span> <span class="ident">expiration_time_secs</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">expiration_time</span>().<span class="ident">as_secs</span>();
+    <span class="kw">let</span> <span class="ident">expiration_timestamp_secs</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">expiration_timestamp_secs</span>();
     <span class="comment">// TODO: this will not work with multisig transactions, where both the pubkey and signature</span>
     <span class="comment">// have different sizes than the ones expected here. We will either need LibraSignedTransaction</span>
     <span class="comment">// types for single and multisig authenticators or adapt the type to work  with both</span>
@@ -1764,7 +1760,7 @@
             <span class="ident">payload</span>,
             <span class="ident">max_gas_amount</span>,
             <span class="ident">gas_unit_price</span>,
-            <span class="ident">expiration_time_secs</span>,
+            <span class="ident">expiration_timestamp_secs</span>,
         },
         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">raw_txn_other</span> <span class="op">=</span> <span class="ident">LibraRawTransaction</span> {
@@ -1776,7 +1772,7 @@
                 },
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
-                <span class="ident">expiration_time_secs</span>,
+                <span class="ident">expiration_timestamp_secs</span>,
             };
             <span class="kw-2">*</span><span class="ident">out</span> <span class="op">=</span> <span class="ident">LibraSignedTransaction</span> {
                 <span class="ident">raw_txn</span>: <span class="ident">raw_txn_other</span>,
@@ -1823,7 +1819,7 @@
         <span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="number">100_000_000</span>;
         <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="number">123</span>;
         <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="number">1000</span>;
-        <span class="kw">let</span> <span class="ident">expiration_time_secs</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">expiration_timestamp_secs</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
         <span class="kw">let</span> <span class="ident">metadata_signature</span> <span class="op">=</span> [<span class="number">0x1</span>; <span class="number">64</span>].<span class="ident">to_vec</span>();
         <span class="kw">let</span> <span class="ident">coin_ident</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">ffi</span>::<span class="ident">CString</span>::<span class="ident">new</span>(<span class="ident">LBR_NAME</span>).<span class="ident">expect</span>(<span class="string">&quot;Invalid ident&quot;</span>);
@@ -1862,7 +1858,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">coin_ident</span>.<span class="ident">as_ptr</span>(),
-                <span class="ident">expiration_time_secs</span>,
+                <span class="ident">expiration_timestamp_secs</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>().<span class="ident">id</span>(),
                 <span class="ident">script_bytes</span>.<span class="ident">as_ptr</span>(),
                 <span class="ident">script_len</span>,
@@ -1912,7 +1908,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">coin_idnet</span>.<span class="ident">as_ptr</span>(),
-                <span class="ident">expiration_time_secs</span>,
+                <span class="ident">expiration_timestamp_secs</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>().<span class="ident">id</span>(),
                 <span class="ident">script_bytes</span>.<span class="ident">as_ptr</span>(),
                 <span class="ident">script_len</span>,
@@ -1961,7 +1957,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">coin_ident_2</span>.<span class="ident">as_ptr</span>(),
-                <span class="ident">expiration_time_secs</span>,
+                <span class="ident">expiration_timestamp_secs</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>().<span class="ident">id</span>(),
                 <span class="ident">script_bytes</span>.<span class="ident">as_ptr</span>(),
                 <span class="ident">script_len</span>,
@@ -2165,7 +2161,7 @@
         <span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="number">100_000_000</span>;
         <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="number">123</span>;
         <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="number">1000</span>;
-        <span class="kw">let</span> <span class="ident">expiration_time_secs</span> <span class="op">=</span> <span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">expiration_timestamp_secs</span> <span class="op">=</span> <span class="number">0</span>;
 
         <span class="comment">// get raw transaction in bytes</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0</span>;
@@ -2180,7 +2176,7 @@
                 <span class="ident">amount</span>,
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
-                <span class="ident">expiration_time_secs</span>,
+                <span class="ident">expiration_timestamp_secs</span>,
                 <span class="macro">vec</span><span class="macro">!</span>[].<span class="ident">as_ptr</span>(),
                 <span class="number">0</span>,
                 <span class="macro">vec</span><span class="macro">!</span>[].<span class="ident">as_ptr</span>(),
@@ -2250,7 +2246,7 @@
         <span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="number">10_000_000</span>;
         <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="number">10</span>;
         <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="number">1</span>;
-        <span class="kw">let</span> <span class="ident">expiration_time_secs</span> <span class="op">=</span> <span class="number">5</span>;
+        <span class="kw">let</span> <span class="ident">expiration_timestamp_secs</span> <span class="op">=</span> <span class="number">5</span>;
         <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>];
         <span class="kw">let</span> <span class="ident">metadata_signature</span> <span class="op">=</span> [<span class="number">0x1</span>; <span class="number">64</span>].<span class="ident">to_vec</span>();
         <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">Ed25519Signature</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="ident">Ed25519Signature</span>::<span class="ident">LENGTH</span>][..]).<span class="ident">unwrap</span>();
@@ -2270,7 +2266,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>(),
-                <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">expiration_time_secs</span>),
+                <span class="ident">expiration_timestamp_secs</span>,
                 <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             ),
             <span class="ident">public_key</span>.<span class="ident">clone</span>(),
@@ -2346,8 +2342,8 @@
             <span class="ident">Ed25519Signature</span>::<span class="ident">try_from</span>(<span class="ident">libra_signed_txn</span>.<span class="ident">signature</span>.<span class="ident">as_ref</span>()).<span class="ident">unwrap</span>()
         );
         <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">expiration_time_secs</span>,
-            <span class="ident">libra_signed_txn</span>.<span class="ident">raw_txn</span>.<span class="ident">expiration_time_secs</span>
+            <span class="ident">expiration_timestamp_secs</span>,
+            <span class="ident">libra_signed_txn</span>.<span class="ident">raw_txn</span>.<span class="ident">expiration_timestamp_secs</span>
         );
     }
 }
