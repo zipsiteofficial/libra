@@ -30,7 +30,19 @@ the sender does not have a published <code>BurnCapability&lt;Token&gt;</code>.</
 balance of <code>child_initial_balance</code> in <code>CoinType</code> and an initial authentication_key
 <code>auth_key_prefix | child_address</code>. If <code>add_all_currencies</code> is true, the child address
 will have a zero balance in all available currencies in the system. This account will
-a child of the transaction sender, which must be a ParentVASP.</p>
+a child of the transaction sender, which must be a ParentVASP. ## Aborts The
+transaction will abort: * If <code>parent_vasp</code> is not a parent vasp with error:
+<code>Roles::EINVALID_PARENT_ROLE</code> * If <code>child_address</code> already exists with error:
+<code>Roles::EROLE_ALREADY_ASSIGNED</code> * If <code>parent_vasp</code> already has 256 child accounts with
+error: <code>VASP::ETOO_MANY_CHILDREN</code> * If <code>parent_vasp</code> does not hold limits for
+<code>CoinType</code> with error: <code>VASP::ENOT_A_PARENT_VASP</code> * If <code>CoinType</code> is not a registered
+currency with error: <code>LibraAccount::ENOT_A_CURRENCY</code> * If <code>parent_vasp</code>'s withdrawal
+capability has been extracted with error:
+<code>LibraAccount::EWITHDRAWAL_CAPABILITY_ALREADY_EXTRACTED</code> * If <code>parent_vasp</code> doesn't
+hold <code>CoinType</code> and <code>child_initial_balance &gt; 0</code> with error:
+<code>LibraAccount::EPAYER_DOESNT_HOLD_CURRENCY</code> * If <code>parent_vasp</code> doesn't at least
+<code>child_initial_balance</code> of <code>CoinType</code> in its account balance with error:
+<code>LibraAccount::EINSUFFICIENT_BALANCE</code></p>
 </td></tr><tr class='module-item'><td><a class="fn" href="fn.encode_create_designated_dealer_script.html" title='transaction_builder::encode_create_designated_dealer_script fn'>encode_create_designated_dealer_script</a></td><td class='docblock-short'><p>Create an account with the DesignatedDealer role at <code>addr</code> with authentication key
 <code>auth_key_prefix</code> | <code>addr</code> and a 0 balance of type <code>Currency</code>. If <code>add_all_currencies</code>
 is true, 0 balances for all available currencies in the system will also be added.
