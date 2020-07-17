@@ -293,6 +293,36 @@
 <span id="293">293</span>
 <span id="294">294</span>
 <span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -302,6 +332,7 @@
     <span class="ident">config</span>::{<span class="ident">PeerNetworkId</span>, <span class="ident">UpstreamConfig</span>},
     <span class="ident">network_id</span>::<span class="ident">NetworkId</span>,
 };
+<span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">seq</span>::<span class="ident">SliceRandom</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">BTreeSet</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
@@ -360,14 +391,14 @@
     }
 
     <span class="comment">// returns true if `peer` is discovered for first time, else false</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">peer_info</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">peer_info</span>
             .<span class="ident">lock</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire peer_info lock&quot;</span>);
         <span class="kw">let</span> <span class="ident">is_new_peer</span> <span class="op">=</span> <span class="op">!</span><span class="ident">peer_info</span>.<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>);
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
-            <span class="kw">if</span> <span class="ident">peer</span>.<span class="ident">network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Validator</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="prelude-val">Some</span>(<span class="ident">origin</span>)) {
+            <span class="kw">if</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Validator</span> {
                 <span class="comment">// For a validator network, resume broadcasting from previous state</span>
                 <span class="comment">// we can afford to not re-broadcast here since the transaction is already in a validator</span>
                 <span class="ident">peer_info</span>
@@ -427,7 +458,7 @@
             .<span class="ident">iter</span>()
             .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">peer</span>, <span class="ident">state</span>)<span class="op">|</span> {
                 <span class="kw">if</span> <span class="ident">state</span>.<span class="ident">is_alive</span> {
-                    <span class="prelude-val">Some</span>((<span class="ident">peer</span>.<span class="ident">network_id</span>(), <span class="ident">peer</span>))
+                    <span class="prelude-val">Some</span>((<span class="ident">peer</span>.<span class="ident">raw_network_id</span>(), <span class="ident">peer</span>))
                 } <span class="kw">else</span> {
                     <span class="prelude-val">None</span>
                 }
@@ -456,7 +487,7 @@
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chosen</span>) <span class="op">=</span> <span class="ident">current_failover</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">candidate</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">failover_candidate</span> {
-                    <span class="kw">if</span> <span class="ident">chosen</span>.<span class="ident">network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">candidate</span>.<span class="ident">network_id</span>()
+                    <span class="kw">if</span> <span class="ident">chosen</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">candidate</span>.<span class="ident">raw_network_id</span>()
                         <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">peer_info</span>.<span class="ident">get</span>(<span class="ident">chosen</span>).<span class="ident">expect</span>(<span class="string">&quot;missing peer state&quot;</span>).<span class="ident">is_alive</span>
                     {
                         <span class="comment">// if current chosen failover peer is alive, then do not overwrite it</span>
@@ -551,16 +582,34 @@
         <span class="ident">sync_state</span>.<span class="ident">broadcast_info</span>.<span class="ident">backoff_mode</span> <span class="op">=</span> <span class="ident">backoff</span>;
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">upstream_config</span>
-            .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">network_id</span>())
-            .<span class="ident">is_some</span>()
+    <span class="comment">// if the origin is provided, checks whether this peer is an upstream peer based on configured preferences and</span>
+    <span class="comment">// connection origin</span>
+    <span class="comment">// if the origin is not provided, checks whether this peer is an upstream peer that was seen before</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConnectionOrigin</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">origin</span>) <span class="op">=</span> <span class="ident">origin</span> {
+            <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_public_downstream</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>(), <span class="ident">origin</span>) {
+                <span class="bool-val">false</span>
+            } <span class="kw">else</span> {
+                <span class="self">self</span>.<span class="ident">upstream_config</span>
+                    .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
+                    .<span class="ident">is_some</span>()
+            }
+        } <span class="kw">else</span> {
+            <span class="self">self</span>.<span class="ident">peer_info</span>
+                .<span class="ident">lock</span>()
+                .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire peer lock&quot;</span>)
+                .<span class="ident">contains_key</span>(<span class="ident">peer</span>)
+        }
     }
 
     <span class="kw">fn</span> <span class="ident">is_primary_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">upstream_config</span>
-            .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">network_id</span>())
+            .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
             <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">0</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">is_public_downstream</span>(<span class="ident">network_id</span>: <span class="ident">NetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">network_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Public</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">origin</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_peer_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PeerSyncState</span> {
@@ -581,12 +630,23 @@
             <span class="kw">return</span> <span class="bool-val">true</span>;
         }
 
-        <span class="comment">// checks whether this peer a chosen upstream failover peer</span>
+        <span class="comment">// checks whether this peer is a chosen upstream failover peer</span>
+        <span class="comment">// NOTE: originally mempool should only broadcast to one peer in the failover network. This is</span>
+        <span class="comment">// to avoid creating too much competition for traffic in the failover network, which is in most</span>
+        <span class="comment">// cases also used by other public clients</span>
+        <span class="comment">// However, currently for VFN&#39;s public on-chain discovery, there is the unfortunate possibility</span>
+        <span class="comment">// that it might discover and select itself as an upstream fallback peer, so the txns will be</span>
+        <span class="comment">// self-broadcasted and make no actual progress.</span>
+        <span class="comment">// So until self-connection is actively checked against for in the networking layer, mempool</span>
+        <span class="comment">// will temporarily broadcast to all peers in its selected failover network as well</span>
         <span class="self">self</span>.<span class="ident">failover_peer</span>
             .<span class="ident">lock</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;failed to get failover peer&quot;</span>)
             .<span class="ident">deref</span>()
-            <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="prelude-val">Some</span>(<span class="ident">peer</span>.<span class="ident">clone</span>())
+            .<span class="ident">as_ref</span>()
+            .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">failover</span><span class="op">|</span> {
+                <span class="ident">failover</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>()
+            })
     }
 }
 </pre></div>

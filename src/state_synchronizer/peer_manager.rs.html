@@ -253,14 +253,29 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">counters</span>;
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
-<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::{<span class="ident">PeerNetworkId</span>, <span class="ident">UpstreamConfig</span>};
+<span class="kw">use</span> <span class="ident">libra_config</span>::{
+    <span class="ident">config</span>::{<span class="ident">PeerNetworkId</span>, <span class="ident">UpstreamConfig</span>},
+    <span class="ident">network_id</span>::<span class="ident">NetworkId</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{
     <span class="ident">distributions</span>::{<span class="ident">Distribution</span>, <span class="ident">WeightedIndex</span>},
     <span class="ident">thread_rng</span>,
@@ -337,8 +352,8 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_peer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>) {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enable_peer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) {
+        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">origin</span>) {
             <span class="kw">return</span>;
         }
 
@@ -438,7 +453,7 @@
                 .<span class="ident">peers</span>
                 .<span class="ident">iter</span>()
                 .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">_peer</span>, <span class="ident">peer_info</span>)<span class="op">|</span> <span class="ident">peer_info</span>.<span class="ident">is_alive</span>)
-                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">peer</span>, <span class="ident">peer_info</span>)<span class="op">|</span> (<span class="ident">peer</span>.<span class="ident">network_id</span>(), (<span class="ident">peer</span>, <span class="ident">peer_info</span>)))
+                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">peer</span>, <span class="ident">peer_info</span>)<span class="op">|</span> (<span class="ident">peer</span>.<span class="ident">raw_network_id</span>(), (<span class="ident">peer</span>, <span class="ident">peer_info</span>)))
                 .<span class="ident">into_group_map</span>();
 
             <span class="comment">// find the first network with any live peers</span>
@@ -498,10 +513,17 @@
         <span class="self">self</span>.<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer_to_penalize</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">TimeOut</span>);
     }
 
-    <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">upstream_config</span>
-            .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">network_id</span>())
-            .<span class="ident">is_some</span>()
+    <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="kw">let</span> <span class="ident">is_network_upstream</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">upstream_config</span>
+            .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
+            .<span class="ident">is_some</span>();
+        <span class="comment">// check for case whether the peer is a public downstream peer, even if the public network is upstream</span>
+        <span class="kw">if</span> <span class="ident">is_network_upstream</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Public</span> {
+            <span class="ident">origin</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ConnectionOrigin</span>::<span class="ident">Outbound</span>
+        } <span class="kw">else</span> {
+            <span class="ident">is_network_upstream</span>
+        }
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>

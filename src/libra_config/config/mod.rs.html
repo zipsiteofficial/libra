@@ -729,13 +729,13 @@
         <span class="kw">for</span> <span class="ident">network</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">config</span>.<span class="ident">full_node_networks</span> {
             <span class="ident">network</span>.<span class="ident">load</span>(<span class="ident">RoleType</span>::<span class="ident">FullNode</span>)<span class="question-mark">?</span>;
 
-            <span class="comment">// Validate that a network isn&#39;t repeated</span>
-            <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>();
+            <span class="comment">// Check a validator network is not included in a list of full-node networks</span>
+            <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">network</span>.<span class="ident">network_id</span>;
             <span class="ident">invariant</span>(
-                <span class="op">!</span><span class="ident">network_ids</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">network_id</span>),
-                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;network_id {:?} was repeated&quot;</span>, <span class="ident">network_id</span>),
+                <span class="op">!</span><span class="macro">matches</span><span class="macro">!</span>(<span class="ident">network_id</span>, <span class="ident">NetworkId</span>::<span class="ident">Validator</span>),
+                <span class="string">&quot;Included a validator network in full_node_networks&quot;</span>.<span class="ident">into</span>(),
             )<span class="question-mark">?</span>;
-            <span class="ident">network_ids</span>.<span class="ident">insert</span>(<span class="ident">network_id</span>);
+            <span class="ident">network_ids</span>.<span class="ident">insert</span>(<span class="ident">network_id</span>.<span class="ident">clone</span>());
         }
         <span class="ident">config</span>.<span class="ident">set_data_dir</span>(<span class="ident">config</span>.<span class="ident">data_dir</span>().<span class="ident">clone</span>());
         <span class="prelude-val">Ok</span>(<span class="ident">config</span>)

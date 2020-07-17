@@ -272,6 +272,15 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -284,6 +293,7 @@
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">channel</span>::<span class="ident">mpsc</span>::<span class="ident">channel</span>, <span class="ident">executor</span>::<span class="ident">block_on</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::{
     <span class="ident">config</span>::{<span class="ident">NetworkConfig</span>, <span class="ident">NodeConfig</span>, <span class="ident">RoleType</span>},
+    <span class="ident">network_id</span>::<span class="ident">NodeNetworkId</span>,
     <span class="ident">utils</span>::<span class="ident">get_genesis_txn</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_json_rpc</span>::<span class="ident">bootstrap_from_config</span> <span class="kw">as</span> <span class="ident">bootstrap_rpc</span>;
@@ -400,7 +410,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builders</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
     <span class="comment">// Instantiate every network and collect the requisite endpoints for state_sync, mempool, and consensus.</span>
-    <span class="kw">for</span> (<span class="ident">role</span>, <span class="ident">network_config</span>) <span class="kw">in</span> <span class="ident">network_configs</span> {
+    <span class="kw">for</span> (<span class="ident">idx</span>, (<span class="ident">role</span>, <span class="ident">network_config</span>)) <span class="kw">in</span> <span class="ident">network_configs</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
         <span class="comment">// Perform common instantiation steps</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span>
             <span class="ident">NetworkBuilder</span>::<span class="ident">create</span>(<span class="ident">node_config</span>.<span class="ident">base</span>.<span class="ident">chain_id</span>, <span class="ident">role</span>, <span class="ident">network_config</span>);
@@ -409,15 +419,23 @@
         <span class="comment">// Create the endpoints to connect the Network to StateSynchronizer.</span>
         <span class="kw">let</span> (<span class="ident">state_sync_sender</span>, <span class="ident">state_sync_events</span>) <span class="op">=</span> <span class="ident">network_builder</span>
             .<span class="ident">add_protocol_handler</span>(<span class="ident">state_synchronizer</span>::<span class="ident">network</span>::<span class="ident">network_endpoint_config</span>());
-        <span class="ident">state_sync_network_handles</span>.<span class="ident">push</span>((<span class="ident">network_id</span>.<span class="ident">clone</span>(), <span class="ident">state_sync_sender</span>, <span class="ident">state_sync_events</span>));
+        <span class="ident">state_sync_network_handles</span>.<span class="ident">push</span>((
+            <span class="ident">NodeNetworkId</span>::<span class="ident">new</span>(<span class="ident">network_id</span>.<span class="ident">clone</span>(), <span class="ident">idx</span>),
+            <span class="ident">state_sync_sender</span>,
+            <span class="ident">state_sync_events</span>,
+        ));
 
-        <span class="comment">// Create the endpoints t connect the Network to MemPool.</span>
+        <span class="comment">// Create the endpoints to connect the Network to mempool.</span>
         <span class="kw">let</span> (<span class="ident">mempool_sender</span>, <span class="ident">mempool_events</span>) <span class="op">=</span>
             <span class="ident">network_builder</span>.<span class="ident">add_protocol_handler</span>(<span class="ident">libra_mempool</span>::<span class="ident">network</span>::<span class="ident">network_endpoint_config</span>(
                 <span class="comment">// TODO:  Make this configuration option more clear.</span>
                 <span class="ident">node_config</span>.<span class="ident">mempool</span>.<span class="ident">max_broadcasts_per_peer</span>,
             ));
-        <span class="ident">mempool_network_handles</span>.<span class="ident">push</span>((<span class="ident">network_id</span>, <span class="ident">mempool_sender</span>, <span class="ident">mempool_events</span>));
+        <span class="ident">mempool_network_handles</span>.<span class="ident">push</span>((
+            <span class="ident">NodeNetworkId</span>::<span class="ident">new</span>(<span class="ident">network_id</span>, <span class="ident">idx</span>),
+            <span class="ident">mempool_sender</span>,
+            <span class="ident">mempool_events</span>,
+        ));
 
         <span class="kw">match</span> <span class="ident">role</span> {
             <span class="comment">// Perform steps relevant specifically to Validator networks.</span>
