@@ -189,7 +189,6 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
-<span id="192">192</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -221,12 +220,12 @@
 <span class="kw">impl</span> <span class="ident">Genesis</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Transaction</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">layout</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">association_key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">association_key</span>(<span class="kw-2">&amp;</span><span class="ident">layout</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">libra_root_key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">libra_root_key</span>(<span class="kw-2">&amp;</span><span class="ident">layout</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">operator_assignments</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">operator_assignments</span>(<span class="kw-2">&amp;</span><span class="ident">layout</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">operator_registrations</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">operator_registrations</span>(<span class="kw-2">&amp;</span><span class="ident">layout</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">genesis</span> <span class="op">=</span> <span class="ident">vm_genesis</span>::<span class="ident">encode_genesis_transaction</span>(
-            <span class="ident">association_key</span>,
+            <span class="ident">libra_root_key</span>,
             <span class="kw-2">&amp;</span><span class="ident">operator_assignments</span>,
             <span class="kw-2">&amp;</span><span class="ident">operator_registrations</span>,
             <span class="prelude-val">Some</span>(<span class="ident">libra_types</span>::<span class="ident">on_chain_config</span>::<span class="ident">VMPublishingOption</span>::<span class="ident">open</span>()), <span class="comment">// TODO: intended?</span>
@@ -248,18 +247,17 @@
         <span class="prelude-val">Ok</span>(<span class="ident">genesis</span>)
     }
 
-    <span class="doccomment">/// Retrieves the association key from the remote storage. Note, at this point in time, genesis</span>
-    <span class="doccomment">/// only supports a single association key.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">association_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Retrieves the libra root key from the remote storage. Note, at this point in time, genesis</span>
+    <span class="doccomment">/// only supports a single libra root key.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">libra_root_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">Layout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">storage_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">name</span>();
-        <span class="kw">let</span> <span class="ident">association_backend</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">shared_backend</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">association_backend</span> <span class="op">=</span> <span class="ident">association_backend</span>.<span class="ident">set_namespace</span>(<span class="ident">layout</span>.<span class="ident">association</span>[<span class="number">0</span>].<span class="ident">clone</span>());
-        <span class="kw">let</span> <span class="ident">association_storage</span> <span class="op">=</span> <span class="ident">association_backend</span>.<span class="ident">create_storage</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">name</span>())<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">association_key</span> <span class="op">=</span> <span class="ident">association_storage</span>
+        <span class="kw">let</span> <span class="ident">libra_root_backend</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">shared_backend</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">libra_root_backend</span> <span class="op">=</span> <span class="ident">libra_root_backend</span>.<span class="ident">set_namespace</span>(<span class="ident">layout</span>.<span class="ident">libra_root</span>[<span class="number">0</span>].<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">libra_root_storage</span> <span class="op">=</span> <span class="ident">libra_root_backend</span>.<span class="ident">create_storage</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">name</span>())<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">libra_root_key</span> <span class="op">=</span> <span class="ident">libra_root_storage</span>
             .<span class="ident">get</span>(<span class="ident">LIBRA_ROOT_KEY</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="ident">storage_name</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
-        <span class="ident">association_key</span>
+        <span class="ident">libra_root_key</span>
             .<span class="ident">value</span>
             .<span class="ident">ed25519_public_key</span>()
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="ident">storage_name</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))
