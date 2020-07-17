@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Genesis","Note, it is implicitly expected that the storage supports a namespace but one has not been set."]]});

@@ -44,6 +44,7 @@ ALIASES["libra_crypto_derive"] = {};
 ALIASES["libra_dev"] = {};
 ALIASES["libra_documentation_tool"] = {};
 ALIASES["libra_fuzzer"] = {};
+ALIASES["libra_genesis_tool"] = {};
 ALIASES["libra_github_client"] = {};
 ALIASES["libra_global_constants"] = {};
 ALIASES["libra_jellyfish_merkle"] = {};

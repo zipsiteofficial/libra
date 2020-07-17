@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `config/management/src/config_builder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>config_builder.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_management/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `config/management/genesis/src/config_builder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>config_builder.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_genesis_tool/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -333,14 +333,11 @@
 <span id="333">333</span>
 <span id="334">334</span>
 <span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">constants</span>, <span class="ident">layout</span>::<span class="ident">Layout</span>, <span class="ident">storage_helper</span>::<span class="ident">StorageHelper</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">storage_helper</span>::<span class="ident">StorageHelper</span>;
 <span class="kw">use</span> <span class="ident">config_builder</span>::<span class="ident">BuildSwarm</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::{
     <span class="ident">config</span>::{
@@ -350,6 +347,10 @@
     <span class="ident">network_id</span>::<span class="ident">NetworkId</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::<span class="ident">Ed25519PrivateKey</span>;
+<span class="kw">use</span> <span class="ident">libra_management</span>::{
+    <span class="ident">constants</span>::{<span class="ident">COMMON_NS</span>, <span class="ident">LAYOUT</span>},
+    <span class="ident">layout</span>::<span class="ident">Layout</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Value</span>};
 <span class="kw">use</span> <span class="ident">libra_temppath</span>::<span class="ident">TempPath</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
@@ -403,13 +404,9 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> (<span class="ident">i</span>.<span class="ident">to_string</span>() <span class="op">+</span> <span class="ident">OPERATOR_SHARED_NS</span>))
             .<span class="ident">collect</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">common_storage</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">storage_helper</span>
-            .<span class="ident">storage</span>(<span class="kw">crate</span>::<span class="ident">constants</span>::<span class="ident">COMMON_NS</span>.<span class="ident">into</span>());
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">common_storage</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage_helper</span>.<span class="ident">storage</span>(<span class="ident">COMMON_NS</span>.<span class="ident">into</span>());
         <span class="kw">let</span> <span class="ident">layout_value</span> <span class="op">=</span> <span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">layout</span>.<span class="ident">to_toml</span>().<span class="ident">unwrap</span>());
-        <span class="ident">common_storage</span>
-            .<span class="ident">set</span>(<span class="kw">crate</span>::<span class="ident">constants</span>::<span class="ident">LAYOUT</span>, <span class="ident">layout_value</span>)
-            .<span class="ident">unwrap</span>();
+        <span class="ident">common_storage</span>.<span class="ident">set</span>(<span class="ident">LAYOUT</span>, <span class="ident">layout_value</span>).<span class="ident">unwrap</span>();
     }
 
     <span class="doccomment">/// Association initializes its account and the libra root key.</span>
@@ -505,7 +502,7 @@
 
         <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">storage_helper</span>
-            .<span class="ident">insert_waypoint</span>(<span class="kw-2">&amp;</span><span class="ident">local_ns</span>, <span class="ident">constants</span>::<span class="ident">COMMON_NS</span>)
+            .<span class="ident">insert_waypoint</span>(<span class="kw-2">&amp;</span><span class="ident">local_ns</span>, <span class="ident">COMMON_NS</span>)
             .<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">storage_helper</span>
@@ -549,10 +546,7 @@
         }
 
         <span class="comment">// Create genesis and waypoint</span>
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">storage_helper</span>
-            .<span class="ident">create_waypoint</span>(<span class="ident">constants</span>::<span class="ident">COMMON_NS</span>)
-            .<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage_helper</span>.<span class="ident">create_waypoint</span>(<span class="ident">COMMON_NS</span>).<span class="ident">unwrap</span>();
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">config</span>) <span class="kw">in</span> <span class="ident">configs</span>.<span class="ident">iter_mut</span>().<span class="ident">enumerate</span>() {
             <span class="self">self</span>.<span class="ident">finish_validator_config</span>(<span class="ident">i</span>, <span class="ident">config</span>);
         }
@@ -676,4 +670,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libra_management";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libra_genesis_tool";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

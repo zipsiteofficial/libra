@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Verify","Prints the public information within a store"]]});
