@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["FatType","VM representation of a Move type that gives access to both the fully qualified name and data layout of the type."]],"mod":[["prop",""]],"struct":[["FatStructType","VM representation of a struct type in Move."]]});
