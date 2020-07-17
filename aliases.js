@@ -30,6 +30,7 @@ ALIASES["functional_tests"] = {};
 ALIASES["futures_semaphore"] = {};
 ALIASES["generate_format"] = {};
 ALIASES["generate_key"] = {};
+ALIASES["inject_error"] = {};
 ALIASES["invalid_mutations"] = {};
 ALIASES["ir_to_bytecode"] = {};
 ALIASES["ir_to_bytecode_syntax"] = {};

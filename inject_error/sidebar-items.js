@@ -1,0 +1,1 @@
+initSidebarItems({"attr":[["inject_error","Proc macro to specify non-deterministic error injection for functions. Specify the chance with #[inject_error(probability = x)] where 0.0 <= x <= 1.0 When injected, the function would return anyhow!(\"Injected error\") immediately. See the example test.rs for usage."]]});
