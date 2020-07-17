@@ -167,17 +167,11 @@
 <span id="167">167</span>
 <span id="168">168</span>
 <span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">account</span>::<span class="ident">Account</span>,
     <span class="ident">account_universe</span>::{<span class="ident">AUTransactionGen</span>, <span class="ident">AccountUniverse</span>},
     <span class="ident">common_transactions</span>::{<span class="ident">empty_txn</span>, <span class="ident">EMPTY_SCRIPT</span>},
     <span class="ident">gas_costs</span>,
@@ -189,7 +183,7 @@
 <span class="kw">use</span> <span class="ident">libra_proptest_helpers</span>::<span class="ident">Index</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_config</span>::<span class="ident">LBR_NAME</span>,
-    <span class="ident">transaction</span>::{<span class="ident">SignedTransaction</span>, <span class="ident">TransactionStatus</span>},
+    <span class="ident">transaction</span>::{<span class="ident">Script</span>, <span class="ident">SignedTransaction</span>, <span class="ident">TransactionStatus</span>},
     <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::{<span class="ident">AbstractMemorySize</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasConstants</span>};
@@ -316,22 +310,18 @@
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">SignedTransaction</span>, (<span class="ident">TransactionStatus</span>, <span class="ident">u64</span>)) {
         <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">universe</span>.<span class="ident">pick</span>(<span class="self">self</span>.<span class="ident">sender</span>).<span class="number">1</span>;
 
-        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">Account</span>::<span class="ident">create_raw_txn_with_args</span>(
-            <span class="kw-2">*</span><span class="ident">sender</span>.<span class="ident">account</span>().<span class="ident">address</span>(),
-            <span class="ident">EMPTY_SCRIPT</span>.<span class="ident">clone</span>(),
-            <span class="macro">vec</span><span class="macro">!</span>[],
-            <span class="macro">vec</span><span class="macro">!</span>[],
-            <span class="ident">sender</span>.<span class="ident">sequence_number</span>,
-            <span class="ident">gas_costs</span>::<span class="ident">TXN_RESERVED</span>,
-            <span class="number">0</span>,
-            <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>(),
-        )
-        .<span class="ident">sign</span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">new_keypair</span>.<span class="ident">private_key</span>,
-            <span class="self">self</span>.<span class="ident">new_keypair</span>.<span class="ident">public_key</span>.<span class="ident">clone</span>(),
-        )
-        .<span class="ident">unwrap</span>()
-        .<span class="ident">into_inner</span>();
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">sender</span>
+            .<span class="ident">account</span>()
+            .<span class="ident">transaction</span>()
+            .<span class="ident">script</span>(<span class="ident">Script</span>::<span class="ident">new</span>(<span class="ident">EMPTY_SCRIPT</span>.<span class="ident">clone</span>(), <span class="macro">vec</span><span class="macro">!</span>[], <span class="macro">vec</span><span class="macro">!</span>[]))
+            .<span class="ident">sequence_number</span>(<span class="ident">sender</span>.<span class="ident">sequence_number</span>)
+            .<span class="ident">raw</span>()
+            .<span class="ident">sign</span>(
+                <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">new_keypair</span>.<span class="ident">private_key</span>,
+                <span class="self">self</span>.<span class="ident">new_keypair</span>.<span class="ident">public_key</span>.<span class="ident">clone</span>(),
+            )
+            .<span class="ident">unwrap</span>()
+            .<span class="ident">into_inner</span>();
 
         (
             <span class="ident">txn</span>,
