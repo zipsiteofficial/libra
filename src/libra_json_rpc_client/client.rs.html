@@ -326,6 +326,8 @@
 <span id="326">326</span>
 <span id="327">327</span>
 <span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -447,6 +449,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">JsonRpcAsyncClientError</span> {
     <span class="ident">ClientError</span>(<span class="ident">reqwest</span>::<span class="ident">Error</span>),
+    <span class="ident">InvalidArgument</span>(<span class="ident">String</span>),
     <span class="ident">InvalidServerResponse</span>(<span class="ident">String</span>),
 }
 
@@ -465,7 +468,8 @@
                 }
                 <span class="bool-val">false</span>
             }
-            <span class="ident">JsonRpcAsyncClientError</span>::<span class="ident">InvalidServerResponse</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            <span class="ident">JsonRpcAsyncClientError</span>::<span class="ident">InvalidServerResponse</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">JsonRpcAsyncClientError</span>::<span class="ident">InvalidArgument</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
         }
     }
 }
@@ -545,7 +549,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
         <span class="ident">batch</span>
             .<span class="ident">add_submit_request</span>(<span class="ident">txn</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">JsonRpcAsyncClientError</span>::<span class="ident">InvalidServerResponse</span>(<span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">JsonRpcAsyncClientError</span>::<span class="ident">InvalidArgument</span>(<span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exec_result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">execute</span>(<span class="ident">batch</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">exec_result</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span>);
         <span class="ident">exec_result</span>
