@@ -1172,6 +1172,9 @@
 <span id="1172">1172</span>
 <span id="1173">1173</span>
 <span id="1174">1174</span>
+<span id="1175">1175</span>
+<span id="1176">1176</span>
+<span id="1177">1177</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1420,7 +1423,7 @@
 }
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">libra_TransactionRotateDualAttestationInfo_from</span>(
+<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">libra_TransactionRotateDualAttestationInfoScript_from</span>(
     <span class="ident">new_url_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">new_url_len</span>: <span class="ident">usize</span>,
     <span class="ident">new_key_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
@@ -1487,11 +1490,11 @@
     <span class="ident">sender</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">receiver</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">sequence</span>: <span class="ident">u64</span>,
-    <span class="ident">chain_id</span>: <span class="ident">u8</span>,
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">max_gas_amount</span>: <span class="ident">u64</span>,
     <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
     <span class="ident">expiration_timestamp_secs</span>: <span class="ident">u64</span>,
+    <span class="ident">chain_id</span>: <span class="ident">u8</span>,
     <span class="ident">metadata_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
     <span class="ident">metadata_len</span>: <span class="ident">usize</span>,
     <span class="ident">metadata_signature_bytes</span>: <span class="kw-2">*</span><span class="kw">const</span> <span class="ident">u8</span>,
@@ -1678,6 +1681,7 @@
     <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">max_gas_amount</span>();
     <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">gas_unit_price</span>();
     <span class="kw">let</span> <span class="ident">expiration_timestamp_secs</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">expiration_timestamp_secs</span>();
+    <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">signed_txn</span>.<span class="ident">chain_id</span>().<span class="ident">id</span>();
     <span class="comment">// TODO: this will not work with multisig transactions, where both the pubkey and signature</span>
     <span class="comment">// have different sizes than the ones expected here. We will either need LibraSignedTransaction</span>
     <span class="comment">// types for single and multisig authenticators or adapt the type to work  with both</span>
@@ -1761,6 +1765,7 @@
             <span class="ident">max_gas_amount</span>,
             <span class="ident">gas_unit_price</span>,
             <span class="ident">expiration_timestamp_secs</span>,
+            <span class="ident">chain_id</span>,
         },
         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">raw_txn_other</span> <span class="op">=</span> <span class="ident">LibraRawTransaction</span> {
@@ -1773,6 +1778,7 @@
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">expiration_timestamp_secs</span>,
+                <span class="ident">chain_id</span>,
             };
             <span class="kw-2">*</span><span class="ident">out</span> <span class="op">=</span> <span class="ident">LibraSignedTransaction</span> {
                 <span class="ident">raw_txn</span>: <span class="ident">raw_txn_other</span>,
@@ -2107,7 +2113,7 @@
 
     <span class="doccomment">/// Generate a RotateDualAttestationInfo Script and deserialize</span>
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_lcs_rotate_base_url_transaction_script</span>() {
+    <span class="kw">fn</span> <span class="ident">test_lcs_rotate_dual_attestationInfo_transaction_script</span>() {
         <span class="kw">let</span> <span class="ident">new_url</span> <span class="op">=</span> <span class="string">b&quot;new_name&quot;</span>.<span class="ident">to_vec</span>();
         <span class="kw">let</span> <span class="ident">private_key</span> <span class="op">=</span> <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate_for_testing</span>();
         <span class="kw">let</span> <span class="ident">new_compliance_public_key</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">public_key</span>();
@@ -2117,7 +2123,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">script_len</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
         <span class="kw">let</span> <span class="ident">script_result</span> <span class="op">=</span> <span class="kw">unsafe</span> {
-            <span class="ident">libra_TransactionRotateDualAttestationInfo_from</span>(
+            <span class="ident">libra_TransactionRotateDualAttestationInfoScript_from</span>(
                 <span class="ident">new_url</span>.<span class="ident">as_ptr</span>(),
                 <span class="ident">new_url</span>.<span class="ident">len</span>(),
                 <span class="ident">new_compliance_public_key</span>.<span class="ident">to_bytes</span>().<span class="ident">as_ptr</span>(),
@@ -2172,11 +2178,11 @@
                 <span class="ident">sender_address</span>.<span class="ident">as_ref</span>().<span class="ident">as_ptr</span>(),
                 <span class="ident">receiver_address</span>.<span class="ident">as_ref</span>().<span class="ident">as_ptr</span>(),
                 <span class="ident">sequence</span>,
-                <span class="ident">ChainId</span>::<span class="ident">test</span>().<span class="ident">id</span>(),
                 <span class="ident">amount</span>,
                 <span class="ident">max_gas_amount</span>,
                 <span class="ident">gas_unit_price</span>,
                 <span class="ident">expiration_timestamp_secs</span>,
+                <span class="ident">ChainId</span>::<span class="ident">test</span>().<span class="ident">id</span>(),
                 <span class="macro">vec</span><span class="macro">!</span>[].<span class="ident">as_ptr</span>(),
                 <span class="number">0</span>,
                 <span class="macro">vec</span><span class="macro">!</span>[].<span class="ident">as_ptr</span>(),
