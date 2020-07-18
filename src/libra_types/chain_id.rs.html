@@ -120,6 +120,7 @@
 <span id="120">120</span>
 <span id="121">121</span>
 <span id="122">122</span>
+<span id="123">123</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -134,14 +135,15 @@
 <span class="doccomment">/// A registry of named chain IDs</span>
 <span class="doccomment">/// Its main purpose is to improve human readability of reserved chain IDs in config files and CLI</span>
 <span class="doccomment">/// When signing transactions for such chains, the numerical chain ID should still be used</span>
-<span class="doccomment">/// (e.g. MAINNET has numeric chain ID 0, PREMAINNET has chain ID 1, etc)</span>
+<span class="doccomment">/// (e.g. MAINNET has numeric chain ID 1, TESTNET has chain ID 2, etc)</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">NamedChain</span> {
-    <span class="doccomment">/// MAINNET is the Libra mainnet production chain and is reserved for 0</span>
-    <span class="ident">MAINNET</span>,
+    <span class="doccomment">/// Users might accidentally initialize the ChainId field to 0, hence reserving ChainId 0 for accidental</span>
+    <span class="doccomment">/// initialization.</span>
+    <span class="doccomment">/// MAINNET is the Libra mainnet production chain and is reserved for 1</span>
+    <span class="ident">MAINNET</span> <span class="op">=</span> <span class="number">1</span>,
     <span class="comment">// The Libra chain below are non-reserved, non-production, and may change over time.  They are listed for convenience here.</span>
-    <span class="ident">PREMAINNET</span>,
     <span class="ident">TESTNET</span>,
     <span class="ident">DEVNET</span>,
     <span class="ident">TESTING</span>,
@@ -152,7 +154,6 @@
         <span class="comment">// TODO implement custom macro that derives FromStr impl for enum (similar to libra/common/num-variants)</span>
         <span class="kw">let</span> <span class="ident">reserved_chain</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">s</span> {
             <span class="string">&quot;MAINNET&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NamedChain</span>::<span class="ident">MAINNET</span>,
-            <span class="string">&quot;PREMAINNET&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NamedChain</span>::<span class="ident">PREMAINNET</span>,
             <span class="string">&quot;TESTNET&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NamedChain</span>::<span class="ident">TESTNET</span>,
             <span class="string">&quot;DEVNET&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NamedChain</span>::<span class="ident">DEVNET</span>,
             <span class="string">&quot;TESTING&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">NamedChain</span>::<span class="ident">TESTING</span>,
@@ -232,6 +233,7 @@
 
 <span class="kw">impl</span> <span class="ident">ChainId</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">id</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">id</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="string">&quot;cannot have chain ID with 0&quot;</span>);
         <span class="self">Self</span>(<span class="ident">id</span>)
     }
 
