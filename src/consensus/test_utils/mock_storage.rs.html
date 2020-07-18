@@ -302,28 +302,6 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -383,21 +361,6 @@
 }
 
 <span class="kw">impl</span> <span class="ident">MockStorage</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">shared_storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MockSharedStorage</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">validator_set</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">shared_storage</span>.<span class="ident">validator_set</span>.<span class="ident">clone</span>());
-        <span class="kw">let</span> <span class="ident">li</span> <span class="op">=</span> <span class="ident">LedgerInfo</span>::<span class="ident">mock_genesis</span>(<span class="ident">validator_set</span>);
-        <span class="kw">let</span> <span class="ident">lis</span> <span class="op">=</span> <span class="ident">LedgerInfoWithSignatures</span>::<span class="ident">new</span>(<span class="ident">li</span>.<span class="ident">clone</span>(), <span class="ident">BTreeMap</span>::<span class="ident">new</span>());
-        <span class="ident">shared_storage</span>
-            .<span class="ident">lis</span>
-            .<span class="ident">lock</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">insert</span>(<span class="ident">lis</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(), <span class="ident">lis</span>);
-        <span class="ident">MockStorage</span> {
-            <span class="ident">shared_storage</span>,
-            <span class="ident">storage_ledger</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">li</span>),
-        }
-    }
-
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_ledger_info</span>(
         <span class="ident">shared_storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MockSharedStorage</span><span class="op">&gt;</span>,
         <span class="ident">ledger_info</span>: <span class="ident">LedgerInfo</span>,
@@ -480,14 +443,7 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">start_for_testing</span>(<span class="ident">validator_set</span>: <span class="ident">ValidatorSet</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">RecoveryData</span>, <span class="ident">Arc</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>) {
-        <span class="kw">let</span> <span class="ident">shared_storage</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">MockSharedStorage</span> {
-            <span class="ident">block</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()),
-            <span class="ident">qc</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()),
-            <span class="ident">lis</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()),
-            <span class="ident">last_vote</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="prelude-val">None</span>),
-            <span class="ident">highest_timeout_certificate</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="prelude-val">None</span>),
-            <span class="ident">validator_set</span>: <span class="ident">validator_set</span>.<span class="ident">clone</span>(),
-        });
+        <span class="kw">let</span> <span class="ident">shared_storage</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">MockSharedStorage</span>::<span class="ident">new</span>(<span class="ident">validator_set</span>.<span class="ident">clone</span>()));
         <span class="kw">let</span> <span class="ident">genesis_li</span> <span class="op">=</span> <span class="ident">LedgerInfo</span>::<span class="ident">mock_genesis</span>(<span class="prelude-val">Some</span>(<span class="ident">validator_set</span>));
         <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">new_with_ledger_info</span>(<span class="ident">shared_storage</span>, <span class="ident">genesis_li</span>);
         <span class="kw">let</span> <span class="ident">recovery_data</span> <span class="op">=</span> <span class="ident">storage</span>
