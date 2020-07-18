@@ -1812,21 +1812,6 @@
 <span id="1812">1812</span>
 <span id="1813">1813</span>
 <span id="1814">1814</span>
-<span id="1815">1815</span>
-<span id="1816">1816</span>
-<span id="1817">1817</span>
-<span id="1818">1818</span>
-<span id="1819">1819</span>
-<span id="1820">1820</span>
-<span id="1821">1821</span>
-<span id="1822">1822</span>
-<span id="1823">1823</span>
-<span id="1824">1824</span>
-<span id="1825">1825</span>
-<span id="1826">1826</span>
-<span id="1827">1827</span>
-<span id="1828">1828</span>
-<span id="1829">1829</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1861,8 +1846,9 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">boogie_helpers</span>::{
         <span class="ident">boogie_byte_blob</span>, <span class="ident">boogie_field_name</span>, <span class="ident">boogie_function_name</span>, <span class="ident">boogie_local_type</span>,
-        <span class="ident">boogie_requires_well_formed</span>, <span class="ident">boogie_struct_name</span>, <span class="ident">boogie_struct_type_value</span>,
-        <span class="ident">boogie_type_value</span>, <span class="ident">boogie_type_values</span>, <span class="ident">boogie_well_formed_check</span>, <span class="ident">WellFormedMode</span>,
+        <span class="ident">boogie_requires_well_formed</span>, <span class="ident">boogie_resource_memory_name</span>, <span class="ident">boogie_struct_name</span>,
+        <span class="ident">boogie_type_value</span>, <span class="ident">boogie_type_value_array</span>, <span class="ident">boogie_type_values</span>, <span class="ident">boogie_well_formed_check</span>,
+        <span class="ident">WellFormedMode</span>,
     },
     <span class="ident">cli</span>::<span class="ident">Options</span>,
     <span class="ident">spec_translator</span>::{<span class="ident">FunctionEntryPoint</span>, <span class="ident">SpecTranslator</span>},
@@ -2107,11 +2093,7 @@
     <span class="kw">fn</span> <span class="ident">translate_struct_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">struct_env</span>: <span class="kw-2">&amp;</span><span class="ident">StructEnv</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
         <span class="comment">// Emit TypeName</span>
         <span class="kw">let</span> <span class="ident">struct_name</span> <span class="op">=</span> <span class="ident">boogie_struct_name</span>(<span class="kw-2">&amp;</span><span class="ident">struct_env</span>);
-        <span class="comment">// Special treatment of well-known resource LibraAccount_T. The type_name</span>
-        <span class="comment">// is forward-declared in the prelude.</span>
-        <span class="kw">if</span> <span class="ident">struct_name</span> <span class="op">!</span><span class="op">=</span> <span class="string">&quot;$LibraAccount_T&quot;</span> {
-            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;const unique {}: $TypeName;&quot;</span>, <span class="ident">struct_name</span>);
-        }
+        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;const unique {}: $TypeName;&quot;</span>, <span class="ident">struct_name</span>);
 
         <span class="comment">// Emit FieldNames</span>
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">field_env</span>) <span class="kw">in</span> <span class="ident">struct_env</span>.<span class="ident">get_fields</span>().<span class="ident">enumerate</span>() {
@@ -2126,64 +2108,35 @@
         }
 
         <span class="comment">// Emit TypeValue constructor function.</span>
-        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">struct_env</span>
+        <span class="kw">let</span> <span class="ident">type_params</span> <span class="op">=</span> <span class="ident">struct_env</span>
             .<span class="ident">get_type_parameters</span>()
             .<span class="ident">iter</span>()
             .<span class="ident">enumerate</span>()
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$tv{}: $TypeValue&quot;</span>, <span class="ident">i</span>))
             .<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>);
+        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">struct_env</span>
+            .<span class="ident">get_type_parameters</span>()
+            .<span class="ident">iter</span>()
+            .<span class="ident">enumerate</span>()
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">Type</span>::<span class="ident">TypeParameter</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u16</span>))
+            .<span class="ident">collect_vec</span>();
+        <span class="kw">let</span> <span class="ident">type_args_array</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">type_args</span>);
+        <span class="kw">let</span> <span class="ident">type_value</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$StructType({}, {})&quot;</span>, <span class="ident">struct_name</span>, <span class="ident">type_args_array</span>);
+        <span class="macro">emitln</span><span class="macro">!</span>(
+            <span class="self">self</span>.<span class="ident">writer</span>,
+            <span class="string">&quot;function {}_type_value({}): $TypeValue {{\n    {}\n}}&quot;</span>,
+            <span class="ident">struct_name</span>,
+            <span class="ident">type_params</span>,
+            <span class="ident">type_value</span>
+        );
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">param_types</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">from</span>(<span class="string">&quot;$MapConstTypeValue($DefaultTypeValue())&quot;</span>);
-        <span class="kw">let</span> <span class="ident">type_param_count</span> <span class="op">=</span> <span class="ident">struct_env</span>.<span class="ident">get_type_parameters</span>().<span class="ident">len</span>();
-        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">type_param_count</span> {
-            <span class="ident">param_types</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}[{} := $tv{}]&quot;</span>, <span class="ident">param_types</span>, <span class="ident">i</span>, <span class="ident">i</span>);
-        }
-        <span class="kw">let</span> <span class="ident">type_param_array</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$TypeValueArray({}, {})&quot;</span>, <span class="ident">param_types</span>, <span class="ident">type_param_count</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">field_types</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">from</span>(<span class="string">&quot;$MapConstTypeValue($DefaultTypeValue())&quot;</span>);
-        <span class="kw">for</span> <span class="ident">field_env</span> <span class="kw">in</span> <span class="ident">struct_env</span>.<span class="ident">get_fields</span>() {
-            <span class="ident">field_types</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-                <span class="string">&quot;{}[{} := {}]&quot;</span>,
-                <span class="ident">field_types</span>,
-                <span class="ident">field_env</span>.<span class="ident">get_offset</span>(),
-                <span class="ident">boogie_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">field_env</span>.<span class="ident">get_type</span>())
-            );
-        }
-        <span class="kw">let</span> <span class="ident">field_array</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;$TypeValueArray({}, {})&quot;</span>,
-            <span class="ident">field_types</span>,
-            <span class="ident">struct_env</span>.<span class="ident">get_field_count</span>()
+        <span class="comment">// Emit memory variable.</span>
+        <span class="kw">let</span> <span class="ident">memory_name</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(
+            <span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">env</span>,
+            <span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">get_id</span>(),
+            <span class="ident">struct_env</span>.<span class="ident">get_id</span>(),
         );
-        <span class="kw">let</span> <span class="ident">type_value</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;$StructType({}, {}, {})&quot;</span>,
-            <span class="ident">struct_name</span>, <span class="ident">type_param_array</span>, <span class="ident">field_array</span>
-        );
-        <span class="kw">if</span> <span class="ident">struct_name</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;$LibraAccount_T&quot;</span> {
-            <span class="comment">// Special treatment of well-known resource LibraAccount_T. The type_value</span>
-            <span class="comment">// function is forward-declared in the prelude, here we only add an axiom for it.</span>
-            <span class="macro">emitln</span><span class="macro">!</span>(
-                <span class="self">self</span>.<span class="ident">writer</span>,
-                <span class="string">&quot;axiom {}_type_value() == {};&quot;</span>,
-                <span class="ident">struct_name</span>,
-                <span class="ident">type_value</span>
-            );
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">struct_name</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;$LibraAccount_Balance&quot;</span> {
-            <span class="comment">// Special treatment of well-known resource LibraAccount_Balance. The type_value</span>
-            <span class="comment">// function is forward-declared in the prelude, here we only add an axiom for it.</span>
-            <span class="macro">emitln</span><span class="macro">!</span>(
-                <span class="self">self</span>.<span class="ident">writer</span>,
-                <span class="string">&quot;axiom (forall $tv0: $TypeValue :: {}_type_value($tv0) == {});&quot;</span>,
-                <span class="ident">struct_name</span>,
-                <span class="ident">type_value</span>
-            );
-        } <span class="kw">else</span> {
-            <span class="macro">emitln</span><span class="macro">!</span>(
-                <span class="self">self</span>.<span class="ident">writer</span>,
-                <span class="string">&quot;function {}_type_value({}): $TypeValue {{\n    {}\n}}&quot;</span>,
-                <span class="ident">struct_name</span>,
-                <span class="ident">type_args</span>,
-                <span class="ident">type_value</span>
-            );
-        }
+        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;var {}: $Memory;&quot;</span>, <span class="ident">memory_name</span>);
 
         <span class="comment">// Emit invariant functions.</span>
         <span class="kw">let</span> <span class="ident">spec_translator</span> <span class="op">=</span>
@@ -2660,7 +2613,7 @@
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">ty</span>) <span class="kw">in</span> <span class="ident">func_target</span>.<span class="ident">get_return_types</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">ret_str</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$ret{}&quot;</span>, <span class="ident">i</span>);
             <span class="kw">if</span> <span class="ident">ty</span>.<span class="ident">is_reference</span>() {
-                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;{} := $DefaultReference;&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">ret_str</span>);
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;{} := $DefaultMutation;&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">ret_str</span>);
             } <span class="kw">else</span> {
                 <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;{} := $DefaultValue();&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">ret_str</span>);
             }
@@ -2756,8 +2709,19 @@
             <span class="ident">WriteBack</span>(<span class="kw">_</span>, <span class="ident">dest</span>, <span class="ident">src</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">use</span> <span class="ident">BorrowNode</span>::<span class="kw-2">*</span>;
                 <span class="kw">match</span> <span class="ident">dest</span> {
-                    <span class="ident">GlobalRoot</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;call $WritebackToGlobal({});&quot;</span>, <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">src</span>));
+                    <span class="ident">GlobalRoot</span>(<span class="ident">struct_decl</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(
+                            <span class="ident">func_target</span>.<span class="ident">global_env</span>(),
+                            <span class="ident">struct_decl</span>.<span class="ident">module_id</span>,
+                            <span class="ident">struct_decl</span>.<span class="ident">struct_id</span>,
+                        );
+                        <span class="macro">emitln</span><span class="macro">!</span>(
+                            <span class="self">self</span>.<span class="ident">writer</span>,
+                            <span class="string">&quot;call {} := $WritebackToGlobal({}, {});&quot;</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">src</span>),
+                        );
                     }
                     <span class="ident">LocalRoot</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">emitln</span><span class="macro">!</span>(
@@ -2796,12 +2760,11 @@
             <span class="ident">SpecBlock</span>(<span class="kw">_</span>, <span class="ident">block_id</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">generate_function_spec_inside_impl</span>(<span class="ident">func_target</span>, <span class="kw-2">*</span><span class="ident">block_id</span>);
             }
-            <span class="ident">Label</span>(<span class="kw">_</span>, <span class="ident">label</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Bytecode</span>::<span class="ident">Label</span>(<span class="kw">_</span>, <span class="ident">label</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">unindent</span>();
                 <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;L{}:&quot;</span>, <span class="ident">label</span>.<span class="ident">as_usize</span>());
                 <span class="kw">if</span> <span class="ident">ctx</span>.<span class="ident">loop_targets</span>.<span class="ident">contains_key</span>(<span class="ident">label</span>) {
                     <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume !$abort_flag;&quot;</span>);
-                    <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume $ExistsTxnSenderAccount($m, $txn);&quot;</span>);
                     <span class="kw">let</span> <span class="ident">targets</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">ctx</span>.<span class="ident">loop_targets</span>[<span class="ident">label</span>];
                     <span class="kw">for</span> <span class="ident">idx</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">func_target</span>.<span class="ident">get_local_count</span>() {
                         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ref_proxy_idx</span>) <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">get_ref_proxy_index</span>(<span class="ident">idx</span>) {
@@ -2809,7 +2772,7 @@
                                 <span class="kw">let</span> <span class="ident">ref_proxy_var_name</span> <span class="op">=</span> <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">ref_proxy_idx</span>);
                                 <span class="kw">let</span> <span class="ident">proxy_idx</span> <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">get_proxy_index</span>(<span class="ident">idx</span>).<span class="ident">unwrap</span>();
                                 <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;assume l#$Reference({}) == $Local({}) &amp;&amp; p#$Reference({}) == $EmptyPath;&quot;</span>,
+                            <span class="string">&quot;assume l#$Mutation({}) == $Local({}) &amp;&amp; p#$Mutation({}) == $EmptyPath;&quot;</span>,
                             <span class="ident">ref_proxy_var_name</span>,
                             <span class="ident">proxy_idx</span>,
                             <span class="ident">ref_proxy_var_name</span>);
@@ -3145,27 +3108,29 @@
                     <span class="ident">Exists</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">dests</span>[<span class="number">0</span>];
-                        <span class="kw">let</span> <span class="ident">resource_type</span> <span class="op">=</span>
-                            <span class="ident">boogie_struct_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;call $tmp := $Exists({}, {});&quot;</span>,
+                            <span class="string">&quot;$tmp := $ResourceExists({}, {}, {});&quot;</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">type_args</span>,
                             <span class="ident">str_local</span>(<span class="ident">addr</span>),
-                            <span class="ident">resource_type</span>
                         );
                         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">update_and_track_local</span>(<span class="ident">dest</span>, <span class="string">&quot;$tmp&quot;</span>));
                     }
                     <span class="ident">BorrowGlobal</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">dests</span>[<span class="number">0</span>];
-                        <span class="kw">let</span> <span class="ident">resource_type</span> <span class="op">=</span>
-                            <span class="ident">boogie_struct_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;call {} := $BorrowGlobal({}, {});&quot;</span>,
+                            <span class="string">&quot;call {} := $BorrowGlobal({}, {}, {});&quot;</span>,
                             <span class="ident">str_local</span>(<span class="ident">dest</span>),
+                            <span class="ident">memory</span>,
                             <span class="ident">str_local</span>(<span class="ident">addr</span>),
-                            <span class="ident">resource_type</span>,
+                            <span class="ident">type_args</span>,
                         );
                         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">propagate_abort</span>());
                         <span class="macro">emit</span><span class="macro">!</span>(
@@ -3182,13 +3147,14 @@
                     <span class="ident">GetGlobal</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">dests</span>[<span class="number">0</span>];
-                        <span class="kw">let</span> <span class="ident">resource_type</span> <span class="op">=</span>
-                            <span class="ident">boogie_struct_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;call $tmp := $GetGlobal({}, {});&quot;</span>,
+                            <span class="string">&quot;call $tmp := $GetGlobal({}, {}, {});&quot;</span>,
+                            <span class="ident">memory</span>,
                             <span class="ident">str_local</span>(<span class="ident">addr</span>),
-                            <span class="ident">resource_type</span>,
+                            <span class="ident">type_args</span>,
                         );
                         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">propagate_abort</span>());
                         <span class="macro">emit</span><span class="macro">!</span>(
@@ -3206,12 +3172,14 @@
                     <span class="ident">MoveTo</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">signer</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">1</span>];
-                        <span class="kw">let</span> <span class="ident">resource_type</span> <span class="op">=</span>
-                            <span class="ident">boogie_struct_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;call $MoveTo({}, {}, {});&quot;</span>,
-                            <span class="ident">resource_type</span>,
+                            <span class="string">&quot;call {} := $MoveTo({}, {}, {}, {});&quot;</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">type_args</span>,
                             <span class="ident">str_local</span>(<span class="ident">value</span>),
                             <span class="ident">str_local</span>(<span class="ident">signer</span>),
                         );
@@ -3220,13 +3188,15 @@
                     <span class="ident">MoveFrom</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">dests</span>[<span class="number">0</span>];
-                        <span class="kw">let</span> <span class="ident">resource_type</span> <span class="op">=</span>
-                            <span class="ident">boogie_struct_type_value</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
-                            <span class="string">&quot;call $tmp := $MoveFrom({}, {});&quot;</span>,
+                            <span class="string">&quot;call {}, $tmp := $MoveFrom({}, {}, {});&quot;</span>,
+                            <span class="ident">memory</span>,
+                            <span class="ident">memory</span>,
                             <span class="ident">str_local</span>(<span class="ident">src</span>),
-                            <span class="ident">resource_type</span>,
+                            <span class="ident">type_args</span>,
                         );
                         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">propagate_abort</span>());
                         <span class="macro">emit</span><span class="macro">!</span>(

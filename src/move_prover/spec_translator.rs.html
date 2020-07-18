@@ -1671,7 +1671,6 @@
 <span id="1671">1671</span>
 <span id="1672">1672</span>
 <span id="1673">1673</span>
-<span id="1674">1674</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1691,8 +1690,9 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">boogie_helpers</span>::{
         <span class="ident">boogie_byte_blob</span>, <span class="ident">boogie_declare_global</span>, <span class="ident">boogie_field_name</span>, <span class="ident">boogie_global_declarator</span>,
-        <span class="ident">boogie_local_type</span>, <span class="ident">boogie_spec_fun_name</span>, <span class="ident">boogie_spec_var_name</span>, <span class="ident">boogie_struct_name</span>,
-        <span class="ident">boogie_struct_type_value</span>, <span class="ident">boogie_type_value</span>, <span class="ident">boogie_well_formed_expr</span>, <span class="ident">WellFormedMode</span>,
+        <span class="ident">boogie_local_type</span>, <span class="ident">boogie_resource_memory_name</span>, <span class="ident">boogie_spec_fun_name</span>, <span class="ident">boogie_spec_var_name</span>,
+        <span class="ident">boogie_struct_name</span>, <span class="ident">boogie_type_value</span>, <span class="ident">boogie_type_value_array</span>, <span class="ident">boogie_well_formed_expr</span>,
+        <span class="ident">WellFormedMode</span>,
     },
     <span class="ident">cli</span>::<span class="ident">Options</span>,
 };
@@ -1813,7 +1813,6 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
 <span class="kw">enum</span> <span class="ident">TraceItem</span> {
     <span class="comment">// Automatically traced items when `options.prover.debug_trace_exp` is on.</span>
-    <span class="ident">Sender</span>,
     <span class="ident">Local</span>(<span class="ident">bool</span>, <span class="ident">Symbol</span>),
     <span class="ident">SpecVar</span>(<span class="ident">bool</span>, <span class="ident">ModuleId</span>, <span class="ident">SpecVarId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>),
     <span class="ident">Exp</span>,
@@ -1993,6 +1992,12 @@
                     <span class="kw-2">&amp;</span><span class="ident">decl</span>.<span class="ident">type_</span>,
                 )
             });
+            <span class="kw">let</span> <span class="ident">mem_params</span> <span class="op">=</span> <span class="ident">fun</span>.<span class="ident">used_memory</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">mid</span>, <span class="ident">sid</span>)<span class="op">|</span> {
+                <span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;{}: $Memory&quot;</span>,
+                    <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>)
+                )
+            });
             <span class="kw">let</span> <span class="ident">type_params</span> <span class="op">=</span> <span class="ident">fun</span>
                 .<span class="ident">type_params</span>
                 .<span class="ident">iter</span>()
@@ -2005,15 +2010,9 @@
                     <span class="ident">boogie_local_type</span>(<span class="ident">ty</span>)
                 )
             });
-            <span class="kw">let</span> <span class="ident">state_params</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">is_pure</span> {
-                <span class="macro">vec</span><span class="macro">!</span>[]
-            } <span class="kw">else</span> {
-                <span class="macro">vec</span><span class="macro">!</span>[<span class="string">&quot;$m: $Memory, $txn: $Transaction&quot;</span>.<span class="ident">to_string</span>()]
-            };
             <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">set_location</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>.<span class="ident">loc</span>);
             <span class="kw">let</span> <span class="ident">boogie_name</span> <span class="op">=</span> <span class="ident">boogie_spec_fun_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_env</span>(), <span class="kw-2">*</span><span class="ident">id</span>);
-            <span class="kw">let</span> <span class="ident">param_list</span> <span class="op">=</span> <span class="ident">state_params</span>
-                .<span class="ident">into_iter</span>()
+            <span class="kw">let</span> <span class="ident">param_list</span> <span class="op">=</span> <span class="ident">mem_params</span>
                 .<span class="ident">chain</span>(<span class="ident">spec_var_params</span>)
                 .<span class="ident">chain</span>(<span class="ident">type_params</span>)
                 .<span class="ident">chain</span>(<span class="ident">params</span>)
@@ -2264,15 +2263,11 @@
                         .<span class="ident">string</span>(<span class="ident">func_target</span>.<span class="ident">get_local_name</span>(<span class="ident">i</span>));
                     <span class="macro">emitln</span><span class="macro">!</span>(
                         <span class="self">self</span>.<span class="ident">writer</span>,
-                        <span class="string">&quot;assume l#$Reference({}) == $Param({});&quot;</span>,
+                        <span class="string">&quot;assume l#$Mutation({}) == $Param({});&quot;</span>,
                         <span class="ident">name</span>,
                         <span class="ident">i</span>
                     );
-                    <span class="macro">emitln</span><span class="macro">!</span>(
-                        <span class="self">self</span>.<span class="ident">writer</span>,
-                        <span class="string">&quot;assume size#Path(p#$Reference({})) == 0;&quot;</span>,
-                        <span class="ident">name</span>
-                    );
+                    <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume size#Path(p#$Mutation({})) == 0;&quot;</span>, <span class="ident">name</span>);
                 }
             }
         }
@@ -2382,7 +2377,6 @@
     <span class="doccomment">/// Assumes preconditions for function. This is used for the top-level verification</span>
     <span class="doccomment">/// entry point of a function.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assume_preconditions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume $Memory__is_well_formed($m);&quot;</span>);
         <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">function_target</span>();
         <span class="comment">// Assume requires.</span>
         <span class="kw">let</span> <span class="ident">requires</span> <span class="op">=</span> <span class="ident">func_target</span>
@@ -2489,12 +2483,7 @@
                 <span class="self">self</span>.<span class="ident">writer</span>,
                 <span class="string">&quot;{}_is_well_formed($ResourceValue(m, {}, a))&quot;</span>,
                 <span class="ident">boogie_struct_name</span>(<span class="ident">struct_env</span>),
-                <span class="ident">boogie_struct_type_value</span>(
-                    <span class="kw-2">&amp;</span><span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">env</span>,
-                    <span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">get_id</span>(),
-                    <span class="ident">struct_env</span>.<span class="ident">get_id</span>(),
-                    <span class="kw-2">&amp;</span><span class="ident">type_args</span>
-                ),
+                <span class="ident">boogie_type_value_array</span>(<span class="ident">struct_env</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">type_args</span>)
             );
             <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">unindent</span>();
             <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;);&quot;</span>);
@@ -3037,9 +3026,6 @@
             <span class="ident">Operation</span>::<span class="ident">Global</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_resource_access</span>(<span class="ident">node_id</span>, <span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">Exists</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_resource_exists</span>(<span class="ident">node_id</span>, <span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">Len</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_primitive_call</span>(<span class="string">&quot;$vlen_value&quot;</span>, <span class="ident">args</span>),
-            <span class="ident">Operation</span>::<span class="ident">Sender</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">trace_value</span>(<span class="ident">node_id</span>, <span class="ident">TraceItem</span>::<span class="ident">Sender</span>, <span class="op">|</span><span class="op">|</span> {
-                <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$TxnSender($txn)&quot;</span>)
-            }),
             <span class="ident">Operation</span>::<span class="ident">All</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_all_or_exists</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="bool-val">true</span>, <span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">Any</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_all_or_exists</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="bool-val">false</span>, <span class="ident">args</span>),
             <span class="ident">Operation</span>::<span class="ident">TypeValue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">translate_type_value</span>(<span class="ident">node_id</span>),
@@ -3086,12 +3072,7 @@
         <span class="kw">let</span> <span class="ident">fun_decl</span> <span class="op">=</span> <span class="ident">module_env</span>.<span class="ident">get_spec_fun</span>(<span class="ident">fun_id</span>);
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">boogie_spec_fun_name</span>(<span class="kw-2">&amp;</span><span class="ident">module_env</span>, <span class="ident">fun_id</span>);
         <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;{}(&quot;</span>, <span class="ident">name</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">first</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">fun_decl</span>.<span class="ident">is_pure</span> {
-            <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$m, $txn&quot;</span>);
-            <span class="bool-val">false</span>
-        } <span class="kw">else</span> {
-            <span class="bool-val">true</span>
-        };
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">first</span> <span class="op">=</span> <span class="bool-val">true</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">maybe_comma</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> {
             <span class="kw">if</span> <span class="ident">first</span> {
                 <span class="ident">first</span> <span class="op">=</span> <span class="bool-val">false</span>;
@@ -3099,6 +3080,11 @@
                 <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;, &quot;</span>);
             }
         };
+        <span class="kw">for</span> (<span class="ident">mid</span>, <span class="ident">sid</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">fun_decl</span>.<span class="ident">used_memory</span> {
+            <span class="ident">maybe_comma</span>();
+            <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>, <span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>);
+            <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">memory</span>);
+        }
         <span class="kw">for</span> (<span class="ident">mid</span>, <span class="ident">vid</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">fun_decl</span>.<span class="ident">used_spec_vars</span> {
             <span class="ident">maybe_comma</span>();
             <span class="kw">let</span> <span class="ident">declaring_module</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>.<span class="ident">get_module</span>(<span class="kw-2">*</span><span class="ident">mid</span>);
@@ -3150,8 +3136,14 @@
     <span class="kw">fn</span> <span class="ident">translate_resource_access</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node_id</span>: <span class="ident">NodeId</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Exp</span>]) {
         <span class="self">self</span>.<span class="ident">trace_value</span>(<span class="ident">node_id</span>, <span class="ident">TraceItem</span>::<span class="ident">Exp</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">rty</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">get_node_instantiation</span>(<span class="ident">node_id</span>)[<span class="number">0</span>];
-            <span class="kw">let</span> <span class="ident">type_value</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_type</span>(<span class="ident">rty</span>);
-            <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$ResourceValue($m, {}, &quot;</span>, <span class="ident">type_value</span>);
+            <span class="kw">let</span> (<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">targs</span>) <span class="op">=</span> <span class="ident">rty</span>.<span class="ident">require_struct</span>();
+            <span class="kw">let</span> <span class="ident">env</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>;
+            <span class="macro">emit</span><span class="macro">!</span>(
+                <span class="self">self</span>.<span class="ident">writer</span>,
+                <span class="string">&quot;$ResourceValue({}, {}, &quot;</span>,
+                <span class="ident">boogie_resource_memory_name</span>(<span class="ident">env</span>, <span class="ident">mid</span>, <span class="ident">sid</span>),
+                <span class="ident">boogie_type_value_array</span>(<span class="ident">env</span>, <span class="ident">targs</span>)
+            );
             <span class="self">self</span>.<span class="ident">translate_exp</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>[<span class="number">0</span>]);
             <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;)&quot;</span>);
         });
@@ -3160,8 +3152,14 @@
     <span class="kw">fn</span> <span class="ident">translate_resource_exists</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">node_id</span>: <span class="ident">NodeId</span>, <span class="ident">args</span>: <span class="kw-2">&amp;</span>[<span class="ident">Exp</span>]) {
         <span class="self">self</span>.<span class="ident">trace_value</span>(<span class="ident">node_id</span>, <span class="ident">TraceItem</span>::<span class="ident">Exp</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">rty</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">get_node_instantiation</span>(<span class="ident">node_id</span>)[<span class="number">0</span>];
-            <span class="kw">let</span> <span class="ident">type_value</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_type</span>(<span class="ident">rty</span>);
-            <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;$ResourceExists($m, {}, &quot;</span>, <span class="ident">type_value</span>);
+            <span class="kw">let</span> (<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">targs</span>) <span class="op">=</span> <span class="ident">rty</span>.<span class="ident">require_struct</span>();
+            <span class="kw">let</span> <span class="ident">env</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">env</span>;
+            <span class="macro">emit</span><span class="macro">!</span>(
+                <span class="self">self</span>.<span class="ident">writer</span>,
+                <span class="string">&quot;$ResourceExists({}, {}, &quot;</span>,
+                <span class="ident">boogie_resource_memory_name</span>(<span class="ident">env</span>, <span class="ident">mid</span>, <span class="ident">sid</span>),
+                <span class="ident">boogie_type_value_array</span>(<span class="ident">env</span>, <span class="ident">targs</span>)
+            );
             <span class="self">self</span>.<span class="ident">translate_exp</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>[<span class="number">0</span>]);
             <span class="macro">emit</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;)&quot;</span>);
         });
