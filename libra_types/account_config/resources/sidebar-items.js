@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["account",""],["balance",""],["currency_info",""],["designated_dealer",""],["dual_attestation",""],["freezing_bit",""],["key_rotation_capability",""],["role",""],["role_id",""],["vasp",""],["withdraw_capability",""]]});
+initSidebarItems({"mod":[["account",""],["balance",""],["currency_info",""],["designated_dealer",""],["dual_attestation",""],["freezing_bit",""],["key_rotation_capability",""],["preburn_balance",""],["role",""],["role_id",""],["vasp",""],["withdraw_capability",""]]});
