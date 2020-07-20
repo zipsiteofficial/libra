@@ -707,6 +707,11 @@
 <span id="707">707</span>
 <span id="708">708</span>
 <span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -739,6 +744,7 @@
     <span class="ident">vote</span>::<span class="ident">Vote</span>,
     <span class="ident">vote_msg</span>::<span class="ident">VoteMsg</span>,
 };
+<span class="kw">use</span> <span class="ident">inject_error</span>::<span class="ident">inject_error</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_trace</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">epoch_state</span>::<span class="ident">EpochState</span>, <span class="ident">validator_verifier</span>::<span class="ident">ValidatorVerifier</span>};
@@ -986,6 +992,7 @@
     <span class="doccomment">/// Process the proposal message:</span>
     <span class="doccomment">/// 1. ensure after processing sync info, we&#39;re at the same round as the proposal</span>
     <span class="doccomment">/// 2. execute and decide whether to vode for the proposal</span>
+    <span class="attribute">#[<span class="ident">inject_error</span>(<span class="ident">probability</span> <span class="op">=</span> <span class="number">0.05</span>)]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_proposal_msg</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">proposal_msg</span>: <span class="ident">ProposalMsg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">trace_event</span><span class="macro">!</span>(<span class="string">&quot;round_manager::pre_process_proposal&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">proposal_msg</span>.<span class="ident">proposal</span>().<span class="ident">id</span>()});
         <span class="kw">if</span> <span class="self">self</span>
@@ -1083,6 +1090,7 @@
     }
 
     <span class="doccomment">/// Process the SyncInfo sent by peers to catch up to latest state.</span>
+    <span class="attribute">#[<span class="ident">inject_error</span>(<span class="ident">probability</span> <span class="op">=</span> <span class="number">0.05</span>)]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_sync_info_msg</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">sync_info</span>: <span class="ident">SyncInfo</span>,
@@ -1255,6 +1263,7 @@
     <span class="doccomment">/// potential attacks).</span>
     <span class="doccomment">/// 2. Add the vote to the pending votes and check whether it finishes a QC.</span>
     <span class="doccomment">/// 3. Once the QC/TC successfully formed, notify the RoundState.</span>
+    <span class="attribute">#[<span class="ident">inject_error</span>(<span class="ident">probability</span> <span class="op">=</span> <span class="number">0.05</span>)]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_vote_msg</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">vote_msg</span>: <span class="ident">VoteMsg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;round_manager::process_vote&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">vote_msg</span>.<span class="ident">proposed_block_id</span>()});
         <span class="comment">// Check whether this validator is a valid recipient of the vote.</span>
@@ -1352,6 +1361,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// The current version of the function is not really async, but keeping it this way for</span>
     <span class="doccomment">/// future possible changes.</span>
+    <span class="attribute">#[<span class="ident">inject_error</span>(<span class="ident">probability</span> <span class="op">=</span> <span class="number">0.05</span>)]</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_block_retrieval</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">IncomingBlockRetrievalRequest</span>,

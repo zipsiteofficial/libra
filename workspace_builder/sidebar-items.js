@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_bin",""],["workspace_root",""]]});
+initSidebarItems({"fn":[["get_bin",""],["get_libra_node_with_inject_error",""],["workspace_root",""]]});

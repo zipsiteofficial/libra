@@ -67,12 +67,16 @@
 <span id="67">67</span>
 <span id="68">68</span>
 <span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! Inject non-deterministic anyhow::Error on annotated functions, it requires the dependency of rand</span>
-<span class="doccomment">//! and is only enabled when compiled with feature &quot;inject-error&quot; and **not** in cargo test.</span>
+<span class="doccomment">//! and is only enabled when compiled with feature &quot;enable-inject-error&quot; in the caller crate</span>
+<span class="doccomment">//! and **not** in cargo test.</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
@@ -112,27 +116,29 @@
     <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">chance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">0.0</span>);
     <span class="kw">let</span> <span class="ident">chance</span> <span class="op">=</span> (<span class="ident">chance</span> <span class="op">*</span> <span class="number">100.0</span>) <span class="kw">as</span> <span class="ident">u64</span>;
     <span class="kw">let</span> <span class="ident">original_func</span> <span class="op">=</span> <span class="macro">parse_macro_input</span><span class="macro">!</span>(<span class="ident">input</span> <span class="kw">as</span> <span class="ident">syn</span>::<span class="ident">ItemFn</span>);
+    <span class="kw">let</span> <span class="ident">fn_name</span> <span class="op">=</span> <span class="ident">original_func</span>.<span class="ident">sig</span>.<span class="ident">ident</span>.<span class="ident">to_string</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">injected_func</span> <span class="op">=</span> <span class="ident">original_func</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">stmt0</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
         <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">Rng</span>;
     };
     <span class="kw">let</span> <span class="ident">stmt1</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
        <span class="kw">if</span> <span class="ident">rand</span>::<span class="ident">thread_rng</span>().<span class="ident">gen_range</span>(<span class="number">0</span>, <span class="number">100</span>) <span class="op">&lt;</span> #<span class="ident">chance</span> {
-           <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error&quot;</span>))<span class="question-mark">?</span>;
+           <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error from {} with chance {} in 100&quot;</span>, #<span class="ident">fn_name</span>, #<span class="ident">chance</span>))<span class="question-mark">?</span>;
        }
     };
     <span class="ident">injected_func</span>
         .<span class="ident">block</span>
         .<span class="ident">stmts</span>
-        .<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">syn</span>::<span class="ident">parse2</span>(<span class="ident">stmt0</span>).<span class="ident">unwrap</span>());
+        .<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">syn</span>::<span class="ident">parse2</span>(<span class="ident">stmt1</span>).<span class="ident">unwrap</span>());
     <span class="ident">injected_func</span>
         .<span class="ident">block</span>
         .<span class="ident">stmts</span>
-        .<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">syn</span>::<span class="ident">parse2</span>(<span class="ident">stmt1</span>).<span class="ident">unwrap</span>());
+        .<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">syn</span>::<span class="ident">parse2</span>(<span class="ident">stmt0</span>).<span class="ident">unwrap</span>());
     <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="macro">quote</span><span class="macro">!</span> {
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">not</span>(<span class="ident">feature</span><span class="op">=</span><span class="string">&quot;inject-error&quot;</span>)))]</span>
+        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;enable-inject-error&quot;</span>)))]</span>
         #<span class="ident">original_func</span>
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">feature</span><span class="op">=</span><span class="string">&quot;inject-error&quot;</span>))]</span>
+
+        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">not</span>(<span class="ident">test</span>), <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;enable-inject-error&quot;</span>))]</span>
         #<span class="ident">injected_func</span>
     };
     <span class="ident">output</span>.<span class="ident">into</span>()
