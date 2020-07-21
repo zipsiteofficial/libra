@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["NegotiatedSubstream","A Negotiated substream encapsulates a protocol and a substream for which that protocol has been negotiated."]]});
