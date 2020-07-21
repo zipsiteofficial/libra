@@ -140,210 +140,148 @@
 <span id="140">140</span>
 <span id="141">141</span>
 <span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">x25519</span>;
-<span class="kw">use</span> <span class="ident">libra_global_constants</span>::<span class="ident">VALIDATOR_NETWORK_KEY</span>;
+<span class="kw">use</span> <span class="ident">libra_global_constants</span>::{<span class="ident">OWNER_ACCOUNT</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>};
 <span class="kw">use</span> <span class="ident">libra_management</span>::{
-    <span class="ident">error</span>::<span class="ident">Error</span>,
-    <span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>,
-    <span class="ident">secure_backend</span>::{<span class="ident">SharedBackend</span>, <span class="ident">ValidatorBackend</span>},
-    <span class="ident">storage</span>::<span class="ident">StorageWrapper</span>,
-    <span class="ident">validator_config</span>::{
-        <span class="ident">decode_validator_address</span>, <span class="ident">encode_address</span>, <span class="ident">encode_validator_address</span>,
-        <span class="ident">update_config_and_reconfigure</span>,
-    },
-    <span class="ident">TransactionContext</span>,
+    <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>, <span class="ident">storage</span>::<span class="ident">StorageWrapper</span>, <span class="ident">TransactionContext</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
-    <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
-    <span class="ident">NetworkAddress</span>,
+    <span class="ident">encrypted</span>::{<span class="ident">EncNetworkAddress</span>, <span class="ident">Key</span>, <span class="ident">RawEncNetworkAddress</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>},
+    <span class="ident">NetworkAddress</span>, <span class="ident">Protocol</span>, <span class="ident">RawNetworkAddress</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetValidatorConfig</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;JSON-RPC Endpoint (e.g. http://localhost:8080&quot;</span>)]</span>
-    <span class="ident">host</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Owner account address&quot;</span>)]</span>
-    <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">GetValidatorConfig</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ValidatorConfig</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">host</span>);
-        <span class="ident">client</span>.<span class="ident">validator_config</span>(<span class="self">self</span>.<span class="ident">account</span>)
-    }
-}
 
 <span class="comment">// TODO: Load all chain IDs from the host</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SetValidatorConfig</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Chain Id representing the chain (one byte)&quot;</span>)]</span>
-    <span class="ident">chain_id</span>: <span class="ident">u8</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;JSON-RPC Endpoint (e.g. http://localhost:8080&quot;</span>)]</span>
     <span class="ident">host</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Owner account address&quot;</span>)]</span>
-    <span class="ident">owner_account</span>: <span class="ident">AccountAddress</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="ident">validator_config</span>: <span class="ident">libra_management</span>::<span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Validator Network Address&quot;</span>)]</span>
     <span class="ident">validator_address</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Full Node Network Address&quot;</span>)]</span>
     <span class="ident">fullnode_address</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">shared_backend</span>: <span class="ident">SharedBackend</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SetValidatorConfig</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionContext</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">idx_addr</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">storage_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>();
+        <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">new</span>(
+            <span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>(),
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
+        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">account_address</span>(<span class="ident">OWNER_ACCOUNT</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// Get current sequence number</span>
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">host</span>);
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">sequence_number</span>(<span class="self">self</span>.<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">sequence_number</span>(<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// Update validator or full node address accordingly</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">validator_config</span>(<span class="self">self</span>.<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">validator_address</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">validator_address</span> {
-            <span class="kw">let</span> <span class="ident">validator_address</span> <span class="op">=</span> <span class="ident">validator_address</span>.<span class="ident">append_prod_protos</span>(
-                <span class="ident">validator_config</span>.<span class="ident">validator_network_identity_public_key</span>,
-                <span class="ident">HANDSHAKE_VERSION</span>,
-            );
-            <span class="ident">validator_config</span>.<span class="ident">validator_network_address</span> <span class="op">=</span> <span class="ident">encode_validator_address</span>(
-                <span class="ident">validator_address</span>,
-                <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">owner_account</span>,
-                <span class="ident">sequence_number</span>,
+        <span class="comment">// Retrieve the current validator / fullnode addresses and update accordingly</span>
+        <span class="kw">let</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">validator_config</span>(<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">validator_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">validator_address</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">validator_address</span> {
+            <span class="ident">validator_address</span>
+        } <span class="kw">else</span> {
+            <span class="ident">decode_validator_address</span>(
+                <span class="ident">validator_config</span>.<span class="ident">validator_network_address</span>,
+                <span class="kw-2">&amp;</span><span class="ident">owner_account</span>,
                 <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
-                <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-                <span class="ident">idx_addr</span>,
+                <span class="number">0</span>, <span class="comment">// addr_idx</span>
             )<span class="question-mark">?</span>
         };
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">fullnode_address</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">fullnode_address</span> {
-            <span class="kw">let</span> <span class="ident">fullnode_address</span> <span class="op">=</span> <span class="ident">fullnode_address</span>.<span class="ident">append_prod_protos</span>(
-                <span class="ident">validator_config</span>.<span class="ident">full_node_network_identity_public_key</span>,
-                <span class="ident">HANDSHAKE_VERSION</span>,
-            );
-            <span class="ident">validator_config</span>.<span class="ident">full_node_network_address</span> <span class="op">=</span> <span class="ident">encode_address</span>(<span class="ident">fullnode_address</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">fullnode_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">fullnode_address</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">fullnode_address</span> {
+            <span class="ident">fullnode_address</span>
+        } <span class="kw">else</span> {
+            <span class="ident">decode_address</span>(<span class="ident">validator_config</span>.<span class="ident">full_node_network_address</span>)<span class="question-mark">?</span>
         };
 
-        <span class="comment">// Submit the transaction with a reconfigure</span>
-        <span class="ident">update_config_and_reconfigure</span>(
-            <span class="ident">storage_name</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
-            <span class="kw-2">&amp;</span><span class="ident">client</span>,
-            <span class="self">self</span>.<span class="ident">owner_account</span>,
-            <span class="self">self</span>.<span class="ident">chain_id</span>,
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">build_transaction</span>(
             <span class="ident">sequence_number</span>,
-            <span class="ident">validator_config</span>,
-        )
+            <span class="ident">fullnode_address</span>,
+            <span class="ident">validator_address</span>,
+            <span class="bool-val">true</span>,
+        )<span class="question-mark">?</span>;
+        <span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="ident">txn</span>.<span class="ident">as_signed_user_txn</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>())
     }
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RotateValidatorNetworkKey</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Chain Id representing the chain (one byte)&quot;</span>)]</span>
-    <span class="ident">chain_id</span>: <span class="ident">u8</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;JSON-RPC Endpoint (e.g. http://localhost:8080)&quot;</span>)]</span>
     <span class="ident">host</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Owner account address&quot;</span>)]</span>
-    <span class="ident">owner_account</span>: <span class="ident">AccountAddress</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
+    <span class="ident">validator_config</span>: <span class="ident">libra_management</span>::<span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">RotateValidatorNetworkKey</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransactionContext</span>, <span class="ident">x25519</span>::<span class="ident">PublicKey</span>), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">idx_addr</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">storage_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>();
-
-        <span class="comment">// Get current sequence number</span>
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">host</span>);
-
-        <span class="comment">// TODO: This should be in a single call for both validator config and sequence number</span>
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">sequence_number</span>(<span class="self">self</span>.<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">validator_config</span>(<span class="self">self</span>.<span class="ident">owner_account</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validator_address</span> <span class="op">=</span> <span class="ident">decode_validator_address</span>(
-            <span class="ident">validator_config</span>.<span class="ident">validator_network_address</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">owner_account</span>,
-            <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
-            <span class="ident">idx_addr</span>,
-        )<span class="question-mark">?</span>;
-
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">new</span>(
-            <span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>(),
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
+            <span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>(),
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
         )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">rotate_key</span>(<span class="ident">VALIDATOR_NETWORK_KEY</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">x25519</span>(<span class="ident">key</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// Rotate key in storage and network address</span>
-        <span class="kw">let</span> <span class="ident">new_validator_network_key</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">rotate_key</span>(<span class="ident">VALIDATOR_NETWORK_KEY</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">new_validator_network_key</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">x25519</span>(<span class="ident">new_validator_network_key</span>)<span class="question-mark">?</span>;
-        <span class="ident">validator_address</span>.<span class="ident">rotate_noise_public_key</span>(
-            <span class="kw-2">&amp;</span><span class="ident">validator_config</span>.<span class="ident">validator_network_identity_public_key</span>,
-            <span class="kw-2">&amp;</span><span class="ident">new_validator_network_key</span>,
-        );
-        <span class="kw">let</span> <span class="ident">raw_enc_validator_address</span> <span class="op">=</span> <span class="ident">encode_validator_address</span>(
-            <span class="ident">validator_address</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">owner_account</span>,
-            <span class="ident">sequence_number</span>,
-            <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
-            <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-            <span class="ident">idx_addr</span>,
-        )<span class="question-mark">?</span>;
-        <span class="ident">validator_config</span>.<span class="ident">validator_network_identity_public_key</span> <span class="op">=</span> <span class="ident">new_validator_network_key</span>;
-        <span class="ident">validator_config</span>.<span class="ident">validator_network_address</span> <span class="op">=</span> <span class="ident">raw_enc_validator_address</span>;
+        <span class="kw">let</span> <span class="ident">set_validator_config</span> <span class="op">=</span> <span class="ident">SetValidatorConfig</span> {
+            <span class="ident">host</span>: <span class="self">self</span>.<span class="ident">host</span>,
+            <span class="ident">validator_config</span>: <span class="self">self</span>.<span class="ident">validator_config</span>,
+            <span class="ident">validator_address</span>: <span class="prelude-val">None</span>,
+            <span class="ident">fullnode_address</span>: <span class="prelude-val">None</span>,
+        };
 
-        <span class="comment">// Submit the transaction with a reconfigure</span>
-        <span class="kw">let</span> <span class="ident">transaction_context</span> <span class="op">=</span> <span class="ident">update_config_and_reconfigure</span>(
-            <span class="ident">storage_name</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
-            <span class="kw-2">&amp;</span><span class="ident">client</span>,
-            <span class="self">self</span>.<span class="ident">owner_account</span>,
-            <span class="self">self</span>.<span class="ident">chain_id</span>,
-            <span class="ident">sequence_number</span>,
-            <span class="ident">validator_config</span>,
-        )<span class="question-mark">?</span>;
-
-        <span class="prelude-val">Ok</span>((<span class="ident">transaction_context</span>, <span class="ident">new_validator_network_key</span>))
+        <span class="ident">set_validator_config</span>.<span class="ident">execute</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">txn_ctx</span><span class="op">|</span> (<span class="ident">txn_ctx</span>, <span class="ident">key</span>))
     }
+}
+
+<span class="kw">fn</span> <span class="ident">decode_validator_address</span>(
+    <span class="ident">address</span>: <span class="ident">RawEncNetworkAddress</span>,
+    <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
+    <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">Key</span>,
+    <span class="ident">addr_idx</span>: <span class="ident">u32</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">EncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+        <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+            <span class="string">&quot;Failed to decode network address {}&quot;</span>,
+            <span class="ident">e</span>.<span class="ident">to_string</span>()
+        ))
+    })<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">raw_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">decrypt</span>(<span class="ident">key</span>, <span class="ident">account</span>, <span class="ident">addr_idx</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+        <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+            <span class="string">&quot;Failed to decrypt network address {}&quot;</span>,
+            <span class="ident">e</span>.<span class="ident">to_string</span>()
+        ))
+    })<span class="question-mark">?</span>;
+    <span class="ident">decode_address</span>(<span class="ident">raw_addr</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">decode_address</span>(<span class="ident">raw_address</span>: <span class="ident">RawNetworkAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">network_address</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">raw_address</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+        <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
+            <span class="string">&quot;Failed to decode network address {}&quot;</span>,
+            <span class="ident">e</span>.<span class="ident">to_string</span>()
+        ))
+    })<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">protocols</span> <span class="op">=</span> <span class="ident">network_address</span>
+        .<span class="ident">as_slice</span>()
+        .<span class="ident">iter</span>()
+        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">protocol</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">protocol</span> {
+            <span class="ident">Protocol</span>::<span class="ident">Dns</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Dns4</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Dns6</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Ip4</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Ip6</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Memory</span>(<span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">Protocol</span>::<span class="ident">Tcp</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+        })
+        .<span class="ident">cloned</span>()
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+    <span class="prelude-val">Ok</span>(<span class="ident">NetworkAddress</span>::<span class="ident">try_from</span>(<span class="ident">protocols</span>).<span class="ident">unwrap</span>())
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libra_operational_tool";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
