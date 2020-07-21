@@ -382,13 +382,25 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! Module contains RPC method handlers for Full Node JSON-RPC interface</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">errors</span>::<span class="ident">JsonRpcError</span>,
+    <span class="ident">errors</span>::{<span class="ident">ErrorData</span>, <span class="ident">InvalidArguments</span>, <span class="ident">JsonRpcError</span>},
     <span class="ident">views</span>::{
         <span class="ident">AccountStateWithProofView</span>, <span class="ident">AccountView</span>, <span class="ident">BlockMetadata</span>, <span class="ident">CurrencyInfoView</span>, <span class="ident">EventView</span>,
         <span class="ident">StateProofView</span>, <span class="ident">TransactionView</span>,
@@ -461,10 +473,19 @@
 }
 
 <span class="kw">impl</span> <span class="ident">JsonRpcRequest</span> {
-    <span class="doccomment">/// Returns the request parameter at the given index. Note: this method should not panic with</span>
-    <span class="doccomment">/// an out of bounds error, as the number of request parameters has already been checked.</span>
+    <span class="doccomment">/// Returns the request parameter at the given index.</span>
+    <span class="doccomment">/// Returns Null if given index is out of bounds.</span>
     <span class="kw">fn</span> <span class="ident">get_param</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Value</span> {
-        <span class="self">self</span>.<span class="ident">params</span>[<span class="ident">index</span>].<span class="ident">clone</span>()
+        <span class="self">self</span>.<span class="ident">get_param_with_default</span>(<span class="ident">index</span>, <span class="ident">Value</span>::<span class="ident">Null</span>)
+    }
+
+    <span class="doccomment">/// Returns the request parameter at the given index.</span>
+    <span class="doccomment">/// Returns default Value if given index is out of bounds.</span>
+    <span class="kw">fn</span> <span class="ident">get_param_with_default</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">default</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Value</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">params</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">index</span> {
+            <span class="kw">return</span> <span class="self">self</span>.<span class="ident">params</span>[<span class="ident">index</span>].<span class="ident">clone</span>();
+        }
+        <span class="ident">default</span>
     }
 
     <span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
@@ -741,29 +762,32 @@
 <span class="doccomment">/// Builds registry of all available RPC methods</span>
 <span class="doccomment">/// To register new RPC method, add it via `register_rpc_method!` macros call</span>
 <span class="doccomment">/// Note that RPC method name will equal to name of function</span>
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_comparisons</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_registry</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RpcRegistry</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">registry</span> <span class="op">=</span> <span class="ident">RpcRegistry</span>::<span class="ident">new</span>();
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;submit&quot;</span>, <span class="ident">submit</span>, <span class="number">1</span>);
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_metadata&quot;</span>, <span class="ident">get_metadata</span>, <span class="number">1</span>);
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_account&quot;</span>, <span class="ident">get_account</span>, <span class="number">1</span>);
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_transactions&quot;</span>, <span class="ident">get_transactions</span>, <span class="number">3</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;submit&quot;</span>, <span class="ident">submit</span>, <span class="number">1</span>, <span class="number">0</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_metadata&quot;</span>, <span class="ident">get_metadata</span>, <span class="number">0</span>, <span class="number">1</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_account&quot;</span>, <span class="ident">get_account</span>, <span class="number">1</span>, <span class="number">0</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_transactions&quot;</span>, <span class="ident">get_transactions</span>, <span class="number">3</span>, <span class="number">0</span>);
     <span class="macro">register_rpc_method</span><span class="macro">!</span>(
         <span class="ident">registry</span>,
         <span class="string">&quot;get_account_transaction&quot;</span>,
         <span class="ident">get_account_transaction</span>,
-        <span class="number">3</span>
+        <span class="number">3</span>,
+        <span class="number">0</span>
     );
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_events&quot;</span>, <span class="ident">get_events</span>, <span class="number">3</span>);
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_currencies&quot;</span>, <span class="ident">currencies_info</span>, <span class="number">0</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_events&quot;</span>, <span class="ident">get_events</span>, <span class="number">3</span>, <span class="number">0</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_currencies&quot;</span>, <span class="ident">currencies_info</span>, <span class="number">0</span>, <span class="number">0</span>);
 
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_state_proof&quot;</span>, <span class="ident">get_state_proof</span>, <span class="number">1</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_state_proof&quot;</span>, <span class="ident">get_state_proof</span>, <span class="number">1</span>, <span class="number">0</span>);
     <span class="macro">register_rpc_method</span><span class="macro">!</span>(
         <span class="ident">registry</span>,
         <span class="string">&quot;get_account_state_with_proof&quot;</span>,
         <span class="ident">get_account_state_with_proof</span>,
-        <span class="number">3</span>
+        <span class="number">3</span>,
+        <span class="number">0</span>
     );
-    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_network_status&quot;</span>, <span class="ident">get_network_status</span>, <span class="number">0</span>);
+    <span class="macro">register_rpc_method</span><span class="macro">!</span>(<span class="ident">registry</span>, <span class="string">&quot;get_network_status&quot;</span>, <span class="ident">get_network_status</span>, <span class="number">0</span>, <span class="number">0</span>);
 
     <span class="ident">registry</span>
 }
