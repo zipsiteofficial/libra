@@ -279,6 +279,17 @@
 <span id="279">279</span>
 <span id="280">280</span>
 <span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -291,10 +302,10 @@
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">join_all</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::{<span class="ident">NodeConfig</span>, <span class="ident">RoleType</span>};
 <span class="kw">use</span> <span class="ident">libra_json_rpc_types</span>::<span class="ident">views</span>::{
-    <span class="ident">JSONRPC_LIBRA_LEDGER_TIMESTAMPUSECS</span>, <span class="ident">JSONRPC_LIBRA_LEDGER_VERSION</span>,
+    <span class="ident">JSONRPC_LIBRA_CHAIN_ID</span>, <span class="ident">JSONRPC_LIBRA_LEDGER_TIMESTAMPUSECS</span>, <span class="ident">JSONRPC_LIBRA_LEDGER_VERSION</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_mempool</span>::<span class="ident">MempoolClientSender</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>};
 <span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">map</span>::<span class="ident">Map</span>, <span class="ident">Value</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">net</span>::<span class="ident">SocketAddr</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">storage_interface</span>::<span class="ident">DbReader</span>;
@@ -319,6 +330,7 @@
     <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>,
     <span class="ident">mp_sender</span>: <span class="ident">MempoolClientSender</span>,
     <span class="ident">role</span>: <span class="ident">RoleType</span>,
+    <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Runtime</span> {
     <span class="kw">let</span> <span class="ident">runtime</span> <span class="op">=</span> <span class="ident">Builder</span>::<span class="ident">new</span>()
         .<span class="ident">thread_name</span>(<span class="string">&quot;rpc-&quot;</span>)
@@ -328,7 +340,7 @@
         .<span class="ident">expect</span>(<span class="string">&quot;[rpc] failed to create runtime&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">registry</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">build_registry</span>());
-    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">JsonRpcService</span>::<span class="ident">new</span>(<span class="ident">libra_db</span>, <span class="ident">mp_sender</span>, <span class="ident">role</span>);
+    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">JsonRpcService</span>::<span class="ident">new</span>(<span class="ident">libra_db</span>, <span class="ident">mp_sender</span>, <span class="ident">role</span>, <span class="ident">chain_id</span>);
 
     <span class="kw">let</span> <span class="ident">base_route</span> <span class="op">=</span> <span class="ident">warp</span>::<span class="ident">any</span>()
         .<span class="ident">and</span>(<span class="ident">warp</span>::<span class="ident">post</span>())
@@ -365,7 +377,13 @@
     <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>,
     <span class="ident">mp_sender</span>: <span class="ident">MempoolClientSender</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Runtime</span> {
-    <span class="ident">bootstrap</span>(<span class="ident">config</span>.<span class="ident">rpc</span>.<span class="ident">address</span>, <span class="ident">libra_db</span>, <span class="ident">mp_sender</span>, <span class="ident">config</span>.<span class="ident">base</span>.<span class="ident">role</span>)
+    <span class="ident">bootstrap</span>(
+        <span class="ident">config</span>.<span class="ident">rpc</span>.<span class="ident">address</span>,
+        <span class="ident">libra_db</span>,
+        <span class="ident">mp_sender</span>,
+        <span class="ident">config</span>.<span class="ident">base</span>.<span class="ident">role</span>,
+        <span class="ident">config</span>.<span class="ident">base</span>.<span class="ident">chain_id</span>,
+    )
 }
 
 <span class="doccomment">/// JSON RPC entry point</span>
@@ -425,6 +443,10 @@
     <span class="ident">response</span>.<span class="ident">insert</span>(
         <span class="ident">JSONRPC_LIBRA_LEDGER_TIMESTAMPUSECS</span>.<span class="ident">to_string</span>(),
         <span class="ident">Value</span>::<span class="ident">Number</span>(<span class="ident">timestamp</span>.<span class="ident">into</span>()),
+    );
+    <span class="ident">response</span>.<span class="ident">insert</span>(
+        <span class="ident">JSONRPC_LIBRA_CHAIN_ID</span>.<span class="ident">to_string</span>(),
+        <span class="ident">Value</span>::<span class="ident">Number</span>(<span class="ident">service</span>.<span class="ident">chain_id</span>().<span class="ident">id</span>().<span class="ident">into</span>()),
     );
 
     <span class="kw">match</span> <span class="ident">req</span> {
