@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["constants",""],["error",""],["genesis",""],["json_rpc",""],["key",""],["layout",""],["secure_backend",""],["validator_config",""],["validator_operator",""],["verify",""],["waypoint",""]]});
+initSidebarItems({"mod":[["constants",""],["error",""],["genesis",""],["json_rpc",""],["key",""],["layout",""],["secure_backend",""],["storage",""],["validator_config",""],["validator_operator",""],["verify",""],["waypoint",""]],"struct":[["TransactionContext","Information for validating a transaction after it's been submitted"]]});
