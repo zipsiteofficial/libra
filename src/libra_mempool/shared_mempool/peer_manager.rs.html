@@ -323,10 +323,40 @@
 <span id="323">323</span>
 <span id="324">324</span>
 <span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">counters</span>;
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::{
     <span class="ident">config</span>::{<span class="ident">PeerNetworkId</span>, <span class="ident">UpstreamConfig</span>},
@@ -338,6 +368,7 @@
     <span class="ident">collections</span>::{<span class="ident">BTreeSet</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>},
     <span class="ident">sync</span>::<span class="ident">Mutex</span>,
+    <span class="ident">time</span>::<span class="ident">Instant</span>,
 };
 
 <span class="doccomment">/// stores only peers that receive txns from this node</span>
@@ -364,7 +395,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BroadcastInfo</span> {
     <span class="comment">// broadcasts that have not been ACK&#39;ed for yet</span>
-    <span class="kw">pub</span> <span class="ident">sent_batches</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">sent_batches</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">BatchInfo</span><span class="op">&gt;</span>,
     <span class="comment">// timeline IDs of all txns that need to be retried and ACKed for</span>
     <span class="kw">pub</span> <span class="ident">total_retry_txns</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="comment">// whether broadcasts are in backoff/backpressure mode, e.g. broadcasting at longer intervals</span>
@@ -379,6 +410,14 @@
             <span class="ident">backoff_mode</span>: <span class="bool-val">false</span>,
         }
     }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BatchInfo</span> {
+    <span class="doccomment">/// Timeline IDs of broadcasted txns</span>
+    <span class="kw">pub</span> <span class="ident">timeline_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// timestamp of broadcast</span>
+    <span class="kw">pub</span> <span class="ident">timestamp</span>: <span class="ident">Instant</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PeerManager</span> {
@@ -518,6 +557,8 @@
         <span class="ident">timeline_id</span>: <span class="ident">u64</span>,
         <span class="comment">// timeline ID of first txn in timeline, used to remove potentially expired retry_txns</span>
         <span class="ident">earliest_timeline_id</span>: <span class="ident">u64</span>,
+        <span class="comment">// timestamp of broadcast</span>
+        <span class="ident">timestamp</span>: <span class="ident">Instant</span>,
     ) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">peer_info</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">peer_info</span>
@@ -525,10 +566,13 @@
             .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire peer_info lock&quot;</span>);
 
         <span class="kw">let</span> <span class="ident">sync_state</span> <span class="op">=</span> <span class="ident">peer_info</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>).<span class="ident">expect</span>(<span class="string">&quot;missing peer sync state&quot;</span>);
-        <span class="ident">sync_state</span>
-            .<span class="ident">broadcast_info</span>
-            .<span class="ident">sent_batches</span>
-            .<span class="ident">insert</span>(<span class="ident">batch_id</span>, <span class="ident">batch</span>);
+        <span class="ident">sync_state</span>.<span class="ident">broadcast_info</span>.<span class="ident">sent_batches</span>.<span class="ident">insert</span>(
+            <span class="ident">batch_id</span>,
+            <span class="ident">BatchInfo</span> {
+                <span class="ident">timeline_ids</span>: <span class="ident">batch</span>,
+                <span class="ident">timestamp</span>,
+            },
+        );
         <span class="ident">sync_state</span>.<span class="ident">timeline_id</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">sync_state</span>.<span class="ident">timeline_id</span>, <span class="ident">timeline_id</span>);
 
         <span class="comment">// clean up expired retriable txns</span>
@@ -549,6 +593,8 @@
         <span class="ident">batch_id</span>: <span class="ident">String</span>,
         <span class="ident">retry_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
         <span class="ident">backoff</span>: <span class="ident">bool</span>,
+        <span class="comment">// timestamp of ACK received</span>
+        <span class="ident">timestamp</span>: <span class="ident">Instant</span>,
     ) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">peer_info</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">peer_info</span>
@@ -558,12 +604,24 @@
         <span class="kw">let</span> <span class="ident">sync_state</span> <span class="op">=</span> <span class="ident">peer_info</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>).<span class="ident">expect</span>(<span class="string">&quot;missing peer sync state&quot;</span>);
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">batch</span>) <span class="op">=</span> <span class="ident">sync_state</span>.<span class="ident">broadcast_info</span>.<span class="ident">sent_batches</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">batch_id</span>) {
+            <span class="comment">// update ACK counter</span>
+            <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_PENDING_BROADCASTS_COUNT</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">dec</span>();
+
+            <span class="comment">// track broadcast roundtrip latency</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">rtt</span>) <span class="op">=</span> <span class="ident">timestamp</span>.<span class="ident">checked_duration_since</span>(<span class="ident">batch</span>.<span class="ident">timestamp</span>) {
+                <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_BROADCAST_RTT</span>
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                    .<span class="ident">observe</span>(<span class="ident">rtt</span>.<span class="ident">as_secs_f64</span>());
+            }
+
             <span class="comment">// convert retry_txns from index within a batch to actual timeline ID of txn</span>
             <span class="kw">let</span> <span class="ident">retry_timeline_ids</span> <span class="op">=</span> <span class="ident">retry_txns</span>
                 .<span class="ident">iter</span>()
-                .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">batch_index</span><span class="op">|</span> <span class="ident">batch</span>.<span class="ident">get</span>(<span class="kw-2">*</span><span class="ident">batch_index</span> <span class="kw">as</span> <span class="ident">usize</span>).<span class="ident">cloned</span>())
+                .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">batch_index</span><span class="op">|</span> <span class="ident">batch</span>.<span class="ident">timeline_ids</span>.<span class="ident">get</span>(<span class="kw-2">*</span><span class="ident">batch_index</span> <span class="kw">as</span> <span class="ident">usize</span>).<span class="ident">cloned</span>())
                 .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">HashSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
-            <span class="kw">for</span> <span class="ident">timeline_id</span> <span class="kw">in</span> <span class="ident">batch</span>.<span class="ident">into_iter</span>() {
+            <span class="kw">for</span> <span class="ident">timeline_id</span> <span class="kw">in</span> <span class="ident">batch</span>.<span class="ident">timeline_ids</span>.<span class="ident">into_iter</span>() {
                 <span class="kw">if</span> <span class="ident">retry_timeline_ids</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">timeline_id</span>) {
                     <span class="comment">// add this retriable txn&#39;s timeline ID to peer info&#39;s retry_txns</span>
                     <span class="ident">sync_state</span>

@@ -268,6 +268,14 @@
 <span id="268">268</span>
 <span id="269">269</span>
 <span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -281,7 +289,7 @@
         <span class="ident">transaction_store</span>::<span class="ident">TransactionStore</span>,
         <span class="ident">ttl_cache</span>::<span class="ident">TtlCache</span>,
     },
-    <span class="ident">OP_COUNTERS</span>,
+    <span class="ident">counters</span>, <span class="ident">OP_COUNTERS</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">NodeConfig</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -336,7 +344,12 @@
             <span class="ident">sequence_number</span>,
             <span class="ident">is_rejected</span>
         );
-        <span class="self">self</span>.<span class="ident">log_latency</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>, <span class="string">&quot;e2e.latency&quot;</span>);
+        <span class="kw">let</span> <span class="ident">metric_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_rejected</span> {
+            <span class="ident">counters</span>::<span class="ident">COMMIT_REJECTED_LABEL</span>
+        } <span class="kw">else</span> {
+            <span class="ident">counters</span>::<span class="ident">COMMIT_ACCEPTED_LABEL</span>
+        };
+        <span class="self">self</span>.<span class="ident">log_latency</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>, <span class="ident">metric_label</span>);
         <span class="self">self</span>.<span class="ident">metrics_cache</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>));
         <span class="ident">OP_COUNTERS</span>.<span class="ident">inc</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;remove_transaction.{}&quot;</span>, <span class="ident">is_rejected</span>));
 
@@ -366,7 +379,9 @@
     <span class="kw">fn</span> <span class="ident">log_latency</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">account</span>: <span class="ident">AccountAddress</span>, <span class="ident">sequence_number</span>: <span class="ident">u64</span>, <span class="ident">metric</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">creation_time</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">metrics_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="ident">account</span>, <span class="ident">sequence_number</span>)) {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">time_delta</span>) <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">duration_since</span>(<span class="ident">creation_time</span>) {
-                <span class="ident">OP_COUNTERS</span>.<span class="ident">observe_duration</span>(<span class="ident">metric</span>, <span class="ident">time_delta</span>);
+                <span class="ident">counters</span>::<span class="ident">CORE_MEMPOOL_TXN_COMMIT_LATENCY</span>
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">metric</span>])
+                    .<span class="ident">observe</span>(<span class="ident">time_delta</span>.<span class="ident">as_secs_f64</span>());
             }
         }
     }
@@ -494,7 +509,7 @@
             <span class="self">self</span>.<span class="ident">log_latency</span>(
                 <span class="ident">transaction</span>.<span class="ident">sender</span>(),
                 <span class="ident">transaction</span>.<span class="ident">sequence_number</span>(),
-                <span class="string">&quot;txn_pre_consensus_s&quot;</span>,
+                <span class="ident">counters</span>::<span class="ident">GET_BLOCK_STAGE_LABEL</span>,
             );
         }
         <span class="ident">block</span>
@@ -505,14 +520,15 @@
     <span class="doccomment">/// clears expired entries in metrics cache and sequence number cache</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">gc</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>();
-        <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">gc_by_system_ttl</span>();
+        <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">gc_by_system_ttl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics_cache</span>);
         <span class="self">self</span>.<span class="ident">metrics_cache</span>.<span class="ident">gc</span>(<span class="ident">now</span>);
         <span class="self">self</span>.<span class="ident">sequence_number_cache</span>.<span class="ident">gc</span>(<span class="ident">now</span>);
     }
 
     <span class="doccomment">/// Garbage collection based on client-specified expiration time</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">gc_by_expiration_time</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">block_time</span>: <span class="ident">Duration</span>) {
-        <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">gc_by_expiration_time</span>(<span class="ident">block_time</span>);
+        <span class="self">self</span>.<span class="ident">transactions</span>
+            .<span class="ident">gc_by_expiration_time</span>(<span class="ident">block_time</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metrics_cache</span>);
     }
 
     <span class="doccomment">/// Read `count` transactions from timeline since `timeline_id`</span>
