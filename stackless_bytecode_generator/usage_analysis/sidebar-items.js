@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["TransitiveUsage","A data structure to retrieve transitive enriched usage data. This internally uses the result of the usage processor, which must be installed in function target pipeline for this to work."],["UsageProcessor",""]]});

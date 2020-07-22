@@ -519,6 +519,20 @@
 <span id="519">519</span>
 <span id="520">520</span>
 <span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -539,7 +553,7 @@
 };
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">file_format</span>::<span class="ident">CodeOffset</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">env</span>::{<span class="ident">FunId</span>, <span class="ident">SchemaId</span>, <span class="ident">TypeParameter</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">env</span>::{<span class="ident">FunId</span>, <span class="ident">GlobalId</span>, <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">TypeParameter</span>};
 
 <span class="comment">// =================================================================================================</span>
 <span class="doccomment">/// # Declarations</span>
@@ -559,8 +573,8 @@
     <span class="kw">pub</span> <span class="ident">type_params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Symbol</span>, <span class="ident">Type</span>)<span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">params</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Symbol</span>, <span class="ident">Type</span>)<span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">result_type</span>: <span class="ident">Type</span>,
-    <span class="kw">pub</span> <span class="ident">used_spec_vars</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span>(<span class="ident">ModuleId</span>, <span class="ident">SpecVarId</span>)<span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">used_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span>(<span class="ident">ModuleId</span>, <span class="ident">StructId</span>)<span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">used_spec_vars</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">SpecVarId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">used_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">uninterpreted</span>: <span class="ident">bool</span>,
     <span class="kw">pub</span> <span class="ident">body</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Exp</span><span class="op">&gt;</span>,
 }
@@ -636,7 +650,7 @@
     <span class="doccomment">/// Returns true if this condition is allowed on a module.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">allowed_on_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">use</span> <span class="ident">ConditionKind</span>::<span class="kw-2">*</span>;
-        <span class="macro">matches</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Invariant</span>)
+        <span class="macro">matches</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Invariant</span> <span class="op">|</span> <span class="ident">InvariantUpdate</span>)
     }
 }
 
@@ -737,6 +751,18 @@
     <span class="ident">Function</span>(<span class="ident">ModuleId</span>, <span class="ident">FunId</span>),
     <span class="ident">FunctionCode</span>(<span class="ident">ModuleId</span>, <span class="ident">FunId</span>, <span class="ident">usize</span>),
     <span class="ident">Schema</span>(<span class="ident">ModuleId</span>, <span class="ident">SchemaId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TypeParameter</span><span class="op">&gt;</span>),
+}
+
+<span class="doccomment">/// Describes a global invariant.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GlobalInvariant</span> {
+    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">GlobalId</span>,
+    <span class="kw">pub</span> <span class="ident">loc</span>: <span class="ident">Loc</span>,
+    <span class="kw">pub</span> <span class="ident">kind</span>: <span class="ident">ConditionKind</span>,
+    <span class="kw">pub</span> <span class="ident">mem_usage</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">spec_var_usage</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">SpecVarId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">declaring_module</span>: <span class="ident">ModuleId</span>,
+    <span class="kw">pub</span> <span class="ident">cond</span>: <span class="ident">Exp</span>,
 }
 
 <span class="comment">// =================================================================================================</span>
@@ -848,6 +874,8 @@
     <span class="ident">Exists</span>,
     <span class="ident">Old</span>,
     <span class="ident">Trace</span>,
+    <span class="ident">Empty</span>,
+    <span class="ident">Single</span>,
     <span class="ident">Update</span>,
     <span class="ident">Concat</span>,
     <span class="ident">MaxU8</span>,
