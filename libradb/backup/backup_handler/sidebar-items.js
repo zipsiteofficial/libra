@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["BackupHandler","`BackupHandler` provides functionalities for LibraDB data backup."]]});
+initSidebarItems({"struct":[["BackupHandler","`BackupHandler` provides functionalities for LibraDB data backup."],["DbState",""]]});
