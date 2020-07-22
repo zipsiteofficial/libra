@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ApplicationConfig",""]],"fn":[["instancelist_to_set",""]],"struct":[["FullnodeConfig",""],["Instance",""],["InstanceConfig",""],["LSRConfig",""],["ValidatorConfig",""],["ValidatorGroup",""],["VaultConfig",""]]});
+initSidebarItems({"enum":[["ApplicationConfig",""]],"fn":[["fullnode_pod_name",""],["instancelist_to_set",""],["lsr_pod_name",""],["validator_pod_name",""],["vault_pod_name",""]],"struct":[["FullnodeConfig",""],["Instance",""],["InstanceConfig",""],["LSRConfig",""],["ValidatorConfig",""],["ValidatorGroup",""],["VaultConfig",""]]});
