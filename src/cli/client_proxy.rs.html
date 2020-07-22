@@ -1840,6 +1840,11 @@
 <span id="1840">1840</span>
 <span id="1841">1841</span>
 <span id="1842">1842</span>
+<span id="1843">1843</span>
+<span id="1844">1844</span>
+<span id="1845">1845</span>
+<span id="1846">1846</span>
+<span id="1847">1847</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2289,7 +2294,7 @@
         <span class="kw">let</span> (<span class="ident">receiver</span>, <span class="ident">receiver_auth_key_opt</span>) <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">receiver_auth_key</span> <span class="op">=</span> <span class="ident">receiver_auth_key_opt</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-            <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Need authentication key to create new account via minting&quot;</span>)
+            <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Need authentication key to create new account via minting from facuet&quot;</span>)
         })<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">mint_currency</span> <span class="op">=</span> <span class="ident">space_delim_strings</span>[<span class="number">3</span>];
         <span class="kw">let</span> <span class="ident">use_base_units</span> <span class="op">=</span> <span class="ident">space_delim_strings</span>
@@ -2304,7 +2309,10 @@
         <span class="kw">let</span> <span class="ident">currency_code</span> <span class="op">=</span> <span class="ident">from_currency_code_string</span>(<span class="ident">mint_currency</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Invalid currency code {} provided to mint&quot;</span>, <span class="ident">mint_currency</span>))<span class="question-mark">?</span>;
 
-        <span class="macro">ensure</span><span class="macro">!</span>(<span class="ident">num_coins</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="string">&quot;Invalid number of coins to mint.&quot;</span>);
+        <span class="macro">ensure</span><span class="macro">!</span>(
+            <span class="ident">num_coins</span> <span class="op">&gt;</span> <span class="number">0</span>,
+            <span class="string">&quot;Invalid number of coins to transfer from faucet.&quot;</span>
+        );
 
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">libra_root_account</span>.<span class="ident">is_some</span>() {
             <span class="kw">let</span> <span class="ident">script</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_create_testing_account_script</span>(
@@ -2321,6 +2329,7 @@
             {
                 <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get</span>(<span class="ident">pos</span>).<span class="ident">unwrap</span>().<span class="ident">status</span>;
                 <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">AccountStatus</span>::<span class="ident">Local</span> <span class="op">=</span><span class="op">=</span> <span class="ident">status</span> {
+                    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;&gt;&gt; Creating recipient account before minting from faucet&quot;</span>);
                     <span class="comment">// This needs to be blocking since the mint can&#39;t happen until it completes</span>
                     <span class="self">self</span>.<span class="ident">association_transaction_with_local_libra_root_account</span>(
                         <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">script</span>),
@@ -2338,6 +2347,7 @@
             } <span class="comment">// else, the account has already been created -- do nothing</span>
         }
 
+        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;&gt;&gt; Sending coins from faucet&quot;</span>);
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span> {
             <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">script</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_testnet_mint_script</span>(
