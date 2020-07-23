@@ -278,6 +278,30 @@
 <span id="278">278</span>
 <span id="279">279</span>
 <span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -304,7 +328,9 @@
 <span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span>, <span class="ident">ExecutedTrees</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">PRE_GENESIS_BLOCK_ID</span>, <span class="ident">HashValue</span>};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">ledger_info</span>::<span class="ident">LedgerInfo</span>, <span class="ident">transaction</span>::<span class="ident">Transaction</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::{
+    <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfo</span>, <span class="ident">transaction</span>::<span class="ident">Transaction</span>,
+};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::<span class="ident">HashMap</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>, <span class="ident">Weak</span>},
@@ -384,6 +410,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">SpeculationCache</span> {
     <span class="ident">synced_trees</span>: <span class="ident">ExecutedTrees</span>,
     <span class="ident">committed_trees</span>: <span class="ident">ExecutedTrees</span>,
+    <span class="ident">committed_txns_and_events</span>: (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>),
     <span class="comment">// The id of root block.</span>
     <span class="ident">committed_block_id</span>: <span class="ident">HashValue</span>,
     <span class="comment">// The chidren of root block.</span>
@@ -398,6 +425,7 @@
         <span class="self">Self</span> {
             <span class="ident">synced_trees</span>: <span class="ident">ExecutedTrees</span>::<span class="ident">new_empty</span>(),
             <span class="ident">committed_trees</span>: <span class="ident">ExecutedTrees</span>::<span class="ident">new_empty</span>(),
+            <span class="ident">committed_txns_and_events</span>: (<span class="macro">vec</span><span class="macro">!</span>[], <span class="macro">vec</span><span class="macro">!</span>[]),
             <span class="ident">heads</span>: <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="ident">block_map</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>())),
             <span class="ident">committed_block_id</span>: <span class="kw-2">*</span><span class="ident">PRE_GENESIS_BLOCK_ID</span>,
@@ -408,7 +436,12 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cache</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="ident">startup_info</span>.<span class="ident">latest_ledger_info</span>.<span class="ident">ledger_info</span>();
         <span class="kw">let</span> <span class="ident">committed_trees</span> <span class="op">=</span> <span class="ident">ExecutedTrees</span>::<span class="ident">from</span>(<span class="ident">startup_info</span>.<span class="ident">committed_tree_state</span>);
-        <span class="ident">cache</span>.<span class="ident">update_block_tree_root</span>(<span class="ident">committed_trees</span>, <span class="ident">ledger_info</span>);
+        <span class="ident">cache</span>.<span class="ident">update_block_tree_root</span>(
+            <span class="ident">committed_trees</span>,
+            <span class="ident">ledger_info</span>,
+            <span class="macro">vec</span><span class="macro">!</span>[], <span class="comment">/* lastest_committed_txns */</span>
+            <span class="macro">vec</span><span class="macro">!</span>[], <span class="comment">/* latest_reconfig_events */</span>
+        );
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">synced_tree_state</span>) <span class="op">=</span> <span class="ident">startup_info</span>.<span class="ident">synced_tree_state</span> {
             <span class="ident">cache</span>.<span class="ident">update_synced_trees</span>(<span class="ident">ExecutedTrees</span>::<span class="ident">from</span>(<span class="ident">synced_tree_state</span>));
         }
@@ -422,10 +455,15 @@
         <span class="self">Self</span> {
             <span class="ident">synced_trees</span>: <span class="ident">executor_trees</span>.<span class="ident">clone</span>(),
             <span class="ident">committed_trees</span>: <span class="ident">executor_trees</span>,
+            <span class="ident">committed_txns_and_events</span>: (<span class="macro">vec</span><span class="macro">!</span>[], <span class="macro">vec</span><span class="macro">!</span>[]),
             <span class="ident">heads</span>: <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="ident">block_map</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>())),
             <span class="ident">committed_block_id</span>: <span class="kw-2">*</span><span class="ident">PRE_GENESIS_BLOCK_ID</span>,
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">committed_txns_and_events</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>) {
+        <span class="self">self</span>.<span class="ident">committed_txns_and_events</span>.<span class="ident">clone</span>()
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">committed_block_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">HashValue</span> {
@@ -444,6 +482,8 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">committed_trees</span>: <span class="ident">ExecutedTrees</span>,
         <span class="ident">committed_ledger_info</span>: <span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span>,
+        <span class="ident">committed_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
+        <span class="ident">reconfig_events</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>,
     ) {
         <span class="kw">let</span> <span class="ident">new_root_block_id</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">committed_ledger_info</span>.<span class="ident">ends_epoch</span>() {
             <span class="comment">// Update the root block id with reconfig virtual block id, to be consistent</span>
@@ -462,6 +502,7 @@
         };
         <span class="self">self</span>.<span class="ident">committed_block_id</span> <span class="op">=</span> <span class="ident">new_root_block_id</span>;
         <span class="self">self</span>.<span class="ident">committed_trees</span> <span class="op">=</span> <span class="ident">committed_trees</span>.<span class="ident">clone</span>();
+        <span class="self">self</span>.<span class="ident">committed_txns_and_events</span> <span class="op">=</span> (<span class="ident">committed_txns</span>, <span class="ident">reconfig_events</span>);
         <span class="self">self</span>.<span class="ident">synced_trees</span> <span class="op">=</span> <span class="ident">committed_trees</span>;
     }
 
@@ -530,7 +571,12 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prune</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">committed_ledger_info</span>: <span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">prune</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">committed_ledger_info</span>: <span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span>,
+        <span class="ident">committed_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
+        <span class="ident">reconfig_events</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">arc_latest_committed_block</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">get_block</span>(<span class="kw-2">&amp;</span><span class="ident">committed_ledger_info</span>.<span class="ident">consensus_block_id</span>())<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">latest_committed_block</span> <span class="op">=</span> <span class="ident">arc_latest_committed_block</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
@@ -538,6 +584,8 @@
         <span class="self">self</span>.<span class="ident">update_block_tree_root</span>(
             <span class="ident">latest_committed_block</span>.<span class="ident">output</span>().<span class="ident">executed_trees</span>().<span class="ident">clone</span>(),
             <span class="ident">committed_ledger_info</span>,
+            <span class="ident">committed_txns</span>,
+            <span class="ident">reconfig_events</span>,
         );
         <span class="prelude-val">Ok</span>(())
     }
