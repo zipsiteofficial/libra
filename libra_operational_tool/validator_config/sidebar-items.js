@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["RotateValidatorNetworkKey",""],["SetValidatorConfig",""]]});
+initSidebarItems({"struct":[["RotateFullNodeNetworkKey",""],["RotateNetworkKey",""],["RotateValidatorNetworkKey",""],["SetValidatorConfig",""]]});
