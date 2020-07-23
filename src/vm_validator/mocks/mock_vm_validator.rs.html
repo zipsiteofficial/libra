@@ -77,6 +77,10 @@
 <span id="77">77</span>
 <span id="78">78</span>
 <span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -87,7 +91,7 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
     <span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>,
-    <span class="ident">transaction</span>::{<span class="ident">SignedTransaction</span>, <span class="ident">VMValidatorResult</span>},
+    <span class="ident">transaction</span>::{<span class="ident">GovernanceRole</span>, <span class="ident">SignedTransaction</span>, <span class="ident">VMValidatorResult</span>},
     <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">VMValidator</span>;
@@ -102,7 +106,7 @@
         <span class="ident">_transaction</span>: <span class="ident">SignedTransaction</span>,
         <span class="ident">_state_view</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">StateView</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMValidatorResult</span> {
-        <span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(<span class="prelude-val">None</span>, <span class="number">0</span>, <span class="bool-val">false</span>)
+        <span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(<span class="prelude-val">None</span>, <span class="number">0</span>, <span class="ident">GovernanceRole</span>::<span class="ident">NonGovernanceRole</span>)
     }
 }
 
@@ -115,7 +119,7 @@
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(
                     <span class="prelude-val">Some</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_SIGNATURE</span>),
                     <span class="number">0</span>,
-                    <span class="bool-val">false</span>,
+                    <span class="ident">GovernanceRole</span>::<span class="ident">NonGovernanceRole</span>,
                 ))
             }
         };
@@ -150,7 +154,11 @@
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         };
-        <span class="prelude-val">Ok</span>(<span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(<span class="ident">ret</span>, <span class="number">0</span>, <span class="bool-val">false</span>))
+        <span class="prelude-val">Ok</span>(<span class="ident">VMValidatorResult</span>::<span class="ident">new</span>(
+            <span class="ident">ret</span>,
+            <span class="number">0</span>,
+            <span class="ident">GovernanceRole</span>::<span class="ident">NonGovernanceRole</span>,
+        ))
     }
 
     <span class="kw">fn</span> <span class="ident">restart</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">_config</span>: <span class="ident">OnChainConfigPayload</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

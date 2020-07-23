@@ -297,13 +297,17 @@
 <span id="297">297</span>
 <span id="298">298</span>
 <span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">/// This module provides various indexes used by Mempool</span>
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">core_mempool</span>::<span class="ident">transaction</span>::{<span class="ident">MempoolTransaction</span>, <span class="ident">TimelineState</span>};
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">transaction</span>::<span class="ident">GovernanceRole</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>::<span class="ident">Ordering</span>,
     <span class="ident">collections</span>::{<span class="ident">btree_set</span>::<span class="ident">Iter</span>, <span class="ident">BTreeMap</span>, <span class="ident">BTreeSet</span>},
@@ -353,7 +357,7 @@
             <span class="ident">expiration_time</span>: <span class="ident">txn</span>.<span class="ident">expiration_time</span>,
             <span class="ident">address</span>: <span class="ident">txn</span>.<span class="ident">get_sender</span>(),
             <span class="ident">sequence_number</span>: <span class="ident">txn</span>.<span class="ident">get_sequence_number</span>(),
-            <span class="ident">is_governance_txn</span>: <span class="ident">txn</span>.<span class="ident">is_governance_txn</span>,
+            <span class="ident">governance_role</span>: <span class="ident">txn</span>.<span class="ident">governance_role</span>,
         }
     }
 
@@ -373,7 +377,7 @@
     <span class="kw">pub</span> <span class="ident">expiration_time</span>: <span class="ident">Duration</span>,
     <span class="kw">pub</span> <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
     <span class="kw">pub</span> <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
-    <span class="kw">pub</span> <span class="ident">is_governance_txn</span>: <span class="ident">bool</span>,
+    <span class="kw">pub</span> <span class="ident">governance_role</span>: <span class="ident">GovernanceRole</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">OrderedQueueKey</span> {
@@ -384,7 +388,11 @@
 
 <span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">OrderedQueueKey</span> {
     <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">OrderedQueueKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Ordering</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">is_governance_txn</span>.<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">is_governance_txn</span>) {
+        <span class="kw">match</span> <span class="self">self</span>
+            .<span class="ident">governance_role</span>
+            .<span class="ident">priority</span>()
+            .<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">governance_role</span>.<span class="ident">priority</span>())
+        {
             <span class="ident">Ordering</span>::<span class="ident">Equal</span> <span class="op">=</span><span class="op">&gt;</span> {}
             <span class="ident">ordering</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">ordering</span>,
         }
