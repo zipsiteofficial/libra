@@ -866,6 +866,16 @@
 <span id="866">866</span>
 <span id="867">867</span>
 <span id="868">868</span>
+<span id="869">869</span>
+<span id="870">870</span>
+<span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
+<span id="877">877</span>
+<span id="878">878</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -985,6 +995,9 @@
     <span class="ident">UpdateAddresses</span>(<span class="ident">DiscoverySource</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span><span class="op">&gt;</span>),
     <span class="doccomment">/// Update set of nodes eligible to join the network.</span>
     <span class="ident">UpdateEligibleNodes</span>(<span class="ident">DiscoverySource</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span>),
+    <span class="doccomment">/// Gets current size of connected peers. This is useful in tests.</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip</span>)]</span>
+    <span class="ident">GetConnectedSize</span>(<span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>),
     <span class="doccomment">/// Gets current size of dial queue. This is useful in tests.</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip</span>)]</span>
     <span class="ident">GetDialQueueSize</span>(<span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>),
@@ -1337,6 +1350,9 @@
             <span class="ident">ConnectivityRequest</span>::<span class="ident">GetDialQueueSize</span>(<span class="ident">sender</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">sender</span>.<span class="ident">send</span>(<span class="self">self</span>.<span class="ident">dial_queue</span>.<span class="ident">len</span>()).<span class="ident">unwrap</span>();
             }
+            <span class="ident">ConnectivityRequest</span>::<span class="ident">GetConnectedSize</span>(<span class="ident">sender</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">sender</span>.<span class="ident">send</span>(<span class="self">self</span>.<span class="ident">connected</span>.<span class="ident">len</span>()).<span class="ident">unwrap</span>();
+            }
         }
     }
 
@@ -1466,19 +1482,23 @@
                 <span class="self">self</span>.<span class="ident">dial_queue</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>);
             }
             <span class="ident">peer_manager</span>::<span class="ident">ConnectionNotification</span>::<span class="ident">LostPeer</span>(<span class="ident">peer_id</span>, <span class="ident">addr</span>, <span class="ident">_origin</span>, <span class="ident">_reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">connected</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
-                    <span class="prelude-val">Some</span>(<span class="ident">curr_addr</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">curr_addr</span> <span class="op">=</span><span class="op">=</span> <span class="ident">addr</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="comment">// Remove node from connected peers list.</span>
-                        <span class="self">self</span>.<span class="ident">connected</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>);
-                    }
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">debug</span><span class="macro">!</span>(
-                            <span class="string">&quot;{} Ignoring stale lost peer event for peer: {}, addr: {}&quot;</span>,
-                            <span class="self">self</span>.<span class="ident">network_context</span>,
-                            <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
-                            <span class="ident">addr</span>
-                        );
-                    }
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">stored_addr</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">connected</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
+                    <span class="comment">// Remove node from connected peers list.</span>
+                    <span class="macro">info</span><span class="macro">!</span>(
+                        <span class="string">&quot;{} Removing peer &#39;{}&#39; addr: {}, vs event addr: {}&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
+                        <span class="ident">stored_addr</span>,
+                        <span class="ident">addr</span>
+                    );
+                    <span class="self">self</span>.<span class="ident">connected</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>);
+                } <span class="kw">else</span> {
+                    <span class="macro">debug</span><span class="macro">!</span>(
+                        <span class="string">&quot;{} Ignoring stale lost peer event for peer: {}, addr: {}&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
+                        <span class="ident">addr</span>
+                    );
                 }
             }
         }
