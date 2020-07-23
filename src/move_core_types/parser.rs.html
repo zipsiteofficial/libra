@@ -408,6 +408,19 @@
 <span id="408">408</span>
 <span id="409">409</span>
 <span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -537,6 +550,19 @@
             }
             <span class="ident">c</span> <span class="kw">if</span> <span class="ident">c</span>.<span class="ident">is_ascii_digit</span>() <span class="op">=</span><span class="op">&gt;</span> <span class="ident">next_number</span>(<span class="ident">c</span>, <span class="ident">it</span>)<span class="question-mark">?</span>,
             <span class="string">&#39;b&#39;</span> <span class="kw">if</span> <span class="ident">it</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="string">&#39;&quot;&#39;</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">it</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>();
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">new</span>();
+                <span class="kw">loop</span> {
+                    <span class="kw">match</span> <span class="ident">it</span>.<span class="ident">next</span>() {
+                        <span class="prelude-val">Some</span>(<span class="string">&#39;&quot;&#39;</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">break</span>,
+                        <span class="prelude-val">Some</span>(<span class="ident">c</span>) <span class="kw">if</span> <span class="ident">c</span>.<span class="ident">is_ascii</span>() <span class="op">=</span><span class="op">&gt;</span> <span class="ident">r</span>.<span class="ident">push</span>(<span class="ident">c</span>),
+                        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;unrecognized token&quot;</span>),
+                    }
+                }
+                <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">r</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="number">3</span>;
+                (<span class="ident">Token</span>::<span class="ident">Bytes</span>(<span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">r</span>)), <span class="ident">len</span>)
+            }
+            <span class="string">&#39;x&#39;</span> <span class="kw">if</span> <span class="ident">it</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="string">&#39;&quot;&#39;</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">it</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>();
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">new</span>();
                 <span class="kw">loop</span> {
@@ -778,10 +804,10 @@
             <span class="string">&quot;0X54afa3526&quot;</span>,
             <span class="ident">T</span>::<span class="ident">Address</span>(<span class="ident">AccountAddress</span>::<span class="ident">from_hex_literal</span>(<span class="string">&quot;0x54afa3526&quot;</span>).<span class="ident">unwrap</span>()),
         ),
-        (<span class="string">&quot;b\&quot;7fff\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x7f</span>, <span class="number">0xff</span>])),
-        (<span class="string">&quot;b\&quot;\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[])),
-        (<span class="string">&quot;b\&quot;00\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x00</span>])),
-        (<span class="string">&quot;b\&quot;deadbeef\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0xde</span>, <span class="number">0xad</span>, <span class="number">0xbe</span>, <span class="number">0xef</span>])),
+        (<span class="string">&quot;x\&quot;7fff\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x7f</span>, <span class="number">0xff</span>])),
+        (<span class="string">&quot;x\&quot;\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[])),
+        (<span class="string">&quot;x\&quot;00\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x00</span>])),
+        (<span class="string">&quot;x\&quot;deadbeef\&quot;&quot;</span>, <span class="ident">T</span>::<span class="ident">U8Vector</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0xde</span>, <span class="number">0xad</span>, <span class="number">0xbe</span>, <span class="number">0xef</span>])),
     ] {
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="kw-2">&amp;</span><span class="ident">parse_transaction_argument</span>(<span class="ident">s</span>).<span class="ident">unwrap</span>(), <span class="ident">expected</span>)
     }
@@ -805,11 +831,11 @@
         <span class="string">&quot;0x&quot;</span>,
         <span class="string">&quot;0x_&quot;</span>,
         <span class="string">&quot;&quot;</span>,
-        <span class="string">&quot;b\&quot;ffff&quot;</span>,
-        <span class="string">&quot;b\&quot;a \&quot;&quot;</span>,
-        <span class="string">&quot;b\&quot; \&quot;&quot;</span>,
-        <span class="string">&quot;b\&quot;0g\&quot;&quot;</span>,
-        <span class="string">&quot;b\&quot;0\&quot;&quot;</span>,
+        <span class="string">&quot;x\&quot;ffff&quot;</span>,
+        <span class="string">&quot;x\&quot;a \&quot;&quot;</span>,
+        <span class="string">&quot;x\&quot; \&quot;&quot;</span>,
+        <span class="string">&quot;x\&quot;0g\&quot;&quot;</span>,
+        <span class="string">&quot;x\&quot;0\&quot;&quot;</span>,
         <span class="string">&quot;garbage&quot;</span>,
         <span class="string">&quot;true3&quot;</span>,
         <span class="string">&quot;3false&quot;</span>,
