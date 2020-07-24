@@ -876,6 +876,26 @@
 <span id="876">876</span>
 <span id="877">877</span>
 <span id="878">878</span>
+<span id="879">879</span>
+<span id="880">880</span>
+<span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -925,7 +945,7 @@
     <span class="ident">prelude</span>::{<span class="ident">SeedableRng</span>, <span class="ident">SmallRng</span>},
     <span class="ident">seq</span>::<span class="ident">SliceRandom</span>,
 };
-<span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">export</span>::<span class="ident">Formatter</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>::<span class="ident">min</span>,
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
@@ -980,11 +1000,31 @@
 <span class="doccomment">/// Different sources for peer addresses, ordered by priority (Onchain=highest,</span>
 <span class="doccomment">/// Config=lowest).</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">NumVariants</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">NumVariants</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">DiscoverySource</span> {
     <span class="ident">OnChain</span>,
     <span class="ident">Gossip</span>,
     <span class="ident">Config</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">DiscoverySource</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">DiscoverySource</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(
+            <span class="ident">f</span>,
+            <span class="string">&quot;{}&quot;</span>,
+            <span class="kw">match</span> <span class="self">self</span> {
+                <span class="ident">DiscoverySource</span>::<span class="ident">OnChain</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;OnChain&quot;</span>,
+                <span class="ident">DiscoverySource</span>::<span class="ident">Gossip</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;Gossip&quot;</span>,
+                <span class="ident">DiscoverySource</span>::<span class="ident">Config</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;Config&quot;</span>,
+            }
+        )
+    }
 }
 
 <span class="doccomment">/// Requests received by the [`ConnectivityManager`] manager actor from upstream modules.</span>
@@ -1403,7 +1443,7 @@
         <span class="kw">if</span> <span class="ident">have_any_changed</span> {
             <span class="kw">let</span> <span class="ident">peer_addrs</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_addrs</span>;
             <span class="macro">info</span><span class="macro">!</span>(
-                <span class="string">&quot;{} current addresses: update src: {:?}, all peer addresses: {}&quot;</span>,
+                <span class="string">&quot;{} current addresses: update src: {}, all peer addresses: {}&quot;</span>,
                 <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">src</span>, <span class="ident">peer_addrs</span>,
             );
         }
@@ -1434,7 +1474,7 @@
             <span class="kw">if</span> <span class="ident">pubkeys</span>.<span class="ident">update</span>(<span class="ident">src</span>, <span class="ident">new_pubkeys</span>) {
                 <span class="ident">have_any_changed</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 <span class="macro">info</span><span class="macro">!</span>(
-                    <span class="string">&quot;{} pubkey sets updated for peer: {}, update src: {:?}, pubkeys: {}&quot;</span>,
+                    <span class="string">&quot;{} pubkey sets updated for peer: {}, update src: {}, pubkeys: {}&quot;</span>,
                     <span class="self">self</span>.<span class="ident">network_context</span>,
                     <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
                     <span class="ident">src</span>,
@@ -1455,7 +1495,7 @@
 
             <span class="kw">let</span> <span class="ident">peer_pubkeys</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_pubkeys</span>;
             <span class="macro">info</span><span class="macro">!</span>(
-                <span class="string">&quot;{} current pubkeys: update src: {:?}, all peer pubkeys: {}, new eligible set: {:?}&quot;</span>,
+                <span class="string">&quot;{} current pubkeys: update src: {}, all peer pubkeys: {}, new eligible set: {:?}&quot;</span>,
                 <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">src</span>, <span class="ident">peer_pubkeys</span>, <span class="ident">new_eligible</span>,
             );
 
