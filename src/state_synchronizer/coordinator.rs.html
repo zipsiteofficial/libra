@@ -1047,6 +1047,45 @@
 <span id="1047">1047</span>
 <span id="1048">1048</span>
 <span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1280,13 +1319,21 @@
                 <span class="ident">msg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client_events</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">match</span> <span class="ident">msg</span> {
                         <span class="ident">CoordinatorMessage</span>::<span class="ident">Request</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
+                                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">SYNC_MSG_LABEL</span>, <span class="ident">counters</span>::<span class="ident">CONSENSUS_SENDER_LABEL</span>])
+                                .<span class="ident">start_timer</span>();
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">request_sync</span>(<span class="kw-2">*</span><span class="ident">request</span>) {
                                 <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] request sync fail: {}&quot;</span>, <span class="ident">e</span>);
                             }
                         }
                         <span class="ident">CoordinatorMessage</span>::<span class="ident">Commit</span>(<span class="ident">txns</span>, <span class="ident">events</span>, <span class="ident">callback</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_commit</span>(<span class="ident">txns</span>, <span class="prelude-val">Some</span>(<span class="ident">callback</span>)).<span class="kw">await</span> {
-                                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] process commit fail: {}&quot;</span>, <span class="ident">e</span>);
+                            {
+                                <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
+                                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">COMMIT_MSG_LABEL</span>, <span class="ident">counters</span>::<span class="ident">CONSENSUS_SENDER_LABEL</span>])
+                                    .<span class="ident">start_timer</span>();
+                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_commit</span>(<span class="ident">txns</span>, <span class="prelude-val">Some</span>(<span class="ident">callback</span>)).<span class="kw">await</span> {
+                                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] process commit fail: {}&quot;</span>, <span class="ident">e</span>);
+                                }
                             }
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">executor_proxy</span>.<span class="ident">publish_on_chain_config_updates</span>(<span class="ident">events</span>){
                                 <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to publish reconfig notification: {}&quot;</span>, <span class="ident">e</span>);
@@ -1332,11 +1379,23 @@
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_one_message</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>, <span class="ident">msg</span>: <span class="ident">StateSynchronizerMsg</span>) {
         <span class="kw">match</span> <span class="ident">msg</span> {
             <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkRequest</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                        <span class="ident">counters</span>::<span class="ident">CHUNK_REQUEST_MSG_LABEL</span>,
+                        <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>(),
+                    ])
+                    .<span class="ident">start_timer</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">process_chunk_request</span>(<span class="ident">peer</span>.<span class="ident">clone</span>(), <span class="kw-2">*</span><span class="ident">request</span>) {
                     <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to serve chunk request from {:?}, local LI version {}: {}&quot;</span>, <span class="ident">peer</span>, <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(), <span class="ident">err</span>);
                 }
             }
             <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkResponse</span>(<span class="ident">response</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                        <span class="ident">counters</span>::<span class="ident">CHUNK_RESPONSE_MSG_LABEL</span>,
+                        <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>(),
+                    ])
+                    .<span class="ident">start_timer</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">process_chunk_response</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">clone</span>(), <span class="kw-2">*</span><span class="ident">response</span>.<span class="ident">clone</span>())
                     .<span class="kw">await</span>
@@ -1349,14 +1408,14 @@
 
                     <span class="comment">// TODO update dashboards to ID peers using PeerNetworkID, not just peer ID</span>
                     <span class="ident">counters</span>::<span class="ident">APPLY_CHUNK_FAILURE</span>
-                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
                         .<span class="ident">inc</span>();
                 } <span class="kw">else</span> {
                     <span class="self">self</span>.<span class="ident">peer_manager</span>
                         .<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">Success</span>);
                     <span class="comment">// TODO update dashboards to ID peers using PeerNetworkID, not just peer ID</span>
                     <span class="ident">counters</span>::<span class="ident">APPLY_CHUNK_SUCCESS</span>
-                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
                         .<span class="ident">inc</span>();
                 }
             }
@@ -1428,7 +1487,9 @@
                 <span class="ident">highest_local_li</span>.<span class="ident">version</span>()
             );
         }
-        <span class="ident">counters</span>::<span class="ident">TARGET_VERSION</span>.<span class="ident">set</span>(<span class="ident">target_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">counters</span>::<span class="ident">VERSION</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">TARGET_VERSION_LABEL</span>])
+            .<span class="ident">set</span>(<span class="ident">target_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="string">&quot;[state sync] sync requested. Known LI: {}, requested_version: {}&quot;</span>,
             <span class="ident">highest_local_li</span>, <span class="ident">target_version</span>
@@ -1453,8 +1514,14 @@
         <span class="comment">// in case the performance implications of re-syncing upon every commit are high,</span>
         <span class="comment">// it&#39;s possible to manage some of the highest known versions in memory.</span>
         <span class="self">self</span>.<span class="ident">sync_state_with_local_storage</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">local_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>();
-        <span class="ident">counters</span>::<span class="ident">COMMITTED_VERSION</span>.<span class="ident">set</span>(<span class="ident">local_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="kw">let</span> <span class="ident">synced_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>();
+        <span class="kw">let</span> <span class="ident">committed_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
+        <span class="ident">counters</span>::<span class="ident">VERSION</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">SYNCED_VERSION_LABEL</span>])
+            .<span class="ident">set</span>(<span class="ident">synced_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">counters</span>::<span class="ident">VERSION</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">COMMITTED_VERSION_LABEL</span>])
+            .<span class="ident">set</span>(<span class="ident">committed_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="kw">let</span> <span class="ident">block_timestamp_usecs</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">local_state</span>
             .<span class="ident">highest_local_li</span>
@@ -1511,7 +1578,7 @@
         }
 
         <span class="self">self</span>.<span class="ident">check_subscriptions</span>();
-        <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">remove_requests</span>(<span class="ident">local_version</span>);
+        <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">remove_requests</span>(<span class="ident">synced_version</span>);
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">req</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_mut</span>() {
             <span class="ident">req</span>.<span class="ident">last_progress_tst</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>();
@@ -1519,14 +1586,14 @@
         <span class="kw">let</span> <span class="ident">sync_request_complete</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">sync_req</span><span class="op">|</span> {
             <span class="comment">// Each `ChunkResponse` is verified to make sure it never goes beyond the requested</span>
             <span class="comment">// target version, hence, the local version should never go beyond sync req target.</span>
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">local_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>());
-            <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">local_version</span>
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">synced_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>());
+            <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">synced_version</span>
         });
 
         <span class="kw">if</span> <span class="ident">sync_request_complete</span> {
             <span class="macro">debug</span><span class="macro">!</span>(
                 <span class="string">&quot;[state sync] synchronization to {} is finished&quot;</span>,
-                <span class="ident">local_version</span>
+                <span class="ident">synced_version</span>
             );
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sync_request</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">take</span>() {
                 <span class="ident">sync_request</span>
@@ -1722,9 +1789,15 @@
             .<span class="ident">network_senders</span>
             .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;missing network sender&quot;</span>);
-        <span class="kw">if</span> <span class="ident">network_sender</span>.<span class="ident">send_to</span>(<span class="ident">peer</span>.<span class="ident">peer_id</span>(), <span class="ident">msg</span>).<span class="ident">is_err</span>() {
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to send p2p message&quot;</span>);
-        }
+        <span class="kw">let</span> <span class="ident">send_result_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">network_sender</span>.<span class="ident">send_to</span>(<span class="ident">peer</span>.<span class="ident">peer_id</span>(), <span class="ident">msg</span>) {
+            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to deliver chunk: {:?}&quot;</span>, <span class="ident">e</span>);
+            <span class="ident">counters</span>::<span class="ident">SEND_FAIL_LABEL</span>
+        } <span class="kw">else</span> {
+            <span class="ident">counters</span>::<span class="ident">SEND_SUCCESS_LABEL</span>
+        };
+        <span class="ident">counters</span>::<span class="ident">RESPONSES_SENT</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>(), <span class="ident">send_result_label</span>])
+            .<span class="ident">inc</span>();
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -1755,9 +1828,6 @@
         <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>,
         <span class="ident">response</span>: <span class="ident">GetChunkResponse</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">counters</span>::<span class="ident">RESPONSES_RECEIVED</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
-            .<span class="ident">inc</span>();
         <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] Processing chunk response {}&quot;</span>, <span class="ident">response</span>);
         <span class="kw">let</span> <span class="ident">txn_list_with_proof</span> <span class="op">=</span> <span class="ident">response</span>.<span class="ident">txn_list_with_proof</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">known_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>();
@@ -1816,7 +1886,9 @@
             <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to apply chunk: {}&quot;</span>, <span class="ident">e</span>)
         })<span class="question-mark">?</span>;
 
-        <span class="ident">counters</span>::<span class="ident">STATE_SYNC_TXN_REPLAYED</span>.<span class="ident">inc_by</span>(<span class="ident">chunk_size</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">counters</span>::<span class="ident">STATE_SYNC_CHUNK_SIZE</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+            .<span class="ident">observe</span>(<span class="ident">chunk_size</span> <span class="kw">as</span> <span class="ident">f64</span>);
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="string">&quot;[state sync] applied chunk. Previous version: {}, new version: {}, chunk size: {}&quot;</span>,
             <span class="ident">known_version</span>, <span class="ident">new_version</span>, <span class="ident">chunk_size</span>
@@ -2041,11 +2113,16 @@
             .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;missing network sender for peer&quot;</span>);
         <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">peer_id</span>();
-        <span class="ident">sender</span>.<span class="ident">send_to</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">send_result</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">send_to</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>);
+        <span class="kw">let</span> <span class="ident">result_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">send_result</span>.<span class="ident">is_err</span>() {
+            <span class="ident">counters</span>::<span class="ident">SEND_FAIL_LABEL</span>
+        } <span class="kw">else</span> {
+            <span class="ident">counters</span>::<span class="ident">SEND_SUCCESS_LABEL</span>
+        };
         <span class="ident">counters</span>::<span class="ident">REQUESTS_SENT</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">peer_id</span>.<span class="ident">to_string</span>()])
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id</span>.<span class="ident">to_string</span>(), <span class="ident">result_label</span>])
             .<span class="ident">inc</span>();
-        <span class="prelude-val">Ok</span>(())
+        <span class="prelude-val">Ok</span>(<span class="ident">send_result</span><span class="question-mark">?</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">deliver_subscription</span>(
@@ -2053,6 +2130,7 @@
         <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
         <span class="ident">request_info</span>: <span class="ident">PendingRequestInfo</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="ident">counters</span>::<span class="ident">SUBSCRIPTION_DELIVERY_COUNT</span>.<span class="ident">inc</span>();
         <span class="kw">let</span> <span class="ident">response_li</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">choose_response_li</span>(<span class="ident">request_info</span>.<span class="ident">known_version</span>, <span class="ident">request_info</span>.<span class="ident">request_epoch</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">deliver_chunk</span>(
