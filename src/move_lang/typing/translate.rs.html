@@ -1886,11 +1886,6 @@
 <span id="1886">1886</span>
 <span id="1887">1887</span>
 <span id="1888">1888</span>
-<span id="1889">1889</span>
-<span id="1890">1890</span>
-<span id="1891">1891</span>
-<span id="1892">1892</span>
-<span id="1893">1893</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1996,50 +1991,37 @@
 }
 
 <span class="kw">fn</span> <span class="ident">check_primitive_script_arg</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">mloc</span>: <span class="ident">Loc</span>, <span class="ident">idx</span>: <span class="ident">usize</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) {
+    <span class="kw">let</span> <span class="ident">current_function</span> <span class="op">=</span> <span class="ident">context</span>.<span class="ident">current_function</span>.<span class="ident">clone</span>().<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="ident">mk_msg</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+        <span class="macro">format</span><span class="macro">!</span>(
+            <span class="string">&quot;Invalid parameter for script function &#39;{}&#39;&quot;</span>,
+            <span class="ident">current_function</span>
+        )
+    };
+
     <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="ident">ty</span>.<span class="ident">loc</span>;
-
     <span class="kw">let</span> <span class="ident">signer_ref</span> <span class="op">=</span> <span class="ident">sp</span>(<span class="ident">loc</span>, <span class="ident">Type_</span>::<span class="ident">Ref</span>(<span class="bool-val">false</span>, <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type_</span>::<span class="ident">signer</span>(<span class="ident">loc</span>))));
-    <span class="kw">let</span> <span class="ident">acceptable_types</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
-        <span class="ident">Type_</span>::<span class="ident">u8</span>(<span class="ident">loc</span>),
-        <span class="ident">Type_</span>::<span class="ident">u64</span>(<span class="ident">loc</span>),
-        <span class="ident">Type_</span>::<span class="ident">u128</span>(<span class="ident">loc</span>),
-        <span class="ident">Type_</span>::<span class="ident">bool</span>(<span class="ident">loc</span>),
-        <span class="ident">Type_</span>::<span class="ident">address</span>(<span class="ident">loc</span>),
-        <span class="ident">Type_</span>::<span class="ident">vector</span>(<span class="ident">loc</span>, <span class="ident">Type_</span>::<span class="ident">u8</span>(<span class="ident">loc</span>)),
-        <span class="ident">signer_ref</span>.<span class="ident">clone</span>(),
-    ];
-    <span class="kw">let</span> <span class="ident">ty_is_unacceptable</span> <span class="op">=</span> <span class="ident">acceptable_types</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">acceptable_type</span><span class="op">|</span> {
-        <span class="ident">subtype_no_report</span>(<span class="ident">context</span>, <span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="ident">acceptable_type</span>.<span class="ident">clone</span>()).<span class="ident">is_err</span>()
-    });
-    <span class="kw">if</span> <span class="ident">ty_is_unacceptable</span> {
-        <span class="kw">let</span> <span class="ident">mmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;Invalid parameter for script function &#39;{}&#39;&quot;</span>,
-            <span class="ident">context</span>.<span class="ident">current_function</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>()
-        );
-        <span class="kw">let</span> <span class="ident">tys</span> <span class="op">=</span> <span class="ident">acceptable_types</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="ident">t</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()));
-        <span class="kw">let</span> <span class="ident">tmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;Found: {}. But expected: {}&quot;</span>,
-            <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="ident">ty</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()),
-            <span class="ident">format_comma</span>(<span class="ident">tys</span>),
-        );
-        <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">mloc</span>, <span class="ident">mmsg</span>), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
-        <span class="kw">return</span>;
+    <span class="kw">let</span> <span class="ident">is_signer_ref</span> <span class="op">=</span> {
+        <span class="kw">let</span> <span class="ident">old_subst</span> <span class="op">=</span> <span class="ident">context</span>.<span class="ident">subst</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">subtype_no_report</span>(<span class="ident">context</span>, <span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="ident">signer_ref</span>.<span class="ident">clone</span>());
+        <span class="ident">context</span>.<span class="ident">subst</span> <span class="op">=</span> <span class="ident">old_subst</span>;
+        <span class="ident">result</span>.<span class="ident">is_ok</span>()
+    };
+    <span class="kw">if</span> <span class="ident">is_signer_ref</span> {
+        <span class="kw">if</span> <span class="ident">idx</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="kw">return</span>;
+        } <span class="kw">else</span> {
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">mk_msg</span>();
+            <span class="kw">let</span> <span class="ident">tmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;{} must be the first argument to a script&quot;</span>,
+                <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="kw-2">&amp;</span><span class="ident">signer_ref</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()),
+            );
+            <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">mloc</span>, <span class="ident">msg</span>), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
+            <span class="kw">return</span>;
+        }
     }
 
-    <span class="kw">if</span> <span class="ident">idx</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">subtype_no_report</span>(<span class="ident">context</span>, <span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="ident">signer_ref</span>.<span class="ident">clone</span>()).<span class="ident">is_ok</span>() {
-        <span class="kw">let</span> <span class="ident">mmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;Invalid parameter for script function &#39;{}&#39;&quot;</span>,
-            <span class="ident">context</span>.<span class="ident">current_function</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>()
-        );
-        <span class="kw">let</span> <span class="ident">tmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;{} must be the first argument to a script&quot;</span>,
-            <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="kw-2">&amp;</span><span class="ident">signer_ref</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()),
-        );
-        <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">mloc</span>, <span class="ident">mmsg</span>), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
-        <span class="kw">return</span>;
-    }
+    <span class="ident">check_valid_constant</span>::<span class="ident">signature</span>(<span class="ident">context</span>, <span class="ident">mloc</span>, <span class="ident">mk_msg</span>, <span class="ident">ty</span>);
 }
 
 <span class="comment">//**************************************************************************************************</span>
@@ -2160,7 +2142,12 @@
 
     <span class="comment">// Don&#39;t need to add base type constraint, as it is checked in `check_valid_constant::signature`</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">core</span>::<span class="ident">instantiate</span>(<span class="ident">context</span>, <span class="ident">signature</span>);
-    <span class="ident">check_valid_constant</span>::<span class="ident">signature</span>(<span class="ident">context</span>, <span class="ident">signature</span>.<span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>);
+    <span class="ident">check_valid_constant</span>::<span class="ident">signature</span>(
+        <span class="ident">context</span>,
+        <span class="ident">signature</span>.<span class="ident">loc</span>,
+        <span class="op">|</span><span class="op">|</span> <span class="string">&quot;Unpermitted constant type&quot;</span>,
+        <span class="kw-2">&amp;</span><span class="ident">signature</span>,
+    );
     <span class="ident">context</span>.<span class="ident">return_type</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">signature</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">exp_</span>(<span class="ident">context</span>, <span class="ident">nvalue</span>);
@@ -2198,7 +2185,12 @@
     };
     <span class="kw">use</span> <span class="ident">move_ir_types</span>::<span class="ident">location</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">signature</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">sloc</span>: <span class="ident">Loc</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">signature</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span><span class="op">&gt;</span>(
+        <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>,
+        <span class="ident">sloc</span>: <span class="ident">Loc</span>,
+        <span class="ident">fmsg</span>: <span class="ident">F</span>,
+        <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
+    ) {
         <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="ident">ty</span>.<span class="ident">loc</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">acceptable_types</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
@@ -2225,11 +2217,9 @@
         <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">core</span>::<span class="ident">ready_tvars</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>.<span class="ident">subst</span>, <span class="ident">inner_tvar</span>);
         <span class="ident">context</span>.<span class="ident">subst</span> <span class="op">=</span> <span class="ident">old_subst</span>;
         <span class="kw">if</span> <span class="ident">is_vec</span> {
-            <span class="ident">signature</span>(<span class="ident">context</span>, <span class="ident">sloc</span>, <span class="kw-2">&amp;</span><span class="ident">inner</span>);
+            <span class="ident">signature</span>(<span class="ident">context</span>, <span class="ident">sloc</span>, <span class="ident">fmsg</span>, <span class="kw-2">&amp;</span><span class="ident">inner</span>);
             <span class="kw">return</span>;
         }
-
-        <span class="kw">let</span> <span class="ident">smsg</span> <span class="op">=</span> <span class="string">&quot;Unpermitted constant type&quot;</span>;
 
         <span class="ident">acceptable_types</span>.<span class="ident">push</span>(<span class="ident">vec_ty</span>);
         <span class="kw">let</span> <span class="ident">tys</span> <span class="op">=</span> <span class="ident">acceptable_types</span>
@@ -2240,7 +2230,7 @@
             <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="ident">ty</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()),
             <span class="ident">format_comma</span>(<span class="ident">tys</span>),
         );
-        <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">sloc</span>, <span class="ident">smsg</span>.<span class="ident">into</span>()), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
+        <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">sloc</span>, <span class="ident">fmsg</span>().<span class="ident">into</span>()), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">exp</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">e</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Exp</span>) {
