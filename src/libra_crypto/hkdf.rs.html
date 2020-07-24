@@ -188,15 +188,6 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -280,11 +271,14 @@
     <span class="ident">BlockInput</span>, <span class="ident">FixedOutput</span>, <span class="ident">Reset</span>, <span class="ident">Update</span>,
 };
 
-<span class="kw">use</span> <span class="ident">generic_array</span>::<span class="ident">typenum</span>::<span class="ident">Unsigned</span>;
+<span class="kw">use</span> <span class="ident">generic_array</span>::<span class="ident">typenum</span>::{<span class="ident">IsGreaterOrEqual</span>, <span class="ident">True</span>, <span class="ident">Unsigned</span>, <span class="ident">U32</span>};
 <span class="kw">use</span> <span class="ident">hmac</span>::{<span class="ident">Hmac</span>, <span class="ident">Mac</span>, <span class="ident">NewMac</span>};
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span>;
 <span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
+
+<span class="doccomment">/// Hash function are not supported if their output is less than 32 bits.</span>
+<span class="kw">type</span> <span class="ident">DMinimumSize</span> <span class="op">=</span> <span class="ident">U32</span>;
 
 <span class="doccomment">/// Structure representing the HKDF, capable of HKDF-Extract and HKDF-Expand operations, as defined</span>
 <span class="doccomment">/// in RFC 5869.</span>
@@ -294,6 +288,7 @@
     <span class="ident">D</span>: <span class="ident">Update</span> <span class="op">+</span> <span class="ident">BlockInput</span> <span class="op">+</span> <span class="ident">FixedOutput</span> <span class="op">+</span> <span class="ident">Reset</span> <span class="op">+</span> <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Clone</span>,
     <span class="ident">D</span>::<span class="ident">BlockSize</span>: <span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
     <span class="ident">D</span>::<span class="ident">OutputSize</span>: <span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="ident">D</span>::<span class="ident">OutputSize</span>: <span class="ident">IsGreaterOrEqual</span><span class="op">&lt;</span><span class="ident">DMinimumSize</span>, <span class="ident">Output</span> <span class="op">=</span> <span class="ident">True</span><span class="op">&gt;</span>,
 {
     <span class="ident">_marker</span>: <span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>,
 }
@@ -303,17 +298,10 @@
     <span class="ident">D</span>: <span class="ident">Update</span> <span class="op">+</span> <span class="ident">BlockInput</span> <span class="op">+</span> <span class="ident">FixedOutput</span> <span class="op">+</span> <span class="ident">Reset</span> <span class="op">+</span> <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Clone</span>,
     <span class="ident">D</span>::<span class="ident">BlockSize</span>: <span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Clone</span>,
     <span class="ident">D</span>::<span class="ident">OutputSize</span>: <span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="ident">D</span>::<span class="ident">OutputSize</span>: <span class="ident">IsGreaterOrEqual</span><span class="op">&lt;</span><span class="ident">DMinimumSize</span>, <span class="ident">Output</span> <span class="op">=</span> <span class="ident">True</span><span class="op">&gt;</span>,
 {
-    <span class="doccomment">/// Minimum acceptable output length for the underlying hash function is 32 bytes.</span>
-    <span class="kw">const</span> <span class="ident">D_MINIMUM_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
-
     <span class="doccomment">/// The RFC5869 HKDF-Extract operation.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">salt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">ikm</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">HkdfError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">d_output_size</span> <span class="op">=</span> <span class="ident">D</span>::<span class="ident">OutputSize</span>::<span class="ident">to_usize</span>();
-        <span class="kw">if</span> <span class="ident">d_output_size</span> <span class="op">&lt;</span> <span class="ident">Hkdf</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">D_MINIMUM_SIZE</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HkdfError</span>::<span class="ident">NotSupportedHashFunctionError</span>);
-        }
-
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hmac</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">salt</span> {
             <span class="prelude-val">Some</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hmac</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">new_varkey</span>(<span class="ident">s</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HkdfError</span>::<span class="ident">MACKeyError</span>)<span class="question-mark">?</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hmac</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">Default</span>::<span class="ident">default</span>()),
@@ -381,12 +369,6 @@
     <span class="doccomment">/// HKDF expand output exceeds the maximum allowed or is zero.</span>
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;HKDF expand error - requested output size exceeds the maximum allowed or is zero&quot;</span>)]</span>
     <span class="ident">InvalidOutputLengthError</span>,
-    <span class="doccomment">/// Hash function is not supported because its output is less than 32 bits.</span>
-    <span class="attribute">#[<span class="ident">error</span>(
-        <span class="string">&quot;HKDF error - the hash function is not supported because \
-         its output is less than 32 bits&quot;</span>
-    )]</span>
-    <span class="ident">NotSupportedHashFunctionError</span>,
     <span class="doccomment">/// PRK on HKDF-Expand should not be less than the underlying hash output bits.</span>
     <span class="attribute">#[<span class="ident">error</span>(
         <span class="string">&quot;HKDF expand error - the pseudorandom key input (&#39;prk&#39; in RFC 5869) \
