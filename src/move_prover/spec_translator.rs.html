@@ -1818,6 +1818,11 @@
 <span id="1818">1818</span>
 <span id="1819">1819</span>
 <span id="1820">1820</span>
+<span id="1821">1821</span>
+<span id="1822">1822</span>
+<span id="1823">1823</span>
+<span id="1824">1824</span>
+<span id="1825">1825</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2128,6 +2133,11 @@
         <span class="kw">for</span> (<span class="ident">id</span>, <span class="ident">fun</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">get_spec_funs</span>() {
             <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">body</span>.<span class="ident">is_none</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">fun</span>.<span class="ident">uninterpreted</span> {
                 <span class="comment">// This function is native and expected to be found in the prelude.</span>
+                <span class="kw">continue</span>;
+            }
+            <span class="kw">if</span> <span class="ident">fun</span>.<span class="ident">is_move_fun</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">module_env</span>().<span class="ident">spec_fun_is_used</span>(<span class="kw-2">*</span><span class="ident">id</span>) {
+                <span class="comment">// This function is a pure move function but is never used,</span>
+                <span class="comment">// so we don&#39;t need to translate it.</span>
                 <span class="kw">continue</span>;
             }
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Type</span>::<span class="ident">Tuple</span>(..) <span class="op">|</span> <span class="ident">Type</span>::<span class="ident">Fun</span>(..) <span class="op">=</span> <span class="ident">fun</span>.<span class="ident">result_type</span> {
