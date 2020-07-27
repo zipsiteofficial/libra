@@ -166,28 +166,6 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -267,12 +245,11 @@
 <span class="doccomment">//! ```</span>
 
 <span class="kw">use</span> <span class="ident">digest</span>::{
-    <span class="ident">generic_array</span>::{<span class="self">self</span>, <span class="ident">ArrayLength</span>, <span class="ident">GenericArray</span>},
+    <span class="ident">generic_array</span>::{<span class="self">self</span>, <span class="ident">ArrayLength</span>},
     <span class="ident">BlockInput</span>, <span class="ident">FixedOutput</span>, <span class="ident">Reset</span>, <span class="ident">Update</span>,
 };
 
-<span class="kw">use</span> <span class="ident">generic_array</span>::<span class="ident">typenum</span>::{<span class="ident">IsGreaterOrEqual</span>, <span class="ident">True</span>, <span class="ident">Unsigned</span>, <span class="ident">U32</span>};
-<span class="kw">use</span> <span class="ident">hmac</span>::{<span class="ident">Hmac</span>, <span class="ident">Mac</span>, <span class="ident">NewMac</span>};
+<span class="kw">use</span> <span class="ident">generic_array</span>::<span class="ident">typenum</span>::{<span class="ident">IsGreaterOrEqual</span>, <span class="ident">True</span>, <span class="ident">U32</span>};
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span>;
 <span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
@@ -302,46 +279,25 @@
 {
     <span class="doccomment">/// The RFC5869 HKDF-Extract operation.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">extract</span>(<span class="ident">salt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">ikm</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">HkdfError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hmac</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">salt</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hmac</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">new_varkey</span>(<span class="ident">s</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HkdfError</span>::<span class="ident">MACKeyError</span>)<span class="question-mark">?</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Hmac</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">Default</span>::<span class="ident">default</span>()),
-        };
-
-        <span class="ident">hmac</span>.<span class="ident">update</span>(<span class="ident">ikm</span>);
-
-        <span class="prelude-val">Ok</span>(<span class="ident">hmac</span>.<span class="ident">finalize</span>().<span class="ident">into_bytes</span>().<span class="ident">to_vec</span>())
+        <span class="kw">let</span> (<span class="ident">arr</span>, <span class="ident">_hkdf</span>) <span class="op">=</span> <span class="ident">hkdf</span>::<span class="ident">Hkdf</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">extract</span>(<span class="ident">salt</span>, <span class="ident">ikm</span>);
+        <span class="prelude-val">Ok</span>(<span class="ident">arr</span>.<span class="ident">to_vec</span>())
     }
 
     <span class="doccomment">/// The RFC5869 HKDF-Expand operation.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">expand</span>(<span class="ident">prk</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>, <span class="ident">length</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">HkdfError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">hmac_output_bytes</span> <span class="op">=</span> <span class="ident">D</span>::<span class="ident">OutputSize</span>::<span class="ident">to_usize</span>();
-        <span class="kw">if</span> <span class="ident">prk</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">hmac_output_bytes</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HkdfError</span>::<span class="ident">WrongPseudorandomKeyError</span>);
-        }
-        <span class="comment">// According to RFC5869, MAX_OUTPUT_LENGTH &lt;= 255 * HashLen.</span>
-        <span class="comment">// We specifically exclude zero size as well.</span>
-        <span class="kw">if</span> <span class="ident">length</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> <span class="op">|</span><span class="op">|</span> <span class="ident">length</span> <span class="op">&gt;</span> <span class="ident">hmac_output_bytes</span> <span class="op">*</span> <span class="number">255</span> {
+        <span class="comment">// According to RFC5869, MAX_OUTPUT_LENGTH &lt;= 255 * HashLen — which is</span>
+        <span class="comment">// checked below.</span>
+        <span class="comment">// We specifically exclude a zero size length as well.</span>
+        <span class="kw">if</span> <span class="ident">length</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HkdfError</span>::<span class="ident">InvalidOutputLengthError</span>);
         }
+
+        <span class="kw">let</span> <span class="ident">hkdf</span> <span class="op">=</span>
+            <span class="ident">hkdf</span>::<span class="ident">Hkdf</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">from_prk</span>(<span class="ident">prk</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HkdfError</span>::<span class="ident">WrongPseudorandomKeyError</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">okm</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">0u8</span>; <span class="ident">length</span>];
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prev</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GenericArray</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="op">&lt;</span><span class="ident">D</span> <span class="kw">as</span> <span class="ident">digest</span>::<span class="ident">FixedOutput</span><span class="op">&gt;</span>::<span class="ident">OutputSize</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hmac</span> <span class="op">=</span> <span class="ident">Hmac</span>::<span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>::<span class="ident">new_varkey</span>(<span class="ident">prk</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HkdfError</span>::<span class="ident">MACKeyError</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">for</span> (<span class="ident">blocknum</span>, <span class="ident">okm_block</span>) <span class="kw">in</span> <span class="ident">okm</span>.<span class="ident">chunks_mut</span>(<span class="ident">hmac_output_bytes</span>).<span class="ident">enumerate</span>() {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">prev</span>) <span class="op">=</span> <span class="ident">prev</span> {
-                <span class="ident">hmac</span>.<span class="ident">update</span>(<span class="ident">prev</span>)
-            }
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_info</span>) <span class="op">=</span> <span class="ident">info</span> {
-                <span class="ident">hmac</span>.<span class="ident">update</span>(<span class="ident">_info</span>);
-            }
-            <span class="ident">hmac</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span>[<span class="ident">blocknum</span> <span class="kw">as</span> <span class="ident">u8</span> <span class="op">+</span> <span class="number">1</span>]);
-
-            <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">hmac</span>.<span class="ident">finalize_reset</span>().<span class="ident">into_bytes</span>();
-            <span class="ident">okm_block</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>[..<span class="ident">okm_block</span>.<span class="ident">len</span>()]);
-
-            <span class="ident">prev</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">output</span>);
-        }
-
+        <span class="ident">hkdf</span>.<span class="ident">expand</span>(<span class="ident">info</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="kw-2">&amp;</span>[]), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">okm</span>)
+            <span class="comment">// length &gt; D::OutputSize::to_usize() * 255</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">HkdfError</span>::<span class="ident">InvalidOutputLengthError</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">okm</span>)
     }
 
