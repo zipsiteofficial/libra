@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["command",""],["validate_transaction",""],["validator_config",""]]});
+initSidebarItems({"mod":[["command",""],["validate_transaction",""],["validator_config",""],["validator_set",""]]});
