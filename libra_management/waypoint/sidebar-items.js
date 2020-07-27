@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["CreateWaypoint","Produces a waypoint from Genesis from the shared storage. It then computes the Waypoint and optionally inserts it into another storage, typically the validator storage."],["InsertWaypoint",""]]});

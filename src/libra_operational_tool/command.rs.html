@@ -135,11 +135,30 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
+
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">TransactionContext</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>, <span class="ident">x25519</span>};
-<span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">TransactionContext</span>};
+<span class="kw">use</span> <span class="ident">libra_management</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
 <span class="kw">use</span> <span class="ident">libra_secure_json_rpc</span>::<span class="ident">VMStatusView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>, <span class="ident">validator_info</span>::<span class="ident">ValidatorInfo</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
@@ -147,14 +166,16 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Tool used for Operators&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Command</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Sets the validator config&quot;</span>)]</span>
-    <span class="ident">SetValidatorConfig</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">SetValidatorConfig</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Set the waypoint in the validator storage&quot;</span>)]</span>
+    <span class="ident">InsertWaypoint</span>(<span class="kw">crate</span>::<span class="ident">waypoint</span>::<span class="ident">InsertWaypoint</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates the consensus key for a validator&quot;</span>)]</span>
     <span class="ident">RotateConsensusKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateConsensusKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a full node network key&quot;</span>)]</span>
     <span class="ident">RotateFullNodeNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateFullNodeNetworkKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a validator network key&quot;</span>)]</span>
     <span class="ident">RotateValidatorNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateValidatorNetworkKey</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Sets the validator config&quot;</span>)]</span>
+    <span class="ident">SetValidatorConfig</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">SetValidatorConfig</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Validates a transaction&quot;</span>)]</span>
     <span class="ident">ValidateTransaction</span>(<span class="kw">crate</span>::<span class="ident">validate_transaction</span>::<span class="ident">ValidateTransaction</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Displays the current validator config registered on the blockchain&quot;</span>)]</span>
@@ -165,10 +186,11 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">CommandName</span> {
-    <span class="ident">SetValidatorConfig</span>,
+    <span class="ident">InsertWaypoint</span>,
     <span class="ident">RotateConsensusKey</span>,
     <span class="ident">RotateFullNodeNetworkKey</span>,
     <span class="ident">RotateValidatorNetworkKey</span>,
+    <span class="ident">SetValidatorConfig</span>,
     <span class="ident">ValidateTransaction</span>,
     <span class="ident">ValidatorConfig</span>,
     <span class="ident">ValidatorSet</span>,
@@ -177,10 +199,11 @@
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Command</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CommandName</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">command</span> {
-            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span>,
+            <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span>,
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span>,
             <span class="ident">Command</span>::<span class="ident">RotateFullNodeNetworkKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateFullNodeNetworkKey</span>,
             <span class="ident">Command</span>::<span class="ident">RotateValidatorNetworkKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateValidatorNetworkKey</span>,
+            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span>,
             <span class="ident">Command</span>::<span class="ident">ValidateTransaction</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ValidateTransaction</span>,
             <span class="ident">Command</span>::<span class="ident">ValidatorConfig</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ValidatorConfig</span>,
             <span class="ident">Command</span>::<span class="ident">ValidatorSet</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ValidatorSet</span>,
@@ -191,10 +214,11 @@
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">CommandName</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set-validator-config&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;insert-waypoint&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-consensus-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateFullNodeNetworkKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-fullnode-network-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateValidatorNetworkKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-validator-network-key&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set-validator-config&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ValidateTransaction</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;validate-transaction&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ValidatorConfig</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;validator-config&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ValidatorSet</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;validator-set&quot;</span>,
@@ -206,20 +230,23 @@
 <span class="kw">impl</span> <span class="ident">Command</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
+            <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">map</span>(<span class="op">|</span>()<span class="op">|</span> <span class="string">&quot;success&quot;</span>).<span class="ident">unwrap</span>())
+            }
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">RotateFullNodeNetworkKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">RotateValidatorNetworkKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
+            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">ValidateTransaction</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">ValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">ValidatorSet</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_validator_config</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionContext</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_waypoint</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span>)),
+            <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span>)),
         }
     }
 
@@ -245,6 +272,13 @@
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">Command</span>::<span class="ident">RotateValidatorNetworkKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">RotateValidatorNetworkKey</span>)),
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_validator_config</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionContext</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span>)),
         }
     }
 

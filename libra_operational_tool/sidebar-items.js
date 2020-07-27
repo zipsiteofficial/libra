@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["command",""],["validate_transaction",""],["validator_config",""],["validator_set",""]]});
+initSidebarItems({"mod":[["command",""],["validate_transaction",""],["validator_config",""],["validator_set",""]],"struct":[["TransactionContext","Information for validating a transaction after it's been submitted"]]});
