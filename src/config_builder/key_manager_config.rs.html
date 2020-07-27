@@ -100,6 +100,9 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -109,11 +112,11 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">chain_id</span>::<span class="ident">ChainId</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">KeyManagerConfig</span> {
-    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="kw">pub</span> <span class="ident">rotation_period_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">sleep_period_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">txn_expiration_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 
+    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="kw">pub</span> <span class="ident">json_rpc_endpoint</span>: <span class="ident">String</span>,
 
     <span class="kw">pub</span> <span class="ident">vault_host</span>: <span class="ident">String</span>,
@@ -127,10 +130,10 @@
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">template</span> <span class="op">=</span> <span class="ident">KMConfig</span>::<span class="ident">default</span>();
         <span class="self">Self</span> {
-            <span class="ident">chain_id</span>: <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             <span class="ident">rotation_period_secs</span>: <span class="prelude-val">None</span>,
             <span class="ident">sleep_period_secs</span>: <span class="prelude-val">None</span>,
             <span class="ident">txn_expiration_secs</span>: <span class="prelude-val">None</span>,
+            <span class="ident">chain_id</span>: <span class="ident">ChainId</span>::<span class="ident">test</span>(),
             <span class="ident">json_rpc_endpoint</span>: <span class="ident">template</span>.<span class="ident">json_rpc_endpoint</span>.<span class="ident">clone</span>(),
             <span class="ident">vault_host</span>: <span class="string">&quot;127.0.0.1:8200&quot;</span>.<span class="ident">to_string</span>(),
             <span class="ident">vault_namespace</span>: <span class="prelude-val">None</span>,
@@ -176,12 +179,14 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">verify_generation</span>() {
+        <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">ChainId</span>::<span class="ident">test</span>();
         <span class="kw">let</span> <span class="ident">json_rpc_endpoint</span> <span class="op">=</span> <span class="string">&quot;http://127.12.12.12:7873&quot;</span>;
         <span class="kw">let</span> <span class="ident">rotation_period_secs</span> <span class="op">=</span> <span class="number">100</span>;
         <span class="kw">let</span> <span class="ident">vault_host</span> <span class="op">=</span> <span class="string">&quot;182.0.0.1:8080&quot;</span>;
         <span class="kw">let</span> <span class="ident">vault_token</span> <span class="op">=</span> <span class="string">&quot;root_token&quot;</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key_manager_config</span> <span class="op">=</span> <span class="ident">KeyManagerConfig</span>::<span class="ident">new</span>();
+        <span class="ident">key_manager_config</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>;
         <span class="ident">key_manager_config</span>.<span class="ident">json_rpc_endpoint</span> <span class="op">=</span> <span class="ident">json_rpc_endpoint</span>.<span class="ident">into</span>();
         <span class="ident">key_manager_config</span>.<span class="ident">rotation_period_secs</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">rotation_period_secs</span>);
         <span class="ident">key_manager_config</span>.<span class="ident">vault_host</span> <span class="op">=</span> <span class="ident">vault_host</span>.<span class="ident">into</span>();
@@ -189,6 +194,7 @@
 
         <span class="kw">let</span> <span class="ident">key_manager_config</span> <span class="op">=</span> <span class="ident">key_manager_config</span>.<span class="ident">build</span>().<span class="ident">unwrap</span>();
 
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">chain_id</span>, <span class="ident">key_manager_config</span>.<span class="ident">chain_id</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">json_rpc_endpoint</span>, <span class="ident">key_manager_config</span>.<span class="ident">json_rpc_endpoint</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">rotation_period_secs</span>,
