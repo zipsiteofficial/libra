@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["constants",""],["error",""],["secure_backend",""],["storage",""],["validator_config",""]]});
+initSidebarItems({"mod":[["config",""],["constants",""],["error",""],["secure_backend",""],["storage",""],["validator_config",""]]});

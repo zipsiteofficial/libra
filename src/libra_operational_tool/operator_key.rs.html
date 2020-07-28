@@ -66,39 +66,49 @@
 <span id="66">66</span>
 <span id="67">67</span>
 <span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>, <span class="ident">validator_config</span>::<span class="ident">RotateKey</span>, <span class="ident">TransactionContext</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>, <span class="ident">TransactionContext</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{<span class="ident">OPERATOR_ACCOUNT</span>, <span class="ident">OPERATOR_KEY</span>};
-<span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">storage</span>::<span class="ident">StorageWrapper</span>};
+<span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">libra_secure_time</span>::{<span class="ident">RealTimeService</span>, <span class="ident">TimeService</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::{<span class="ident">authenticator</span>::<span class="ident">AuthenticationKey</span>, <span class="ident">RawTransaction</span>, <span class="ident">Transaction</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RotateOperatorKey</span> {
+    <span class="doccomment">/// JSON-RPC Endpoint (e.g. http://localhost:8080)</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span> <span class="op">=</span> <span class="string">&quot;config&quot;</span>)]</span>
+    <span class="ident">json_server</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">rotate_key</span>: <span class="ident">RotateKey</span>,
+    <span class="ident">validator_config</span>: <span class="ident">libra_management</span>::<span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">RotateOperatorKey</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransactionContext</span>, <span class="ident">Ed25519PublicKey</span>), <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">validator_config</span>
+            .<span class="ident">config</span>
+            .<span class="ident">load</span>()<span class="question-mark">?</span>
+            .<span class="ident">override_json_server</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">json_server</span>)
+            .<span class="ident">override_validator_backend</span>(
+                <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
+            )<span class="question-mark">?</span>;
+
         <span class="comment">// Fetch the operator account from storage</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">new</span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">rotate_key</span>.<span class="ident">validator_config</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>(),
-            <span class="kw-2">&amp;</span><span class="self">self</span>
-                .<span class="ident">rotate_key</span>
-                .<span class="ident">validator_config</span>
-                .<span class="ident">validator_backend</span>
-                .<span class="ident">validator_backend</span>,
-        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">validator_backend</span>();
         <span class="kw">let</span> <span class="ident">operator_account</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">account_address</span>(<span class="ident">OPERATOR_ACCOUNT</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Create a JSON RPC client and fetch the current sequence number</span>
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">rotate_key</span>.<span class="ident">host</span>);
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="ident">config</span>.<span class="ident">json_server</span>);
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">sequence_number</span>(<span class="ident">operator_account</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Rotate the operator key in storage</span>
@@ -117,7 +127,7 @@
             <span class="ident">constants</span>::<span class="ident">GAS_UNIT_PRICE</span>,
             <span class="ident">constants</span>::<span class="ident">GAS_CURRENCY_CODE</span>.<span class="ident">to_owned</span>(),
             <span class="ident">RealTimeService</span>::<span class="ident">new</span>().<span class="ident">now</span>() <span class="op">+</span> <span class="ident">constants</span>::<span class="ident">TXN_EXPIRATION_SECS</span>,
-            <span class="self">self</span>.<span class="ident">rotate_key</span>.<span class="ident">validator_config</span>.<span class="ident">chain_id</span>,
+            <span class="ident">config</span>.<span class="ident">chain_id</span>,
         );
 
         <span class="comment">// Sign the operator rotation transaction</span>

@@ -24,20 +24,27 @@
 <span id="24">24</span>
 <span id="25">25</span>
 <span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>;
-<span class="kw">use</span> <span class="ident">libra_management</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
+<span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">config</span>::<span class="ident">ConfigPath</span>, <span class="ident">error</span>::<span class="ident">Error</span>};
 <span class="kw">use</span> <span class="ident">libra_secure_json_rpc</span>::<span class="ident">VMStatusView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ValidateTransaction</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;JSON-RPC Endpoint (e.g. http://localhost:8080&quot;</span>)]</span>
-    <span class="ident">host</span>: <span class="ident">String</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
+    <span class="doccomment">/// JSON-RPC Endpoint (e.g. http://localhost:8080)</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span> <span class="op">=</span> <span class="string">&quot;config&quot;</span>)]</span>
+    <span class="ident">json_server</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;AccountAddress to check transactions&quot;</span>)]</span>
     <span class="ident">account_address</span>: <span class="ident">AccountAddress</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Sequence number to verify&quot;</span>)]</span>
@@ -47,7 +54,8 @@
 <span class="doccomment">/// Returns `true` if we&#39;ve passed by the expected sequence number</span>
 <span class="kw">impl</span> <span class="ident">ValidateTransaction</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VMStatusView</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">host</span>)
+        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">load</span>()<span class="question-mark">?</span>.<span class="ident">override_json_server</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">json_server</span>);
+        <span class="ident">JsonRpcClientWrapper</span>::<span class="ident">new</span>(<span class="ident">config</span>.<span class="ident">json_server</span>)
             .<span class="ident">transaction_status</span>(<span class="self">self</span>.<span class="ident">account_address</span>, <span class="self">self</span>.<span class="ident">sequence_number</span>)
     }
 }

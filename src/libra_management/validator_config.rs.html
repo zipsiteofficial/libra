@@ -121,11 +121,16 @@
 <span id="121">121</span>
 <span id="122">122</span>
 <span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">ValidatorBackend</span>, <span class="ident">storage</span>::<span class="ident">StorageWrapper</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">config</span>::<span class="ident">ConfigPath</span>, <span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">ValidatorBackend</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ValidCryptoMaterial</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
@@ -148,8 +153,10 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ValidatorConfig</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span>(<span class="string">&quot;config&quot;</span>))]</span>
+    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="kw">pub</span> <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
 }
@@ -162,10 +169,13 @@
         <span class="ident">validator_address</span>: <span class="ident">NetworkAddress</span>,
         <span class="ident">reconfigure</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Transaction</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">StorageWrapper</span>::<span class="ident">new</span>(
-            <span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">name</span>(),
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>,
-        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">config</span>
+            .<span class="ident">load</span>()<span class="question-mark">?</span>
+            .<span class="ident">override_chain_id</span>(<span class="self">self</span>.<span class="ident">chain_id</span>)
+            .<span class="ident">override_validator_backend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">validator_backend</span>();
+
         <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">account_address</span>(<span class="ident">OWNER_ACCOUNT</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">consensus_key</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">ed25519_public_from_private</span>(<span class="ident">CONSENSUS_KEY</span>)<span class="question-mark">?</span>;
@@ -227,7 +237,7 @@
             <span class="ident">constants</span>::<span class="ident">GAS_UNIT_PRICE</span>,
             <span class="ident">constants</span>::<span class="ident">GAS_CURRENCY_CODE</span>.<span class="ident">to_owned</span>(),
             <span class="ident">RealTimeService</span>::<span class="ident">new</span>().<span class="ident">now</span>() <span class="op">+</span> <span class="ident">constants</span>::<span class="ident">TXN_EXPIRATION_SECS</span>,
-            <span class="self">self</span>.<span class="ident">chain_id</span>,
+            <span class="ident">config</span>.<span class="ident">chain_id</span>,
         );
         <span class="kw">let</span> <span class="ident">signed_txn</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">sign</span>(<span class="ident">OPERATOR_KEY</span>, <span class="string">&quot;validator-config&quot;</span>, <span class="ident">raw_txn</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">Transaction</span>::<span class="ident">UserTransaction</span>(<span class="ident">signed_txn</span>);

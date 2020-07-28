@@ -93,12 +93,15 @@
 <span id="93">93</span>
 <span id="94">94</span>
 <span id="95">95</span>
+<span id="96">96</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">SharedBackend</span>};
-<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">KVStorage</span>, <span class="ident">Value</span>};
+<span class="kw">use</span> <span class="ident">libra_management</span>::{
+    <span class="ident">config</span>::<span class="ident">ConfigPath</span>, <span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">SharedBackend</span>,
+};
+<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::<span class="ident">Value</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">fs</span>::<span class="ident">File</span>,
@@ -143,6 +146,8 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SetLayout</span> {
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
     <span class="ident">path</span>: <span class="ident">PathBuf</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
@@ -154,15 +159,12 @@
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span>::<span class="ident">from_disk</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">path</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">layout</span>.<span class="ident">to_toml</span>()<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">remote_storage</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">backend</span>
-            .<span class="ident">shared_backend</span>
-            .<span class="ident">create_storage</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">name</span>())<span class="question-mark">?</span>;
-        <span class="ident">remote_storage</span>
-            .<span class="ident">set</span>(<span class="ident">constants</span>::<span class="ident">LAYOUT</span>, <span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">data</span>))
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-                <span class="ident">Error</span>::<span class="ident">StorageWriteError</span>(<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">name</span>(), <span class="ident">constants</span>::<span class="ident">LAYOUT</span>, <span class="ident">e</span>.<span class="ident">to_string</span>())
-            })<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">config</span>
+            .<span class="ident">load</span>()<span class="question-mark">?</span>
+            .<span class="ident">override_shared_backend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">shared_backend</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">shared_backend</span>();
+        <span class="ident">storage</span>.<span class="ident">set</span>(<span class="ident">constants</span>::<span class="ident">LAYOUT</span>, <span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">data</span>))<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">layout</span>)
     }
