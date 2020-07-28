@@ -273,28 +273,6 @@
 <span id="273">273</span>
 <span id="274">274</span>
 <span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -309,7 +287,6 @@
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{
     <span class="ident">block_retrieval</span>::{<span class="ident">BlockRetrievalRequest</span>, <span class="ident">BlockRetrievalResponse</span>, <span class="ident">MAX_BLOCKS_PER_REQUEST</span>},
     <span class="ident">common</span>::<span class="ident">Author</span>,
-    <span class="ident">proposal_msg</span>::<span class="ident">ProposalMsg</span>,
     <span class="ident">sync_info</span>::<span class="ident">SyncInfo</span>,
     <span class="ident">vote_msg</span>::<span class="ident">VoteMsg</span>,
 };
@@ -409,21 +386,13 @@
         <span class="prelude-val">Ok</span>(<span class="ident">response</span>)
     }
 
-    <span class="doccomment">/// Tries to send the given proposal (block and proposer metadata) to all the participants.</span>
-    <span class="doccomment">/// A validator on the receiving end is going to be notified about a new proposal in the</span>
-    <span class="doccomment">/// proposal queue.</span>
+    <span class="doccomment">/// Tries to send the given msg to all the participants.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The future is fulfilled as soon as the message put into the mpsc channel to network</span>
     <span class="doccomment">/// internal(to provide back pressure), it does not indicate the message is delivered or sent</span>
     <span class="doccomment">/// out. It does not give indication about when the message is delivered to the recipients,</span>
     <span class="doccomment">/// as well as there is no indication about the network failures.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">broadcast_proposal</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">proposal</span>: <span class="ident">ProposalMsg</span>) {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">ConsensusMsg</span>::<span class="ident">ProposalMsg</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">proposal</span>));
-        <span class="comment">// counters::UNWRAPPED_PROPOSAL_SIZE_BYTES.observe(msg.message.len() as f64);</span>
-        <span class="self">self</span>.<span class="ident">broadcast</span>(<span class="ident">msg</span>).<span class="kw">await</span>
-    }
-
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">broadcast</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">ConsensusMsg</span>) {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">broadcast</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">msg</span>: <span class="ident">ConsensusMsg</span>) {
         <span class="comment">// Directly send the message to ourself without going through network.</span>
         <span class="kw">let</span> <span class="ident">self_msg</span> <span class="op">=</span> <span class="ident">Event</span>::<span class="ident">Message</span>((<span class="self">self</span>.<span class="ident">author</span>, <span class="ident">msg</span>.<span class="ident">clone</span>()));
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">self_sender</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">self_msg</span>)).<span class="kw">await</span> {
@@ -470,12 +439,6 @@
         }
     }
 
-    <span class="doccomment">/// Broadcasts vote message to all validators</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">broadcast_vote</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">vote_msg</span>: <span class="ident">VoteMsg</span>) {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">ConsensusMsg</span>::<span class="ident">VoteMsg</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">vote_msg</span>));
-        <span class="self">self</span>.<span class="ident">broadcast</span>(<span class="ident">msg</span>).<span class="kw">await</span>
-    }
-
     <span class="doccomment">/// Sends the given sync info to the given author.</span>
     <span class="doccomment">/// The future is fulfilled as soon as the message is added to the internal network channel</span>
     <span class="doccomment">/// (does not indicate whether the message is delivered or sent out).</span>
@@ -488,13 +451,6 @@
                 <span class="ident">recipient</span>, <span class="ident">e</span>
             );
         }
-    }
-
-    <span class="doccomment">/// Broadcast about epoch changes with proof to the current validator set (including self)</span>
-    <span class="doccomment">/// when we commit the reconfiguration block</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">broadcast_epoch_change</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">proof</span>: <span class="ident">EpochChangeProof</span>) {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">ConsensusMsg</span>::<span class="ident">EpochChangeProof</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">proof</span>));
-        <span class="self">self</span>.<span class="ident">broadcast</span>(<span class="ident">msg</span>).<span class="kw">await</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">notify_epoch_change</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">proof</span>: <span class="ident">EpochChangeProof</span>) {

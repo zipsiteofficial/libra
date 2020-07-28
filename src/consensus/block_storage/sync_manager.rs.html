@@ -336,6 +336,9 @@
 <span id="336">336</span>
 <span id="337">337</span>
 <span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -343,6 +346,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">block_storage</span>::{<span class="ident">BlockReader</span>, <span class="ident">BlockStore</span>},
     <span class="ident">network</span>::<span class="ident">NetworkSender</span>,
+    <span class="ident">network_interface</span>::<span class="ident">ConsensusMsg</span>,
     <span class="ident">persistent_liveness_storage</span>::{<span class="ident">PersistentLivenessStorage</span>, <span class="ident">RecoveryData</span>},
     <span class="ident">state_replication</span>::<span class="ident">StateComputer</span>,
 };
@@ -443,10 +447,12 @@
             <span class="kw">if</span> <span class="ident">qc</span>.<span class="ident">ends_epoch</span>() {
                 <span class="ident">retriever</span>
                     .<span class="ident">network</span>
-                    .<span class="ident">broadcast_epoch_change</span>(<span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(
-                        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">finality_proof</span>.<span class="ident">clone</span>()],
-                        <span class="comment">/* more = */</span> <span class="bool-val">false</span>,
-                    ))
+                    .<span class="ident">broadcast</span>(<span class="ident">ConsensusMsg</span>::<span class="ident">EpochChangeProof</span>(<span class="ident">Box</span>::<span class="ident">new</span>(
+                        <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(
+                            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">finality_proof</span>.<span class="ident">clone</span>()],
+                            <span class="comment">/* more = */</span> <span class="bool-val">false</span>,
+                        ),
+                    )))
                     .<span class="kw">await</span>;
             }
         }
