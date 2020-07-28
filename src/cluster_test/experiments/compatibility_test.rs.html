@@ -305,6 +305,24 @@
 <span id="305">305</span>
 <span id="306">306</span>
 <span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -323,7 +341,7 @@
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::<span class="ident">HashSet</span>,
-    <span class="ident">fmt</span>,
+    <span class="ident">env</span>, <span class="ident">fmt</span>,
     <span class="ident">iter</span>::<span class="ident">once</span>,
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
@@ -570,30 +588,48 @@
                 <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to upgrade rest of validator images: {}&quot;</span>, <span class="ident">e</span>)
             })<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;5. All full nodes ({}) {} ==&gt; {}, to finish the network upgrade&quot;</span>,
-            <span class="self">self</span>.<span class="ident">full_nodes</span>.<span class="ident">len</span>(),
-            <span class="ident">context</span>.<span class="ident">current_tag</span>,
-            <span class="self">self</span>.<span class="ident">updated_image_tag</span>
-        );
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">msg</span>);
-        <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Upgrading full nodes: {}&quot;</span>,
-            <span class="ident">get_instance_list_str</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">full_nodes</span>)
-        );
-        <span class="ident">context</span>.<span class="ident">report</span>.<span class="ident">report_text</span>(<span class="ident">msg</span>);
-        <span class="ident">update_batch_instance</span>(
-            <span class="ident">context</span>,
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">full_nodes</span>,
-            <span class="kw-2">&amp;</span>[],
-            <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>(),
-        )
-        .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">context</span>
-            .<span class="ident">tx_emitter</span>
-            .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">fullnode_txn_job</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to upgrade full node images: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="comment">// TODO(rustielin): fullnode reboot in cluster-test breaks with current version of config-builder</span>
+        <span class="comment">//                  skipping for now, so cluster is not restored to same version across all instances</span>
+        <span class="kw">let</span> <span class="ident">disable_fn_upgrade</span> <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;DISABLE_FN_UPGRADE&quot;</span>).<span class="ident">is_ok</span>();
+        <span class="kw">if</span> <span class="ident">disable_fn_upgrade</span> {
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;5. Reset all nodes ==&gt; {}, to finish the network upgrade&quot;</span>,
+                <span class="self">self</span>.<span class="ident">updated_image_tag</span>
+            );
+            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">msg</span>);
+            <span class="ident">context</span>.<span class="ident">report</span>.<span class="ident">report_text</span>(<span class="ident">msg</span>);
+            <span class="ident">context</span>.<span class="ident">cluster_builder</span>.<span class="ident">current_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>();
+            <span class="ident">context</span>
+                .<span class="ident">cluster_builder</span>
+                .<span class="ident">setup_cluster</span>(<span class="ident">context</span>.<span class="ident">cluster_builder_params</span>, <span class="bool-val">false</span>)
+                .<span class="kw">await</span><span class="question-mark">?</span>;
+        } <span class="kw">else</span> {
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;5. All full nodes ({}) {} ==&gt; {}, to finish the network upgrade&quot;</span>,
+                <span class="self">self</span>.<span class="ident">full_nodes</span>.<span class="ident">len</span>(),
+                <span class="ident">context</span>.<span class="ident">current_tag</span>,
+                <span class="self">self</span>.<span class="ident">updated_image_tag</span>
+            );
+            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">msg</span>);
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="string">&quot;Upgrading full nodes: {}&quot;</span>,
+                <span class="ident">get_instance_list_str</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">full_nodes</span>)
+            );
+            <span class="ident">context</span>.<span class="ident">report</span>.<span class="ident">report_text</span>(<span class="ident">msg</span>);
+            <span class="ident">update_batch_instance</span>(
+                <span class="ident">context</span>,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">full_nodes</span>,
+                <span class="kw-2">&amp;</span>[],
+                <span class="self">self</span>.<span class="ident">updated_image_tag</span>.<span class="ident">clone</span>(),
+            )
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">context</span>
+                .<span class="ident">tx_emitter</span>
+                .<span class="ident">emit_txn_for</span>(<span class="ident">job_duration</span>, <span class="ident">fullnode_txn_job</span>)
+                .<span class="kw">await</span>
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">anyhow</span>::<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to upgrade full node images: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        }
+
         <span class="prelude-val">Ok</span>(())
     }
 

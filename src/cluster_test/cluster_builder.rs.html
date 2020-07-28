@@ -263,6 +263,23 @@
 <span id="263">263</span>
 <span id="264">264</span>
 <span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -283,7 +300,7 @@
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">info</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">StructOpt</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">StructOpt</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClusterBuilderParams</span> {
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;1&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">fullnodes_per_validator</span>: <span class="ident">u32</span>,
@@ -314,7 +331,7 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClusterBuilder</span> {
-    <span class="ident">current_tag</span>: <span class="ident">String</span>,
+    <span class="kw">pub</span> <span class="ident">current_tag</span>: <span class="ident">String</span>,
     <span class="ident">cluster_swarm</span>: <span class="ident">ClusterSwarmKube</span>,
 }
 
@@ -326,7 +343,11 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">setup_cluster</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">params</span>: <span class="kw-2">&amp;</span><span class="ident">ClusterBuilderParams</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cluster</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">setup_cluster</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">params</span>: <span class="kw-2">&amp;</span><span class="ident">ClusterBuilderParams</span>,
+        <span class="ident">clean_data</span>: <span class="ident">bool</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Cluster</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">cluster_swarm</span>
             .<span class="ident">cleanup</span>()
             .<span class="kw">await</span>
@@ -352,15 +373,17 @@
                 <span class="ident">instance_count</span> <span class="op">+</span><span class="op">=</span> <span class="ident">params</span>.<span class="ident">num_validators</span>;
             }
         }
-        <span class="comment">// First scale down to zero instances and wait for it to complete so that we don&#39;t schedule pods on</span>
-        <span class="comment">// instances which are going into termination state</span>
-        <span class="ident">aws</span>::<span class="ident">set_asg_size</span>(<span class="number">0</span>, <span class="number">0.0</span>, <span class="kw-2">&amp;</span><span class="ident">asg_name</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;{} scale down failed: {}&quot;</span>, <span class="ident">asg_name</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-        <span class="comment">// Then scale up and bring up new instances</span>
-        <span class="ident">aws</span>::<span class="ident">set_asg_size</span>(<span class="ident">instance_count</span> <span class="kw">as</span> <span class="ident">i64</span>, <span class="number">5.0</span>, <span class="kw-2">&amp;</span><span class="ident">asg_name</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;{} scale up failed: {}&quot;</span>, <span class="ident">asg_name</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">clean_data</span> {
+            <span class="comment">// First scale down to zero instances and wait for it to complete so that we don&#39;t schedule pods on</span>
+            <span class="comment">// instances which are going into termination state</span>
+            <span class="ident">aws</span>::<span class="ident">set_asg_size</span>(<span class="number">0</span>, <span class="number">0.0</span>, <span class="kw-2">&amp;</span><span class="ident">asg_name</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>)
+                .<span class="kw">await</span>
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;{} scale down failed: {}&quot;</span>, <span class="ident">asg_name</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+            <span class="comment">// Then scale up and bring up new instances</span>
+            <span class="ident">aws</span>::<span class="ident">set_asg_size</span>(<span class="ident">instance_count</span> <span class="kw">as</span> <span class="ident">i64</span>, <span class="number">5.0</span>, <span class="kw-2">&amp;</span><span class="ident">asg_name</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>)
+                .<span class="kw">await</span>
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;{} scale up failed: {}&quot;</span>, <span class="ident">asg_name</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
+        }
         <span class="kw">let</span> (<span class="ident">validators</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">fullnodes</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">spawn_validator_and_fullnode_set</span>(
                 <span class="ident">params</span>.<span class="ident">num_validators</span>,
@@ -369,6 +392,7 @@
                 <span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">lsr_backend</span>,
                 <span class="ident">current_tag</span>,
                 <span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">cfg_overrides</span>(),
+                <span class="ident">clean_data</span>,
             )
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to spawn_validator_and_fullnode_set: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
@@ -391,6 +415,7 @@
         <span class="ident">lsr_backend</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">image_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">config_overrides</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>],
+        <span class="ident">clean_data</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">vault_nodes</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsrs_nodes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -409,7 +434,9 @@
                     .<span class="ident">enumerate</span>()
                     .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">node</span>)<span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
                         <span class="kw">let</span> <span class="ident">vault_config</span> <span class="op">=</span> <span class="ident">VaultConfig</span> {};
-                        <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="kw">if</span> <span class="ident">clean_data</span> {
+                            <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        }
                         <span class="self">self</span>.<span class="ident">cluster_swarm</span>
                             .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
                                 <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>),
@@ -435,7 +462,9 @@
                         <span class="ident">image_tag</span>: <span class="ident">image_tag</span>.<span class="ident">to_string</span>(),
                         <span class="ident">lsr_backend</span>: <span class="ident">lsr_backend</span>.<span class="ident">to_string</span>(),
                     };
-                    <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                    <span class="kw">if</span> <span class="ident">clean_data</span> {
+                        <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                    }
                     <span class="self">self</span>.<span class="ident">cluster_swarm</span>
                         .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
                             <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>),
@@ -471,9 +500,11 @@
                     <span class="ident">seed_peer_ip</span>,
                     <span class="ident">safety_rules_addr</span>,
                 };
-                <span class="self">self</span>.<span class="ident">cluster_swarm</span>
-                    .<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">name</span>)
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="ident">clean_data</span> {
+                    <span class="self">self</span>.<span class="ident">cluster_swarm</span>
+                        .<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">name</span>)
+                        .<span class="kw">await</span><span class="question-mark">?</span>;
+                }
                 <span class="self">self</span>.<span class="ident">cluster_swarm</span>
                     .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
                         <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">i</span>),
@@ -505,13 +536,16 @@
                     <span class="ident">config_overrides</span>: <span class="ident">config_overrides</span>.<span class="ident">to_vec</span>(),
                     <span class="ident">seed_peer_ip</span>,
                 };
-                <span class="self">self</span>.<span class="ident">cluster_swarm</span>
-                    .<span class="ident">clean_data</span>(
-                        <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>[(<span class="ident">validator_index</span> <span class="op">*</span> <span class="ident">num_fullnodes_per_validator</span>
-                            <span class="op">+</span> <span class="ident">fullnode_index</span>) <span class="kw">as</span> <span class="ident">usize</span>]
-                            .<span class="ident">name</span>,
-                    )
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">if</span> <span class="ident">clean_data</span> {
+                    <span class="self">self</span>.<span class="ident">cluster_swarm</span>
+                        .<span class="ident">clean_data</span>(
+                            <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>[(<span class="ident">validator_index</span> <span class="op">*</span> <span class="ident">num_fullnodes_per_validator</span>
+                                <span class="op">+</span> <span class="ident">fullnode_index</span>)
+                                <span class="kw">as</span> <span class="ident">usize</span>]
+                                .<span class="ident">name</span>,
+                        )
+                        .<span class="kw">await</span><span class="question-mark">?</span>;
+                }
                 <span class="self">self</span>.<span class="ident">cluster_swarm</span>
                     .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
                         <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">validator_index</span>),
