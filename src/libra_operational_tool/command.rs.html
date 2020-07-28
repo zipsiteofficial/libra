@@ -152,6 +152,19 @@
 <span id="152">152</span>
 <span id="153">153</span>
 <span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -172,6 +185,8 @@
     <span class="ident">RotateConsensusKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateConsensusKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a full node network key&quot;</span>)]</span>
     <span class="ident">RotateFullNodeNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateFullNodeNetworkKey</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates the operator key for the operator&quot;</span>)]</span>
+    <span class="ident">RotateOperatorKey</span>(<span class="kw">crate</span>::<span class="ident">operator_key</span>::<span class="ident">RotateOperatorKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a validator network key&quot;</span>)]</span>
     <span class="ident">RotateValidatorNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateValidatorNetworkKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Sets the validator config&quot;</span>)]</span>
@@ -188,6 +203,7 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">CommandName</span> {
     <span class="ident">InsertWaypoint</span>,
     <span class="ident">RotateConsensusKey</span>,
+    <span class="ident">RotateOperatorKey</span>,
     <span class="ident">RotateFullNodeNetworkKey</span>,
     <span class="ident">RotateValidatorNetworkKey</span>,
     <span class="ident">SetValidatorConfig</span>,
@@ -201,6 +217,7 @@
         <span class="kw">match</span> <span class="ident">command</span> {
             <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span>,
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span>,
+            <span class="ident">Command</span>::<span class="ident">RotateOperatorKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateOperatorKey</span>,
             <span class="ident">Command</span>::<span class="ident">RotateFullNodeNetworkKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateFullNodeNetworkKey</span>,
             <span class="ident">Command</span>::<span class="ident">RotateValidatorNetworkKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateValidatorNetworkKey</span>,
             <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span>,
@@ -216,6 +233,7 @@
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;insert-waypoint&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-consensus-key&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">RotateOperatorKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-operator-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateFullNodeNetworkKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-fullnode-network-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateValidatorNetworkKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-validator-network-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">SetValidatorConfig</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;set-validator-config&quot;</span>,
@@ -234,6 +252,7 @@
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">map</span>(<span class="op">|</span>()<span class="op">|</span> <span class="string">&quot;success&quot;</span>).<span class="ident">unwrap</span>())
             }
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
+            <span class="ident">Command</span>::<span class="ident">RotateOperatorKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">RotateFullNodeNetworkKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">RotateValidatorNetworkKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
             <span class="ident">Command</span>::<span class="ident">SetValidatorConfig</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">unwrap</span>()),
@@ -254,6 +273,13 @@
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span>)),
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_operator_key</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransactionContext</span>, <span class="ident">Ed25519PublicKey</span>), <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Command</span>::<span class="ident">RotateOperatorKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cmd</span>.<span class="ident">execute</span>(),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="self">self</span>.<span class="ident">unexpected_command</span>(<span class="ident">CommandName</span>::<span class="ident">RotateOperatorKey</span>)),
         }
     }
 
