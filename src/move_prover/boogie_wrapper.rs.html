@@ -1471,6 +1471,36 @@
 <span id="1471">1471</span>
 <span id="1472">1472</span>
 <span id="1473">1473</span>
+<span id="1474">1474</span>
+<span id="1475">1475</span>
+<span id="1476">1476</span>
+<span id="1477">1477</span>
+<span id="1478">1478</span>
+<span id="1479">1479</span>
+<span id="1480">1480</span>
+<span id="1481">1481</span>
+<span id="1482">1482</span>
+<span id="1483">1483</span>
+<span id="1484">1484</span>
+<span id="1485">1485</span>
+<span id="1486">1486</span>
+<span id="1487">1487</span>
+<span id="1488">1488</span>
+<span id="1489">1489</span>
+<span id="1490">1490</span>
+<span id="1491">1491</span>
+<span id="1492">1492</span>
+<span id="1493">1493</span>
+<span id="1494">1494</span>
+<span id="1495">1495</span>
+<span id="1496">1496</span>
+<span id="1497">1497</span>
+<span id="1498">1498</span>
+<span id="1499">1499</span>
+<span id="1500">1500</span>
+<span id="1501">1501</span>
+<span id="1502">1502</span>
+<span id="1503">1503</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1503,7 +1533,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">cli</span>::<span class="ident">Options</span>;
 <span class="comment">// DEBUG</span>
 <span class="comment">// use backtrace::Backtrace;</span>
-<span class="kw">use</span> <span class="ident">spec_lang</span>::<span class="ident">env</span>::<span class="ident">NodeId</span>;
+<span class="kw">use</span> <span class="ident">spec_lang</span>::<span class="ident">env</span>::{<span class="ident">ConditionTag</span>, <span class="ident">NodeId</span>};
 <span class="kw">use</span> <span class="ident">stackless_bytecode_generator</span>::{
     <span class="ident">function_target</span>::<span class="ident">FunctionTarget</span>, <span class="ident">function_target_pipeline</span>::<span class="ident">FunctionTargetsHolder</span>,
 };
@@ -1659,7 +1689,7 @@
 
         <span class="comment">// Check whether the condition which failed was a negative one.</span>
         <span class="self">self</span>.<span class="ident">env</span>
-            .<span class="ident">get_condition_info</span>(<span class="kw-2">&amp;</span><span class="ident">source_loc</span>)
+            .<span class="ident">get_condition_info</span>(<span class="kw-2">&amp;</span><span class="ident">source_loc</span>, <span class="ident">ConditionTag</span>::<span class="ident">NegativeTest</span>)
             .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">info</span><span class="op">|</span> <span class="ident">info</span>.<span class="ident">negative_cond</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Some</span>(<span class="ident">source_loc</span>)
     }
@@ -1667,7 +1697,7 @@
     <span class="doccomment">/// Go over all negative conditions and check whether errors occurred for them.</span>
     <span class="doccomment">/// For those which did not occur, report error.</span>
     <span class="kw">fn</span> <span class="ident">add_negative_errors</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">negative_cond_errors</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Loc</span><span class="op">&gt;</span>) {
-        <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">with_condition_infos</span>(<span class="op">|</span><span class="ident">loc</span>, <span class="ident">info</span><span class="op">|</span> {
+        <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">with_condition_infos</span>(<span class="op">|</span>(<span class="ident">loc</span>, <span class="kw">_</span>), <span class="ident">info</span><span class="op">|</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="ident">info</span>.<span class="ident">negative_cond</span> <span class="op">|</span><span class="op">|</span> <span class="ident">negative_cond_errors</span>.<span class="ident">contains</span>(<span class="ident">loc</span>) {
                 <span class="comment">// Not a negative condition, or expected error happened.</span>
                 <span class="kw">return</span>;
@@ -1703,20 +1733,25 @@
         <span class="comment">// Create the error</span>
         <span class="kw">let</span> (<span class="ident">show_trace</span>, <span class="ident">message</span>, <span class="ident">call_loc</span>) <span class="op">=</span> <span class="ident">loc_opt</span>
             .<span class="ident">as_ref</span>()
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">loc</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">get_condition_info</span>(<span class="ident">loc</span>))
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">info</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">msg</span>) <span class="op">=</span> <span class="ident">info</span>.<span class="ident">message_if_requires</span>.<span class="ident">as_ref</span>() {
+            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">loc</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">requires_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">get_condition_info</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">ConditionTag</span>::<span class="ident">Requires</span>);
+                <span class="kw">let</span> <span class="ident">ensures_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">get_condition_info</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="ident">ConditionTag</span>::<span class="ident">Ensures</span>);
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>) <span class="op">=</span> <span class="ident">requires_info</span> {
                     <span class="comment">// Check whether the Boogie error indicates a precondition, or if this is</span>
-                    <span class="comment">// the only message we have.</span>
-                    <span class="kw">if</span> <span class="ident">error</span>.<span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BoogieErrorKind</span>::<span class="ident">Precondition</span> <span class="op">|</span><span class="op">|</span> <span class="ident">info</span>.<span class="ident">message</span>.<span class="ident">is_empty</span>() {
+                    <span class="comment">// the only info we have.</span>
+                    <span class="kw">if</span> <span class="ident">error</span>.<span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BoogieErrorKind</span>::<span class="ident">Precondition</span> <span class="op">|</span><span class="op">|</span> <span class="ident">ensures_info</span>.<span class="ident">is_none</span>() {
                         <span class="comment">// Extract the location of the call site.</span>
                         <span class="kw">let</span> <span class="ident">call_loc</span> <span class="op">=</span> <span class="ident">error</span>
                             .<span class="ident">context_position</span>
                             .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">to_proper_source_location</span>(<span class="self">self</span>.<span class="ident">get_locations</span>(<span class="ident">p</span>).<span class="number">1</span>));
-                        <span class="kw">return</span> (<span class="op">!</span><span class="ident">info</span>.<span class="ident">omit_trace</span>, <span class="ident">msg</span>.<span class="ident">clone</span>(), <span class="ident">call_loc</span>);
+                        <span class="kw">return</span> <span class="prelude-val">Some</span>((<span class="op">!</span><span class="ident">info</span>.<span class="ident">omit_trace</span>, <span class="ident">info</span>.<span class="ident">message</span>, <span class="ident">call_loc</span>));
                     }
                 }
-                (<span class="op">!</span><span class="ident">info</span>.<span class="ident">omit_trace</span>, <span class="ident">info</span>.<span class="ident">message</span>, <span class="prelude-val">None</span>)
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>) <span class="op">=</span> <span class="ident">ensures_info</span> {
+                    <span class="prelude-val">Some</span>((<span class="op">!</span><span class="ident">info</span>.<span class="ident">omit_trace</span>, <span class="ident">info</span>.<span class="ident">message</span>, <span class="prelude-val">None</span>))
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                }
             })
             .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> (<span class="bool-val">true</span>, <span class="ident">error</span>.<span class="ident">message</span>.<span class="ident">clone</span>(), <span class="prelude-val">None</span>));
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">diag</span> <span class="op">=</span> <span class="ident">Diagnostic</span>::<span class="ident">new</span>(
@@ -1783,19 +1818,14 @@
                     <span class="comment">//    source_pos.1.line, source_pos.1.column</span>
                     <span class="comment">//);</span>
                     <span class="comment">// END DEBUG</span>
-                    <span class="kw">let</span> <span class="ident">aborts_here</span> <span class="op">=</span> <span class="ident">error</span>
-                        .<span class="ident">model</span>
-                        .<span class="ident">as_ref</span>()
-                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">model</span><span class="op">|</span> {
-                            <span class="ident">model</span>
-                                .<span class="ident">tracked_aborts</span>
-                                .<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="ident">source_pos</span>.<span class="number">0</span>.<span class="ident">clone</span>(), <span class="ident">source_pos</span>.<span class="number">1</span>.<span class="ident">line</span>))
-                                .<span class="ident">is_some</span>()
-                        })
-                        .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>);
-                    <span class="kw">if</span> <span class="ident">aborts_here</span> {
+                    <span class="kw">let</span> <span class="ident">abort_marker</span> <span class="op">=</span> <span class="ident">error</span>.<span class="ident">model</span>.<span class="ident">as_ref</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">model</span><span class="op">|</span> {
+                        <span class="ident">model</span>
+                            .<span class="ident">tracked_aborts</span>
+                            .<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="ident">source_pos</span>.<span class="number">0</span>.<span class="ident">clone</span>(), <span class="ident">source_pos</span>.<span class="number">1</span>.<span class="ident">line</span>))
+                    });
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">m</span>) <span class="op">=</span> <span class="ident">abort_marker</span> {
                         <span class="ident">kind</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">TraceKind</span>::<span class="ident">Aborted</span>;
-                        <span class="ident">aborted</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">source_loc</span>.<span class="ident">clone</span>());
+                        <span class="ident">aborted</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="ident">source_loc</span>.<span class="ident">clone</span>(), <span class="ident">m</span>.<span class="ident">code</span>));
                     }
                     <span class="prelude-val">Some</span>((<span class="ident">orig_pos</span>, <span class="ident">source_loc</span>, <span class="ident">source_pos</span>, <span class="ident">kind</span>, <span class="ident">msg</span>))
                 })
@@ -1833,14 +1863,22 @@
                         .<span class="ident">collect_vec</span>()
                 })
                 .<span class="ident">collect_vec</span>();
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">abort_loc</span>) <span class="op">=</span> <span class="ident">aborted</span> {
-                <span class="comment">// Patch the diag for aborted case. In this case, none of the aborts_if clauses</span>
-                <span class="comment">// covered the abort case, and the error message can be misleading.</span>
-                <span class="ident">diag</span>.<span class="ident">message</span> <span class="op">=</span> <span class="string">&quot;abort not covered by any of the `aborts_if` clauses&quot;</span>.<span class="ident">to_string</span>();
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">abort_loc</span>, <span class="ident">code</span>)) <span class="op">=</span> <span class="ident">aborted</span> {
+                <span class="comment">// Patch the diag for aborted case if its the generic one. In this case, none of</span>
+                <span class="comment">// the aborts_if clauses covered the abort case, and the error message can be</span>
+                <span class="comment">// misleading.</span>
+                <span class="kw">if</span> <span class="ident">diag</span>
+                    .<span class="ident">message</span>
+                    .<span class="ident">trim</span>()
+                    .<span class="ident">starts_with</span>(<span class="string">&quot;A postcondition might not hold&quot;</span>)
+                {
+                    <span class="ident">diag</span>.<span class="ident">message</span> <span class="op">=</span>
+                        <span class="string">&quot;abort not covered by any of the `aborts_if` clauses&quot;</span>.<span class="ident">to_string</span>();
+                }
                 <span class="ident">diag</span>.<span class="ident">secondary_labels</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Label</span>::<span class="ident">new</span>(
                     <span class="ident">abort_loc</span>.<span class="ident">file_id</span>(),
                     <span class="ident">abort_loc</span>.<span class="ident">span</span>(),
-                    <span class="string">&quot;abort happened here&quot;</span>,
+                    <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;abort happened here with code `{}`&quot;</span>, <span class="ident">code</span>),
                 )];
             }
             <span class="ident">diag</span> <span class="op">=</span> <span class="ident">diag</span>.<span class="ident">with_notes</span>(<span class="ident">trace</span>);
@@ -2321,7 +2359,7 @@
         <span class="ident">map_entry</span>: <span class="kw-2">&amp;</span><span class="ident">ModelValue</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">AbortDescriptor</span>, <span class="ident">Loc</span>), <span class="ident">ModelParseError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">ModelValue</span>::<span class="ident">List</span>(<span class="ident">args</span>) <span class="op">=</span> <span class="ident">map_entry</span> {
-            <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
+            <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">3</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="self">Self</span>::<span class="ident">invalid_track_info</span>());
             }
             <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">extract_loc</span>(<span class="ident">wrapper</span>, <span class="ident">args</span>)<span class="question-mark">?</span>;
@@ -2330,10 +2368,14 @@
                 .<span class="ident">get_enclosing_function</span>(<span class="ident">loc</span>.<span class="ident">clone</span>())
                 .<span class="ident">ok_or_else</span>(<span class="self">Self</span>::<span class="ident">invalid_track_info</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="ident">wrapper</span>.<span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
+            <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">args</span>[<span class="number">2</span>]
+                .<span class="ident">extract_i128</span>()
+                .<span class="ident">ok_or_else</span>(<span class="self">Self</span>::<span class="ident">invalid_track_info</span>)<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>((
                 <span class="ident">AbortDescriptor</span> {
                     <span class="ident">module_id</span>: <span class="ident">func_target</span>.<span class="ident">func_env</span>.<span class="ident">module_env</span>.<span class="ident">get_id</span>(),
                     <span class="ident">func_id</span>: <span class="ident">func_target</span>.<span class="ident">get_id</span>(),
+                    <span class="ident">code</span>,
                 },
                 <span class="ident">loc</span>,
             ))
@@ -2605,6 +2647,23 @@
         }
     }
 
+    <span class="doccomment">/// Extract a i128 from a literal.</span>
+    <span class="kw">fn</span> <span class="ident">extract_i128</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i128</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_list</span>(<span class="string">&quot;-&quot;</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">values</span><span class="op">|</span> {
+            <span class="kw">if</span> <span class="ident">values</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+                <span class="ident">values</span>[<span class="number">0</span>].<span class="ident">extract_i128</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">value</span><span class="op">|</span> <span class="op">-</span><span class="ident">value</span>)
+            } <span class="kw">else</span> {
+                <span class="prelude-val">None</span>
+            }
+        }) {
+            <span class="prelude-val">Some</span>(<span class="ident">value</span>)
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">n</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_literal</span>()<span class="question-mark">?</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">i128</span><span class="op">&gt;</span>() {
+            <span class="prelude-val">Some</span>(<span class="ident">n</span>)
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        }
+    }
+
     <span class="doccomment">/// Extract the value of a primitive.</span>
     <span class="kw">fn</span> <span class="ident">extract_primitive</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ctor</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">String</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_list</span>(<span class="ident">ctor</span>)<span class="question-mark">?</span>;
@@ -2827,6 +2886,7 @@
 <span class="kw">struct</span> <span class="ident">AbortDescriptor</span> {
     <span class="ident">module_id</span>: <span class="ident">ModuleId</span>,
     <span class="ident">func_id</span>: <span class="ident">FunId</span>,
+    <span class="ident">code</span>: <span class="ident">i128</span>,
 }
 
 <span class="doccomment">/// Represents an expression descriptor.</span>

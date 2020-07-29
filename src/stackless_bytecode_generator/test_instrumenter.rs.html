@@ -105,6 +105,8 @@
 <span id="105">105</span>
 <span id="106">106</span>
 <span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -115,7 +117,7 @@
 };
 <span class="kw">use</span> <span class="ident">spec_lang</span>::{
     <span class="ident">ast</span>::{<span class="ident">Condition</span>, <span class="ident">ConditionKind</span>, <span class="ident">Exp</span>, <span class="ident">PropertyBag</span>, <span class="ident">Spec</span>, <span class="ident">Value</span>},
-    <span class="ident">env</span>::{<span class="ident">ConditionInfo</span>, <span class="ident">FunctionEnv</span>, <span class="ident">VerificationScope</span>, <span class="ident">ALWAYS_ABORTS_TEST_PRAGMA</span>},
+    <span class="ident">env</span>::{<span class="ident">ConditionInfo</span>, <span class="ident">ConditionTag</span>, <span class="ident">FunctionEnv</span>, <span class="ident">VerificationScope</span>, <span class="ident">ALWAYS_ABORTS_TEST_PRAGMA</span>},
     <span class="ident">ty</span>::<span class="ident">BOOL_TYPE</span>,
 };
 
@@ -176,13 +178,15 @@
         <span class="comment">// Add ConditionInfo to global environment for backend error reporting.</span>
         <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">ConditionInfo</span> {
             <span class="ident">message</span>: <span class="string">&quot;function always aborts&quot;</span>.<span class="ident">to_string</span>(),
-            <span class="ident">message_if_requires</span>: <span class="prelude-val">None</span>,
             <span class="ident">omit_trace</span>: <span class="bool-val">true</span>,    <span class="comment">// no error trace needed</span>
             <span class="ident">negative_cond</span>: <span class="bool-val">true</span>, <span class="comment">// this is a negative condition: we report above error if it passes</span>
         };
         <span class="comment">// Register the condition info for location we assigned to the condition. This way the</span>
         <span class="comment">// backend will find it.</span>
-        <span class="ident">func_env</span>.<span class="ident">module_env</span>.<span class="ident">env</span>.<span class="ident">set_condition_info</span>(<span class="ident">cond_loc</span>, <span class="ident">info</span>);
+        <span class="ident">func_env</span>
+            .<span class="ident">module_env</span>
+            .<span class="ident">env</span>
+            .<span class="ident">set_condition_info</span>(<span class="ident">cond_loc</span>, <span class="ident">ConditionTag</span>::<span class="ident">NegativeTest</span>, <span class="ident">info</span>);
     }
 }
 

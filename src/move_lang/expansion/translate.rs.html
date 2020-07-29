@@ -1720,6 +1720,16 @@
 <span id="1720">1720</span>
 <span id="1721">1721</span>
 <span id="1722">1722</span>
+<span id="1723">1723</span>
+<span id="1724">1724</span>
+<span id="1725">1725</span>
+<span id="1726">1726</span>
+<span id="1727">1727</span>
+<span id="1728">1728</span>
+<span id="1729">1729</span>
+<span id="1730">1730</span>
+<span id="1731">1731</span>
+<span id="1732">1732</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2531,16 +2541,19 @@
             <span class="ident">kind</span>,
             <span class="ident">properties</span>: <span class="ident">pproperties</span>,
             <span class="ident">exp</span>,
+            <span class="ident">abort_codes</span>,
         } <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="ident">pproperties</span>
                 .<span class="ident">into_iter</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">pragma_property</span>(<span class="ident">context</span>, <span class="ident">p</span>))
                 .<span class="ident">collect</span>();
             <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="ident">exp_</span>(<span class="ident">context</span>, <span class="ident">exp</span>);
+            <span class="kw">let</span> <span class="ident">abort_codes</span> <span class="op">=</span> <span class="ident">abort_codes</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">exp_</span>(<span class="ident">context</span>, <span class="ident">e</span>)).<span class="ident">collect</span>();
             <span class="ident">EM</span>::<span class="ident">Condition</span> {
                 <span class="ident">kind</span>,
                 <span class="ident">properties</span>,
                 <span class="ident">exp</span>,
+                <span class="ident">abort_codes</span>,
             }
         }
         <span class="ident">PM</span>::<span class="ident">Function</span> {
@@ -3157,8 +3170,15 @@
 
 <span class="kw">fn</span> <span class="ident">unbound_names_spec_block_member</span>(<span class="ident">unbound</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Name</span><span class="op">&gt;</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">m_</span>): <span class="kw-2">&amp;</span><span class="ident">E</span>::<span class="ident">SpecBlockMember</span>) {
     <span class="kw">use</span> <span class="ident">E</span>::<span class="ident">SpecBlockMember_</span> <span class="kw">as</span> <span class="ident">M</span>;
-    <span class="kw">match</span> <span class="ident">m_</span> {
-        <span class="ident">M</span>::<span class="ident">Condition</span> { <span class="ident">exp</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">unbound_names_exp</span>(<span class="ident">unbound</span>, <span class="ident">exp</span>),
+    <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">m_</span> {
+        <span class="ident">M</span>::<span class="ident">Condition</span> {
+            <span class="ident">exp</span>, <span class="ident">abort_codes</span>, ..
+        } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">unbound_names_exp</span>(<span class="ident">unbound</span>, <span class="ident">exp</span>);
+            <span class="ident">abort_codes</span>
+                .<span class="ident">iter</span>()
+                .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">unbound_names_exp</span>(<span class="ident">unbound</span>, <span class="ident">e</span>));
+        }
         <span class="comment">// No unbound names</span>
         <span class="comment">// And will error in the move prover</span>
         <span class="ident">M</span>::<span class="ident">Function</span> { .. }
