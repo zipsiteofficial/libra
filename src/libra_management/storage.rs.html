@@ -150,12 +150,25 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>, <span class="ident">x25519</span>};
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::{
+    <span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>},
+    <span class="ident">x25519</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>, <span class="ident">Value</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
@@ -240,6 +253,13 @@
             .<span class="ident">get_public_key</span>(<span class="ident">key_name</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="self">self</span>.<span class="ident">storage_name</span>, <span class="ident">key_name</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>
             .<span class="ident">public_key</span>)
+    }
+
+    <span class="doccomment">/// Retrieves public key from the stored private key</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ed25519_private</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key_name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">storage</span>
+            .<span class="ident">export_private_key</span>(<span class="ident">key_name</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">StorageReadError</span>(<span class="self">self</span>.<span class="ident">storage_name</span>, <span class="ident">key_name</span>, <span class="ident">e</span>.<span class="ident">to_string</span>()))
     }
 
     <span class="doccomment">/// Retrieves public key from the stored private key</span>
