@@ -920,7 +920,7 @@
     <span class="ident">network</span>: <span class="ident">NetworkSender</span>,
     <span class="ident">txn_manager</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">TxnManager</span><span class="op">&gt;</span>,
     <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PersistentLivenessStorage</span><span class="op">&gt;</span>,
-    <span class="ident">stop_consensus</span>: <span class="ident">bool</span>,
+    <span class="ident">sync_only</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">RoundManager</span> {
@@ -934,7 +934,7 @@
         <span class="ident">network</span>: <span class="ident">NetworkSender</span>,
         <span class="ident">txn_manager</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">TxnManager</span><span class="op">&gt;</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PersistentLivenessStorage</span><span class="op">&gt;</span>,
-        <span class="ident">stop_consensus</span>: <span class="ident">bool</span>,
+        <span class="ident">sync_only</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">epoch_state</span>,
@@ -946,7 +946,7 @@
             <span class="ident">txn_manager</span>,
             <span class="ident">network</span>,
             <span class="ident">storage</span>,
-            <span class="ident">stop_consensus</span>,
+            <span class="ident">sync_only</span>,
         }
     }
 
@@ -1141,8 +1141,8 @@
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
 
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">stop_consensus</span> {
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[RoundManager] stop_consensus flag is set, broadcasting SyncInfo&quot;</span>);
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">sync_only</span> {
+            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[RoundManager] sync_only flag is set, broadcasting SyncInfo&quot;</span>);
             <span class="self">self</span>.<span class="ident">network</span>
                 .<span class="ident">broadcast</span>(<span class="ident">ConsensusMsg</span>::<span class="ident">SyncInfo</span>(<span class="ident">Box</span>::<span class="ident">new</span>(
                     <span class="self">self</span>.<span class="ident">block_store</span>.<span class="ident">sync_info</span>(),
@@ -1279,8 +1279,8 @@
         );
 
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="op">!</span><span class="self">self</span>.<span class="ident">stop_consensus</span>,
-            <span class="string">&quot;[RoundManager] stop_consensus flag is set, stop voting&quot;</span>
+            <span class="op">!</span><span class="self">self</span>.<span class="ident">sync_only</span>,
+            <span class="string">&quot;[RoundManager] sync_only flag is set, stop voting&quot;</span>
         );
 
         <span class="kw">let</span> <span class="ident">maybe_signed_vote_proposal</span> <span class="op">=</span> <span class="ident">executed_block</span>.<span class="ident">maybe_signed_vote_proposal</span>();
