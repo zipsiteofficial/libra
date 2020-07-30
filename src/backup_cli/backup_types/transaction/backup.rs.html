@@ -188,12 +188,20 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::<span class="ident">transaction</span>::<span class="ident">manifest</span>::{<span class="ident">TransactionBackup</span>, <span class="ident">TransactionChunk</span>},
+    <span class="ident">metadata</span>::<span class="ident">Metadata</span>,
     <span class="ident">storage</span>::{<span class="ident">BackupHandleRef</span>, <span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>, <span class="ident">ShellSafeName</span>},
     <span class="ident">utils</span>::{
         <span class="ident">backup_service_client</span>::<span class="ident">BackupServiceClient</span>, <span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>,
@@ -374,6 +382,12 @@
             .<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">manifest_file</span>
             .<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">serde_json</span>::<span class="ident">to_vec</span>(<span class="kw-2">&amp;</span><span class="ident">manifest</span>)<span class="question-mark">?</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span>
+            <span class="ident">Metadata</span>::<span class="ident">new_transaction_backup</span>(<span class="ident">first_version</span>, <span class="ident">last_version</span>, <span class="ident">manifest_handle</span>.<span class="ident">clone</span>());
+        <span class="self">self</span>.<span class="ident">storage</span>
+            .<span class="ident">save_metadata_line</span>(<span class="kw-2">&amp;</span><span class="ident">metadata</span>.<span class="ident">name</span>(), <span class="kw-2">&amp;</span><span class="ident">metadata</span>.<span class="ident">to_text_line</span>()<span class="question-mark">?</span>)
             .<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">manifest_handle</span>)

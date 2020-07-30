@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["backup_types",""],["storage",""],["utils",""]]});
+initSidebarItems({"mod":[["backup_types",""],["metadata",""],["storage",""],["utils",""]]});
