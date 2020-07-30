@@ -1090,6 +1090,7 @@
 <span id="1090">1090</span>
 <span id="1091">1091</span>
 <span id="1092">1092</span>
+<span id="1093">1093</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2001,15 +2002,16 @@
         <span class="ident">target</span>: <span class="ident">LedgerInfoWithSignatures</span>,
         <span class="ident">intermediate_end_of_epoch_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">target_epoch_and_round</span> <span class="op">=</span> (<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(), <span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">round</span>());
-        <span class="kw">let</span> <span class="ident">local_epoch_and_round</span> <span class="op">=</span> (
+        <span class="kw">let</span> <span class="ident">target_epoch_and_version</span> <span class="op">=</span>
+            (<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(), <span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>());
+        <span class="kw">let</span> <span class="ident">local_epoch_and_version</span> <span class="op">=</span> (
             <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(),
-            <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">round</span>(),
+            <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
         );
-        <span class="kw">if</span> <span class="ident">target_epoch_and_round</span> <span class="op">&lt;</span> <span class="ident">local_epoch_and_round</span> {
+        <span class="kw">if</span> <span class="ident">target_epoch_and_version</span> <span class="op">&lt;</span> <span class="ident">local_epoch_and_version</span> {
             <span class="macro">warn</span><span class="macro">!</span>(
-                <span class="string">&quot;Ledger info is too old: local epoch/round: {:?}, epoch/round in request: {:?}.&quot;</span>,
-                <span class="ident">local_epoch_and_round</span>, <span class="ident">target_epoch_and_round</span>,
+                <span class="string">&quot;Ledger info is too old: local epoch/version: {:?}, epoch/version in request: {:?}.&quot;</span>,
+                <span class="ident">local_epoch_and_version</span>, <span class="ident">target_epoch_and_version</span>,
             );
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
