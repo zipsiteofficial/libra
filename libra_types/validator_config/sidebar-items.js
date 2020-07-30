@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ValidatorConfig",""],["ValidatorConfigResource",""]]});
+initSidebarItems({"struct":[["ValidatorConfig",""],["ValidatorConfigResource",""],["ValidatorOperatorConfigResource",""]]});
