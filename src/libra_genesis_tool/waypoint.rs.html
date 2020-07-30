@@ -74,6 +74,12 @@
 <span id="74">74</span>
 <span id="75">75</span>
 <span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -87,7 +93,7 @@
 };
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::<span class="ident">Value</span>;
 <span class="kw">use</span> <span class="ident">libra_temppath</span>::<span class="ident">TempPath</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">waypoint</span>::<span class="ident">Waypoint</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
 <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">LibraVM</span>;
 <span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">LibraDB</span>;
 <span class="kw">use</span> <span class="ident">storage_interface</span>::<span class="ident">DbReaderWriter</span>;
@@ -99,6 +105,8 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CreateWaypoint</span> {
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span>(<span class="string">&quot;config&quot;</span>))]</span>
+    <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">shared_backend</span>: <span class="ident">SharedBackend</span>,
 }
@@ -107,6 +115,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">genesis_helper</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">genesis</span>::<span class="ident">Genesis</span> {
             <span class="ident">config</span>: <span class="self">self</span>.<span class="ident">config</span>,
+            <span class="ident">chain_id</span>: <span class="self">self</span>.<span class="ident">chain_id</span>,
             <span class="ident">backend</span>: <span class="self">self</span>.<span class="ident">shared_backend</span>,
             <span class="ident">path</span>: <span class="prelude-val">None</span>,
         };
@@ -126,6 +135,8 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CreateAndInsertWaypoint</span> {
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span>(<span class="string">&quot;config&quot;</span>))]</span>
+    <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
@@ -137,6 +148,7 @@
 <span class="kw">impl</span> <span class="ident">CreateAndInsertWaypoint</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="ident">CreateWaypoint</span> {
+            <span class="ident">chain_id</span>: <span class="self">self</span>.<span class="ident">chain_id</span>,
             <span class="ident">config</span>: <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">clone</span>(),
             <span class="ident">shared_backend</span>: <span class="self">self</span>.<span class="ident">shared_backend</span>,
         }
