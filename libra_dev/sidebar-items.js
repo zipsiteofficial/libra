@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["account",""],["account_resource",""],["error",""],["event",""],["transaction",""]]});
+initSidebarItems({"mod":[["crypto",""],["error",""],["transaction",""]]});
