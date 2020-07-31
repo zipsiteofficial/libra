@@ -166,6 +166,17 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -204,6 +215,7 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ErrorData</span> {
     <span class="ident">InvalidArguments</span>(<span class="ident">InvalidArguments</span>),
     <span class="ident">StatusCode</span>(<span class="ident">StatusCode</span>),
+    <span class="ident">ExceedBatchSizeLimit</span>(<span class="ident">ExceedBatchSizeLimit</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Copy</span>)]</span>
@@ -218,6 +230,12 @@
     <span class="kw">pub</span> <span class="ident">code</span>: <span class="ident">i16</span>,
     <span class="kw">pub</span> <span class="ident">message</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ErrorData</span><span class="op">&gt;</span>,
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExceedBatchSizeLimit</span> {
+    <span class="kw">pub</span> <span class="ident">limit</span>: <span class="ident">u16</span>,
+    <span class="kw">pub</span> <span class="ident">batch_request_size</span>: <span class="ident">usize</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">for</span> <span class="ident">JsonRpcError</span> {}
@@ -246,10 +264,14 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">invalid_request</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span>::<span class="ident">invalid_request_with_data</span>(<span class="prelude-ty">Option</span>::<span class="prelude-val">None</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">invalid_request_with_data</span>(<span class="ident">data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ErrorData</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">code</span>: <span class="op">-</span><span class="number">32600</span>,
             <span class="ident">message</span>: <span class="string">&quot;Invalid Request&quot;</span>.<span class="ident">to_string</span>(),
-            <span class="ident">data</span>: <span class="prelude-val">None</span>,
+            <span class="ident">data</span>,
         }
     }
 

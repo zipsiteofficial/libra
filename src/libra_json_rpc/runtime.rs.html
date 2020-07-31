@@ -294,13 +294,29 @@
 <span id="294">294</span>
 <span id="295">295</span>
 <span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>,
-    <span class="ident">errors</span>::<span class="ident">JsonRpcError</span>,
+    <span class="ident">errors</span>::{<span class="ident">ErrorData</span>, <span class="ident">ExceedBatchSizeLimit</span>, <span class="ident">JsonRpcError</span>},
     <span class="ident">methods</span>::{<span class="ident">build_registry</span>, <span class="ident">JsonRpcRequest</span>, <span class="ident">JsonRpcService</span>, <span class="ident">RpcRegistry</span>},
 };
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">join_all</span>;
@@ -331,6 +347,7 @@
 <span class="doccomment">/// Returns handle to corresponding Tokio runtime</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bootstrap</span>(
     <span class="ident">address</span>: <span class="ident">SocketAddr</span>,
+    <span class="ident">batch_size_limit</span>: <span class="ident">u16</span>,
     <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>,
     <span class="ident">mp_sender</span>: <span class="ident">MempoolClientSender</span>,
     <span class="ident">role</span>: <span class="ident">RoleType</span>,
@@ -344,7 +361,7 @@
         .<span class="ident">expect</span>(<span class="string">&quot;[rpc] failed to create runtime&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">registry</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">build_registry</span>());
-    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">JsonRpcService</span>::<span class="ident">new</span>(<span class="ident">libra_db</span>, <span class="ident">mp_sender</span>, <span class="ident">role</span>, <span class="ident">chain_id</span>);
+    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">JsonRpcService</span>::<span class="ident">new</span>(<span class="ident">libra_db</span>, <span class="ident">mp_sender</span>, <span class="ident">role</span>, <span class="ident">chain_id</span>, <span class="ident">batch_size_limit</span>);
 
     <span class="kw">let</span> <span class="ident">base_route</span> <span class="op">=</span> <span class="ident">warp</span>::<span class="ident">any</span>()
         .<span class="ident">and</span>(<span class="ident">warp</span>::<span class="ident">post</span>())
@@ -387,6 +404,7 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Runtime</span> {
     <span class="ident">bootstrap</span>(
         <span class="ident">config</span>.<span class="ident">rpc</span>.<span class="ident">address</span>,
+        <span class="ident">config</span>.<span class="ident">rpc</span>.<span class="ident">batch_size_limit</span>,
         <span class="ident">libra_db</span>,
         <span class="ident">mp_sender</span>,
         <span class="ident">config</span>.<span class="ident">base</span>.<span class="ident">role</span>,
@@ -408,17 +426,31 @@
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">reject</span>::<span class="ident">custom</span>(<span class="ident">DatabaseError</span>))<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Value</span>::<span class="ident">Array</span>(<span class="ident">requests</span>) <span class="op">=</span> <span class="ident">data</span> {
-        <span class="comment">// batch API call</span>
-        <span class="kw">let</span> <span class="ident">futures</span> <span class="op">=</span> <span class="ident">requests</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">req</span><span class="op">|</span> {
-            <span class="ident">rpc_request_handler</span>(
-                <span class="ident">req</span>,
-                <span class="ident">service</span>.<span class="ident">clone</span>(),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">registry</span>),
-                <span class="ident">ledger_info</span>.<span class="ident">clone</span>(),
-            )
-        });
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="ident">join_all</span>(<span class="ident">futures</span>).<span class="kw">await</span>;
-        <span class="ident">warp</span>::<span class="ident">reply</span>::<span class="ident">json</span>(<span class="kw-2">&amp;</span><span class="ident">Value</span>::<span class="ident">Array</span>(<span class="ident">responses</span>))
+        <span class="kw">if</span> <span class="ident">requests</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">service</span>.<span class="ident">batch_size_limit</span> <span class="kw">as</span> <span class="ident">usize</span> {
+            <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">ErrorData</span>::<span class="ident">ExceedBatchSizeLimit</span>(<span class="ident">ExceedBatchSizeLimit</span> {
+                <span class="ident">limit</span>: <span class="ident">service</span>.<span class="ident">batch_size_limit</span>,
+                <span class="ident">batch_request_size</span>: <span class="ident">requests</span>.<span class="ident">len</span>(),
+            });
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">Map</span>::<span class="ident">new</span>();
+            <span class="ident">resp</span>.<span class="ident">insert</span>(
+                <span class="string">&quot;error&quot;</span>.<span class="ident">to_string</span>(),
+                <span class="ident">JsonRpcError</span>::<span class="ident">invalid_request_with_data</span>(<span class="prelude-val">Some</span>(<span class="ident">data</span>)).<span class="ident">serialize</span>(),
+            );
+
+            <span class="ident">warp</span>::<span class="ident">reply</span>::<span class="ident">json</span>(<span class="kw-2">&amp;</span><span class="ident">resp</span>)
+        } <span class="kw">else</span> {
+            <span class="comment">// batch API call</span>
+            <span class="kw">let</span> <span class="ident">futures</span> <span class="op">=</span> <span class="ident">requests</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">req</span><span class="op">|</span> {
+                <span class="ident">rpc_request_handler</span>(
+                    <span class="ident">req</span>,
+                    <span class="ident">service</span>.<span class="ident">clone</span>(),
+                    <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">registry</span>),
+                    <span class="ident">ledger_info</span>.<span class="ident">clone</span>(),
+                )
+            });
+            <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="ident">join_all</span>(<span class="ident">futures</span>).<span class="kw">await</span>;
+            <span class="ident">warp</span>::<span class="ident">reply</span>::<span class="ident">json</span>(<span class="kw-2">&amp;</span><span class="ident">Value</span>::<span class="ident">Array</span>(<span class="ident">responses</span>))
+        }
     } <span class="kw">else</span> {
         <span class="comment">// single API call</span>
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">rpc_request_handler</span>(<span class="ident">data</span>, <span class="ident">service</span>, <span class="ident">registry</span>, <span class="ident">ledger_info</span>).<span class="kw">await</span>;
