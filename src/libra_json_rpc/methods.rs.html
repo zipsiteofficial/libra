@@ -397,13 +397,37 @@
 <span id="397">397</span>
 <span id="398">398</span>
 <span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! Module contains RPC method handlers for Full Node JSON-RPC interface</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">errors</span>::{<span class="ident">ErrorData</span>, <span class="ident">InvalidArguments</span>, <span class="ident">JsonRpcError</span>},
+    <span class="ident">errors</span>::{<span class="ident">ErrorData</span>, <span class="ident">ExceedSizeLimit</span>, <span class="ident">InvalidArguments</span>, <span class="ident">JsonRpcError</span>},
     <span class="ident">views</span>::{
         <span class="ident">AccountStateWithProofView</span>, <span class="ident">AccountView</span>, <span class="ident">BlockMetadata</span>, <span class="ident">CurrencyInfoView</span>, <span class="ident">EventView</span>,
         <span class="ident">StateProofView</span>, <span class="ident">TransactionView</span>,
@@ -437,7 +461,8 @@
     <span class="ident">mempool_sender</span>: <span class="ident">MempoolClientSender</span>,
     <span class="ident">role</span>: <span class="ident">RoleType</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-    <span class="kw">pub</span> <span class="ident">batch_size_limit</span>: <span class="ident">u16</span>,
+    <span class="ident">batch_size_limit</span>: <span class="ident">u16</span>,
+    <span class="ident">page_size_limit</span>: <span class="ident">u16</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">JsonRpcService</span> {
@@ -447,6 +472,7 @@
         <span class="ident">role</span>: <span class="ident">RoleType</span>,
         <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
         <span class="ident">batch_size_limit</span>: <span class="ident">u16</span>,
+        <span class="ident">page_size_limit</span>: <span class="ident">u16</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">db</span>,
@@ -454,6 +480,7 @@
             <span class="ident">role</span>,
             <span class="ident">chain_id</span>,
             <span class="ident">batch_size_limit</span>,
+            <span class="ident">page_size_limit</span>,
         }
     }
 
@@ -463,6 +490,28 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainId</span> {
         <span class="self">self</span>.<span class="ident">chain_id</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_batch_size_limit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">JsonRpcError</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">validate_size_limit</span>(<span class="string">&quot;batch size&quot;</span>, <span class="self">self</span>.<span class="ident">batch_size_limit</span>, <span class="ident">size</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">validate_page_size_limit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">JsonRpcError</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">validate_size_limit</span>(<span class="string">&quot;page size&quot;</span>, <span class="self">self</span>.<span class="ident">page_size_limit</span>, <span class="ident">size</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">validate_size_limit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">limit</span>: <span class="ident">u16</span>, <span class="ident">size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">JsonRpcError</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">size</span> <span class="op">&gt;</span> <span class="ident">limit</span> <span class="kw">as</span> <span class="ident">usize</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">JsonRpcError</span>::<span class="ident">invalid_request_with_data</span>(<span class="prelude-val">Some</span>(
+                <span class="ident">ErrorData</span>::<span class="ident">ExceedSizeLimit</span>(<span class="ident">ExceedSizeLimit</span> {
+                    <span class="ident">limit</span>,
+                    <span class="ident">size</span>,
+                    <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">to_string</span>(),
+                }),
+            )))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>(())
+        }
     }
 }
 
@@ -589,10 +638,7 @@
     <span class="kw">let</span> <span class="ident">limit</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">request</span>.<span class="ident">get_param</span>(<span class="number">1</span>))<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">include_events</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">request</span>.<span class="ident">get_param</span>(<span class="number">2</span>))<span class="question-mark">?</span>;
 
-    <span class="macro">ensure</span><span class="macro">!</span>(
-        <span class="ident">limit</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">limit</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">1000</span>,
-        <span class="string">&quot;limit must be smaller than 1000&quot;</span>
-    );
+    <span class="ident">service</span>.<span class="ident">validate_page_size_limit</span>(<span class="ident">limit</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">txs</span> <span class="op">=</span>
         <span class="ident">service</span>
@@ -687,6 +733,8 @@
     <span class="kw">let</span> <span class="ident">raw_event_key</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">request</span>.<span class="ident">get_param</span>(<span class="number">0</span>))<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">start</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">request</span>.<span class="ident">get_param</span>(<span class="number">1</span>))<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">limit</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">request</span>.<span class="ident">get_param</span>(<span class="number">2</span>))<span class="question-mark">?</span>;
+
+    <span class="ident">service</span>.<span class="ident">validate_page_size_limit</span>(<span class="ident">limit</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">event_key</span> <span class="op">=</span> <span class="ident">EventKey</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">raw_event_key</span>)<span class="question-mark">?</span>[..])<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">events_with_proof</span> <span class="op">=</span> <span class="ident">service</span>.<span class="ident">db</span>.<span class="ident">get_events</span>(<span class="kw-2">&amp;</span><span class="ident">event_key</span>, <span class="ident">start</span>, <span class="bool-val">true</span>, <span class="ident">limit</span>)<span class="question-mark">?</span>;
