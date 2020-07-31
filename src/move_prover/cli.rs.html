@@ -1047,18 +1047,8 @@
                 <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">proc_cores</span>
             }
         )]);
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">vc_timeout</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
-                <span class="string">&quot;-proverOpt:O:timeout={}&quot;</span>,
-                <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">vc_timeout</span> <span class="op">*</span> <span class="number">1000</span>
-            )]);
-        }
         <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-proverOpt:O:smt.QI.EAGER_THRESHOLD=100&quot;</span>]);
         <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-proverOpt:O:smt.QI.LAZY_THRESHOLD=100&quot;</span>]);
-        <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;-proverOpt:O:smt.random_seed={}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">random_seed</span>
-        )]);
         <span class="comment">// TODO: see what we can make out of these flags.</span>
         <span class="comment">//add(&amp;[&quot;-proverOpt:O:smt.QI.PROFILE=true&quot;]);</span>
         <span class="comment">//add(&amp;[&quot;-proverOpt:O:trace=true&quot;]);</span>
@@ -1077,6 +1067,16 @@
     <span class="doccomment">/// Returns name of file where to log boogie output.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_boogie_log_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">boogie_file</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}.log&quot;</span>, <span class="ident">boogie_file</span>)
+    }
+
+    <span class="doccomment">/// Adjust a timeout value, given in seconds, for the runtime environment.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">adjust_timeout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">time</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="comment">// If running on a Linux flavor as in Ci, add 100% to the timeout for added</span>
+        <span class="comment">// robustness against flakiness.</span>
+        <span class="kw">match</span> <span class="ident">std</span>::<span class="ident">env</span>::<span class="ident">consts</span>::<span class="ident">OS</span> {
+            <span class="string">&quot;linux&quot;</span> <span class="op">|</span> <span class="string">&quot;freebsd&quot;</span> <span class="op">|</span> <span class="string">&quot;openbsd&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">time</span> <span class="op">+</span> <span class="ident">time</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">time</span>,
+        }
     }
 }
 </pre></div>
