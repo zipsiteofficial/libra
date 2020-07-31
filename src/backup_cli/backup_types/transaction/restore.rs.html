@@ -210,6 +210,14 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -241,10 +249,18 @@
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;transaction-manifest&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">manifest_handle</span>: <span class="ident">FileHandle</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(
-        <span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;replay-transaction-from-version&quot;</span>,
-        <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;Version::max_value()&quot;</span>
+        <span class="ident">long</span> <span class="op">=</span> <span class="string">&quot;replay-transactions-from-version&quot;</span>,
+        <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Transactions with this version and above will be replayed so state and events are \
+        gonna pop up. Requires state at the version right before this to exist, either by \
+        recovering a state snapshot, or previous transaction replay.&quot;</span>
     )]</span>
-    <span class="kw">pub</span> <span class="ident">replay_from_version</span>: <span class="ident">Version</span>,
+    <span class="kw">pub</span> <span class="ident">replay_from_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">TransactionRestoreOpt</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">replay_from_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Version</span> {
+        <span class="self">self</span>.<span class="ident">replay_from_version</span>.<span class="ident">unwrap_or</span>(<span class="ident">Version</span>::<span class="ident">max_value</span>())
+    }
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionRestoreController</span> {
@@ -329,9 +345,9 @@
         <span class="self">Self</span> {
             <span class="ident">storage</span>,
             <span class="ident">restore_handler</span>,
+            <span class="ident">replay_from_version</span>: <span class="ident">opt</span>.<span class="ident">replay_from_version</span>(),
             <span class="ident">manifest_handle</span>: <span class="ident">opt</span>.<span class="ident">manifest_handle</span>,
-            <span class="ident">target_version</span>: <span class="ident">global_opt</span>.<span class="ident">target_version</span>,
-            <span class="ident">replay_from_version</span>: <span class="ident">opt</span>.<span class="ident">replay_from_version</span>,
+            <span class="ident">target_version</span>: <span class="ident">global_opt</span>.<span class="ident">target_version</span>(),
             <span class="ident">state</span>: <span class="ident">State</span>::<span class="ident">default</span>(),
         }
     }
