@@ -182,14 +182,45 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
+<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::{
     <span class="ident">register_histogram_vec</span>, <span class="ident">register_int_counter_vec</span>, <span class="ident">register_int_gauge_vec</span>, <span class="ident">HistogramVec</span>,
     <span class="ident">IntCounterVec</span>, <span class="ident">IntGauge</span>, <span class="ident">IntGaugeVec</span>, <span class="ident">OpMetrics</span>,
 };
+<span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 
 <span class="comment">// some type labels</span>
@@ -214,6 +245,33 @@
     )
     .<span class="ident">unwrap</span>()
 });
+
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">LIBRA_CONNECTIONS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntGaugeVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_gauge_vec</span><span class="macro">!</span>(
+        <span class="comment">// metric name</span>
+        <span class="string">&quot;libra_connections&quot;</span>,
+        <span class="comment">// metric description</span>
+        <span class="string">&quot;Libra connections counter&quot;</span>,
+        <span class="comment">// metric labels (dimensions)</span>
+        <span class="kw-2">&amp;</span>[<span class="string">&quot;role_type&quot;</span>, <span class="string">&quot;network_id&quot;</span>, <span class="string">&quot;peer_id&quot;</span>, <span class="string">&quot;direction&quot;</span>]
+    )
+    .<span class="ident">unwrap</span>()
+});
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_libra_connections</span>(
+    <span class="ident">network_context</span>: <span class="kw-2">&amp;</span><span class="ident">NetworkContext</span>,
+    <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>,
+    <span class="ident">num_connections</span>: <span class="ident">usize</span>,
+) {
+    <span class="ident">LIBRA_CONNECTIONS</span>
+        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+            <span class="ident">network_context</span>.<span class="ident">role</span>().<span class="ident">as_str</span>(),
+            <span class="ident">network_context</span>.<span class="ident">network_id</span>().<span class="ident">to_string</span>().<span class="ident">as_str</span>(),
+            <span class="ident">network_context</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>().<span class="ident">as_str</span>(),
+            <span class="ident">origin</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>(),
+        ])
+        .<span class="ident">set</span>(<span class="ident">num_connections</span> <span class="kw">as</span> <span class="ident">i64</span>);
+}
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">LIBRA_NETWORK_DISCOVERY_NOTES</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntGaugeVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
     <span class="macro">register_int_gauge_vec</span><span class="macro">!</span>(
