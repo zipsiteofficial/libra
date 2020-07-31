@@ -180,6 +180,27 @@
 <span id="180">180</span>
 <span id="181">181</span>
 <span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -348,13 +369,34 @@
     <span class="ident">move_prover</span>::<span class="ident">run_move_prover_errors_to_stderr</span>(<span class="ident">options</span>).<span class="ident">unwrap</span>();
 }
 
+<span class="comment">// TODO: remove once https://github.com/facebookincubator/serde-reflection/issues/32 is closed</span>
+<span class="kw">fn</span> <span class="ident">post_process_add_proptest_derivations</span>(<span class="ident">buffer</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
+    <span class="kw">let</span> <span class="ident">contents</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">from_utf8</span>(<span class="ident">buffer</span>).<span class="ident">unwrap</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>::<span class="ident">create</span>(<span class="ident">TRANSACTION_BUILDERS_GENERATED_SOURCE_PATH</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;Failed to open file for Rust script build generation&quot;</span>);
+    <span class="macro">write</span><span class="macro">!</span>(
+        <span class="ident">file</span>,
+        <span class="string">&quot;{}&quot;</span>,
+        <span class="ident">contents</span>.<span class="ident">replacen</span>(
+            <span class="string">&quot;pub enum ScriptCall&quot;</span>,
+            <span class="string">r#&quot;
+#[cfg_attr(any(test, feature = &quot;fuzzing&quot;), derive(proptest_derive::Arbitrary))]
+#[cfg_attr(any(test, feature = &quot;fuzzing&quot;), proptest(no_params))]
+pub enum ScriptCall&quot;#</span>,
+            <span class="number">1</span>
+        )
+    )
+    .<span class="ident">expect</span>(<span class="string">&quot;Unable to write generated Rust script builders&quot;</span>);
+}
+
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_rust_transaction_builders</span>() {
     <span class="kw">let</span> <span class="ident">abis</span> <span class="op">=</span> <span class="ident">transaction_builder_generator</span>::<span class="ident">read_abis</span>(<span class="ident">COMPILED_TRANSACTION_SCRIPTS_ABI_DIR</span>)
         .<span class="ident">expect</span>(<span class="string">&quot;Failed to read generated ABIs&quot;</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">f</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">File</span>::<span class="ident">create</span>(<span class="ident">TRANSACTION_BUILDERS_GENERATED_SOURCE_PATH</span>)
-        .<span class="ident">expect</span>(<span class="string">&quot;Failed to open file for Rust script build generation&quot;</span>);
-    <span class="ident">transaction_builder_generator</span>::<span class="ident">rust</span>::<span class="ident">output</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">f</span>, <span class="kw-2">&amp;</span><span class="ident">abis</span>, <span class="comment">/* local types */</span> <span class="bool-val">true</span>)
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+    <span class="ident">transaction_builder_generator</span>::<span class="ident">rust</span>::<span class="ident">output</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>, <span class="kw-2">&amp;</span><span class="ident">abis</span>, <span class="comment">/* local types */</span> <span class="bool-val">true</span>)
         .<span class="ident">expect</span>(<span class="string">&quot;Failed to generate Rust builders for Libra&quot;</span>);
+
+    <span class="ident">post_process_add_proptest_derivations</span>(<span class="kw-2">&amp;</span><span class="ident">buf</span>);
 
     <span class="ident">std</span>::<span class="ident">process</span>::<span class="ident">Command</span>::<span class="ident">new</span>(<span class="string">&quot;rustfmt&quot;</span>)
         .<span class="ident">arg</span>(<span class="string">&quot;--config&quot;</span>)
