@@ -28,16 +28,25 @@
 <span id="28">28</span>
 <span id="29">29</span>
 <span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">libra_metrics</span>::{<span class="ident">register_int_gauge_vec</span>, <span class="ident">IntGaugeVec</span>};
+<span class="kw">use</span> <span class="ident">libra_metrics</span>::{<span class="ident">register_int_counter</span>, <span class="ident">register_int_counter_vec</span>, <span class="ident">IntCounter</span>, <span class="ident">IntCounterVec</span>};
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 
 <span class="doccomment">/// Cumulative number of valid requests that the JSON RPC client service receives</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntGaugeVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
-    <span class="macro">register_int_gauge_vec</span><span class="macro">!</span>(
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounterVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_counter_vec</span><span class="macro">!</span>(
         <span class="string">&quot;libra_client_service_requests_count&quot;</span>,
         <span class="string">&quot;Cumulative number of requests that JSON RPC client service receives&quot;</span>,
         <span class="kw-2">&amp;</span>[
@@ -49,13 +58,22 @@
 });
 
 <span class="doccomment">/// Cumulative number of invalid requests that the JSON RPC client service receives</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INVALID_REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntGaugeVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
-    <span class="macro">register_int_gauge_vec</span><span class="macro">!</span>(
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INVALID_REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounterVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_counter_vec</span><span class="macro">!</span>(
         <span class="string">&quot;libra_client_service_invalid_requests_count&quot;</span>,
         <span class="string">&quot;Cumulative number of invalid requests that JSON RPC client service receives&quot;</span>,
         <span class="kw-2">&amp;</span>[
             <span class="string">&quot;type&quot;</span>, <span class="comment">// categories of invalid requests: &quot;invalid_format&quot;, &quot;invalid_params&quot;, &quot;invalid_method&quot;, &quot;method_not_found&quot;</span>
         ]
+    )
+    .<span class="ident">unwrap</span>()
+});
+
+<span class="doccomment">/// Cumulative number of server internal errors.</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INTERNAL_ERRORS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounter</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_counter</span><span class="macro">!</span>(
+        <span class="string">&quot;libra_client_service_internal_error_count&quot;</span>,
+        <span class="string">&quot;Cumulative number of internal error&quot;</span>
     )
     .<span class="ident">unwrap</span>()
 });
