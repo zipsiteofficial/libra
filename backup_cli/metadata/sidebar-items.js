@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["cache",""],["view",""]]});
+initSidebarItems({"mod":[["cache",""],["view",""]],"struct":[["EpochEndingBackupMeta",""],["StateSnapshotBackupMeta",""],["TransactionBackupMeta",""]]});
