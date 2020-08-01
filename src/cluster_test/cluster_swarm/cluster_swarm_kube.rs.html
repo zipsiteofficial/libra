@@ -728,13 +728,91 @@
 <span id="728">728</span>
 <span id="729">729</span>
 <span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
+<span id="798">798</span>
+<span id="799">799</span>
+<span id="800">800</span>
+<span id="801">801</span>
+<span id="802">802</span>
+<span id="803">803</span>
+<span id="804">804</span>
+<span id="805">805</span>
+<span id="806">806</span>
+<span id="807">807</span>
+<span id="808">808</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">env</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
@@ -762,6 +840,10 @@
 <span class="kw">use</span> <span class="ident">reqwest</span>::<span class="ident">Client</span> <span class="kw">as</span> <span class="ident">HttpClient</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashSet</span>, <span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">process</span>::<span class="ident">Command</span>};
 
+<span class="kw">use</span> <span class="ident">rusoto_core</span>::<span class="ident">Region</span>;
+<span class="kw">use</span> <span class="ident">rusoto_s3</span>::{<span class="ident">PutObjectRequest</span>, <span class="ident">S3Client</span>, <span class="ident">S3</span>};
+<span class="kw">use</span> <span class="ident">rusoto_sts</span>::<span class="ident">WebIdentityProvider</span>;
+
 <span class="kw">const</span> <span class="ident">DEFAULT_NAMESPACE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;default&quot;</span>;
 
 <span class="kw">const</span> <span class="ident">CFG_SEED</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;1337133713371337133713371337133713371337133713371337133713371337&quot;</span>;
@@ -773,6 +855,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClusterSwarmKube</span> {
     <span class="ident">client</span>: <span class="ident">Client</span>,
     <span class="ident">http_client</span>: <span class="ident">HttpClient</span>,
+    <span class="ident">s3_client</span>: <span class="ident">S3Client</span>,
     <span class="kw">pub</span> <span class="ident">node_map</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">KubeNode</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
@@ -797,11 +880,16 @@
                 .<span class="ident">expect</span>(<span class="string">&quot;Failed to parse kubernetes endpoint url&quot;</span>),
         );
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Client</span>::<span class="ident">new</span>(<span class="ident">config</span>);
+        <span class="kw">let</span> <span class="ident">credentials_provider</span> <span class="op">=</span> <span class="ident">WebIdentityProvider</span>::<span class="ident">from_k8s_env</span>();
+        <span class="kw">let</span> <span class="ident">dispatcher</span> <span class="op">=</span>
+            <span class="ident">rusoto_core</span>::<span class="ident">HttpClient</span>::<span class="ident">new</span>().<span class="ident">expect</span>(<span class="string">&quot;failed to create request dispatcher&quot;</span>);
+        <span class="kw">let</span> <span class="ident">s3_client</span> <span class="op">=</span> <span class="ident">S3Client</span>::<span class="ident">new_with</span>(<span class="ident">dispatcher</span>, <span class="ident">credentials_provider</span>, <span class="ident">Region</span>::<span class="ident">UsWest2</span>);
         <span class="kw">let</span> <span class="ident">node_map</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()));
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">client</span>,
             <span class="ident">node_map</span>,
             <span class="ident">http_client</span>,
+            <span class="ident">s3_client</span>,
         })
     }
 
@@ -820,7 +908,6 @@
     <span class="kw">fn</span> <span class="ident">lsr_spec</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">validator_index</span>: <span class="ident">u32</span>,
-        <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">num_validators</span>: <span class="ident">u32</span>,
         <span class="ident">node_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">image_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
@@ -832,7 +919,6 @@
             <span class="ident">num_validators</span> <span class="op">=</span> <span class="ident">num_validators</span>,
             <span class="ident">image_tag</span> <span class="op">=</span> <span class="ident">image_tag</span>,
             <span class="ident">node_name</span> <span class="op">=</span> <span class="ident">node_name</span>,
-            <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,
             <span class="ident">lsr_backend</span> <span class="op">=</span> <span class="ident">lsr_backend</span>,
             <span class="ident">cfg_seed</span> <span class="op">=</span> <span class="ident">CFG_SEED</span>,
         );
@@ -890,7 +976,6 @@
         } <span class="kw">else</span> {
             <span class="string">&quot;&quot;</span>
         };
-        <span class="kw">let</span> <span class="ident">fluentbit_enabled</span> <span class="op">=</span> <span class="string">&quot;true&quot;</span>;
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
             <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;validator_spec_template.yaml&quot;</span>),
             <span class="ident">index</span> <span class="op">=</span> <span class="ident">index</span>,
@@ -905,7 +990,6 @@
             <span class="ident">cfg_seed_peer_ip</span> <span class="op">=</span> <span class="ident">seed_peer_ip</span>,
             <span class="ident">cfg_safety_rules_addr</span> <span class="op">=</span> <span class="ident">safety_rules_addr</span>,
             <span class="ident">cfg_fullnode_seed</span> <span class="op">=</span> <span class="ident">cfg_fullnode_seed</span>,
-            <span class="ident">fluentbit_enabled</span> <span class="op">=</span> <span class="ident">fluentbit_enabled</span>,
         );
         <span class="kw">let</span> <span class="ident">pod_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">pod_spec</span>)<span class="question-mark">?</span>;
@@ -924,7 +1008,6 @@
         <span class="ident">seed_peer_ip</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">cfg_overrides</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Pod</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">fluentbit_enabled</span> <span class="op">=</span> <span class="string">&quot;true&quot;</span>;
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
             <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;fullnode_spec_template.yaml&quot;</span>),
             <span class="ident">fullnode_index</span> <span class="op">=</span> <span class="ident">fullnode_index</span>,
@@ -937,7 +1020,6 @@
             <span class="ident">cfg_seed</span> <span class="op">=</span> <span class="ident">CFG_SEED</span>,
             <span class="ident">cfg_seed_peer_ip</span> <span class="op">=</span> <span class="ident">seed_peer_ip</span>,
             <span class="ident">cfg_fullnode_seed</span> <span class="op">=</span> <span class="ident">CFG_FULLNODE_SEED</span>,
-            <span class="ident">fluentbit_enabled</span> <span class="op">=</span> <span class="ident">fluentbit_enabled</span>,
         );
         <span class="kw">let</span> <span class="ident">pod_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">pod_spec</span>)<span class="question-mark">?</span>;
@@ -1185,6 +1267,22 @@
             .<span class="ident">allocate_node</span>(<span class="kw-2">&amp;</span><span class="ident">pod_name</span>)
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to allocate node: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Configuring fluent-bit for pod {} on {:?}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">node</span>);
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="ident">application_config</span> {
+            <span class="ident">Validator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">config_fluentbit</span>(<span class="string">&quot;validator-events&quot;</span>, <span class="ident">pod_name</span>.<span class="ident">as_str</span>(), <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)
+                    .<span class="kw">await</span><span class="question-mark">?</span>
+            }
+            <span class="ident">Fullnode</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">config_fluentbit</span>(<span class="string">&quot;validator-events&quot;</span>, <span class="ident">pod_name</span>.<span class="ident">as_str</span>(), <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)
+                    .<span class="kw">await</span><span class="question-mark">?</span>
+            }
+            <span class="ident">LSR</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">config_fluentbit</span>(<span class="string">&quot;safety-rules-events&quot;</span>, <span class="ident">pod_name</span>.<span class="ident">as_str</span>(), <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)
+                    .<span class="kw">await</span><span class="question-mark">?</span>
+            }
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
+        }
         <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Creating pod {} on {:?}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">node</span>);
         <span class="kw">let</span> (<span class="ident">p</span>, <span class="ident">s</span>): (<span class="ident">Pod</span>, <span class="ident">Service</span>) <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="ident">application_config</span> {
             <span class="ident">Validator</span>(<span class="ident">validator_config</span>) <span class="op">=</span><span class="op">&gt;</span> (
@@ -1223,7 +1321,6 @@
             }
             <span class="ident">LSR</span>(<span class="ident">lsr_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">lsr_spec</span>(
                 <span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index_only</span>(),
-                <span class="ident">pod_name</span>.<span class="ident">as_str</span>(),
                 <span class="ident">lsr_config</span>.<span class="ident">num_validators</span>,
                 <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
                 <span class="kw-2">&amp;</span><span class="ident">lsr_config</span>.<span class="ident">image_tag</span>,
@@ -1390,6 +1487,65 @@
             <span class="ident">job_name</span>,
         )
         .<span class="kw">await</span>
+    }
+
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">put_file</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">node</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">content</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">bucket</span> <span class="op">=</span> <span class="string">&quot;toro-cluster-test-flamegraphs&quot;</span>;
+        <span class="kw">let</span> <span class="ident">run_id</span> <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;RUN_ID&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;RUN_ID is not set.&quot;</span>);
+        <span class="self">self</span>.<span class="ident">s3_client</span>
+            .<span class="ident">put_object</span>(<span class="ident">PutObjectRequest</span> {
+                <span class="ident">bucket</span>: <span class="ident">bucket</span>.<span class="ident">to_string</span>(),
+                <span class="ident">key</span>: <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;data/{}/{}/{}&quot;</span>, <span class="ident">run_id</span>, <span class="ident">pod_name</span>, <span class="ident">path</span>),
+                <span class="ident">body</span>: <span class="prelude-val">Some</span>(<span class="ident">content</span>.<span class="ident">into</span>()),
+                ..<span class="ident">Default</span>::<span class="ident">default</span>()
+            })
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">util_cmd</span>(
+            <span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;aws s3 cp s3://{}/data/{}/{}/{path} {path}&quot;</span>,
+                <span class="ident">bucket</span>,
+                <span class="ident">run_id</span>,
+                <span class="ident">pod_name</span>,
+                <span class="ident">path</span> <span class="op">=</span> <span class="ident">path</span>
+            ),
+            <span class="ident">node</span>,
+            <span class="string">&quot;put-file&quot;</span>,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">config_fluentbit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">node</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">parsers_config</span> <span class="op">=</span> <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;fluent-bit/parsers.conf&quot;</span>).<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">fluentbit_config</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;fluent-bit/fluent-bit.conf&quot;</span>),
+            <span class="ident">input_tag</span> <span class="op">=</span> <span class="ident">input_tag</span>,
+            <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>
+        );
+        <span class="kw">let</span> <span class="ident">dir</span> <span class="op">=</span> <span class="string">&quot;/opt/libra/data/fluent-bit/&quot;</span>;
+        <span class="self">self</span>.<span class="ident">util_cmd</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;mkdir -p {}&quot;</span>, <span class="ident">dir</span>), <span class="ident">node</span>, <span class="string">&quot;mkdir-fluentbit&quot;</span>)
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">put_file</span>(
+            <span class="ident">node</span>,
+            <span class="ident">pod_name</span>,
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}parser.conf&quot;</span>, <span class="ident">dir</span>).<span class="ident">as_str</span>(),
+            <span class="ident">parsers_config</span>.<span class="ident">into_bytes</span>(),
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">put_file</span>(
+            <span class="ident">node</span>,
+            <span class="ident">pod_name</span>,
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}fluent-bit.conf&quot;</span>, <span class="ident">dir</span>).<span class="ident">as_str</span>(),
+            <span class="ident">fluentbit_config</span>.<span class="ident">into_bytes</span>(),
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
