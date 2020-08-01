@@ -281,6 +281,24 @@
 <span id="281">281</span>
 <span id="282">282</span>
 <span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -300,11 +318,14 @@
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_mempool</span>::<span class="ident">gen_mempool_reconfig_subscription</span>;
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::<span class="ident">metric_server</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{
+    <span class="ident">account_config</span>::<span class="ident">libra_root_address</span>, <span class="ident">account_state</span>::<span class="ident">AccountState</span>, <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">LibraVM</span>;
 <span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">LibraDB</span>;
 <span class="kw">use</span> <span class="ident">network_builder</span>::<span class="ident">builder</span>::<span class="ident">NetworkBuilder</span>;
 <span class="kw">use</span> <span class="ident">state_synchronizer</span>::<span class="ident">StateSynchronizer</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">boxed</span>::<span class="ident">Box</span>, <span class="ident">net</span>::<span class="ident">ToSocketAddrs</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">thread</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">boxed</span>::<span class="ident">Box</span>, <span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">net</span>::<span class="ident">ToSocketAddrs</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">thread</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
 <span class="kw">use</span> <span class="ident">storage_interface</span>::<span class="ident">DbReaderWriter</span>;
 <span class="kw">use</span> <span class="ident">storage_service</span>::<span class="ident">start_storage_service_with_db</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">runtime</span>::{<span class="ident">Builder</span>, <span class="ident">Runtime</span>};
@@ -320,6 +341,21 @@
     <span class="ident">_consensus_runtime</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">_debug</span>: <span class="ident">NodeDebugService</span>,
     <span class="ident">_backup</span>: <span class="ident">Runtime</span>,
+}
+
+<span class="comment">// Fetch chain ID from on-chain resource</span>
+<span class="kw">fn</span> <span class="ident">fetch_chain_id</span>(<span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="ident">DbReaderWriter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainId</span> {
+    <span class="kw">let</span> <span class="ident">blob</span> <span class="op">=</span> <span class="ident">db</span>
+        .<span class="ident">reader</span>
+        .<span class="ident">get_latest_account_state</span>(<span class="ident">libra_root_address</span>())
+        .<span class="ident">expect</span>(<span class="string">&quot;[libra-node] failed to get Libra root address account state&quot;</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;[libra-node] missing Libra root address account state&quot;</span>);
+    <span class="ident">AccountState</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;[libra-node] failed to convert blob to account state&quot;</span>)
+        .<span class="ident">get_chain_id_resource</span>()
+        .<span class="ident">expect</span>(<span class="string">&quot;[libra-node] failed to get chain ID resource&quot;</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;[libra-node] missing chain ID resource&quot;</span>)
+        .<span class="ident">chain_id</span>()
 }
 
 <span class="kw">fn</span> <span class="ident">setup_chunk_executor</span>(<span class="ident">db</span>: <span class="ident">DbReaderWriter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChunkExecutor</span><span class="op">&gt;</span> {
@@ -389,6 +425,7 @@
         <span class="string">&quot;ChunkExecutor setup in {} ms&quot;</span>,
         <span class="ident">instant</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>()
     );
+    <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">fetch_chain_id</span>(<span class="kw-2">&amp;</span><span class="ident">db_rw</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_runtimes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state_sync_network_handles</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mempool_network_handles</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -421,8 +458,7 @@
     <span class="comment">// Instantiate every network and collect the requisite endpoints for state_sync, mempool, and consensus.</span>
     <span class="kw">for</span> (<span class="ident">idx</span>, (<span class="ident">role</span>, <span class="ident">network_config</span>)) <span class="kw">in</span> <span class="ident">network_configs</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
         <span class="comment">// Perform common instantiation steps</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span>
-            <span class="ident">NetworkBuilder</span>::<span class="ident">create</span>(<span class="ident">node_config</span>.<span class="ident">base</span>.<span class="ident">chain_id</span>, <span class="ident">role</span>, <span class="ident">network_config</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span> <span class="ident">NetworkBuilder</span>::<span class="ident">create</span>(<span class="ident">chain_id</span>, <span class="ident">role</span>, <span class="ident">network_config</span>);
         <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="ident">network_config</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>();
 
         <span class="comment">// Create the endpoints to connect the Network to StateSynchronizer.</span>
@@ -509,7 +545,7 @@
     );
     <span class="kw">let</span> (<span class="ident">mp_client_sender</span>, <span class="ident">mp_client_events</span>) <span class="op">=</span> <span class="ident">channel</span>(<span class="ident">AC_SMP_CHANNEL_BUFFER_SIZE</span>);
 
-    <span class="kw">let</span> <span class="ident">rpc_runtime</span> <span class="op">=</span> <span class="ident">bootstrap_rpc</span>(<span class="kw-2">&amp;</span><span class="ident">node_config</span>, <span class="ident">libra_db</span>.<span class="ident">clone</span>(), <span class="ident">mp_client_sender</span>);
+    <span class="kw">let</span> <span class="ident">rpc_runtime</span> <span class="op">=</span> <span class="ident">bootstrap_rpc</span>(<span class="kw-2">&amp;</span><span class="ident">node_config</span>, <span class="ident">chain_id</span>, <span class="ident">libra_db</span>.<span class="ident">clone</span>(), <span class="ident">mp_client_sender</span>);
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">consensus_runtime</span> <span class="op">=</span> <span class="prelude-val">None</span>;
     <span class="kw">let</span> (<span class="ident">consensus_to_mempool_sender</span>, <span class="ident">consensus_requests</span>) <span class="op">=</span> <span class="ident">channel</span>(<span class="ident">INTRA_NODE_CHANNEL_BUFFER_SIZE</span>);
