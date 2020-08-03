@@ -232,6 +232,14 @@
 <span id="232">232</span>
 <span id="233">233</span>
 <span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -405,7 +413,7 @@
 
             <span class="comment">// Transactions to save without replaying:</span>
             <span class="kw">if</span> <span class="ident">first_to_replay</span> <span class="op">&gt;</span> <span class="ident">chunk</span>.<span class="ident">manifest</span>.<span class="ident">first_version</span> {
-                <span class="kw">let</span> <span class="ident">last_to_save</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">last</span>, <span class="ident">first_to_replay</span>);
+                <span class="kw">let</span> <span class="ident">last_to_save</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">last</span>, <span class="ident">first_to_replay</span> <span class="op">-</span> <span class="number">1</span>);
                 <span class="kw">let</span> <span class="ident">num_txns_to_save</span> <span class="op">=</span> (<span class="ident">last_to_save</span> <span class="op">-</span> <span class="ident">chunk</span>.<span class="ident">manifest</span>.<span class="ident">first_version</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>;
                 <span class="self">self</span>.<span class="ident">restore_handler</span>.<span class="ident">save_transactions</span>(
                     <span class="ident">chunk</span>.<span class="ident">manifest</span>.<span class="ident">first_version</span>,
@@ -420,7 +428,7 @@
                 <span class="kw">let</span> <span class="ident">num_to_replay</span> <span class="op">=</span> (<span class="ident">last</span> <span class="op">-</span> <span class="ident">first_to_replay</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>;
                 <span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">truncate</span>(<span class="ident">num_to_replay</span>);
                 <span class="ident">chunk</span>.<span class="ident">txn_infos</span>.<span class="ident">truncate</span>(<span class="ident">num_to_replay</span>);
-                <span class="self">self</span>.<span class="ident">transaction_replayer</span>()<span class="question-mark">?</span>.<span class="ident">replay_chunk</span>(
+                <span class="self">self</span>.<span class="ident">transaction_replayer</span>(<span class="ident">first_to_replay</span>)<span class="question-mark">?</span>.<span class="ident">replay_chunk</span>(
                     <span class="ident">first_to_replay</span>,
                     <span class="ident">chunk</span>.<span class="ident">txns</span>,
                     <span class="ident">chunk</span>.<span class="ident">txn_infos</span>,
@@ -455,14 +463,22 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">transaction_replayer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Executor</span><span class="op">&lt;</span><span class="ident">LibraVM</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">transaction_replayer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">first_version</span>: <span class="ident">Version</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Executor</span><span class="op">&lt;</span><span class="ident">LibraVM</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">state</span>.<span class="ident">transaction_replayer</span>.<span class="ident">is_none</span>() {
             <span class="kw">let</span> <span class="ident">replayer</span> <span class="op">=</span> <span class="ident">Executor</span>::<span class="ident">new_on_unbootstrapped_db</span>(
                 <span class="ident">DbReaderWriter</span>::<span class="ident">from_arc</span>(<span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">restore_handler</span>.<span class="ident">libradb</span>)),
-                <span class="self">self</span>.<span class="ident">restore_handler</span>
-                    .<span class="ident">get_tree_state</span>(<span class="self">self</span>.<span class="ident">replay_from_version</span>)<span class="question-mark">?</span>,
+                <span class="self">self</span>.<span class="ident">restore_handler</span>.<span class="ident">get_tree_state</span>(<span class="ident">first_version</span>)<span class="question-mark">?</span>,
             );
             <span class="self">self</span>.<span class="ident">state</span>.<span class="ident">transaction_replayer</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">replayer</span>);
+        } <span class="kw">else</span> {
+            <span class="macro">assert_eq</span><span class="macro">!</span>(
+                <span class="self">self</span>.<span class="ident">state</span>
+                    .<span class="ident">transaction_replayer</span>
+                    .<span class="ident">as_ref</span>()
+                    .<span class="ident">unwrap</span>()
+                    .<span class="ident">expecting_version</span>(),
+                <span class="ident">first_version</span>
+            );
         }
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">state</span>.<span class="ident">transaction_replayer</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>())
     }
