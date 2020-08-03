@@ -180,11 +180,9 @@
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">tx_emitter_duration</span>, <span class="ident">emit_job_request</span>)
             .<span class="ident">boxed</span>();
-        <span class="kw">let</span> <span class="ident">filename</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;{}/libra-node-perf.svg&quot;</span>,
-            <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;RUN_ID&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;RUN_ID is not set&quot;</span>)
-        );
-        <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">generate_perf_flamegraph_command</span>(<span class="kw-2">&amp;</span><span class="ident">filename</span>, <span class="self">self</span>.<span class="ident">duration_secs</span>);
+        <span class="kw">let</span> <span class="ident">run_id</span> <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;RUN_ID&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;RUN_ID is not set&quot;</span>);
+        <span class="kw">let</span> <span class="ident">filename</span> <span class="op">=</span> <span class="string">&quot;libra-node-perf.svg&quot;</span>;
+        <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">generate_perf_flamegraph_command</span>(<span class="kw-2">&amp;</span><span class="ident">filename</span>, <span class="kw-2">&amp;</span><span class="ident">run_id</span>, <span class="self">self</span>.<span class="ident">duration_secs</span>);
         <span class="kw">let</span> <span class="ident">flame_graph</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">perf_instance</span>.<span class="ident">util_cmd</span>(<span class="ident">command</span>, <span class="string">&quot;generate-flamegraph&quot;</span>);
         <span class="kw">let</span> <span class="ident">flame_graph_future</span> <span class="op">=</span> <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">buffer</span>)
             .<span class="ident">then</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> { <span class="ident">flame_graph</span>.<span class="kw">await</span> })
@@ -193,7 +191,8 @@
         <span class="ident">emit_result</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Emiting tx failed: {:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="ident">flame_graph_result</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to generate flamegraph: {:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="ident">context</span>.<span class="ident">report</span>.<span class="ident">report_text</span>(<span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;perf flamegraph : https://toro-cluster-test-flamegraphs.s3-us-west-2.amazonaws.com/flamegraphs/{}&quot;</span>,
+            <span class="string">&quot;perf flamegraph : https://toro-cluster-test-flamegraphs.s3-us-west-2.amazonaws.com/flamegraphs/{}/{}&quot;</span>,
+            <span class="ident">run_id</span>,
             <span class="ident">filename</span>
         ));
         <span class="prelude-val">Ok</span>(())
@@ -210,7 +209,7 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">generate_perf_flamegraph_command</span>(<span class="ident">filename</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">duration_secs</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+<span class="kw">fn</span> <span class="ident">generate_perf_flamegraph_command</span>(<span class="ident">filename</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">run_id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">duration_secs</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
     <span class="macro">format</span><span class="macro">!</span>(
         <span class="string">r#&quot;
         set -xe;
@@ -220,9 +219,10 @@
         perf record -F 99 -p $(ps aux | grep libra-node | grep -v grep | awk &#39;{{print $2}}&#39;) --output=perf.data --call-graph dwarf -- sleep {duration_secs};
         perf script --input=perf.data | /usr/local/etc/FlameGraph/stackcollapse-perf.pl &gt; out.perf-folded;
         /usr/local/etc/FlameGraph/flamegraph.pl out.perf-folded &gt; {filename};
-        aws s3 cp {filename} s3://toro-cluster-test-flamegraphs/flamegraphs/{filename};&quot;#</span>,
+        aws s3 cp {filename} s3://toro-cluster-test-flamegraphs/flamegraphs/{run_id}/{filename};&quot;#</span>,
         <span class="ident">duration_secs</span> <span class="op">=</span> <span class="ident">duration_secs</span>,
         <span class="ident">filename</span> <span class="op">=</span> <span class="ident">filename</span>,
+        <span class="ident">run_id</span> <span class="op">=</span> <span class="ident">run_id</span>,
     )
 }
 </pre></div>
