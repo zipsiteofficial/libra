@@ -850,6 +850,10 @@
 <span id="850">850</span>
 <span id="851">851</span>
 <span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -897,6 +901,7 @@
     <span class="ident">metrics</span>::{
         <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>, <span class="ident">LIBRA_STORAGE_CF_SIZE_BYTES</span>,
         <span class="ident">LIBRA_STORAGE_COMMITTED_TXNS</span>, <span class="ident">LIBRA_STORAGE_LATEST_TXN_VERSION</span>,
+        <span class="ident">LIBRA_STORAGE_LEDGER_VERSION</span>, <span class="ident">LIBRA_STORAGE_NEXT_BLOCK_EPOCH</span>,
     },
     <span class="ident">pruner</span>::<span class="ident">Pruner</span>,
     <span class="ident">schema</span>::<span class="kw-2">*</span>,
@@ -1653,6 +1658,9 @@
         <span class="comment">// Once everything is successfully persisted, update the latest in-memory ledger info.</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
             <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">set_latest_ledger_info</span>(<span class="ident">x</span>.<span class="ident">clone</span>());
+
+            <span class="ident">LIBRA_STORAGE_LEDGER_VERSION</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+            <span class="ident">LIBRA_STORAGE_NEXT_BLOCK_EPOCH</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">next_block_epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
         }
 
         <span class="comment">// Only increment counter if commit succeeds and there are at least one transaction written</span>
