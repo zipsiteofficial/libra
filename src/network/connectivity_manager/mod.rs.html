@@ -896,6 +896,9 @@
 <span id="896">896</span>
 <span id="897">897</span>
 <span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+<span id="901">901</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -954,6 +957,7 @@
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">time</span>;
+<span class="kw">use</span> <span class="ident">tokio_retry</span>::<span class="ident">strategy</span>::<span class="ident">jitter</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">builder</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
@@ -1792,7 +1796,9 @@
     }
 
     <span class="kw">fn</span> <span class="ident">next_backoff_delay</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">max_delay</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="ident">min</span>(<span class="ident">max_delay</span>, <span class="self">self</span>.<span class="ident">backoff</span>.<span class="ident">next</span>().<span class="ident">unwrap_or</span>(<span class="ident">max_delay</span>))
+        <span class="kw">let</span> <span class="ident">jitter</span> <span class="op">=</span> <span class="ident">jitter</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">100</span>));
+
+        <span class="ident">min</span>(<span class="ident">max_delay</span>, <span class="self">self</span>.<span class="ident">backoff</span>.<span class="ident">next</span>().<span class="ident">unwrap_or</span>(<span class="ident">max_delay</span>)) <span class="op">+</span> <span class="ident">jitter</span>
     }
 }
 </pre></div>
