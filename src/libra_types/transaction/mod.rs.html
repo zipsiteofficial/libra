@@ -1003,6 +1003,24 @@
 <span id="1003">1003</span>
 <span id="1004">1004</span>
 <span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
+<span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1061,33 +1079,39 @@
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MAX_TRANSACTION_SIZE_IN_BYTES</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">4096</span>;
 
-<span class="doccomment">/// RawTransaction is the portion of a transaction that a client signs</span>
+<span class="doccomment">/// RawTransaction is the portion of a transaction that a client signs.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Hash</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">CryptoHasher</span>, <span class="ident">LCSCryptoHash</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RawTransaction</span> {
     <span class="doccomment">/// Sender&#39;s address.</span>
     <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
-    <span class="comment">// Sequence number of this transaction corresponding to sender&#39;s account.</span>
+
+    <span class="doccomment">/// Sequence number of this transaction. This must match the sequence number</span>
+    <span class="doccomment">/// stored in the sender&#39;s account at the time the transaction executes.</span>
     <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
-    <span class="comment">// The transaction script to execute.</span>
+
+    <span class="doccomment">/// The transaction payload, e.g., a script to execute.</span>
     <span class="ident">payload</span>: <span class="ident">TransactionPayload</span>,
 
-    <span class="comment">// Maximal total gas specified by wallet to spend for this transaction.</span>
+    <span class="doccomment">/// Maximal total gas to spend for this transaction.</span>
     <span class="ident">max_gas_amount</span>: <span class="ident">u64</span>,
-    <span class="comment">// Maximal price can be paid per gas.</span>
+
+    <span class="doccomment">/// Price to be paid per gas unit.</span>
     <span class="ident">gas_unit_price</span>: <span class="ident">u64</span>,
 
+    <span class="doccomment">/// The currency code, e.g., &quot;LBR&quot;, used to pay for gas. The `max_gas_amount`</span>
+    <span class="doccomment">/// and `gas_unit_price` values refer to units of this currency.</span>
     <span class="ident">gas_currency_code</span>: <span class="ident">String</span>,
 
-    <span class="comment">// Expiration timestamp for this transaction. timestamp is represented</span>
-    <span class="comment">// as u64 in seconds from Unix Epoch. If storage is queried and</span>
-    <span class="comment">// the time returned is greater than or equal to this time and this</span>
-    <span class="comment">// transaction has not been included, you can be certain that it will</span>
-    <span class="comment">// never be included.</span>
-    <span class="comment">// A transaction that doesn&#39;t expire is represented by a very large value like</span>
-    <span class="comment">// u64::max_value().</span>
+    <span class="doccomment">/// Expiration timestamp for this transaction, represented</span>
+    <span class="doccomment">/// as seconds from the Unix Epoch. If the current blockchain timestamp</span>
+    <span class="doccomment">/// is greater than or equal to this time, then the transaction has</span>
+    <span class="doccomment">/// expired and will be discarded. The maximum valid value is</span>
+    <span class="doccomment">/// u64::max_value() / 1_000_000 (so that it can be converted to</span>
+    <span class="doccomment">/// microseconds without overflowing); this value can be used to</span>
+    <span class="doccomment">/// indicate that a transaction does not expire.</span>
     <span class="ident">expiration_timestamp_secs</span>: <span class="ident">u64</span>,
 
-    <span class="comment">// chain ID of the Libra network this transaction is intended for</span>
+    <span class="doccomment">/// Chain ID of the Libra network this transaction is intended for.</span>
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
 }
 
@@ -1303,8 +1327,10 @@
     }
 }
 
+<span class="doccomment">/// Different kinds of transactions.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Hash</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TransactionPayload</span> {
+    <span class="doccomment">/// A system maintenance transaction.</span>
     <span class="ident">WriteSet</span>(<span class="ident">WriteSetPayload</span>),
     <span class="doccomment">/// A transaction that executes code.</span>
     <span class="ident">Script</span>(<span class="ident">Script</span>),
@@ -1312,11 +1338,12 @@
     <span class="ident">Module</span>(<span class="ident">Module</span>),
 }
 
+<span class="doccomment">/// Two different kinds of WriteSet transactions.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Hash</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">WriteSetPayload</span> {
-    <span class="doccomment">/// Directly passing in the write set.</span>
+    <span class="doccomment">/// Directly passing in the WriteSet.</span>
     <span class="ident">Direct</span>(<span class="ident">ChangeSet</span>),
-    <span class="doccomment">/// Generate the writeset by running a script.</span>
+    <span class="doccomment">/// Generate the WriteSet by running a script.</span>
     <span class="ident">Script</span> {
         <span class="doccomment">/// Execute the script as the designated signer.</span>
         <span class="ident">execute_as</span>: <span class="ident">AccountAddress</span>,
@@ -1639,8 +1666,17 @@
 <span class="doccomment">/// The result of running the transaction through the VM validator.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">VMValidatorResult</span> {
+    <span class="doccomment">/// Result of the validation: `None` if the transaction was successfully validated</span>
+    <span class="doccomment">/// or `Some(DiscardedVMStatus)` if the transaction should be discarded.</span>
     <span class="ident">status</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DiscardedVMStatus</span><span class="op">&gt;</span>,
+
+    <span class="doccomment">/// Score for ranking the transaction priority (e.g., based on the gas price).</span>
+    <span class="doccomment">/// Only used when the status is `None`. Higher values indicate a higher priority.</span>
     <span class="ident">score</span>: <span class="ident">u64</span>,
+
+    <span class="doccomment">/// The account role for the transaction sender, so that certain</span>
+    <span class="doccomment">/// governance transactions can be prioritized above normal transactions.</span>
+    <span class="doccomment">/// Only used when the status is `None`.</span>
     <span class="ident">governance_role</span>: <span class="ident">GovernanceRole</span>,
 }
 
