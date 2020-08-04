@@ -933,7 +933,7 @@
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">schemadb</span>::{<span class="ident">DB</span>, <span class="ident">DEFAULT_CF_NAME</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">iter</span>::<span class="ident">Iterator</span>, <span class="ident">path</span>::<span class="ident">Path</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
-<span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">DbReader</span>, <span class="ident">DbWriter</span>, <span class="ident">StartupInfo</span>, <span class="ident">TreeState</span>};
+<span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">DbReader</span>, <span class="ident">DbWriter</span>, <span class="ident">Order</span>, <span class="ident">StartupInfo</span>, <span class="ident">TreeState</span>};
 
 <span class="kw">static</span> <span class="ident">OP_COUNTER</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">OpMetrics</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">OpMetrics</span>::<span class="ident">new_and_registered</span>(<span class="string">&quot;storage&quot;</span>));
 
@@ -1128,12 +1128,12 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">event_key</span>: <span class="kw-2">&amp;</span><span class="ident">EventKey</span>,
         <span class="ident">start_seq_num</span>: <span class="ident">u64</span>,
-        <span class="ident">ascending</span>: <span class="ident">bool</span>,
+        <span class="ident">order</span>: <span class="ident">Order</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
         <span class="ident">ledger_version</span>: <span class="ident">Version</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventWithProof</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="ident">error_if_too_many_requested</span>(<span class="ident">limit</span>, <span class="ident">MAX_LIMIT</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">get_latest</span> <span class="op">=</span> <span class="op">!</span><span class="ident">ascending</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">start_seq_num</span> <span class="op">=</span><span class="op">=</span> <span class="ident">u64</span>::<span class="ident">max_value</span>();
+        <span class="kw">let</span> <span class="ident">get_latest</span> <span class="op">=</span> <span class="ident">order</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Order</span>::<span class="ident">Descending</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">start_seq_num</span> <span class="op">=</span><span class="op">=</span> <span class="ident">u64</span>::<span class="ident">max_value</span>();
 
         <span class="kw">let</span> <span class="ident">cursor</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">get_latest</span> {
             <span class="comment">// Caller wants the latest, figure out the latest seq_num.</span>
@@ -1146,7 +1146,7 @@
         };
 
         <span class="comment">// Convert requested range and order to a range in ascending order.</span>
-        <span class="kw">let</span> (<span class="ident">first_seq</span>, <span class="ident">real_limit</span>) <span class="op">=</span> <span class="ident">get_first_seq_num_and_limit</span>(<span class="ident">ascending</span>, <span class="ident">cursor</span>, <span class="ident">limit</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> (<span class="ident">first_seq</span>, <span class="ident">real_limit</span>) <span class="op">=</span> <span class="ident">get_first_seq_num_and_limit</span>(<span class="ident">order</span>, <span class="ident">cursor</span>, <span class="ident">limit</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Query the index.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">event_keys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">event_store</span>.<span class="ident">lookup_events_by_key</span>(
@@ -1162,7 +1162,7 @@
         <span class="comment">// For example, if the latest sequence number is 100, and the caller is asking for 110 to</span>
         <span class="comment">// 90, we will get 90 to 100 from the index lookup above. Seeing that the last item</span>
         <span class="comment">// is 100 instead of 110 tells us 110 is out of bound.</span>
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">ascending</span> {
+        <span class="kw">if</span> <span class="ident">order</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Order</span>::<span class="ident">Descending</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">seq_num</span>, <span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span> <span class="ident">event_keys</span>.<span class="ident">last</span>() {
                 <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">seq_num</span> <span class="op">&lt;</span> <span class="ident">cursor</span> {
                     <span class="ident">event_keys</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
@@ -1189,7 +1189,7 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">EventWithProof</span>::<span class="ident">new</span>(<span class="ident">ver</span>, <span class="ident">idx</span>, <span class="ident">event</span>, <span class="ident">proof</span>))
             })
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">ascending</span> {
+        <span class="kw">if</span> <span class="ident">order</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Order</span>::<span class="ident">Descending</span> {
             <span class="ident">events_with_proof</span>.<span class="ident">reverse</span>();
         }
 
@@ -1423,7 +1423,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">event_key</span>: <span class="kw-2">&amp;</span><span class="ident">EventKey</span>,
         <span class="ident">start</span>: <span class="ident">u64</span>,
-        <span class="ident">ascending</span>: <span class="ident">bool</span>,
+        <span class="ident">order</span>: <span class="ident">Order</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">ContractEvent</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
@@ -1436,7 +1436,7 @@
             .<span class="ident">ledger_info</span>()
             .<span class="ident">version</span>();
         <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">get_events_by_event_key</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">ascending</span>, <span class="ident">limit</span>, <span class="ident">version</span>)<span class="question-mark">?</span>
+            .<span class="ident">get_events_by_event_key</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">order</span>, <span class="ident">limit</span>, <span class="ident">version</span>)<span class="question-mark">?</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> (<span class="ident">e</span>.<span class="ident">transaction_version</span>, <span class="ident">e</span>.<span class="ident">event</span>))
             .<span class="ident">collect</span>();
@@ -1683,10 +1683,10 @@
 }
 
 <span class="comment">// Convert requested range and order to a range in ascending order.</span>
-<span class="kw">fn</span> <span class="ident">get_first_seq_num_and_limit</span>(<span class="ident">ascending</span>: <span class="ident">bool</span>, <span class="ident">cursor</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">u64</span>)<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">get_first_seq_num_and_limit</span>(<span class="ident">order</span>: <span class="ident">Order</span>, <span class="ident">cursor</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">u64</span>)<span class="op">&gt;</span> {
     <span class="macro">ensure</span><span class="macro">!</span>(<span class="ident">limit</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="string">&quot;limit should &gt; 0, got {}&quot;</span>, <span class="ident">limit</span>);
 
-    <span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">ascending</span> {
+    <span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">order</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Order</span>::<span class="ident">Ascending</span> {
         (<span class="ident">cursor</span>, <span class="ident">limit</span>)
     } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">limit</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">cursor</span> {
         (<span class="ident">cursor</span> <span class="op">-</span> <span class="ident">limit</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">limit</span>)
