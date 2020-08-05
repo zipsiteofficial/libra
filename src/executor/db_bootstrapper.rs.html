@@ -165,6 +165,28 @@
 <span id="165">165</span>
 <span id="166">166</span>
 <span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -192,19 +214,41 @@
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>;
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">state_view</span>::<span class="ident">VerifiedStateView</span>, <span class="ident">DbReaderWriter</span>, <span class="ident">TreeState</span>};
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bootstrap_db_if_empty</span><span class="op">&lt;</span><span class="ident">V</span>: <span class="ident">VMExecutor</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_waypoint</span><span class="op">&lt;</span><span class="ident">V</span>: <span class="ident">VMExecutor</span><span class="op">&gt;</span>(
     <span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="ident">DbReaderWriter</span>,
     <span class="ident">genesis_txn</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">tree_state</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">reader</span>.<span class="ident">get_latest_tree_state</span>()<span class="question-mark">?</span>;
-    <span class="kw">if</span> <span class="op">!</span><span class="ident">tree_state</span>.<span class="ident">is_empty</span>() {
-        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+
+    <span class="kw">let</span> <span class="ident">committer</span> <span class="op">=</span> <span class="ident">calculate_genesis</span>::<span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>(<span class="ident">db</span>, <span class="ident">tree_state</span>, <span class="ident">genesis_txn</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(<span class="ident">committer</span>.<span class="ident">waypoint</span>)
+}
+
+<span class="doccomment">/// If current version + 1 != waypoint.version(), return Ok(false) indicating skipping the txn.</span>
+<span class="doccomment">/// otherwise apply the txn and commit it if the result matches the waypoint.</span>
+<span class="doccomment">/// Returns Ok(true) if committed otherwise Err.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">maybe_bootstrap</span><span class="op">&lt;</span><span class="ident">V</span>: <span class="ident">VMExecutor</span><span class="op">&gt;</span>(
+    <span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="ident">DbReaderWriter</span>,
+    <span class="ident">genesis_txn</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>,
+    <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">tree_state</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">reader</span>.<span class="ident">get_latest_tree_state</span>()<span class="question-mark">?</span>;
+    <span class="comment">// if the waypoint is not targeted with the genesis txn, it may be either already bootstrapped, or</span>
+    <span class="comment">// aiming for state sync to catch up.</span>
+    <span class="kw">if</span> <span class="ident">tree_state</span>.<span class="ident">num_transactions</span> <span class="op">!</span><span class="op">=</span> <span class="ident">waypoint</span>.<span class="ident">version</span>() {
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Skip genesis txn&quot;</span>);
+        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
     }
 
     <span class="kw">let</span> <span class="ident">committer</span> <span class="op">=</span> <span class="ident">calculate_genesis</span>::<span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>(<span class="ident">db</span>, <span class="ident">tree_state</span>, <span class="ident">genesis_txn</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="ident">committer</span>.<span class="ident">waypoint</span>;
+    <span class="macro">ensure</span><span class="macro">!</span>(
+        <span class="ident">waypoint</span> <span class="op">=</span><span class="op">=</span> <span class="ident">committer</span>.<span class="ident">waypoint</span>(),
+        <span class="string">&quot;Waypoint verification failed. Expected {:?}, got {:?}.&quot;</span>,
+        <span class="ident">waypoint</span>,
+        <span class="ident">committer</span>.<span class="ident">waypoint</span>(),
+    );
     <span class="ident">committer</span>.<span class="ident">commit</span>()<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">waypoint</span>))
+    <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisCommitter</span><span class="op">&lt;</span><span class="ident">V</span>: <span class="ident">VMExecutor</span><span class="op">&gt;</span> {
