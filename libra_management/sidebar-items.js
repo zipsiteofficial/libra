@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["config",""],["constants",""],["error",""],["secure_backend",""],["storage",""],["validator_config",""]]});
+initSidebarItems({"macro":[["execute_command",""]],"mod":[["config",""],["constants",""],["error",""],["secure_backend",""],["storage",""],["transaction",""],["validator_config",""]]});

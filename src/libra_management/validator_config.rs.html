@@ -130,7 +130,12 @@
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">config</span>::<span class="ident">ConfigPath</span>, <span class="ident">constants</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">ValidatorBackend</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">config</span>::{<span class="ident">Config</span>, <span class="ident">ConfigPath</span>},
+    <span class="ident">error</span>::<span class="ident">Error</span>,
+    <span class="ident">secure_backend</span>::<span class="ident">ValidatorBackend</span>,
+    <span class="ident">transaction</span>::<span class="ident">build_raw_transaction</span>,
+};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ValidCryptoMaterial</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
@@ -143,11 +148,7 @@
     },
     <span class="ident">NetworkAddress</span>, <span class="ident">RawNetworkAddress</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_secure_time</span>::{<span class="ident">RealTimeService</span>, <span class="ident">TimeService</span>};
-<span class="kw">use</span> <span class="ident">libra_types</span>::{
-    <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
-    <span class="ident">transaction</span>::{<span class="ident">RawTransaction</span>, <span class="ident">Transaction</span>},
-};
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">transaction</span>::<span class="ident">Transaction</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
@@ -162,6 +163,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ValidatorConfig</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Config</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">config</span>
+            .<span class="ident">load</span>()<span class="question-mark">?</span>
+            .<span class="ident">override_chain_id</span>(<span class="self">self</span>.<span class="ident">chain_id</span>)
+            .<span class="ident">override_validator_backend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>)
+    }
+
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_transaction</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
@@ -169,11 +177,7 @@
         <span class="ident">validator_address</span>: <span class="ident">NetworkAddress</span>,
         <span class="ident">reconfigure</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Transaction</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">config</span>
-            .<span class="ident">load</span>()<span class="question-mark">?</span>
-            .<span class="ident">override_chain_id</span>(<span class="self">self</span>.<span class="ident">chain_id</span>)
-            .<span class="ident">override_validator_backend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">validator_backend</span>();
 
         <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">account_address</span>(<span class="ident">OWNER_ACCOUNT</span>)<span class="question-mark">?</span>;
@@ -229,15 +233,11 @@
         );
 
         <span class="comment">// Create and sign the validator-config transaction</span>
-        <span class="kw">let</span> <span class="ident">raw_txn</span> <span class="op">=</span> <span class="ident">RawTransaction</span>::<span class="ident">new_script</span>(
+        <span class="kw">let</span> <span class="ident">raw_txn</span> <span class="op">=</span> <span class="ident">build_raw_transaction</span>(
+            <span class="ident">config</span>.<span class="ident">chain_id</span>,
             <span class="ident">storage</span>.<span class="ident">account_address</span>(<span class="ident">OPERATOR_ACCOUNT</span>)<span class="question-mark">?</span>,
             <span class="ident">sequence_number</span>,
             <span class="ident">validator_config_script</span>,
-            <span class="ident">constants</span>::<span class="ident">MAX_GAS_AMOUNT</span>,
-            <span class="ident">constants</span>::<span class="ident">GAS_UNIT_PRICE</span>,
-            <span class="ident">constants</span>::<span class="ident">GAS_CURRENCY_CODE</span>.<span class="ident">to_owned</span>(),
-            <span class="ident">RealTimeService</span>::<span class="ident">new</span>().<span class="ident">now</span>() <span class="op">+</span> <span class="ident">constants</span>::<span class="ident">TXN_EXPIRATION_SECS</span>,
-            <span class="ident">config</span>.<span class="ident">chain_id</span>,
         );
         <span class="kw">let</span> <span class="ident">signed_txn</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">sign</span>(<span class="ident">OPERATOR_KEY</span>, <span class="string">&quot;validator-config&quot;</span>, <span class="ident">raw_txn</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">Transaction</span>::<span class="ident">UserTransaction</span>(<span class="ident">signed_txn</span>);
