@@ -5169,6 +5169,37 @@
 <span id="5169">5169</span>
 <span id="5170">5170</span>
 <span id="5171">5171</span>
+<span id="5172">5172</span>
+<span id="5173">5173</span>
+<span id="5174">5174</span>
+<span id="5175">5175</span>
+<span id="5176">5176</span>
+<span id="5177">5177</span>
+<span id="5178">5178</span>
+<span id="5179">5179</span>
+<span id="5180">5180</span>
+<span id="5181">5181</span>
+<span id="5182">5182</span>
+<span id="5183">5183</span>
+<span id="5184">5184</span>
+<span id="5185">5185</span>
+<span id="5186">5186</span>
+<span id="5187">5187</span>
+<span id="5188">5188</span>
+<span id="5189">5189</span>
+<span id="5190">5190</span>
+<span id="5191">5191</span>
+<span id="5192">5192</span>
+<span id="5193">5193</span>
+<span id="5194">5194</span>
+<span id="5195">5195</span>
+<span id="5196">5196</span>
+<span id="5197">5197</span>
+<span id="5198">5198</span>
+<span id="5199">5199</span>
+<span id="5200">5200</span>
+<span id="5201">5201</span>
+<span id="5202">5202</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -7549,6 +7580,7 @@
         }
 
         <span class="comment">// Now process all conditions and invariants.</span>
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">spec_block_lets</span>.<span class="ident">is_empty</span>());
         <span class="kw">for</span> <span class="ident">member</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span> {
             <span class="kw">let</span> <span class="ident">member_loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">loc</span>);
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">value</span> {
@@ -7556,6 +7588,13 @@
                     <span class="ident">is_global</span>: <span class="bool-val">false</span>, ..
                 } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* handled during decl analysis */</span> }
                 <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Include</span> { .. } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* handled above */</span> }
+                <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Let</span> {
+                    <span class="ident">name</span>: <span class="ident">let_name</span>,
+                    <span class="ident">def</span>,
+                } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">Schema</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
+                    <span class="self">self</span>.<span class="ident">def_ana_let</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="ident">member_loc</span>, <span class="ident">let_name</span>, <span class="ident">def</span>);
+                }
                 <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> {
                     <span class="ident">kind</span>,
                     <span class="ident">properties</span>,
@@ -7582,6 +7621,7 @@
                 }
             };
         }
+        <span class="self">self</span>.<span class="ident">spec_block_lets</span>.<span class="ident">clear</span>();
     }
 
     <span class="doccomment">/// Extracts all schema inclusions from a list of spec block members.</span>
@@ -7893,18 +7933,17 @@
                     <span class="self">self</span>.<span class="ident">parent</span>
                         .<span class="ident">error</span>(<span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;`{}` cannot be included conditionally&quot;</span>, <span class="ident">kind</span>));
                 } <span class="kw">else</span> {
-                    <span class="kw">let</span> <span class="ident">path_cond_loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loc_map</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">cond</span>.<span class="ident">node_id</span>()).<span class="ident">unwrap_or</span>(<span class="ident">loc</span>).<span class="ident">clone</span>();
-                    <span class="kw">let</span> <span class="ident">node_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_node_id_with_type_loc</span>(<span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>, <span class="kw-2">&amp;</span><span class="ident">path_cond_loc</span>);
                     <span class="comment">// In case of AbortsIf, the path condition is combined with the predicate using</span>
                     <span class="comment">// &amp;&amp;, otherwise ==&gt;.</span>
-                    <span class="ident">exp</span> <span class="op">=</span> <span class="ident">Exp</span>::<span class="ident">Call</span>(
-                        <span class="ident">node_id</span>,
+                    <span class="ident">exp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">make_path_expr</span>(
                         <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">ConditionKind</span>::<span class="ident">AbortsIf</span> {
                             <span class="ident">Operation</span>::<span class="ident">And</span>
                         } <span class="kw">else</span> {
                             <span class="ident">Operation</span>::<span class="ident">Implies</span>
                         },
-                        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">cond</span>.<span class="ident">clone</span>(), <span class="ident">exp</span>],
+                        <span class="ident">cond</span>.<span class="ident">node_id</span>(),
+                        <span class="ident">cond</span>.<span class="ident">clone</span>(),
+                        <span class="ident">exp</span>,
                     );
                 }
             }
@@ -7920,6 +7959,29 @@
         <span class="self">self</span>.<span class="ident">parent</span>
             .<span class="ident">spec_schema_table</span>
             .<span class="ident">insert</span>(<span class="ident">schema_name</span>, <span class="ident">schema_entry</span>);
+    }
+
+    <span class="doccomment">/// Make a path expression. This takes care of keeping virtual operators as top-level</span>
+    <span class="doccomment">/// expressions.</span>
+    <span class="kw">fn</span> <span class="ident">make_path_expr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">oper</span>: <span class="ident">Operation</span>, <span class="ident">node_id</span>: <span class="ident">NodeId</span>, <span class="ident">cond</span>: <span class="ident">Exp</span>, <span class="ident">exp</span>: <span class="ident">Exp</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Exp</span> {
+        <span class="kw">let</span> <span class="ident">path_cond_loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loc_map</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">node_id</span>).<span class="ident">expect</span>(<span class="string">&quot;loc defined&quot;</span>).<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">new_node_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_node_id_with_type_loc</span>(<span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>, <span class="kw-2">&amp;</span><span class="ident">path_cond_loc</span>);
+        <span class="kw">match</span> <span class="ident">exp</span> {
+            <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">outer_node_id</span>, <span class="ident">Operation</span>::<span class="ident">CondWithAbortCode</span>, <span class="kw-2">mut</span> <span class="ident">args</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="ident">args</span>.<span class="ident">remove</span>(<span class="number">0</span>);
+                <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">args</span>.<span class="ident">remove</span>(<span class="number">0</span>);
+                <span class="ident">Exp</span>::<span class="ident">Call</span>(
+                    <span class="ident">outer_node_id</span>,
+                    <span class="ident">Operation</span>::<span class="ident">CondWithAbortCode</span>,
+                    <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">new_node_id</span>, <span class="ident">oper</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">cond</span>, <span class="ident">exp</span>]), <span class="ident">code</span>],
+                )
+            }
+            <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="kw">_</span>, <span class="ident">Operation</span>::<span class="ident">AbortCodes</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">path_cond_loc</span>, <span class="string">&quot;[implementation restriction] `aborts_with` cannot be included in schema expression context&quot;</span>);
+                <span class="ident">exp</span>
+            }
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">new_node_id</span>, <span class="ident">oper</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">cond</span>, <span class="ident">exp</span>]),
+        }
     }
 
     <span class="doccomment">/// Creates an expression translator for use in schema expression. This defines the context</span>
