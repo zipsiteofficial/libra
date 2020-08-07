@@ -896,9 +896,6 @@
 <span id="896">896</span>
 <span id="897">897</span>
 <span id="898">898</span>
-<span id="899">899</span>
-<span id="900">900</span>
-<span id="901">901</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -930,7 +927,7 @@
 <span class="doccomment">//! using a relay protocol.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">logging</span>::<span class="kw-2">*</span>,
+    <span class="ident">logging</span>::{<span class="ident">network_events</span>::<span class="ident">DISCOVERY_SOURCE</span>, <span class="kw-2">*</span>},
     <span class="ident">peer_manager</span>::{<span class="self">self</span>, <span class="ident">conn_notifs_channel</span>, <span class="ident">ConnectionRequestSender</span>, <span class="ident">PeerManagerError</span>},
 };
 <span class="kw">use</span> <span class="ident">futures</span>::{
@@ -1446,10 +1443,9 @@
         <span class="comment">// Only log the total state if anything has actually changed.</span>
         <span class="kw">if</span> <span class="ident">have_any_changed</span> {
             <span class="kw">let</span> <span class="ident">peer_addrs</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_addrs</span>;
-            <span class="macro">info</span><span class="macro">!</span>(
-                <span class="string">&quot;{} current addresses: update src: {}, all peer addresses: {}&quot;</span>,
-                <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">src</span>, <span class="ident">peer_addrs</span>,
-            );
+            <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="string">&quot;peer_addresses_update&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                .<span class="ident">field</span>(<span class="ident">DISCOVERY_SOURCE</span>, <span class="kw-2">&amp;</span><span class="ident">src</span>)
+                .<span class="ident">data</span>(<span class="string">&quot;peer_addresses&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">peer_addrs</span>));
         }
     }
 
@@ -1497,11 +1493,9 @@
             <span class="comment">// to generate the new eligible peers set.</span>
             <span class="kw">let</span> <span class="ident">new_eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_pubkeys</span>.<span class="ident">union_all</span>();
 
-            <span class="kw">let</span> <span class="ident">peer_pubkeys</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_pubkeys</span>;
-            <span class="macro">info</span><span class="macro">!</span>(
-                <span class="string">&quot;{} current pubkeys: update src: {}, all peer pubkeys: {}, new eligible set: {:?}&quot;</span>,
-                <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">src</span>, <span class="ident">peer_pubkeys</span>, <span class="ident">new_eligible</span>,
-            );
+            <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="string">&quot;eligible_peers_update&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                .<span class="ident">field</span>(<span class="ident">DISCOVERY_SOURCE</span>, <span class="kw-2">&amp;</span><span class="ident">src</span>)
+                .<span class="ident">data</span>(<span class="string">&quot;eligible_peers&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">new_eligible</span>));
 
             <span class="comment">// Swap in the new eligible peers set. Drop the old set after releasing</span>
             <span class="comment">// the write lock.</span>
