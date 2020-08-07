@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["output","Output transaction builders in Java for the given ABIs."]],"struct":[["Installer",""]]});
+initSidebarItems({"fn":[["write_source_files","Output transaction builders and decoders in Java for the given ABIs. Source files will be located in a subdirectory of `install_dir` corresponding to the given package name (if any, otherwise `install_dir` it self)."]],"struct":[["Installer",""]]});
