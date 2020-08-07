@@ -1886,6 +1886,14 @@
 <span id="1886">1886</span>
 <span id="1887">1887</span>
 <span id="1888">1888</span>
+<span id="1889">1889</span>
+<span id="1890">1890</span>
+<span id="1891">1891</span>
+<span id="1892">1892</span>
+<span id="1893">1893</span>
+<span id="1894">1894</span>
+<span id="1895">1895</span>
+<span id="1896">1896</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1990,7 +1998,12 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">check_primitive_script_arg</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">mloc</span>: <span class="ident">Loc</span>, <span class="ident">idx</span>: <span class="ident">usize</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) {
+<span class="kw">fn</span> <span class="ident">check_primitive_script_arg</span>(
+    <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>,
+    <span class="ident">mloc</span>: <span class="ident">Loc</span>,
+    <span class="ident">seen_non_signer</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bool</span>,
+    <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
+) {
     <span class="kw">let</span> <span class="ident">current_function</span> <span class="op">=</span> <span class="ident">context</span>.<span class="ident">current_function</span>.<span class="ident">clone</span>().<span class="ident">unwrap</span>();
     <span class="kw">let</span> <span class="ident">mk_msg</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
         <span class="macro">format</span><span class="macro">!</span>(
@@ -2008,17 +2021,19 @@
         <span class="ident">result</span>.<span class="ident">is_ok</span>()
     };
     <span class="kw">if</span> <span class="ident">is_signer_ref</span> {
-        <span class="kw">if</span> <span class="ident">idx</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="op">!</span><span class="kw-2">*</span><span class="ident">seen_non_signer</span> {
             <span class="kw">return</span>;
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">mk_msg</span>();
             <span class="kw">let</span> <span class="ident">tmsg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-                <span class="string">&quot;{} must be the first argument to a script&quot;</span>,
+                <span class="string">&quot;{}s must be a prefix of the arguments to a script--they must come before any non-signer types&quot;</span>,
                 <span class="ident">core</span>::<span class="ident">error_format</span>(<span class="kw-2">&amp;</span><span class="ident">signer_ref</span>, <span class="kw-2">&amp;</span><span class="ident">Subst</span>::<span class="ident">empty</span>()),
             );
             <span class="ident">context</span>.<span class="ident">error</span>(<span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">mloc</span>, <span class="ident">msg</span>), (<span class="ident">loc</span>, <span class="ident">tmsg</span>)]);
             <span class="kw">return</span>;
         }
+    } <span class="kw">else</span> {
+        <span class="kw-2">*</span><span class="ident">seen_non_signer</span> <span class="op">=</span> <span class="bool-val">true</span>;
     }
 
     <span class="ident">check_valid_constant</span>::<span class="ident">signature</span>(<span class="ident">context</span>, <span class="ident">mloc</span>, <span class="ident">mk_msg</span>, <span class="ident">ty</span>);
@@ -2047,8 +2062,9 @@
 
     <span class="ident">function_signature</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>);
     <span class="kw">if</span> <span class="ident">is_script</span> {
-        <span class="kw">for</span> (<span class="ident">idx</span>, (<span class="kw">_</span>, <span class="ident">param_ty</span>)) <span class="kw">in</span> <span class="ident">signature</span>.<span class="ident">parameters</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="ident">check_primitive_script_arg</span>(<span class="ident">context</span>, <span class="ident">loc</span>, <span class="ident">idx</span>, <span class="ident">param_ty</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seen_non_signer</span> <span class="op">=</span> <span class="bool-val">false</span>;
+        <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">param_ty</span>) <span class="kw">in</span> <span class="ident">signature</span>.<span class="ident">parameters</span>.<span class="ident">iter</span>() {
+            <span class="ident">check_primitive_script_arg</span>(<span class="ident">context</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">seen_non_signer</span>, <span class="ident">param_ty</span>);
         }
         <span class="ident">subtype</span>(
             <span class="ident">context</span>,

@@ -166,6 +166,17 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -259,7 +270,7 @@
         <span class="ident">script</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">ty_args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TypeTag</span><span class="op">&gt;</span>,
         <span class="kw-2">mut</span> <span class="ident">args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span>,
-        <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
+        <span class="ident">senders</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;</span>,
         <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -275,11 +286,22 @@
         <span class="comment">// load the script, perform verification</span>
         <span class="kw">let</span> (<span class="ident">main</span>, <span class="ident">type_params</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">load_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>, <span class="kw-2">&amp;</span><span class="ident">ty_args</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// build the arguments list for the main and check the arguments are of restricted types</span>
-        <span class="kw">let</span> <span class="ident">first_param_opt</span> <span class="op">=</span> <span class="ident">main</span>.<span class="ident">parameters</span>().<span class="number">0</span>.<span class="ident">get</span>(<span class="number">0</span>);
-        <span class="kw">if</span> <span class="ident">first_param_opt</span>.<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">sig</span><span class="op">|</span> <span class="ident">is_signer_reference</span>(<span class="ident">sig</span>)) {
-            <span class="ident">args</span>.<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">sender</span>))
+        <span class="comment">// Build the arguments list for the main and check the arguments are of restricted types.</span>
+        <span class="comment">// Signers are built up from left-to-right. Either all signer arguments are used, or no</span>
+        <span class="comment">// signer arguments can be be used by a script.</span>
+        <span class="kw">let</span> <span class="ident">parameters</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">main</span>.<span class="ident">parameters</span>().<span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">first_param_is_signer_ref</span> <span class="op">=</span> <span class="ident">parameters</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="ident">is_signer_reference</span>);
+        <span class="kw">if</span> <span class="ident">first_param_is_signer_ref</span> {
+            <span class="kw">if</span> <span class="ident">parameters</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">args</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="ident">senders</span>.<span class="ident">len</span>() {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>)
+                    .<span class="ident">with_message</span>(<span class="string">&quot;Scripts must use all or no signers&quot;</span>.<span class="ident">to_string</span>())
+                    .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>));
+            }
+            <span class="ident">senders</span>.<span class="ident">into_iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">addr</span><span class="op">|</span> {
+                <span class="ident">args</span>.<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">addr</span>))
+            });
         }
+
         <span class="ident">check_args</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// run the script</span>
