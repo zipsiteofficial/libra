@@ -1073,24 +1073,6 @@
 <span id="1073">1073</span>
 <span id="1074">1074</span>
 <span id="1075">1075</span>
-<span id="1076">1076</span>
-<span id="1077">1077</span>
-<span id="1078">1078</span>
-<span id="1079">1079</span>
-<span id="1080">1080</span>
-<span id="1081">1081</span>
-<span id="1082">1082</span>
-<span id="1083">1083</span>
-<span id="1084">1084</span>
-<span id="1085">1085</span>
-<span id="1086">1086</span>
-<span id="1087">1087</span>
-<span id="1088">1088</span>
-<span id="1089">1089</span>
-<span id="1090">1090</span>
-<span id="1091">1091</span>
-<span id="1092">1092</span>
-<span id="1093">1093</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1101,7 +1083,7 @@
     <span class="ident">counters</span>,
     <span class="ident">executor_proxy</span>::<span class="ident">ExecutorProxyTrait</span>,
     <span class="ident">network</span>::{<span class="ident">StateSynchronizerEvents</span>, <span class="ident">StateSynchronizerMsg</span>, <span class="ident">StateSynchronizerSender</span>},
-    <span class="ident">peer_manager</span>::{<span class="ident">PeerManager</span>, <span class="ident">PeerScoreUpdateType</span>},
+    <span class="ident">request_manager</span>::{<span class="ident">PeerScoreUpdateType</span>, <span class="ident">RequestManager</span>},
     <span class="ident">SynchronizerState</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">ensure</span>, <span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
@@ -1127,7 +1109,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>},
     <span class="ident">ops</span>::<span class="ident">Bound</span>::<span class="ident">Included</span>,
-    <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">SystemTime</span>, <span class="ident">UNIX_EPOCH</span>},
+    <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">SystemTime</span>},
 };
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">time</span>::{<span class="ident">interval</span>, <span class="ident">timeout</span>};
 
@@ -1241,8 +1223,6 @@
     <span class="comment">// latest transaction covered by the LedgerInfo (see `SynchronizerState` documentation).</span>
     <span class="comment">// The state is updated via syncing with the local storage.</span>
     <span class="ident">local_state</span>: <span class="ident">SynchronizerState</span>,
-    <span class="comment">// duration with the same version before the next attempt to get the next chunk</span>
-    <span class="ident">retry_timeout</span>: <span class="ident">Duration</span>,
     <span class="comment">// config</span>
     <span class="ident">config</span>: <span class="ident">StateSyncConfig</span>,
     <span class="comment">// role of node</span>
@@ -1252,8 +1232,9 @@
     <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
     <span class="comment">// network senders - (k, v) = (network ID, network sender)</span>
     <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NodeNetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
-    <span class="comment">// peers used for synchronization</span>
-    <span class="ident">peer_manager</span>: <span class="ident">PeerManager</span>,
+    <span class="comment">// Actor for sending chunk requests</span>
+    <span class="comment">// Manages to whom and how to send chunk requests</span>
+    <span class="ident">request_manager</span>: <span class="ident">RequestManager</span>,
     <span class="comment">// Optional sync request to be called when the target sync is reached</span>
     <span class="ident">sync_request</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SyncRequest</span><span class="op">&gt;</span>,
     <span class="comment">// Ledger infos in the future that have not been committed yet</span>
@@ -1283,18 +1264,23 @@
             <span class="ident">RoleType</span>::<span class="ident">FullNode</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">long_poll_timeout_ms</span>,
             <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span> <span class="op">*</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span>,
         };
+        <span class="kw">let</span> <span class="ident">multicast_timeout</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="ident">config</span>.<span class="ident">multicast_timeout_ms</span>);
 
         <span class="self">Self</span> {
             <span class="ident">client_events</span>,
             <span class="ident">state_sync_to_mempool_sender</span>,
             <span class="ident">local_state</span>: <span class="ident">initial_state</span>,
             <span class="ident">pending_ledger_infos</span>: <span class="ident">PendingLedgerInfos</span>::<span class="ident">new</span>(),
-            <span class="ident">retry_timeout</span>: <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="ident">retry_timeout_val</span>),
             <span class="ident">config</span>,
             <span class="ident">role</span>,
             <span class="ident">waypoint</span>,
+            <span class="ident">request_manager</span>: <span class="ident">RequestManager</span>::<span class="ident">new</span>(
+                <span class="ident">upstream_config</span>,
+                <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="ident">retry_timeout_val</span>),
+                <span class="ident">multicast_timeout</span>,
+                <span class="ident">network_senders</span>.<span class="ident">clone</span>(),
+            ),
             <span class="ident">network_senders</span>,
-            <span class="ident">peer_manager</span>: <span class="ident">PeerManager</span>::<span class="ident">new</span>(<span class="ident">upstream_config</span>),
             <span class="ident">subscriptions</span>: <span class="ident">HashMap</span>::<span class="ident">new</span>(),
             <span class="ident">sync_request</span>: <span class="prelude-val">None</span>,
             <span class="ident">initialization_listener</span>: <span class="prelude-val">None</span>,
@@ -1359,13 +1345,13 @@
                                 <span class="ident">Event</span>::<span class="ident">NewPeer</span>(<span class="ident">peer_id</span>, <span class="ident">origin</span>) <span class="op">=</span><span class="op">&gt;</span> {
                                     <span class="kw">let</span> <span class="ident">peer</span> <span class="op">=</span> <span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>, <span class="ident">peer_id</span>);
                                     <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] new peer {}&quot;</span>, <span class="ident">peer</span>);
-                                    <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">enable_peer</span>(<span class="ident">peer</span>, <span class="ident">origin</span>);
+                                    <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">enable_peer</span>(<span class="ident">peer</span>, <span class="ident">origin</span>);
                                     <span class="self">self</span>.<span class="ident">check_progress</span>();
                                 }
                                 <span class="ident">Event</span>::<span class="ident">LostPeer</span>(<span class="ident">peer_id</span>, <span class="ident">_origin</span>) <span class="op">=</span><span class="op">&gt;</span> {
                                     <span class="kw">let</span> <span class="ident">peer</span> <span class="op">=</span> <span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>, <span class="ident">peer_id</span>);
                                     <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] lost peer {}&quot;</span>, <span class="ident">peer</span>);
-                                    <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">disable_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>);
+                                    <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">disable_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>);
                                 }
                                 <span class="ident">Event</span>::<span class="ident">Message</span>((<span class="ident">peer_id</span>, <span class="kw-2">mut</span> <span class="ident">message</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_one_message</span>(<span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>.<span class="ident">clone</span>(), <span class="ident">peer_id</span>), <span class="ident">message</span>).<span class="kw">await</span>,
                                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;[state sync] unexpected event: {:?}&quot;</span>, <span class="ident">event</span>),
@@ -1420,8 +1406,6 @@
                         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
                         .<span class="ident">inc</span>();
                 } <span class="kw">else</span> {
-                    <span class="self">self</span>.<span class="ident">peer_manager</span>
-                        .<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">Success</span>);
                     <span class="comment">// TODO update dashboards to ID peers using PeerNetworkID, not just peer ID</span>
                     <span class="ident">counters</span>::<span class="ident">APPLY_CHUNK_SUCCESS</span>
                         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
@@ -1588,7 +1572,7 @@
         }
 
         <span class="self">self</span>.<span class="ident">check_subscriptions</span>();
-        <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">remove_requests</span>(<span class="ident">synced_version</span>);
+        <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">remove_requests</span>(<span class="ident">synced_version</span>);
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">req</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_mut</span>() {
             <span class="ident">req</span>.<span class="ident">last_progress_tst</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>();
@@ -1631,7 +1615,13 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">get_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">callback</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">SynchronizerState</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">get_state</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">callback</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">SynchronizerState</span><span class="op">&gt;</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sync_state_with_local_storage</span>() {
+            <span class="macro">error</span><span class="macro">!</span>(
+                <span class="string">&quot;[state sync] failed to sync with local storage for get_state request: {:?}&quot;</span>,
+                <span class="ident">e</span>
+            );
+        }
         <span class="kw">if</span> <span class="ident">callback</span>.<span class="ident">send</span>(<span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">clone</span>()).<span class="ident">is_err</span>() {
             <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to send internal state&quot;</span>);
         }
@@ -1845,21 +1835,18 @@
             <span class="ident">txn_list_with_proof</span>
                 .<span class="ident">first_transaction_version</span>
                 .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                    <span class="self">self</span>.<span class="ident">peer_manager</span>
+                    <span class="self">self</span>.<span class="ident">request_manager</span>
                         .<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">EmptyChunk</span>);
                     <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[state sync] Empty chunk from {:?}&quot;</span>, <span class="ident">peer</span>)
                 })<span class="question-mark">?</span>;
 
         <span class="kw">if</span> <span class="ident">chunk_start_version</span> <span class="op">!</span><span class="op">=</span> <span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span> {
             <span class="comment">// Old / wrong chunk.</span>
-            <span class="self">self</span>.<span class="ident">peer_manager</span>
-                .<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">ChunkVersionCannotBeApplied</span>);
-            <span class="macro">bail</span><span class="macro">!</span>(
-                <span class="string">&quot;[state sync] Non sequential chunk from {:?}: known_version: {}, received: {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">process_chunk_version_mismatch</span>(
                 <span class="ident">peer</span>,
+                <span class="ident">chunk_start_version</span>,
                 <span class="ident">known_version</span>,
-                <span class="ident">chunk_start_version</span>
-            );
+            )<span class="question-mark">?</span>;
         }
 
         <span class="kw">let</span> <span class="ident">chunk_size</span> <span class="op">=</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
@@ -1891,7 +1878,7 @@
             ),
         }
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-            <span class="self">self</span>.<span class="ident">peer_manager</span>
+            <span class="self">self</span>.<span class="ident">request_manager</span>
                 .<span class="ident">update_score</span>(<span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">InvalidChunk</span>);
             <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[state sync] failed to apply chunk: {}&quot;</span>, <span class="ident">e</span>)
         })<span class="question-mark">?</span>;
@@ -1906,7 +1893,9 @@
 
         <span class="comment">// The overall chunk processing duration is calculated starting from the very first attempt</span>
         <span class="comment">// until the commit</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">first_attempt_tst</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">get_first_request_time</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>)
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">first_attempt_tst</span>) <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">request_manager</span>
+            .<span class="ident">get_first_request_time</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>)
         {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">duration</span>) <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">duration_since</span>(<span class="ident">first_attempt_tst</span>) {
                 <span class="ident">counters</span>::<span class="ident">SYNC_PROGRESS_DURATION</span>.<span class="ident">observe_duration</span>(<span class="ident">duration</span>);
@@ -1914,7 +1903,11 @@
         }
 
         <span class="self">self</span>.<span class="ident">process_commit</span>(<span class="ident">response</span>.<span class="ident">txn_list_with_proof</span>.<span class="ident">transactions</span>, <span class="prelude-val">None</span>)
-            .<span class="kw">await</span>
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="comment">// at this point, chunk has been successfully processed</span>
+        <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">process_success_response</span>(<span class="ident">peer</span>);
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="doccomment">/// Processing chunk responses that carry a LedgerInfo that should be verified using the</span>
@@ -2026,9 +2019,9 @@
     }
 
     <span class="doccomment">/// Ensures that StateSynchronizer is making progress:</span>
-    <span class="doccomment">/// issue a new request if too much time passed since requesting highest_committed_version + 1.</span>
+    <span class="doccomment">/// issue a new request if too much time passed since requesting highest_synced_version + 1.</span>
     <span class="kw">fn</span> <span class="ident">check_progress</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">is_empty</span>() {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">no_available_peers</span>() {
             <span class="kw">return</span>;
         }
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">role</span> <span class="op">=</span><span class="op">=</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">is_none</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">is_initialized</span>()
@@ -2058,20 +2051,13 @@
         }
 
         <span class="kw">let</span> <span class="ident">known_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>();
-        <span class="kw">let</span> <span class="ident">last_request_tst</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">peer_manager</span>
-            .<span class="ident">get_last_request_time</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>)
-            .<span class="ident">unwrap_or</span>(<span class="ident">UNIX_EPOCH</span>);
 
         <span class="comment">// if coordinator didn&#39;t make progress by expected time, issue new request</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tst</span>) <span class="op">=</span> <span class="ident">last_request_tst</span>.<span class="ident">checked_add</span>(<span class="self">self</span>.<span class="ident">retry_timeout</span>) {
-            <span class="kw">if</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">duration_since</span>(<span class="ident">tst</span>).<span class="ident">is_ok</span>() {
-                <span class="self">self</span>.<span class="ident">peer_manager</span>.<span class="ident">process_timeout</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>);
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_chunk_request</span>(<span class="ident">known_version</span>, <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()) {
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] Failed to send chunk request: {}&quot;</span>, <span class="ident">e</span>);
-                }
-                <span class="ident">counters</span>::<span class="ident">TIMEOUT</span>.<span class="ident">inc</span>();
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">check_timeout</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>) {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_chunk_request</span>(<span class="ident">known_version</span>, <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()) {
+                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[state sync] Failed to send chunk request: {}&quot;</span>, <span class="ident">e</span>);
             }
+            <span class="ident">counters</span>::<span class="ident">TIMEOUT</span>.<span class="ident">inc</span>();
         }
     }
 
@@ -2079,10 +2065,9 @@
     <span class="doccomment">/// (might be chosen optimistically).</span>
     <span class="doccomment">/// The request includes a target for Validator and a non-zero timeout for a FullNode.</span>
     <span class="kw">fn</span> <span class="ident">send_chunk_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">known_version</span>: <span class="ident">u64</span>, <span class="ident">known_epoch</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">peer</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">peer_manager</span>
-            .<span class="ident">pick_peer</span>()
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;No peers found for chunk request.&quot;</span>))<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">no_available_peers</span>() {
+            <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No peers found for chunk request.&quot;</span>);
+        }
 
         <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_initialized</span>() {
             <span class="kw">let</span> <span class="ident">waypoint_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>();
@@ -2111,28 +2096,7 @@
         };
 
         <span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">GetChunkRequest</span>::<span class="ident">new</span>(<span class="ident">known_version</span>, <span class="ident">known_epoch</span>, <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">chunk_limit</span>, <span class="ident">target</span>);
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;[state sync] request next chunk. peer: {}, chunk req: {}&quot;</span>,
-            <span class="ident">peer</span>, <span class="ident">req</span>,
-        );
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkRequest</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">req</span>));
-        <span class="self">self</span>.<span class="ident">peer_manager</span>
-            .<span class="ident">process_request</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">peer</span>.<span class="ident">clone</span>());
-        <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">network_senders</span>
-            .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
-            .<span class="ident">expect</span>(<span class="string">&quot;missing network sender for peer&quot;</span>);
-        <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">peer_id</span>();
-        <span class="kw">let</span> <span class="ident">send_result</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">send_to</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>);
-        <span class="kw">let</span> <span class="ident">result_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">send_result</span>.<span class="ident">is_err</span>() {
-            <span class="ident">counters</span>::<span class="ident">SEND_FAIL_LABEL</span>
-        } <span class="kw">else</span> {
-            <span class="ident">counters</span>::<span class="ident">SEND_SUCCESS_LABEL</span>
-        };
-        <span class="ident">counters</span>::<span class="ident">REQUESTS_SENT</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id</span>.<span class="ident">to_string</span>(), <span class="ident">result_label</span>])
-            .<span class="ident">inc</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">send_result</span><span class="question-mark">?</span>)
+        <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">send_chunk_request</span>(<span class="ident">req</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">deliver_subscription</span>(
