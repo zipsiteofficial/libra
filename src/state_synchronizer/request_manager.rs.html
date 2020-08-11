@@ -442,6 +442,13 @@
 <span id="442">442</span>
 <span id="443">443</span>
 <span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -801,6 +808,12 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">req_info</span><span class="op">|</span> <span class="ident">req_info</span>.<span class="ident">first_request_time</span>)
     }
 
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_multicast_start_time</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SystemTime</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">requests</span>
+            .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">version</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">req_info</span><span class="op">|</span> <span class="ident">req_info</span>.<span class="ident">multicast_start_time</span>)
+    }
+
     <span class="doccomment">/// Removes requests for all versions before `version` (inclusive) if they are older than</span>
     <span class="doccomment">/// now - `timeout`</span>
     <span class="doccomment">/// We keep the requests that have not timed out so we don&#39;t penalize</span>
@@ -848,7 +861,8 @@
         }
 
         <span class="comment">// increment multicast level if this request is also multicast-timed-out</span>
-        <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_timeout</span>(<span class="ident">last_request_time</span>, <span class="self">self</span>.<span class="ident">multicast_timeout</span>) {
+        <span class="kw">let</span> <span class="ident">multicast_start_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_multicast_start_time</span>(<span class="ident">version</span>).<span class="ident">unwrap_or</span>(<span class="ident">UNIX_EPOCH</span>);
+        <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_timeout</span>(<span class="ident">multicast_start_time</span>, <span class="self">self</span>.<span class="ident">multicast_timeout</span>) {
             <span class="kw">let</span> <span class="ident">prev_multicast_level</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">multicast_level</span>;
             <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(
                 <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">+</span> <span class="number">1</span>,
