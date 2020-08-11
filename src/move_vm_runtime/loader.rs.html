@@ -1836,6 +1836,73 @@
 <span id="1836">1836</span>
 <span id="1837">1837</span>
 <span id="1838">1838</span>
+<span id="1839">1839</span>
+<span id="1840">1840</span>
+<span id="1841">1841</span>
+<span id="1842">1842</span>
+<span id="1843">1843</span>
+<span id="1844">1844</span>
+<span id="1845">1845</span>
+<span id="1846">1846</span>
+<span id="1847">1847</span>
+<span id="1848">1848</span>
+<span id="1849">1849</span>
+<span id="1850">1850</span>
+<span id="1851">1851</span>
+<span id="1852">1852</span>
+<span id="1853">1853</span>
+<span id="1854">1854</span>
+<span id="1855">1855</span>
+<span id="1856">1856</span>
+<span id="1857">1857</span>
+<span id="1858">1858</span>
+<span id="1859">1859</span>
+<span id="1860">1860</span>
+<span id="1861">1861</span>
+<span id="1862">1862</span>
+<span id="1863">1863</span>
+<span id="1864">1864</span>
+<span id="1865">1865</span>
+<span id="1866">1866</span>
+<span id="1867">1867</span>
+<span id="1868">1868</span>
+<span id="1869">1869</span>
+<span id="1870">1870</span>
+<span id="1871">1871</span>
+<span id="1872">1872</span>
+<span id="1873">1873</span>
+<span id="1874">1874</span>
+<span id="1875">1875</span>
+<span id="1876">1876</span>
+<span id="1877">1877</span>
+<span id="1878">1878</span>
+<span id="1879">1879</span>
+<span id="1880">1880</span>
+<span id="1881">1881</span>
+<span id="1882">1882</span>
+<span id="1883">1883</span>
+<span id="1884">1884</span>
+<span id="1885">1885</span>
+<span id="1886">1886</span>
+<span id="1887">1887</span>
+<span id="1888">1888</span>
+<span id="1889">1889</span>
+<span id="1890">1890</span>
+<span id="1891">1891</span>
+<span id="1892">1892</span>
+<span id="1893">1893</span>
+<span id="1894">1894</span>
+<span id="1895">1895</span>
+<span id="1896">1896</span>
+<span id="1897">1897</span>
+<span id="1898">1898</span>
+<span id="1899">1899</span>
+<span id="1900">1900</span>
+<span id="1901">1901</span>
+<span id="1902">1902</span>
+<span id="1903">1903</span>
+<span id="1904">1904</span>
+<span id="1905">1905</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2323,12 +2390,11 @@
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>) {
             <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// verify dependencies</span>
-                <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">load_script_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>);
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependencies</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-                <span class="kw">for</span> <span class="ident">dep</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">deps</span> {
-                    <span class="ident">dependencies</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">load_module</span>(<span class="ident">dep</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>);
-                }
-                <span class="self">self</span>.<span class="ident">verify_script_dependencies</span>(<span class="ident">script</span>, <span class="ident">dependencies</span>)
+                <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">script_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>);
+                <span class="kw">let</span> <span class="ident">loaded_deps</span> <span class="op">=</span>
+                    <span class="self">self</span>.<span class="ident">load_dependencies_verify_no_missing_dependencies</span>(<span class="ident">deps</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
+                <span class="self">self</span>.<span class="ident">verify_script_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>, <span class="ident">loaded_deps</span>)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(<span class="ident">script</span>)
             }
             <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">error</span><span class="macro">!</span>(
@@ -2353,14 +2419,14 @@
 
     <span class="kw">fn</span> <span class="ident">verify_script_dependencies</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">script</span>: <span class="ident">CompiledScript</span>,
+        <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>,
         <span class="ident">dependencies</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledScript</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">deps</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> <span class="ident">dep</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">dependencies</span> {
             <span class="ident">deps</span>.<span class="ident">push</span>(<span class="ident">dep</span>.<span class="ident">module</span>());
         }
-        <span class="ident">DependencyChecker</span>::<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>, <span class="ident">deps</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">script</span>)
+        <span class="ident">DependencyChecker</span>::<span class="ident">verify_script</span>(<span class="ident">script</span>, <span class="ident">deps</span>)
     }
 
     <span class="comment">//</span>
@@ -2377,7 +2443,7 @@
         <span class="ident">ty_args</span>: <span class="kw-2">&amp;</span>[<span class="ident">TypeTag</span>],
         <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>(<span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Function</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">load_module</span>(<span class="ident">module_id</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">load_module_expect_no_missing_dependencies</span>(<span class="ident">module_id</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">idx</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">module_cache</span>
             .<span class="ident">lock</span>()
@@ -2402,7 +2468,28 @@
     <span class="comment">// This step performs all verification steps to load the module without loading it.</span>
     <span class="comment">// The module is not added to the code cache. It is simply published to the data cache.</span>
     <span class="comment">// See `verify_script()` for script verification steps.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify_module_verify_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">verify_module</span>(<span class="ident">module</span>, <span class="ident">data_store</span>, <span class="bool-val">true</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">verify_module_expect_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">verify_module</span>(<span class="ident">module</span>, <span class="ident">data_store</span>, <span class="bool-val">false</span>)
+    }
+
+    <span class="kw">fn</span> <span class="ident">verify_module</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+        <span class="ident">verify_no_missing_modules</span>: <span class="ident">bool</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">DuplicationChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">SignatureChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">InstructionConsistency</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
@@ -2411,53 +2498,16 @@
         <span class="ident">RecursiveStructDefChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">InstantiationLoopChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="ident">CodeUnitVerifier</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
-        <span class="self">Self</span>::<span class="ident">check_natives</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)
-    }
+        <span class="self">Self</span>::<span class="ident">check_natives</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
 
-    <span class="comment">// The process of loading is recursive, and module are cached by the loader as soon as</span>
-    <span class="comment">// they are verifiable (including dependencies).</span>
-    <span class="comment">// Effectively that means modules are cached from leaf to root in the dependency DAG.</span>
-    <span class="comment">// If a dependency error is found, loading stops and the error is returned.</span>
-    <span class="comment">// However all modules cached up to that point stay loaded.</span>
-    <span class="comment">// In principle that is not the safest model but it is justified</span>
-    <span class="comment">// by the fact that publishing is limited, and complex/tricky dependencies error</span>
-    <span class="comment">// are difficult or impossible to accomplish in reality.</span>
-
-    <span class="comment">// The process of deserialization and verification is not and it must not be under lock.</span>
-    <span class="comment">// So when publishing modules through the dependency DAG it may happen that a different</span>
-    <span class="comment">// thread had loaded the module after this process fetched it from storage.</span>
-    <span class="comment">// Caching will take care of that by asking for each dependency module again under lock.</span>
-    <span class="kw">fn</span> <span class="ident">deserialize_and_verify_module</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>,
-        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">data_store</span>.<span class="ident">load_module</span>(<span class="ident">id</span>) {
-            <span class="prelude-val">Ok</span>(<span class="ident">bytes</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-                <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">CODE_DESERIALIZATION_ERROR</span>)
-                    .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>)
-            })<span class="question-mark">?</span>,
-            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">crit</span><span class="macro">!</span>(<span class="string">&quot;[VM] Error fetching module with id {:?}&quot;</span>, <span class="ident">id</span>);
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
-            }
+        <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">module_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>);
+        <span class="kw">let</span> <span class="ident">loaded_deps</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">verify_no_missing_modules</span> {
+            <span class="self">self</span>.<span class="ident">load_dependencies_verify_no_missing_dependencies</span>(<span class="ident">deps</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>
+        } <span class="kw">else</span> {
+            <span class="self">self</span>.<span class="ident">load_dependencies_expect_no_missing_dependencies</span>(<span class="ident">deps</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>
         };
-        <span class="self">self</span>.<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">check_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">module</span>)
-    }
 
-    <span class="kw">fn</span> <span class="ident">check_dependencies</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">load_module_dependencies</span>(<span class="ident">module</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dependencies</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-        <span class="kw">for</span> <span class="ident">dep</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">deps</span> {
-            <span class="ident">dependencies</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">load_module</span>(<span class="ident">dep</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>);
-        }
-        <span class="self">self</span>.<span class="ident">verify_module_dependencies</span>(<span class="ident">module</span>, <span class="ident">dependencies</span>)
+        <span class="self">self</span>.<span class="ident">verify_module_dependencies</span>(<span class="ident">module</span>, <span class="ident">loaded_deps</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">verify_module_dependencies</span>(
@@ -2527,7 +2577,7 @@
             <span class="ident">TypeTag</span>::<span class="ident">Vector</span>(<span class="ident">tt</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">load_type</span>(<span class="ident">tt</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>)),
             <span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">struct_tag</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">module_id</span> <span class="op">=</span> <span class="ident">ModuleId</span>::<span class="ident">new</span>(<span class="ident">struct_tag</span>.<span class="ident">address</span>, <span class="ident">struct_tag</span>.<span class="ident">module</span>.<span class="ident">clone</span>());
-                <span class="self">self</span>.<span class="ident">load_module</span>(<span class="kw-2">&amp;</span><span class="ident">module_id</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
+                <span class="self">self</span>.<span class="ident">load_module_verify_no_missing_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">module_id</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
                 <span class="kw">let</span> (<span class="ident">idx</span>, <span class="ident">struct_type</span>) <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">module_cache</span>
                     .<span class="ident">lock</span>()
@@ -2550,12 +2600,96 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">load_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>, <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="comment">// The process of loading is recursive, and module are cached by the loader as soon as</span>
+    <span class="comment">// they are verifiable (including dependencies).</span>
+    <span class="comment">// Effectively that means modules are cached from leaf to root in the dependency DAG.</span>
+    <span class="comment">// If a dependency error is found, loading stops and the error is returned.</span>
+    <span class="comment">// However all modules cached up to that point stay loaded.</span>
+    <span class="comment">// In principle that is not the safest model but it is justified</span>
+    <span class="comment">// by the fact that publishing is limited, and complex/tricky dependencies error</span>
+    <span class="comment">// are difficult or impossible to accomplish in reality.</span>
+
+    <span class="comment">// The process of deserialization and verification is not and it must not be under lock.</span>
+    <span class="comment">// So when publishing modules through the dependency DAG it may happen that a different</span>
+    <span class="comment">// thread had loaded the module after this process fetched it from storage.</span>
+    <span class="comment">// Caching will take care of that by asking for each dependency module again under lock.</span>
+    <span class="kw">fn</span> <span class="ident">load_module</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+        <span class="ident">verify_no_missing_modules</span>: <span class="ident">bool</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="comment">// kept private to `load_module` to prevent verification errors from leaking</span>
+        <span class="comment">// and not being marked as invariant violations</span>
+        <span class="kw">fn</span> <span class="ident">deserialize_and_verify_module</span>(
+            <span class="ident">loader</span>: <span class="kw-2">&amp;</span><span class="ident">Loader</span>,
+            <span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+            <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+            <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+                <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">CODE_DESERIALIZATION_ERROR</span>)
+                    .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>)
+            })<span class="question-mark">?</span>;
+            <span class="ident">loader</span>.<span class="ident">verify_module_expect_no_missing_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(<span class="ident">module</span>)
+        }
+
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">module</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module_cache</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">module_at</span>(<span class="ident">id</span>) {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">module</span>);
         }
-        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">deserialize_and_verify_module</span>(<span class="ident">id</span>, <span class="ident">data_store</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">data_store</span>.<span class="ident">load_module</span>(<span class="ident">id</span>) {
+            <span class="prelude-val">Ok</span>(<span class="ident">bytes</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">bytes</span>,
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="kw">if</span> <span class="ident">verify_no_missing_modules</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">crit</span><span class="macro">!</span>(<span class="string">&quot;[VM] Error fetching module with id {:?}&quot;</span>, <span class="ident">id</span>);
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>.<span class="ident">expect_no_verification_errors</span>());
+            }
+        };
+
+        <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">deserialize_and_verify_module</span>(<span class="self">self</span>, <span class="ident">bytes</span>, <span class="ident">data_store</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">expect_no_verification_errors</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">module_cache</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">insert</span>(<span class="ident">id</span>.<span class="ident">clone</span>(), <span class="ident">module</span>)
+    }
+
+    <span class="comment">// Returns a verifier error if the module does not exist</span>
+    <span class="kw">fn</span> <span class="ident">load_module_verify_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">load_module</span>(<span class="ident">id</span>, <span class="ident">data_store</span>, <span class="bool-val">true</span>)
+    }
+
+    <span class="comment">// Expects all modules to be on chain. Gives an invariant violation if it is not found</span>
+    <span class="kw">fn</span> <span class="ident">load_module_expect_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">load_module</span>(<span class="ident">id</span>, <span class="ident">data_store</span>, <span class="bool-val">false</span>)
+    }
+
+    <span class="comment">// Returns a verifier error if the module does not exist</span>
+    <span class="kw">fn</span> <span class="ident">load_dependencies_verify_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">deps</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">deps</span>.<span class="ident">into_iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">dep</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">load_module_verify_no_missing_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">dep</span>, <span class="ident">data_store</span>))
+            .<span class="ident">collect</span>()
+    }
+
+    <span class="comment">// Expects all modules to be on chain. Gives an invariant violation if it is not found</span>
+    <span class="kw">fn</span> <span class="ident">load_dependencies_expect_no_missing_dependencies</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">deps</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span>,
+        <span class="ident">data_store</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">impl</span> <span class="ident">DataStore</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Module</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">deps</span>.<span class="ident">into_iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">dep</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">load_module_expect_no_missing_dependencies</span>(<span class="kw-2">&amp;</span><span class="ident">dep</span>, <span class="ident">data_store</span>))
+            .<span class="ident">collect</span>()
     }
 
     <span class="comment">// Verify the kind (constraints) of an instantiation.</span>
@@ -3396,7 +3530,7 @@
 <span class="comment">// Utility functions</span>
 <span class="comment">//</span>
 
-<span class="kw">fn</span> <span class="ident">load_script_dependencies</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">script_dependencies</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">deps</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">for</span> <span class="ident">module</span> <span class="kw">in</span> <span class="ident">script</span>.<span class="ident">module_handles</span>() {
         <span class="ident">deps</span>.<span class="ident">push</span>(<span class="ident">ModuleId</span>::<span class="ident">new</span>(
@@ -3407,7 +3541,7 @@
     <span class="ident">deps</span>
 }
 
-<span class="kw">fn</span> <span class="ident">load_module_dependencies</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">module_dependencies</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ModuleId</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">self_module</span> <span class="op">=</span> <span class="ident">module</span>.<span class="ident">self_handle</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">deps</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">for</span> <span class="ident">module_handle</span> <span class="kw">in</span> <span class="ident">module</span>.<span class="ident">module_handles</span>() {
