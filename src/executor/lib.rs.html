@@ -921,6 +921,12 @@
 <span id="921">921</span>
 <span id="922">922</span>
 <span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -948,7 +954,7 @@
     <span class="ident">speculation_cache</span>::<span class="ident">SpeculationCache</span>,
     <span class="ident">types</span>::{<span class="ident">ProcessedVMOutput</span>, <span class="ident">TransactionData</span>},
 };
-<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">ensure</span>, <span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">bail</span>, <span class="ident">ensure</span>, <span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">executor_types</span>::{
     <span class="ident">BlockExecutor</span>, <span class="ident">ChunkExecutor</span>, <span class="ident">Error</span>, <span class="ident">ExecutedTrees</span>, <span class="ident">ProofReader</span>, <span class="ident">StateComputeResult</span>,
     <span class="ident">TransactionReplayer</span>,
@@ -1105,10 +1111,16 @@
         <span class="kw">if</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">transactions</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>((<span class="ident">Vec</span>::<span class="ident">new</span>(), <span class="ident">Vec</span>::<span class="ident">new</span>()));
         }
-        <span class="kw">let</span> <span class="ident">first_txn_version</span> <span class="op">=</span> <span class="ident">txn_list_with_proof</span>
-            .<span class="ident">first_transaction_version</span>
-            .<span class="ident">expect</span>(<span class="string">&quot;first_transaction_version should exist.&quot;</span>)
-            <span class="kw">as</span> <span class="ident">Version</span>;
+        <span class="kw">let</span> <span class="ident">first_txn_version</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">first_transaction_version</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">tx</span> <span class="kw">as</span> <span class="ident">Version</span>,
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;MUST_FIX&quot;</span>, <span class="string">&quot;assertion&quot;</span>)
+                    .<span class="ident">data</span>(<span class="string">&quot;details&quot;</span>, <span class="string">&quot;first_transaction_version should exist.&quot;</span>)
+                    .<span class="ident">critical</span>());
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;first_transaction_version should exist.&quot;</span>));
+            }
+        };
+
         <span class="kw">let</span> <span class="ident">num_committed_txns</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">synced_trees</span>().<span class="ident">txn_accumulator</span>().<span class="ident">num_leaves</span>();
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">first_txn_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">num_committed_txns</span>,
