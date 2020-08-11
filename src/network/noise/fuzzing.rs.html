@@ -171,6 +171,31 @@
 <span id="171">171</span>
 <span id="172">172</span>
 <span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -183,11 +208,12 @@
 <span class="comment">//</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">noise</span>::{<span class="ident">AntiReplayTimestamps</span>, <span class="ident">HandshakeAuthMode</span>, <span class="ident">NoiseUpgrader</span>},
+    <span class="ident">noise</span>::{<span class="ident">stream</span>::<span class="ident">NoiseStream</span>, <span class="ident">AntiReplayTimestamps</span>, <span class="ident">HandshakeAuthMode</span>, <span class="ident">NoiseUpgrader</span>},
     <span class="ident">testutils</span>::<span class="ident">fake_socket</span>::{<span class="ident">ReadOnlyTestSocket</span>, <span class="ident">ReadWriteTestSocket</span>},
 };
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">executor</span>::<span class="ident">block_on</span>, <span class="ident">future</span>::<span class="ident">join</span>};
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span> <span class="kw">as</span> <span class="kw">_</span>};
+<span class="kw">use</span> <span class="ident">futures_util</span>::<span class="ident">io</span>::<span class="ident">AsyncReadExt</span>;
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">noise</span>::<span class="ident">NoiseSession</span>, <span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span> <span class="kw">as</span> <span class="kw">_</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">rand_core</span>::<span class="ident">SeedableRng</span>;
@@ -297,6 +323,7 @@
     [<span class="number">0u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>]
 }
 
+<span class="doccomment">/// Fuzz a client during the handshake</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_initiator</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
     <span class="comment">// setup initiator</span>
     <span class="kw">let</span> ((<span class="ident">initiator_private_key</span>, <span class="kw">_</span>, <span class="ident">initiator_peer_id</span>), (<span class="kw">_</span>, <span class="ident">responder_public_key</span>, <span class="kw">_</span>)) <span class="op">=</span>
@@ -315,6 +342,7 @@
     <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">block_on</span>(<span class="ident">initiator</span>.<span class="ident">upgrade_outbound</span>(<span class="ident">fake_socket</span>, <span class="ident">responder_public_key</span>, <span class="ident">fake_timestamp</span>));
 }
 
+<span class="doccomment">/// Fuzz a server during the handshake</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_responder</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
     <span class="comment">// setup responder</span>
     <span class="kw">let</span> (<span class="kw">_</span>, (<span class="ident">responder_private_key</span>, <span class="kw">_</span>, <span class="ident">responder_peer_id</span>)) <span class="op">=</span> <span class="ident">KEYPAIRS</span>.<span class="ident">clone</span>();
@@ -332,6 +360,27 @@
     <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">block_on</span>(<span class="ident">responder</span>.<span class="ident">upgrade_inbound</span>(<span class="ident">fake_socket</span>));
 }
 
+<span class="doccomment">/// Fuzz a peer post-handshake</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_post_handshake</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
+    <span class="kw">if</span> <span class="ident">data</span>.<span class="ident">is_empty</span>() {
+        <span class="kw">return</span>;
+    }
+
+    <span class="comment">// setup fake socket</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fake_socket</span> <span class="op">=</span> <span class="ident">ReadOnlyTestSocket</span>::<span class="ident">new</span>(<span class="ident">data</span>);
+    <span class="ident">fake_socket</span>.<span class="ident">set_trailing</span>();
+
+    <span class="comment">// setup a NoiseStream with a dummy state</span>
+    <span class="kw">let</span> <span class="ident">noise_session</span> <span class="op">=</span> <span class="ident">NoiseSession</span>::<span class="ident">new_for_fuzzing</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">peer</span> <span class="op">=</span> <span class="ident">NoiseStream</span>::<span class="ident">new</span>(<span class="ident">fake_socket</span>, <span class="ident">noise_session</span>);
+
+    <span class="comment">// read fuzz data</span>
+    <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">block_on</span>(<span class="kw">async</span> <span class="kw">move</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buffer</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">1024</span>];
+        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">read</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buffer</span>).<span class="kw">await</span>;
+    });
+}
+
 <span class="comment">//</span>
 <span class="comment">// Tests</span>
 <span class="comment">// =====</span>
@@ -340,10 +389,11 @@
 <span class="comment">//</span>
 
 <span class="attribute">#[<span class="ident">test</span>]</span>
-<span class="kw">fn</span> <span class="ident">test_noise_fuzzer</span>() {
+<span class="kw">fn</span> <span class="ident">test_noise_fuzzers</span>() {
     <span class="kw">let</span> (<span class="ident">init_msg</span>, <span class="ident">resp_msg</span>) <span class="op">=</span> <span class="ident">generate_first_two_messages</span>();
     <span class="ident">fuzz_responder</span>(<span class="kw-2">&amp;</span><span class="ident">init_msg</span>);
     <span class="ident">fuzz_initiator</span>(<span class="kw-2">&amp;</span><span class="ident">resp_msg</span>);
+    <span class="ident">fuzz_post_handshake</span>(<span class="kw-2">&amp;</span><span class="ident">resp_msg</span>);
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "network";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
