@@ -5261,6 +5261,27 @@
 <span id="5261">5261</span>
 <span id="5262">5262</span>
 <span id="5263">5263</span>
+<span id="5264">5264</span>
+<span id="5265">5265</span>
+<span id="5266">5266</span>
+<span id="5267">5267</span>
+<span id="5268">5268</span>
+<span id="5269">5269</span>
+<span id="5270">5270</span>
+<span id="5271">5271</span>
+<span id="5272">5272</span>
+<span id="5273">5273</span>
+<span id="5274">5274</span>
+<span id="5275">5275</span>
+<span id="5276">5276</span>
+<span id="5277">5277</span>
+<span id="5278">5278</span>
+<span id="5279">5279</span>
+<span id="5280">5280</span>
+<span id="5281">5281</span>
+<span id="5282">5282</span>
+<span id="5283">5283</span>
+<span id="5284">5284</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -7662,9 +7683,6 @@
             .<span class="ident">spec_schema_table</span>
             .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;schema defined&quot;</span>);
-
-        <span class="comment">// Process all schema includes. We need to do this before we type check expressions to have</span>
-        <span class="comment">// all variables from includes in the environment.</span>
         <span class="kw">let</span> <span class="ident">type_params</span> <span class="op">=</span> <span class="ident">entry</span>.<span class="ident">type_params</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">all_vars</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Symbol</span>, <span class="ident">LocalVarEntry</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">entry</span>
             .<span class="ident">vars</span>
@@ -7681,6 +7699,36 @@
             })
             .<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">included_spec</span> <span class="op">=</span> <span class="ident">Spec</span>::<span class="ident">default</span>();
+
+        <span class="comment">// Store back all_vars computed so far (which does not include those coming from</span>
+        <span class="comment">// included schemas). This is needed so we can analyze lets.</span>
+        {
+            <span class="kw">let</span> <span class="ident">entry</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">parent</span>
+                .<span class="ident">spec_schema_table</span>
+                .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>)
+                .<span class="ident">expect</span>(<span class="string">&quot;schema defined&quot;</span>);
+            <span class="ident">entry</span>.<span class="ident">all_vars</span> <span class="op">=</span> <span class="ident">all_vars</span>.<span class="ident">clone</span>();
+        }
+
+        <span class="comment">// Process all lets. We need to do this before includes so we have them available</span>
+        <span class="comment">// in schema arguments of includes. This unfortunately means we can&#39;t refer in</span>
+        <span class="comment">// lets to variables included from schemas, but this seems to be a rare use case.</span>
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">spec_block_lets</span>.<span class="ident">is_empty</span>());
+        <span class="kw">for</span> <span class="ident">member</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span> {
+            <span class="kw">let</span> <span class="ident">member_loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">loc</span>);
+            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Let</span> {
+                <span class="ident">name</span>: <span class="ident">let_name</span>,
+                <span class="ident">def</span>,
+            } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">value</span>
+            {
+                <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">Schema</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
+                <span class="self">self</span>.<span class="ident">def_ana_let</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="ident">member_loc</span>, <span class="ident">let_name</span>, <span class="ident">def</span>);
+            }
+        }
+
+        <span class="comment">// Process all schema includes. We need to do this before we type check expressions to have</span>
+        <span class="comment">// all variables from includes in the environment.</span>
         <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">included_exp</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter_schema_includes</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span>) {
             <span class="self">self</span>.<span class="ident">def_ana_schema_exp</span>(
                 <span class="kw-2">&amp;</span><span class="ident">type_params</span>,
@@ -7702,7 +7750,6 @@
         }
 
         <span class="comment">// Now process all conditions and invariants.</span>
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">spec_block_lets</span>.<span class="ident">is_empty</span>());
         <span class="kw">for</span> <span class="ident">member</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span> {
             <span class="kw">let</span> <span class="ident">member_loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">loc</span>);
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">member</span>.<span class="ident">value</span> {
@@ -7710,13 +7757,7 @@
                     <span class="ident">is_global</span>: <span class="bool-val">false</span>, ..
                 } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* handled during decl analysis */</span> }
                 <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Include</span> { .. } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* handled above */</span> }
-                <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Let</span> {
-                    <span class="ident">name</span>: <span class="ident">let_name</span>,
-                    <span class="ident">def</span>,
-                } <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">Schema</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
-                    <span class="self">self</span>.<span class="ident">def_ana_let</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="ident">member_loc</span>, <span class="ident">let_name</span>, <span class="ident">def</span>);
-                }
+                <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Let</span> { .. } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* handled above */</span> }
                 <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Condition</span> {
                     <span class="ident">kind</span>,
                     <span class="ident">properties</span>,
@@ -8458,6 +8499,7 @@
                     <span class="ident">mem_usage</span>,
                     <span class="ident">declaring_module</span>: <span class="self">self</span>.<span class="ident">module_id</span>,
                     <span class="ident">cond</span>: <span class="ident">exp</span>,
+                    <span class="ident">properties</span>: <span class="ident">cond</span>.<span class="ident">properties</span>.<span class="ident">clone</span>(),
                 });
             } <span class="kw">else</span> {
                 <span class="kw">if</span> <span class="ident">cond</span>.<span class="ident">kind</span> <span class="op">!</span><span class="op">=</span> <span class="ident">ConditionKind</span>::<span class="ident">Invariant</span> {
