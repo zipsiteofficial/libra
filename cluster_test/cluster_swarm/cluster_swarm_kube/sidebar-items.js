@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ClusterSwarmKube",""],["KubeNode",""]]});
+initSidebarItems({"constant":[["CFG_SEED",""]],"struct":[["ClusterSwarmKube",""],["KubeNode",""]]});
