@@ -854,6 +854,16 @@
 <span id="854">854</span>
 <span id="855">855</span>
 <span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -902,6 +912,7 @@
         <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>, <span class="ident">LIBRA_STORAGE_CF_SIZE_BYTES</span>,
         <span class="ident">LIBRA_STORAGE_COMMITTED_TXNS</span>, <span class="ident">LIBRA_STORAGE_LATEST_TXN_VERSION</span>,
         <span class="ident">LIBRA_STORAGE_LEDGER_VERSION</span>, <span class="ident">LIBRA_STORAGE_NEXT_BLOCK_EPOCH</span>,
+        <span class="ident">LIBRA_STORAGE_OTHER_TIMERS_SECONDS</span>,
     },
     <span class="ident">pruner</span>::<span class="ident">Pruner</span>,
     <span class="ident">schema</span>::<span class="kw-2">*</span>,
@@ -1281,6 +1292,9 @@
     <span class="kw">fn</span> <span class="ident">commit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sealed_cs</span>: <span class="ident">SealedChangeSet</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">write_schemas</span>(<span class="ident">sealed_cs</span>.<span class="ident">batch</span>)<span class="question-mark">?</span>;
 
+        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_OTHER_TIMERS_SECONDS</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_approximate_cf_sizes&quot;</span>])
+            .<span class="ident">start_timer</span>();
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">get_approximate_sizes_cf</span>() {
             <span class="prelude-val">Ok</span>(<span class="ident">cf_sizes</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">for</span> (<span class="ident">cf_name</span>, <span class="ident">size</span>) <span class="kw">in</span> <span class="ident">cf_sizes</span> {
@@ -1654,7 +1668,13 @@
 
         <span class="comment">// Persist.</span>
         <span class="kw">let</span> (<span class="ident">sealed_cs</span>, <span class="ident">counters</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">seal_change_set</span>(<span class="ident">first_version</span>, <span class="ident">num_txns</span>, <span class="ident">cs</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">commit</span>(<span class="ident">sealed_cs</span>)<span class="question-mark">?</span>;
+        {
+            <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_OTHER_TIMERS_SECONDS</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;save_transactions_commit&quot;</span>])
+                .<span class="ident">start_timer</span>();
+            <span class="self">self</span>.<span class="ident">commit</span>(<span class="ident">sealed_cs</span>)<span class="question-mark">?</span>;
+        }
+
         <span class="comment">// Once everything is successfully persisted, update the latest in-memory ledger info.</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
             <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">set_latest_ledger_info</span>(<span class="ident">x</span>.<span class="ident">clone</span>());
