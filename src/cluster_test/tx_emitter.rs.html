@@ -962,6 +962,23 @@
 <span id="962">962</span>
 <span id="963">963</span>
 <span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
+<span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
+<span id="981">981</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -970,7 +987,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">atomic_histogram</span>::<span class="kw-2">*</span>, <span class="ident">cluster</span>::<span class="ident">Cluster</span>, <span class="ident">instance</span>::<span class="ident">Instance</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">fmt</span>, <span class="ident">slice</span>,
+    <span class="ident">env</span>, <span class="ident">fmt</span>, <span class="ident">slice</span>,
     <span class="ident">sync</span>::<span class="ident">Arc</span>,
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
@@ -1002,6 +1019,7 @@
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">future</span>::{<span class="ident">try_join_all</span>, <span class="ident">FutureExt</span>};
 <span class="kw">use</span> <span class="ident">libra_json_rpc_client</span>::<span class="ident">JsonRpcAsyncClient</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::<span class="ident">SignedTransaction</span>;
+<span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>},
     <span class="ident">ops</span>::<span class="ident">Sub</span>,
@@ -1071,6 +1089,14 @@
     <span class="kw">pub</span> <span class="ident">workers_per_ac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">thread_params</span>: <span class="ident">EmitThreadParams</span>,
 }
+
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">GAS_UNIT_PRICE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;GAS_UNIT_PRICE&quot;</span>) {
+        <span class="ident">v</span>.<span class="ident">parse</span>().<span class="ident">expect</span>(<span class="string">&quot;Failed to parse GAS_UNIT_PRICE&quot;</span>)
+    } <span class="kw">else</span> {
+        <span class="number">0_u64</span>
+    }
+});
 
 <span class="kw">impl</span> <span class="ident">EmitJobRequest</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">for_instances</span>(
@@ -1268,10 +1294,12 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">libra_root_account</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">load_libra_root_account</span>(<span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>))
             .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">mint_txn</span> <span class="op">=</span> <span class="ident">gen_mint_request</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_account</span>,
-            <span class="ident">LIBRA_PER_NEW_ACCOUNT</span> <span class="op">*</span> <span class="ident">num_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>,
-        );
+        <span class="kw">let</span> <span class="ident">coins_per_account</span> <span class="op">=</span> (<span class="ident">SEND_AMOUNT</span> <span class="op">+</span> <span class="kw-2">*</span><span class="ident">GAS_UNIT_PRICE</span>) <span class="op">*</span> <span class="ident">MAX_TXNS</span>;
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Minting additional {} accounts&quot;</span>, <span class="ident">num_accounts</span>);
+        <span class="kw">let</span> <span class="ident">coins_per_seed_account</span> <span class="op">=</span>
+            (<span class="ident">coins_per_account</span> <span class="op">*</span> <span class="ident">num_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">/</span> <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
+        <span class="kw">let</span> <span class="ident">coins_total</span> <span class="op">=</span> <span class="ident">coins_per_account</span> <span class="op">*</span> <span class="ident">num_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>;
+        <span class="kw">let</span> <span class="ident">mint_txn</span> <span class="op">=</span> <span class="ident">gen_mint_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_account</span>, <span class="ident">coins_total</span>);
         <span class="ident">execute_and_wait_transactions</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">pick_mint_client</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>),
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_account</span>,
@@ -1279,6 +1307,7 @@
         )
         .<span class="kw">await</span>
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to mint into faucet account: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+
         <span class="kw">let</span> <span class="ident">seed_accounts</span> <span class="op">=</span> <span class="ident">create_seed_accounts</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">libra_root_account</span>,
             <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>(),
@@ -1288,13 +1317,11 @@
         .<span class="kw">await</span>
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create seed accounts: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Completed creating seed accounts&quot;</span>);
-        <span class="kw">let</span> <span class="ident">libra_per_seed</span> <span class="op">=</span>
-            (<span class="ident">LIBRA_PER_NEW_ACCOUNT</span> <span class="op">*</span> <span class="ident">num_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">/</span> <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
         <span class="comment">// Create seed accounts with which we can create actual accounts concurrently</span>
         <span class="ident">mint_to_new_accounts</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_account</span>,
             <span class="kw-2">&amp;</span><span class="ident">seed_accounts</span>,
-            <span class="ident">libra_per_seed</span>,
+            <span class="ident">coins_per_seed_account</span>,
             <span class="number">100</span>,
             <span class="self">self</span>.<span class="ident">pick_mint_client</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>),
         )
@@ -1314,7 +1341,7 @@
                 <span class="ident">create_new_accounts</span>(
                     <span class="ident">seed_account</span>,
                     <span class="ident">num_new_accounts</span>,
-                    <span class="ident">LIBRA_PER_NEW_ACCOUNT</span>,
+                    <span class="ident">coins_per_account</span>,
                     <span class="number">20</span>,
                     <span class="ident">client</span>,
                 )
@@ -1325,6 +1352,7 @@
             .<span class="ident">into_iter</span>()
             .<span class="ident">flatten</span>()
             .<span class="ident">collect</span>();
+
         <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">minted_accounts</span>);
         <span class="macro">assert</span><span class="macro">!</span>(
             <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">num_accounts</span>,
@@ -1476,7 +1504,7 @@
                 .<span class="ident">all_addresses</span>
                 .<span class="ident">choose</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;all_addresses can&#39;t be empty&quot;</span>);
-            <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">gen_transfer_txn_request</span>(<span class="ident">sender</span>, <span class="ident">receiver</span>, <span class="number">1</span>);
+            <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">gen_transfer_txn_request</span>(<span class="ident">sender</span>, <span class="ident">receiver</span>, <span class="ident">SEND_AMOUNT</span>);
             <span class="ident">requests</span>.<span class="ident">push</span>(<span class="ident">request</span>);
         }
         <span class="ident">requests</span>
@@ -1551,15 +1579,16 @@
 }
 
 <span class="kw">const</span> <span class="ident">MAX_GAS_AMOUNT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1_000_000</span>;
-<span class="kw">const</span> <span class="ident">GAS_UNIT_PRICE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">const</span> <span class="ident">GAS_CURRENCY_CODE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="ident">COIN1_NAME</span>;
 <span class="kw">const</span> <span class="ident">TXN_EXPIRATION_SECONDS</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="number">50</span>;
 <span class="kw">const</span> <span class="ident">TXN_MAX_WAIT</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">TXN_EXPIRATION_SECONDS</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">+</span> <span class="number">30</span>);
-<span class="kw">const</span> <span class="ident">LIBRA_PER_NEW_ACCOUNT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1_000_000</span>;
+<span class="kw">const</span> <span class="ident">MAX_TXNS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1_000_000</span>;
+<span class="kw">const</span> <span class="ident">SEND_AMOUNT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1</span>;
 
 <span class="kw">fn</span> <span class="ident">gen_submit_transaction_request</span>(
     <span class="ident">script</span>: <span class="ident">Script</span>,
     <span class="ident">sender_account</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
+    <span class="ident">no_gas</span>: <span class="ident">bool</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">create_user_txn</span>(
         <span class="kw-2">&amp;</span><span class="ident">sender_account</span>.<span class="ident">key_pair</span>,
@@ -1567,7 +1596,7 @@
         <span class="ident">sender_account</span>.<span class="ident">address</span>,
         <span class="ident">sender_account</span>.<span class="ident">sequence_number</span>,
         <span class="ident">MAX_GAS_AMOUNT</span>,
-        <span class="ident">GAS_UNIT_PRICE</span>,
+        <span class="kw">if</span> <span class="ident">no_gas</span> { <span class="number">0</span> } <span class="kw">else</span> { <span class="kw-2">*</span><span class="ident">GAS_UNIT_PRICE</span> },
         <span class="ident">GAS_CURRENCY_CODE</span>.<span class="ident">to_owned</span>(),
         <span class="ident">TXN_EXPIRATION_SECONDS</span>,
         <span class="ident">ChainId</span>::<span class="ident">test</span>(),
@@ -1588,6 +1617,7 @@
             <span class="macro">vec</span><span class="macro">!</span>[],
         ),
         <span class="ident">faucet_account</span>,
+        <span class="bool-val">true</span>,
     )
 }
 
@@ -1605,6 +1635,7 @@
             <span class="macro">vec</span><span class="macro">!</span>[],
         ),
         <span class="ident">sender</span>,
+        <span class="bool-val">false</span>,
     )
 }
 
@@ -1624,6 +1655,7 @@
             <span class="ident">num_coins</span>,
         ),
         <span class="ident">sender</span>,
+        <span class="bool-val">true</span>,
     )
 }
 
@@ -1640,6 +1672,7 @@
             <span class="bool-val">false</span>,
         ),
         <span class="ident">sender</span>,
+        <span class="bool-val">true</span>,
     )
 }
 
@@ -1657,6 +1690,7 @@
             <span class="macro">vec</span><span class="macro">!</span>[],
         ),
         <span class="ident">sender</span>,
+        <span class="bool-val">true</span>,
     )
 }
 

@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["execute_and_wait_transactions",""]],"struct":[["AccountData",""],["EmitJob",""],["EmitJobRequest",""],["EmitThreadParams",""],["TxEmitter",""],["TxStats",""],["TxStatsRate",""]]});
+initSidebarItems({"fn":[["execute_and_wait_transactions",""]],"static":[["GAS_UNIT_PRICE",""]],"struct":[["AccountData",""],["EmitJob",""],["EmitJobRequest",""],["EmitThreadParams",""],["TxEmitter",""],["TxStats",""],["TxStatsRate",""]]});
