@@ -1031,7 +1031,6 @@
 <span id="1031">1031</span>
 <span id="1032">1032</span>
 <span id="1033">1033</span>
-<span id="1034">1034</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1420,7 +1419,7 @@
     <span class="doccomment">/// Start listening on the set address and return a future which runs PeerManager</span>
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="comment">// Start listening for connections.</span>
-        <span class="macro">send_struct_log</span><span class="macro">!</span>(
+        <span class="macro">sl_info</span><span class="macro">!</span>(
             <span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                 .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">TYPE</span>, <span class="ident">network_events</span>::<span class="ident">START</span>)
         );
@@ -1428,21 +1427,21 @@
         <span class="kw">loop</span> {
             ::<span class="ident">futures</span>::<span class="macro">select</span><span class="macro">!</span> {
                 <span class="ident">connection_event</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">transport_notifs_rx</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    <span class="macro">sl_trace</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                         .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">TYPE</span>, <span class="string">&quot;connection_event&quot;</span>)
                         .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">EVENT</span>, <span class="kw-2">&amp;</span><span class="ident">connection_event</span>)
                     );
                     <span class="self">self</span>.<span class="ident">handle_connection_event</span>(<span class="ident">connection_event</span>);
                 }
                 <span class="ident">request</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">requests_rx</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    <span class="macro">sl_trace</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                         .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">TYPE</span>, <span class="string">&quot;request&quot;</span>)
                         .<span class="ident">field</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_REQUEST</span>, <span class="kw-2">&amp;</span><span class="ident">request</span>)
                     );
                     <span class="self">self</span>.<span class="ident">handle_request</span>(<span class="ident">request</span>).<span class="kw">await</span>;
                 }
                 <span class="ident">connection_request</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">connection_reqs_rx</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    <span class="macro">sl_trace</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                         .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">TYPE</span>, <span class="string">&quot;connection_request&quot;</span>)
                         .<span class="ident">field</span>(<span class="ident">network_events</span>::<span class="ident">CONNECTION_REQUEST</span>, <span class="kw-2">&amp;</span><span class="ident">connection_request</span>)
                     );
@@ -1450,9 +1449,8 @@
                 }
                 <span class="ident">complete</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// TODO: This should be ok when running in client mode.</span>
-                    <span class="macro">send_struct_log</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    <span class="macro">sl_error</span><span class="macro">!</span>(<span class="ident">network_log</span>(<span class="ident">network_events</span>::<span class="ident">PEER_MANAGER_LOOP</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                         .<span class="ident">data</span>(<span class="ident">network_events</span>::<span class="ident">TYPE</span>, <span class="ident">network_events</span>::<span class="ident">TERMINATION</span>)
-                        .<span class="ident">critical</span>()
                     );
                     <span class="macro">crit</span><span class="macro">!</span>(<span class="string">&quot;{} Peer manager actor terminated&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
                     <span class="kw">break</span>;
