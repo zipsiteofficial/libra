@@ -138,20 +138,6 @@
 <span id="138">138</span>
 <span id="139">139</span>
 <span id="140">140</span>
-<span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -162,7 +148,6 @@
     <span class="ident">process</span>::<span class="ident">ProcessService</span>,
     <span class="ident">remote_service</span>::<span class="ident">RemoteService</span>,
     <span class="ident">serializer</span>::{<span class="ident">SerializerClient</span>, <span class="ident">SerializerService</span>},
-    <span class="ident">spawned_process</span>::<span class="ident">SpawnedProcess</span>,
     <span class="ident">thread</span>::<span class="ident">ThreadService</span>,
     <span class="ident">SafetyRules</span>, <span class="ident">TSafetyRules</span>,
 };
@@ -211,7 +196,6 @@
     <span class="ident">Local</span>(<span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">SafetyRules</span><span class="op">&gt;</span><span class="op">&gt;</span>),
     <span class="ident">Process</span>(<span class="ident">ProcessService</span>),
     <span class="ident">Serializer</span>(<span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">SerializerService</span><span class="op">&gt;</span><span class="op">&gt;</span>),
-    <span class="ident">SpawnedProcess</span>(<span class="ident">SpawnedProcess</span>),
     <span class="ident">Thread</span>(<span class="ident">ThreadService</span>),
 }
 
@@ -221,13 +205,9 @@
 
 <span class="kw">impl</span> <span class="ident">SafetyRulesManager</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SafetyRulesConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">service</span> {
-            <span class="ident">SafetyRulesService</span>::<span class="ident">Process</span>(<span class="ident">conf</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">new_process</span>(<span class="ident">conf</span>.<span class="ident">server_address</span>(), <span class="ident">config</span>.<span class="ident">network_timeout_ms</span>)
-            }
-            <span class="ident">SafetyRulesService</span>::<span class="ident">SpawnedProcess</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">new_spawned_process</span>(<span class="ident">config</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
-        };
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">SafetyRulesService</span>::<span class="ident">Process</span>(<span class="ident">conf</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">service</span> {
+            <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">new_process</span>(<span class="ident">conf</span>.<span class="ident">server_address</span>(), <span class="ident">config</span>.<span class="ident">network_timeout_ms</span>);
+        }
 
         <span class="kw">let</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">storage</span>(<span class="ident">config</span>);
         <span class="kw">let</span> <span class="ident">verify_vote_proposal_signature</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">verify_vote_proposal_signature</span>;
@@ -275,13 +255,6 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_spawned_process</span>(<span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SafetyRulesConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">process</span> <span class="op">=</span> <span class="ident">SpawnedProcess</span>::<span class="ident">new</span>(<span class="ident">config</span>);
-        <span class="self">Self</span> {
-            <span class="ident">internal_safety_rules</span>: <span class="ident">SafetyRulesWrapper</span>::<span class="ident">SpawnedProcess</span>(<span class="ident">process</span>),
-        }
-    }
-
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_thread</span>(
         <span class="ident">storage</span>: <span class="ident">PersistentSafetyStorage</span>,
         <span class="ident">verify_vote_proposal_signature</span>: <span class="ident">bool</span>,
@@ -302,7 +275,6 @@
             <span class="ident">SafetyRulesWrapper</span>::<span class="ident">Serializer</span>(<span class="ident">serializer_service</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">SerializerClient</span>::<span class="ident">new</span>(<span class="ident">serializer_service</span>.<span class="ident">clone</span>()))
             }
-            <span class="ident">SafetyRulesWrapper</span>::<span class="ident">SpawnedProcess</span>(<span class="ident">process</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">process</span>.<span class="ident">client</span>()),
             <span class="ident">SafetyRulesWrapper</span>::<span class="ident">Thread</span>(<span class="ident">thread</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">thread</span>.<span class="ident">client</span>()),
         }
     }
