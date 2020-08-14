@@ -524,6 +524,56 @@
 <span id="524">524</span>
 <span id="525">525</span>
 <span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -546,26 +596,22 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">future</span>::<span class="ident">try_join_all</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">info</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">fs</span>::{<span class="self">self</span>, <span class="ident">File</span>},
-    <span class="ident">io</span>::<span class="ident">Write</span>,
-    <span class="ident">path</span>::<span class="ident">Path</span>,
-};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fs</span>::<span class="ident">File</span>, <span class="ident">io</span>::<span class="ident">Write</span>, <span class="ident">path</span>::<span class="ident">Path</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="kw">use</span> <span class="ident">libra_genesis_tool</span>::<span class="ident">layout</span>::<span class="ident">Layout</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
-    <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>,
-    <span class="ident">VALIDATOR_NETWORK_KEY</span>,
+    <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EPOCH</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">LIBRA_ROOT_KEY</span>,
+    <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>, <span class="ident">PREFERRED_ROUND</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
-<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">VaultStorage</span>};
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">chain_id</span>::<span class="ident">ChainId</span>;
+<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Value</span>, <span class="ident">VaultStorage</span>};
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
 
 <span class="kw">const</span> <span class="ident">VAULT_TOKEN</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;root&quot;</span>;
 <span class="kw">const</span> <span class="ident">VAULT_PORT</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">8200</span>;
-<span class="kw">const</span> <span class="ident">LIBRA_ROOT_NAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;libra&quot;</span>;
+<span class="kw">const</span> <span class="ident">LIBRA_ROOT_NS</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;val-0&quot;</span>;
 <span class="kw">const</span> <span class="ident">VAULT_BACKEND</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;vault&quot;</span>;
 <span class="kw">const</span> <span class="ident">GENESIS_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/tmp/genesis.blob&quot;</span>;
 
@@ -657,7 +703,7 @@
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;{} scale up failed: {}&quot;</span>, <span class="ident">asg_name</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
         }
-        <span class="kw">let</span> (<span class="ident">validators</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">fullnodes</span>) <span class="op">=</span> <span class="self">self</span>
+        <span class="kw">let</span> (<span class="ident">validators</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">fullnodes</span>, <span class="ident">waypoint</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">spawn_validator_and_fullnode_set</span>(
                 <span class="ident">params</span>.<span class="ident">num_validators</span>,
                 <span class="ident">params</span>.<span class="ident">fullnodes_per_validator</span>,
@@ -669,7 +715,7 @@
             )
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to spawn_validator_and_fullnode_set: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">cluster</span> <span class="op">=</span> <span class="ident">Cluster</span>::<span class="ident">new</span>(<span class="ident">validators</span>, <span class="ident">fullnodes</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>);
+        <span class="kw">let</span> <span class="ident">cluster</span> <span class="op">=</span> <span class="ident">Cluster</span>::<span class="ident">new</span>(<span class="ident">validators</span>, <span class="ident">fullnodes</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">waypoint</span>);
 
         <span class="macro">info</span><span class="macro">!</span>(
             <span class="string">&quot;Deployed {} validators and {} fns&quot;</span>,
@@ -689,11 +735,18 @@
         <span class="ident">image_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">config_overrides</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>],
         <span class="ident">clean_data</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(
+        <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>,
+        <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span>,
+    )<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">vault_nodes</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsrs_nodes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsr_nodes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vaults</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsrs</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
         <span class="kw">if</span> <span class="ident">enable_lsr</span> {
             <span class="kw">if</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
@@ -722,29 +775,44 @@
             } <span class="kw">else</span> {
                 <span class="ident">vault_nodes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
             }
-            <span class="ident">lsrs_nodes</span> <span class="op">=</span> <span class="ident">try_join_all</span>((<span class="number">0</span>..<span class="ident">num_validators</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
+            <span class="ident">lsr_nodes</span> <span class="op">=</span> <span class="ident">try_join_all</span>((<span class="number">0</span>..<span class="ident">num_validators</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
                 <span class="kw">let</span> <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">lsr_pod_name</span>(<span class="ident">i</span>);
                 <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">allocate_node</span>(<span class="kw-2">&amp;</span><span class="ident">pod_name</span>).<span class="kw">await</span>
             }))
             .<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsr_instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">lsrs_nodes</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lsr_instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">lsr_nodes</span>
                 .<span class="ident">iter</span>()
                 .<span class="ident">enumerate</span>()
-                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">node</span>)<span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-                    <span class="kw">let</span> <span class="ident">lsr_config</span> <span class="op">=</span> <span class="ident">LSRConfig</span> {
-                        <span class="ident">num_validators</span>,
-                        <span class="ident">image_tag</span>: <span class="ident">image_tag</span>.<span class="ident">to_string</span>(),
-                        <span class="ident">lsr_backend</span>: <span class="ident">lsr_backend</span>.<span class="ident">to_string</span>(),
-                    };
-                    <span class="kw">if</span> <span class="ident">clean_data</span> {
-                        <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">node</span>)<span class="op">|</span> {
+                    <span class="kw">let</span> <span class="ident">vault_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">vault_nodes</span>;
+                    <span class="kw">async</span> <span class="kw">move</span> {
+                        <span class="kw">let</span> <span class="ident">vault_addr</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                            <span class="prelude-val">Some</span>(<span class="ident">vault_nodes</span>[<span class="ident">i</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>())
+                        } <span class="kw">else</span> {
+                            <span class="prelude-val">None</span>
+                        };
+                        <span class="kw">let</span> <span class="ident">vault_namespace</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                            <span class="prelude-val">Some</span>(<span class="ident">validator_pod_name</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>))
+                        } <span class="kw">else</span> {
+                            <span class="prelude-val">None</span>
+                        };
+                        <span class="kw">let</span> <span class="ident">lsr_config</span> <span class="op">=</span> <span class="ident">LSRConfig</span> {
+                            <span class="ident">num_validators</span>,
+                            <span class="ident">image_tag</span>: <span class="ident">image_tag</span>.<span class="ident">to_string</span>(),
+                            <span class="ident">lsr_backend</span>: <span class="ident">lsr_backend</span>.<span class="ident">to_string</span>(),
+                            <span class="ident">vault_addr</span>,
+                            <span class="ident">vault_namespace</span>,
+                        };
+                        <span class="kw">if</span> <span class="ident">clean_data</span> {
+                            <span class="self">self</span>.<span class="ident">cluster_swarm</span>.<span class="ident">clean_data</span>(<span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        }
+                        <span class="self">self</span>.<span class="ident">cluster_swarm</span>
+                            .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
+                                <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>),
+                                <span class="ident">application_config</span>: <span class="ident">LSR</span>(<span class="ident">lsr_config</span>),
+                            })
+                            .<span class="kw">await</span>
                     }
-                    <span class="self">self</span>.<span class="ident">cluster_swarm</span>
-                        .<span class="ident">spawn_new_instance</span>(<span class="ident">InstanceConfig</span> {
-                            <span class="ident">validator_group</span>: <span class="ident">ValidatorGroup</span>::<span class="ident">new_for_index</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>),
-                            <span class="ident">application_config</span>: <span class="ident">LSR</span>(<span class="ident">lsr_config</span>),
-                        })
-                        .<span class="kw">await</span>
                 })
                 .<span class="ident">collect</span>();
             <span class="ident">lsrs</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">lsr_instances</span>);
@@ -779,26 +847,40 @@
             }))
             .<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="self">self</span>.<span class="ident">generate_genesis</span>(
-                <span class="ident">num_validators</span>,
-                <span class="kw-2">&amp;</span><span class="ident">vault_nodes</span>,
-                <span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>,
-                <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>,
-            )
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">waypoint</span> <span class="op">=</span> <span class="prelude-val">Some</span>(
+                <span class="self">self</span>.<span class="ident">generate_genesis</span>(
+                    <span class="ident">num_validators</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">vault_nodes</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>,
+                )
+                .<span class="kw">await</span><span class="question-mark">?</span>,
+            );
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Done generating genesis.&quot;</span>);
         }
 
         <span class="kw">let</span> <span class="ident">validators</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_validators</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">validator_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>;
-            <span class="kw">let</span> <span class="ident">lsrs_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">lsrs_nodes</span>;
+            <span class="kw">let</span> <span class="ident">lsr_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">lsr_nodes</span>;
+            <span class="kw">let</span> <span class="ident">vault_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">vault_nodes</span>;
             <span class="kw">async</span> <span class="kw">move</span> {
-                <span class="kw">let</span> <span class="ident">seed_peer_ip</span> <span class="op">=</span> <span class="ident">validator_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>();
-                <span class="kw">let</span> <span class="ident">safety_rules_addr</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">lsrs_nodes</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>())
+                <span class="kw">let</span> <span class="ident">vault_addr</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">vault_nodes</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>())
                 } <span class="kw">else</span> {
                     <span class="prelude-val">None</span>
                 };
+                <span class="kw">let</span> <span class="ident">vault_namespace</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">validator_pod_name</span>(<span class="ident">i</span>))
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                };
+                <span class="kw">let</span> <span class="ident">seed_peer_ip</span> <span class="op">=</span> <span class="ident">validator_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>();
+                <span class="kw">let</span> <span class="ident">safety_rules_addr</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">lsr_nodes</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>())
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                };
+                <span class="kw">let</span> <span class="ident">enable_mgmt_tool</span> <span class="op">=</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span>;
                 <span class="kw">let</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">ValidatorConfig</span> {
                     <span class="ident">num_validators</span>,
                     <span class="ident">num_fullnodes</span>: <span class="ident">num_fullnodes_per_validator</span>,
@@ -807,6 +889,9 @@
                     <span class="ident">config_overrides</span>: <span class="ident">config_overrides</span>.<span class="ident">to_vec</span>(),
                     <span class="ident">seed_peer_ip</span>,
                     <span class="ident">safety_rules_addr</span>,
+                    <span class="ident">vault_addr</span>,
+                    <span class="ident">vault_namespace</span>,
+                    <span class="ident">enable_mgmt_tool</span>,
                 };
                 <span class="kw">if</span> <span class="ident">clean_data</span> {
                     <span class="self">self</span>.<span class="ident">cluster_swarm</span>
@@ -825,10 +910,22 @@
         <span class="kw">let</span> <span class="ident">fullnodes</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_validators</span>).<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">validator_index</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">fullnode_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>;
             <span class="kw">let</span> <span class="ident">validator_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">validator_nodes</span>;
+            <span class="kw">let</span> <span class="ident">vault_nodes</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">vault_nodes</span>;
             (<span class="number">0</span>..<span class="ident">num_fullnodes_per_validator</span>).<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">fullnode_index</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
+                <span class="kw">let</span> <span class="ident">vault_addr</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">vault_nodes</span>[<span class="ident">validator_index</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">internal_ip</span>.<span class="ident">clone</span>())
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                };
+                <span class="kw">let</span> <span class="ident">vault_namespace</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">validator_pod_name</span>(<span class="ident">validator_index</span>))
+                } <span class="kw">else</span> {
+                    <span class="prelude-val">None</span>
+                };
                 <span class="kw">let</span> <span class="ident">seed_peer_ip</span> <span class="op">=</span> <span class="ident">validator_nodes</span>[<span class="ident">validator_index</span> <span class="kw">as</span> <span class="ident">usize</span>]
                     .<span class="ident">internal_ip</span>
                     .<span class="ident">clone</span>();
+                <span class="kw">let</span> <span class="ident">enable_mgmt_tool</span> <span class="op">=</span> <span class="ident">enable_lsr</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">lsr_backend</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;vault&quot;</span>;
                 <span class="kw">let</span> <span class="ident">fullnode_config</span> <span class="op">=</span> <span class="ident">FullnodeConfig</span> {
                     <span class="ident">fullnode_index</span>,
                     <span class="ident">num_fullnodes_per_validator</span>,
@@ -836,6 +933,9 @@
                     <span class="ident">image_tag</span>: <span class="ident">image_tag</span>.<span class="ident">to_string</span>(),
                     <span class="ident">config_overrides</span>: <span class="ident">config_overrides</span>.<span class="ident">to_vec</span>(),
                     <span class="ident">seed_peer_ip</span>,
+                    <span class="ident">vault_addr</span>,
+                    <span class="ident">vault_namespace</span>,
+                    <span class="ident">enable_mgmt_tool</span>,
                 };
                 <span class="kw">if</span> <span class="ident">clean_data</span> {
                     <span class="self">self</span>.<span class="ident">cluster_swarm</span>
@@ -858,25 +958,24 @@
 
         <span class="kw">let</span> <span class="ident">validators</span> <span class="op">=</span> <span class="ident">try_join_all</span>(<span class="ident">validators</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">fullnodes</span> <span class="op">=</span> <span class="ident">try_join_all</span>(<span class="ident">fullnodes</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((<span class="ident">validators</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">fullnodes</span>))
+        <span class="prelude-val">Ok</span>((<span class="ident">validators</span>, <span class="ident">lsrs</span>, <span class="ident">vaults</span>, <span class="ident">fullnodes</span>, <span class="ident">waypoint</span>))
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">initialize_vault</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">validator_index</span>: <span class="ident">u32</span>, <span class="ident">vault_node</span>: <span class="kw-2">&amp;</span><span class="ident">KubeNode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">vault_node</span>.<span class="ident">internal_ip</span>.<span class="ident">clone</span>();
         <span class="ident">tokio</span>::<span class="ident">task</span>::<span class="ident">spawn_blocking</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">validator_pod_name</span>(<span class="ident">validator_index</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vault_storage</span> <span class="op">=</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">VaultStorage</span>::<span class="ident">new</span>(
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">addr</span>, <span class="ident">VAULT_PORT</span>),
                 <span class="ident">VAULT_TOKEN</span>.<span class="ident">to_string</span>(),
-                <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
                 <span class="prelude-val">None</span>,
             ));
             <span class="kw">if</span> <span class="ident">validator_index</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-                <span class="kw">let</span> <span class="ident">libra_root_key</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}__{}&quot;</span>, <span class="ident">LIBRA_ROOT_NAME</span>, <span class="ident">LIBRA_ROOT_KEY</span>);
-                <span class="ident">vault_storage</span>
-                    .<span class="ident">create_key</span>(<span class="kw-2">&amp;</span><span class="ident">libra_root_key</span>)
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {} : {}&quot;</span>, <span class="ident">libra_root_key</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+                <span class="ident">vault_storage</span>.<span class="ident">create_key</span>(<span class="ident">LIBRA_ROOT_KEY</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}__{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">e</span>)
+                })<span class="question-mark">?</span>;
             }
-            <span class="kw">let</span> <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">validator_pod_name</span>(<span class="ident">validator_index</span>);
             <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">OWNER_KEY</span>,
                 <span class="ident">OPERATOR_KEY</span>,
@@ -886,11 +985,26 @@
                 <span class="ident">FULLNODE_NETWORK_KEY</span>,
             ];
             <span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident">keys</span> {
-                <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}__{}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">key</span>);
                 <span class="ident">vault_storage</span>
-                    .<span class="ident">create_key</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {} : {}&quot;</span>, <span class="ident">key</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+                    .<span class="ident">create_key</span>(<span class="ident">key</span>)
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}__{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">key</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
             }
+            <span class="ident">vault_storage</span>
+                .<span class="ident">set</span>(<span class="ident">EPOCH</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">EPOCH</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            <span class="ident">vault_storage</span>
+                .<span class="ident">set</span>(<span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">e</span>)
+                })<span class="question-mark">?</span>;
+            <span class="ident">vault_storage</span>
+                .<span class="ident">set</span>(<span class="ident">PREFERRED_ROUND</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">PREFERRED_ROUND</span>, <span class="ident">e</span>)
+                })<span class="question-mark">?</span>;
+            <span class="ident">vault_storage</span>
+                .<span class="ident">set</span>(<span class="ident">WAYPOINT</span>, <span class="ident">Value</span>::<span class="ident">String</span>(<span class="string">&quot;&quot;</span>.<span class="ident">into</span>()))
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">WAYPOINT</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>::<span class="op">&lt;</span>(), <span class="ident">anyhow</span>::<span class="ident">Error</span><span class="op">&gt;</span>(())
         })
         .<span class="kw">await</span><span class="question-mark">?</span><span class="question-mark">?</span>;
@@ -903,13 +1017,13 @@
         <span class="ident">vault_nodes</span>: <span class="kw-2">&amp;</span>[<span class="ident">KubeNode</span>],
         <span class="ident">validator_nodes</span>: <span class="kw-2">&amp;</span>[<span class="ident">KubeNode</span>],
         <span class="ident">fullnode_nodes</span>: <span class="kw-2">&amp;</span>[<span class="ident">KubeNode</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">genesis_helper</span> <span class="op">=</span> <span class="ident">GenesisHelper</span>::<span class="ident">new</span>(<span class="string">&quot;/tmp/genesis.json&quot;</span>);
         <span class="kw">let</span> <span class="ident">owners</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_validators</span>).<span class="ident">map</span>(<span class="ident">validator_pod_name</span>).<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span> {
             <span class="ident">owners</span>: <span class="ident">owners</span>.<span class="ident">clone</span>(),
             <span class="ident">operators</span>: <span class="ident">owners</span>,
-            <span class="ident">libra_root</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">LIBRA_ROOT_NAME</span>.<span class="ident">to_string</span>()],
+            <span class="ident">libra_root</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">LIBRA_ROOT_NS</span>.<span class="ident">to_string</span>()],
         };
         <span class="kw">let</span> <span class="ident">layout_path</span> <span class="op">=</span> <span class="string">&quot;/tmp/layout.yaml&quot;</span>;
         <span class="macro">write</span><span class="macro">!</span>(
@@ -942,8 +1056,8 @@
                 <span class="ident">VAULT_BACKEND</span>,
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">vault_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
                 <span class="ident">token_path</span>,
-                <span class="ident">LIBRA_ROOT_NAME</span>,
-                <span class="ident">LIBRA_ROOT_NAME</span>,
+                <span class="ident">LIBRA_ROOT_NS</span>,
+                <span class="ident">LIBRA_ROOT_NS</span>,
             )
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to libra_root_key : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
@@ -970,6 +1084,11 @@
                 )
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to operator_key for {} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">fullnode_ip</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">fullnode_nodes</span>.<span class="ident">is_empty</span>() {
+                <span class="string">&quot;0.0.0.0&quot;</span>
+            } <span class="kw">else</span> {
+                <span class="kw-2">&amp;</span><span class="ident">fullnode_nodes</span>[<span class="ident">i</span>].<span class="ident">internal_ip</span>
+            };
             <span class="ident">genesis_helper</span>
                 .<span class="ident">validator_config</span>(
                     <span class="kw-2">&amp;</span><span class="ident">pod_name</span>,
@@ -977,11 +1096,9 @@
                         <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;/ip4/{}/tcp/{}&quot;</span>, <span class="ident">validator_nodes</span>[<span class="ident">i</span>].<span class="ident">internal_ip</span>, <span class="number">6180</span>).<span class="ident">as_str</span>(),
                     )
                     .<span class="ident">expect</span>(<span class="string">&quot;Failed to parse network address&quot;</span>),
-                    <span class="ident">NetworkAddress</span>::<span class="ident">from_str</span>(
-                        <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;/ip4/{}/tcp/{}&quot;</span>, <span class="ident">fullnode_nodes</span>[<span class="ident">i</span>].<span class="ident">internal_ip</span>, <span class="number">6180</span>).<span class="ident">as_str</span>(),
-                    )
-                    .<span class="ident">expect</span>(<span class="string">&quot;Failed to parse network address&quot;</span>),
-                    <span class="ident">ChainId</span>::<span class="ident">new</span>(<span class="number">1</span>),
+                    <span class="ident">NetworkAddress</span>::<span class="ident">from_str</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;/ip4/{}/tcp/{}&quot;</span>, <span class="ident">fullnode_ip</span>, <span class="number">6180</span>).<span class="ident">as_str</span>())
+                        .<span class="ident">expect</span>(<span class="string">&quot;Failed to parse network address&quot;</span>),
+                    <span class="ident">ChainId</span>::<span class="ident">test</span>(),
                     <span class="ident">VAULT_BACKEND</span>,
                     <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">node</span>.<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
                     <span class="ident">token_path</span>,
@@ -996,13 +1113,17 @@
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to set_operator for {} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         }
         <span class="ident">genesis_helper</span>
-            .<span class="ident">genesis</span>(<span class="ident">ChainId</span>::<span class="ident">new</span>(<span class="number">1</span>), <span class="ident">Path</span>::<span class="ident">new</span>(<span class="ident">GENESIS_PATH</span>))
+            .<span class="ident">genesis</span>(<span class="ident">ChainId</span>::<span class="ident">test</span>(), <span class="ident">Path</span>::<span class="ident">new</span>(<span class="ident">GENESIS_PATH</span>))
             .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="ident">genesis_helper</span>
+            .<span class="ident">create_waypoint</span>(<span class="ident">ChainId</span>::<span class="ident">test</span>())
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create_waypoint : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">node</span>) <span class="kw">in</span> <span class="ident">vault_nodes</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">validator_pod_name</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>);
             <span class="ident">genesis_helper</span>
                 .<span class="ident">create_and_insert_waypoint</span>(
-                    <span class="ident">ChainId</span>::<span class="ident">new</span>(<span class="number">1</span>),
+                    <span class="ident">ChainId</span>::<span class="ident">test</span>(),
                     <span class="ident">VAULT_BACKEND</span>,
                     <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">node</span>.<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
                     <span class="ident">token_path</span>,
@@ -1019,7 +1140,7 @@
         }
         <span class="ident">genesis_helper</span>
             .<span class="ident">extract_private_key</span>(
-                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}__{}&quot;</span>, <span class="ident">LIBRA_ROOT_NAME</span>, <span class="ident">LIBRA_ROOT_KEY</span>).<span class="ident">as_str</span>(),
+                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}__{}&quot;</span>, <span class="ident">LIBRA_ROOT_NS</span>, <span class="ident">LIBRA_ROOT_KEY</span>).<span class="ident">as_str</span>(),
                 <span class="string">&quot;/tmp/mint.key&quot;</span>,
                 <span class="ident">VAULT_BACKEND</span>,
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">vault_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
@@ -1027,28 +1148,7 @@
             )
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to extract_private_key : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-
-        <span class="ident">try_join_all</span>(
-            <span class="ident">validator_nodes</span>
-                .<span class="ident">iter</span>()
-                .<span class="ident">enumerate</span>()
-                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">node</span>)<span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-                    <span class="kw">let</span> <span class="ident">genesis</span> <span class="op">=</span> <span class="ident">fs</span>::<span class="ident">read</span>(<span class="ident">GENESIS_PATH</span>)
-                        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to read {} : {}&quot;</span>, <span class="ident">GENESIS_PATH</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-                    <span class="self">self</span>.<span class="ident">cluster_swarm</span>
-                        .<span class="ident">put_file</span>(
-                            <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
-                            <span class="ident">validator_pod_name</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>).<span class="ident">as_str</span>(),
-                            <span class="string">&quot;/opt/libra/etc/genesis2.blob&quot;</span>,
-                            <span class="ident">genesis</span>,
-                        )
-                        .<span class="kw">await</span>
-                }),
-        )
-        .<span class="kw">await</span>
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to copy genesis.blob to validator nodes : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-
-        <span class="prelude-val">Ok</span>(())
+        <span class="prelude-val">Ok</span>(<span class="ident">waypoint</span>)
     }
 }
 </pre></div>
