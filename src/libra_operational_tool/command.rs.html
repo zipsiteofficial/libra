@@ -257,6 +257,16 @@
 <span id="257">257</span>
 <span id="258">258</span>
 <span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -268,13 +278,15 @@
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>, <span class="ident">x25519</span>};
 <span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">execute_command</span>};
 <span class="kw">use</span> <span class="ident">libra_secure_json_rpc</span>::<span class="ident">VMStatusView</span>;
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">account_config</span>::<span class="ident">AccountResource</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Tool used for Operators&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Command</span> {
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Displays the current account resource on the blockchain&quot;</span>)]</span>
+    <span class="ident">AccountResource</span>(<span class="kw">crate</span>::<span class="ident">account_resource</span>::<span class="ident">AccountResource</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Remove a validator from ValidatorSet&quot;</span>)]</span>
     <span class="ident">AddValidator</span>(<span class="kw">crate</span>::<span class="ident">governance</span>::<span class="ident">AddValidator</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Extract a private key from the validator storage&quot;</span>)]</span>
@@ -292,7 +304,7 @@
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a full node network key&quot;</span>)]</span>
     <span class="ident">RotateFullNodeNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateFullNodeNetworkKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates the operator key for the operator&quot;</span>)]</span>
-    <span class="ident">RotateOperatorKey</span>(<span class="kw">crate</span>::<span class="ident">operator_key</span>::<span class="ident">RotateOperatorKey</span>),
+    <span class="ident">RotateOperatorKey</span>(<span class="kw">crate</span>::<span class="ident">account_resource</span>::<span class="ident">RotateOperatorKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates a validator network key&quot;</span>)]</span>
     <span class="ident">RotateValidatorNetworkKey</span>(<span class="kw">crate</span>::<span class="ident">validator_config</span>::<span class="ident">RotateValidatorNetworkKey</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Sets the validator config&quot;</span>)]</span>
@@ -307,6 +319,7 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">CommandName</span> {
+    <span class="ident">AccountResource</span>,
     <span class="ident">AddValidator</span>,
     <span class="ident">ExtractPrivateKey</span>,
     <span class="ident">ExtractPublicKey</span>,
@@ -326,6 +339,7 @@
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Command</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CommandName</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">command</span> {
+            <span class="ident">Command</span>::<span class="ident">AccountResource</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">AccountResource</span>,
             <span class="ident">Command</span>::<span class="ident">AddValidator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">AddValidator</span>,
             <span class="ident">Command</span>::<span class="ident">ExtractPrivateKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ExtractPrivateKey</span>,
             <span class="ident">Command</span>::<span class="ident">ExtractPublicKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ExtractPublicKey</span>,
@@ -347,6 +361,7 @@
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">CommandName</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">CommandName</span>::<span class="ident">AccountResource</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;account-resource&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">AddValidator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;add-validator&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ExtractPrivateKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;extract-private-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ExtractPublicKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;extract-public-key&quot;</span>,
@@ -369,6 +384,7 @@
 <span class="kw">impl</span> <span class="ident">Command</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Command</span>::<span class="ident">AccountResource</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">AddValidator</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_success</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">ExtractPrivateKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_success</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
@@ -417,6 +433,10 @@
         };
 
         <span class="ident">serde_json</span>::<span class="ident">to_string_pretty</span>(<span class="kw-2">&amp;</span><span class="ident">result</span>).<span class="ident">unwrap</span>()
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account_resource</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountResource</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="macro">execute_command</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Command</span>::<span class="ident">AccountResource</span>, <span class="ident">CommandName</span>::<span class="ident">AccountResource</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_validator</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionContext</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
