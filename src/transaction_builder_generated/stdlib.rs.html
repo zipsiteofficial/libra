@@ -2185,6 +2185,17 @@
 <span id="2185">2185</span>
 <span id="2186">2186</span>
 <span id="2187">2187</span>
+<span id="2188">2188</span>
+<span id="2189">2189</span>
+<span id="2190">2190</span>
+<span id="2191">2191</span>
+<span id="2192">2192</span>
+<span id="2193">2193</span>
+<span id="2194">2194</span>
+<span id="2195">2195</span>
+<span id="2196">2196</span>
+<span id="2197">2197</span>
+<span id="2198">2198</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2233,6 +2244,9 @@
     <span class="doccomment">/// * Aborts with `RecoveryAddress:ENOT_A_RECOVERY_ADDRESS` if `recovery_address` does not have a `RecoveryAddress` resource.</span>
     <span class="doccomment">/// * Aborts with `RecoveryAddress::EINVALID_KEY_ROTATION_DELEGATION` if `to_recover_account` and `recovery_address` do not belong to the same VASP.</span>
     <span class="ident">AddRecoveryRotationCapability</span> { <span class="ident">recovery_address</span>: <span class="ident">AccountAddress</span> },
+
+    <span class="doccomment">/// Append the `hash` to script hashes list allowed to be executed by the network.</span>
+    <span class="ident">AddToScriptAllowList</span> { <span class="ident">hash</span>: <span class="ident">Bytes</span>, <span class="ident">sliding_nonce</span>: <span class="ident">u64</span> },
 
     <span class="doccomment">/// Add `new_validator` to the validator set.</span>
     <span class="doccomment">/// Fails if the `new_validator` address is already in the validator set</span>
@@ -2367,9 +2381,6 @@
     <span class="doccomment">/// Mint `amount_lbr` LBR from the sending account&#39;s constituent coins and deposits the</span>
     <span class="doccomment">/// resulting LBR into the sending account.</span>
     <span class="ident">MintLbr</span> { <span class="ident">amount_lbr</span>: <span class="ident">u64</span> },
-
-    <span class="doccomment">/// Modify publishing options. Takes the LCS bytes of a `VMPublishingOption` object as input.</span>
-    <span class="ident">ModifyPublishingOption</span> { <span class="ident">args</span>: <span class="ident">Bytes</span> },
 
     <span class="doccomment">/// Transfer `amount` coins of type `Currency` from `payer` to `payee` with (optional) associated</span>
     <span class="doccomment">/// `metadata` and an (optional) `metadata_signature` on the message</span>
@@ -2572,6 +2583,10 @@
             <span class="ident">AddRecoveryRotationCapability</span> { <span class="ident">recovery_address</span> } <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">encode_add_recovery_rotation_capability_script</span>(<span class="ident">recovery_address</span>)
             }
+            <span class="ident">AddToScriptAllowList</span> {
+                <span class="ident">hash</span>,
+                <span class="ident">sliding_nonce</span>,
+            } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">encode_add_to_script_allow_list_script</span>(<span class="ident">hash</span>, <span class="ident">sliding_nonce</span>),
             <span class="ident">AddValidatorAndReconfigure</span> {
                 <span class="ident">sliding_nonce</span>,
                 <span class="ident">validator_name</span>,
@@ -2681,7 +2696,6 @@
                 <span class="ident">to_freeze_account</span>,
             } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">encode_freeze_account_script</span>(<span class="ident">sliding_nonce</span>, <span class="ident">to_freeze_account</span>),
             <span class="ident">MintLbr</span> { <span class="ident">amount_lbr</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">encode_mint_lbr_script</span>(<span class="ident">amount_lbr</span>),
-            <span class="ident">ModifyPublishingOption</span> { <span class="ident">args</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">encode_modify_publishing_option_script</span>(<span class="ident">args</span>),
             <span class="ident">PeerToPeerWithMetadata</span> {
                 <span class="ident">currency</span>,
                 <span class="ident">payee</span>,
@@ -2852,6 +2866,18 @@
         <span class="ident">ADD_RECOVERY_ROTATION_CAPABILITY_CODE</span>.<span class="ident">to_vec</span>(),
         <span class="macro">vec</span><span class="macro">!</span>[],
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">TransactionArgument</span>::<span class="ident">Address</span>(<span class="ident">recovery_address</span>)],
+    )
+}
+
+<span class="doccomment">/// Append the `hash` to script hashes list allowed to be executed by the network.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_add_to_script_allow_list_script</span>(<span class="ident">hash</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">sliding_nonce</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Script</span> {
+    <span class="ident">Script</span>::<span class="ident">new</span>(
+        <span class="ident">ADD_TO_SCRIPT_ALLOW_LIST_CODE</span>.<span class="ident">to_vec</span>(),
+        <span class="macro">vec</span><span class="macro">!</span>[],
+        <span class="macro">vec</span><span class="macro">!</span>[
+            <span class="ident">TransactionArgument</span>::<span class="ident">U8Vector</span>(<span class="ident">hash</span>),
+            <span class="ident">TransactionArgument</span>::<span class="ident">U64</span>(<span class="ident">sliding_nonce</span>),
+        ],
     )
 }
 
@@ -3098,15 +3124,6 @@
         <span class="ident">MINT_LBR_CODE</span>.<span class="ident">to_vec</span>(),
         <span class="macro">vec</span><span class="macro">!</span>[],
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">TransactionArgument</span>::<span class="ident">U64</span>(<span class="ident">amount_lbr</span>)],
-    )
-}
-
-<span class="doccomment">/// Modify publishing options. Takes the LCS bytes of a `VMPublishingOption` object as input.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_modify_publishing_option_script</span>(<span class="ident">args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Script</span> {
-    <span class="ident">Script</span>::<span class="ident">new</span>(
-        <span class="ident">MODIFY_PUBLISHING_OPTION_CODE</span>.<span class="ident">to_vec</span>(),
-        <span class="macro">vec</span><span class="macro">!</span>[],
-        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">TransactionArgument</span>::<span class="ident">U8Vector</span>(<span class="ident">args</span>)],
     )
 }
 
@@ -3503,6 +3520,13 @@
     })
 }
 
+<span class="kw">fn</span> <span class="ident">decode_add_to_script_allow_list_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ScriptCall</span><span class="op">&gt;</span> {
+    <span class="prelude-val">Some</span>(<span class="ident">ScriptCall</span>::<span class="ident">AddToScriptAllowList</span> {
+        <span class="ident">hash</span>: <span class="ident">decode_u8vector_argument</span>(<span class="ident">script</span>.<span class="ident">args</span>().<span class="ident">get</span>(<span class="number">0</span>)<span class="question-mark">?</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
+        <span class="ident">sliding_nonce</span>: <span class="ident">decode_u64_argument</span>(<span class="ident">script</span>.<span class="ident">args</span>().<span class="ident">get</span>(<span class="number">1</span>)<span class="question-mark">?</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
+    })
+}
+
 <span class="kw">fn</span> <span class="ident">decode_add_validator_and_reconfigure_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ScriptCall</span><span class="op">&gt;</span> {
     <span class="prelude-val">Some</span>(<span class="ident">ScriptCall</span>::<span class="ident">AddValidatorAndReconfigure</span> {
         <span class="ident">sliding_nonce</span>: <span class="ident">decode_u64_argument</span>(<span class="ident">script</span>.<span class="ident">args</span>().<span class="ident">get</span>(<span class="number">0</span>)<span class="question-mark">?</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
@@ -3609,12 +3633,6 @@
 <span class="kw">fn</span> <span class="ident">decode_mint_lbr_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ScriptCall</span><span class="op">&gt;</span> {
     <span class="prelude-val">Some</span>(<span class="ident">ScriptCall</span>::<span class="ident">MintLbr</span> {
         <span class="ident">amount_lbr</span>: <span class="ident">decode_u64_argument</span>(<span class="ident">script</span>.<span class="ident">args</span>().<span class="ident">get</span>(<span class="number">0</span>)<span class="question-mark">?</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
-    })
-}
-
-<span class="kw">fn</span> <span class="ident">decode_modify_publishing_option_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ScriptCall</span><span class="op">&gt;</span> {
-    <span class="prelude-val">Some</span>(<span class="ident">ScriptCall</span>::<span class="ident">ModifyPublishingOption</span> {
-        <span class="ident">args</span>: <span class="ident">decode_u8vector_argument</span>(<span class="ident">script</span>.<span class="ident">args</span>().<span class="ident">get</span>(<span class="number">0</span>)<span class="question-mark">?</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
     })
 }
 
@@ -3798,6 +3816,10 @@
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_add_recovery_rotation_capability_script</span>),
     );
     <span class="ident">map</span>.<span class="ident">insert</span>(
+        <span class="ident">ADD_TO_SCRIPT_ALLOW_LIST_CODE</span>.<span class="ident">to_vec</span>(),
+        <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_add_to_script_allow_list_script</span>),
+    );
+    <span class="ident">map</span>.<span class="ident">insert</span>(
         <span class="ident">ADD_VALIDATOR_AND_RECONFIGURE_CODE</span>.<span class="ident">to_vec</span>(),
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_add_validator_and_reconfigure_script</span>),
     );
@@ -3843,10 +3865,6 @@
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_freeze_account_script</span>),
     );
     <span class="ident">map</span>.<span class="ident">insert</span>(<span class="ident">MINT_LBR_CODE</span>.<span class="ident">to_vec</span>(), <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_mint_lbr_script</span>));
-    <span class="ident">map</span>.<span class="ident">insert</span>(
-        <span class="ident">MODIFY_PUBLISHING_OPTION_CODE</span>.<span class="ident">to_vec</span>(),
-        <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_modify_publishing_option_script</span>),
-    );
     <span class="ident">map</span>.<span class="ident">insert</span>(
         <span class="ident">PEER_TO_PEER_WITH_METADATA_CODE</span>.<span class="ident">to_vec</span>(),
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">decode_peer_to_peer_with_metadata_script</span>),
@@ -3995,6 +4013,17 @@
     <span class="number">5</span>, <span class="number">11</span>, <span class="number">0</span>, <span class="number">17</span>, <span class="number">0</span>, <span class="number">10</span>, <span class="number">1</span>, <span class="number">17</span>, <span class="number">1</span>, <span class="number">2</span>,
 ];
 
+<span class="kw">const</span> <span class="ident">ADD_TO_SCRIPT_ALLOW_LIST_CODE</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
+    <span class="number">161</span>, <span class="number">28</span>, <span class="number">235</span>, <span class="number">11</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">10</span>, <span class="number">5</span>, <span class="number">14</span>, <span class="number">16</span>, <span class="number">7</span>, <span class="number">30</span>, <span class="number">93</span>, <span class="number">8</span>, <span class="number">123</span>, <span class="number">16</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
+    <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">3</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">32</span>, <span class="number">76</span>,
+    <span class="number">105</span>, <span class="number">98</span>, <span class="number">114</span>, <span class="number">97</span>, <span class="number">84</span>, <span class="number">114</span>, <span class="number">97</span>, <span class="number">110</span>, <span class="number">115</span>, <span class="number">97</span>, <span class="number">99</span>, <span class="number">116</span>, <span class="number">105</span>, <span class="number">111</span>, <span class="number">110</span>, <span class="number">80</span>, <span class="number">117</span>, <span class="number">98</span>, <span class="number">108</span>, <span class="number">105</span>,
+    <span class="number">115</span>, <span class="number">104</span>, <span class="number">105</span>, <span class="number">110</span>, <span class="number">103</span>, <span class="number">79</span>, <span class="number">112</span>, <span class="number">116</span>, <span class="number">105</span>, <span class="number">111</span>, <span class="number">110</span>, <span class="number">12</span>, <span class="number">83</span>, <span class="number">108</span>, <span class="number">105</span>, <span class="number">100</span>, <span class="number">105</span>, <span class="number">110</span>, <span class="number">103</span>, <span class="number">78</span>,
+    <span class="number">111</span>, <span class="number">110</span>, <span class="number">99</span>, <span class="number">101</span>, <span class="number">24</span>, <span class="number">97</span>, <span class="number">100</span>, <span class="number">100</span>, <span class="number">95</span>, <span class="number">116</span>, <span class="number">111</span>, <span class="number">95</span>, <span class="number">115</span>, <span class="number">99</span>, <span class="number">114</span>, <span class="number">105</span>, <span class="number">112</span>, <span class="number">116</span>, <span class="number">95</span>, <span class="number">97</span>,
+    <span class="number">108</span>, <span class="number">108</span>, <span class="number">111</span>, <span class="number">119</span>, <span class="number">95</span>, <span class="number">108</span>, <span class="number">105</span>, <span class="number">115</span>, <span class="number">116</span>, <span class="number">21</span>, <span class="number">114</span>, <span class="number">101</span>, <span class="number">99</span>, <span class="number">111</span>, <span class="number">114</span>, <span class="number">100</span>, <span class="number">95</span>, <span class="number">110</span>, <span class="number">111</span>, <span class="number">110</span>,
+    <span class="number">99</span>, <span class="number">101</span>, <span class="number">95</span>, <span class="number">111</span>, <span class="number">114</span>, <span class="number">95</span>, <span class="number">97</span>, <span class="number">98</span>, <span class="number">111</span>, <span class="number">114</span>, <span class="number">116</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
+    <span class="number">1</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">7</span>, <span class="number">10</span>, <span class="number">0</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">17</span>, <span class="number">1</span>, <span class="number">11</span>, <span class="number">0</span>, <span class="number">11</span>, <span class="number">1</span>, <span class="number">17</span>, <span class="number">0</span>, <span class="number">2</span>,
+];
+
 <span class="kw">const</span> <span class="ident">ADD_VALIDATOR_AND_RECONFIGURE_CODE</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
     <span class="number">161</span>, <span class="number">28</span>, <span class="number">235</span>, <span class="number">11</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">6</span>, <span class="number">3</span>, <span class="number">6</span>, <span class="number">15</span>, <span class="number">5</span>, <span class="number">21</span>, <span class="number">24</span>, <span class="number">7</span>, <span class="number">45</span>, <span class="number">92</span>, <span class="number">8</span>, <span class="number">137</span>, <span class="number">1</span>, <span class="number">16</span>, <span class="number">0</span>, <span class="number">0</span>,
     <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">5</span>, <span class="number">1</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">6</span>,
@@ -4133,13 +4162,6 @@
     <span class="number">119</span>, <span class="number">95</span>, <span class="number">99</span>, <span class="number">97</span>, <span class="number">112</span>, <span class="number">97</span>, <span class="number">98</span>, <span class="number">105</span>, <span class="number">108</span>, <span class="number">105</span>, <span class="number">116</span>, <span class="number">121</span>, <span class="number">10</span>, <span class="number">115</span>, <span class="number">116</span>, <span class="number">97</span>, <span class="number">112</span>, <span class="number">108</span>, <span class="number">101</span>, <span class="number">95</span>,
     <span class="number">108</span>, <span class="number">98</span>, <span class="number">114</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">1</span>, <span class="number">9</span>, <span class="number">11</span>, <span class="number">0</span>, <span class="number">17</span>, <span class="number">0</span>, <span class="number">12</span>, <span class="number">2</span>,
     <span class="number">14</span>, <span class="number">2</span>, <span class="number">10</span>, <span class="number">1</span>, <span class="number">17</span>, <span class="number">2</span>, <span class="number">11</span>, <span class="number">2</span>, <span class="number">17</span>, <span class="number">1</span>, <span class="number">2</span>,
-];
-
-<span class="kw">const</span> <span class="ident">MODIFY_PUBLISHING_OPTION_CODE</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
-    <span class="number">161</span>, <span class="number">28</span>, <span class="number">235</span>, <span class="number">11</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">5</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">5</span>, <span class="number">5</span>, <span class="number">7</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">13</span>, <span class="number">36</span>, <span class="number">8</span>, <span class="number">49</span>, <span class="number">16</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>,
-    <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">6</span>, <span class="number">12</span>, <span class="number">10</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">13</span>, <span class="number">76</span>, <span class="number">105</span>, <span class="number">98</span>, <span class="number">114</span>, <span class="number">97</span>, <span class="number">86</span>, <span class="number">77</span>, <span class="number">67</span>, <span class="number">111</span>, <span class="number">110</span>, <span class="number">102</span>, <span class="number">105</span>, <span class="number">103</span>, <span class="number">21</span>,
-    <span class="number">115</span>, <span class="number">101</span>, <span class="number">116</span>, <span class="number">95</span>, <span class="number">112</span>, <span class="number">117</span>, <span class="number">98</span>, <span class="number">108</span>, <span class="number">105</span>, <span class="number">115</span>, <span class="number">104</span>, <span class="number">105</span>, <span class="number">110</span>, <span class="number">103</span>, <span class="number">95</span>, <span class="number">111</span>, <span class="number">112</span>, <span class="number">116</span>, <span class="number">105</span>,
-    <span class="number">111</span>, <span class="number">110</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">4</span>, <span class="number">11</span>, <span class="number">0</span>, <span class="number">11</span>, <span class="number">1</span>, <span class="number">17</span>, <span class="number">0</span>, <span class="number">2</span>,
 ];
 
 <span class="kw">const</span> <span class="ident">PEER_TO_PEER_WITH_METADATA_CODE</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[

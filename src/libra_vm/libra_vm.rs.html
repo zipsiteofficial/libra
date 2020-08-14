@@ -521,13 +521,28 @@
 <span id="521">521</span>
 <span id="522">522</span>
 <span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">access_path_cache</span>::<span class="ident">AccessPathCache</span>,
-    <span class="ident">data_cache</span>::{<span class="ident">RemoteStorage</span>, <span class="ident">StateViewCache</span>},
+    <span class="ident">data_cache</span>::<span class="ident">RemoteStorage</span>,
     <span class="ident">errors</span>::{
         <span class="ident">convert_normal_prologue_error</span>, <span class="ident">convert_normal_success_epilogue_error</span>,
         <span class="ident">convert_write_set_prologue_error</span>, <span class="ident">expect_only_successful_execution</span>,
@@ -542,8 +557,8 @@
     <span class="ident">account_config</span>,
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>,
     <span class="ident">event</span>::<span class="ident">EventKey</span>,
-    <span class="ident">on_chain_config</span>::{<span class="ident">ConfigStorage</span>, <span class="ident">LibraVersion</span>, <span class="ident">OnChainConfig</span>, <span class="ident">VMConfig</span>},
-    <span class="ident">transaction</span>::{<span class="ident">ChangeSet</span>, <span class="ident">Script</span>, <span class="ident">TransactionOutput</span>, <span class="ident">TransactionStatus</span>},
+    <span class="ident">on_chain_config</span>::{<span class="ident">ConfigStorage</span>, <span class="ident">LibraVersion</span>, <span class="ident">OnChainConfig</span>, <span class="ident">VMConfig</span>, <span class="ident">VMPublishingOption</span>},
+    <span class="ident">transaction</span>::{<span class="ident">ChangeSet</span>, <span class="ident">TransactionOutput</span>, <span class="ident">TransactionStatus</span>},
     <span class="ident">vm_status</span>::{<span class="ident">KeptVMStatus</span>, <span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>},
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>, <span class="ident">WriteSetMut</span>},
 };
@@ -571,6 +586,7 @@
     <span class="ident">move_vm</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">MoveVM</span><span class="op">&gt;</span>,
     <span class="ident">on_chain_config</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VMConfig</span><span class="op">&gt;</span>,
     <span class="ident">version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LibraVersion</span><span class="op">&gt;</span>,
+    <span class="ident">publishing_option</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VMPublishingOption</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">LibraVMImpl</span> {
@@ -581,17 +597,23 @@
             <span class="ident">move_vm</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">inner</span>),
             <span class="ident">on_chain_config</span>: <span class="prelude-val">None</span>,
             <span class="ident">version</span>: <span class="prelude-val">None</span>,
+            <span class="ident">publishing_option</span>: <span class="prelude-val">None</span>,
         };
         <span class="ident">vm</span>.<span class="ident">load_configs_impl</span>(<span class="kw-2">&amp;</span><span class="ident">RemoteStorage</span>::<span class="ident">new</span>(<span class="ident">state</span>));
         <span class="ident">vm</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_with_config</span>(<span class="ident">version</span>: <span class="ident">LibraVersion</span>, <span class="ident">on_chain_config</span>: <span class="ident">VMConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_with_config</span>(
+        <span class="ident">version</span>: <span class="ident">LibraVersion</span>,
+        <span class="ident">on_chain_config</span>: <span class="ident">VMConfig</span>,
+        <span class="ident">publishing_option</span>: <span class="ident">VMPublishingOption</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">MoveVM</span>::<span class="ident">new</span>();
         <span class="self">Self</span> {
             <span class="ident">move_vm</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">inner</span>),
             <span class="ident">on_chain_config</span>: <span class="prelude-val">Some</span>(<span class="ident">on_chain_config</span>),
             <span class="ident">version</span>: <span class="prelude-val">Some</span>(<span class="ident">version</span>),
+            <span class="ident">publishing_option</span>: <span class="prelude-val">Some</span>(<span class="ident">publishing_option</span>),
         }
     }
 
@@ -600,9 +622,9 @@
         <span class="ident">LibraVMInternals</span>(<span class="self">self</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">on_chain_config</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMConfig</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">on_chain_config</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. On Chain Config Not Found&quot;</span>);
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">publishing_option</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMPublishingOption</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">publishing_option</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. PublishingOption Not Found&quot;</span>);
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
         })
     }
@@ -610,6 +632,7 @@
     <span class="kw">fn</span> <span class="ident">load_configs_impl</span><span class="op">&lt;</span><span class="ident">S</span>: <span class="ident">ConfigStorage</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">data_cache</span>: <span class="kw-2">&amp;</span><span class="ident">S</span>) {
         <span class="self">self</span>.<span class="ident">on_chain_config</span> <span class="op">=</span> <span class="ident">VMConfig</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
         <span class="self">self</span>.<span class="ident">version</span> <span class="op">=</span> <span class="ident">LibraVersion</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
+        <span class="self">self</span>.<span class="ident">publishing_option</span> <span class="op">=</span> <span class="ident">VMPublishingOption</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
@@ -702,39 +725,9 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_allowed_script</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>
-            .<span class="ident">on_chain_config</span>()<span class="question-mark">?</span>
-            .<span class="ident">publishing_option</span>
-            .<span class="ident">is_allowed_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">code</span>())
-        {
-            <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;[VM] Custom scripts not allowed: {:?}&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">code</span>());
-            <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_SCRIPT</span>))
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Ok</span>(())
-        }
-    }
-
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_allowed_module</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
-        <span class="ident">_remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="kw-2">&amp;</span><span class="self">self</span>
-            .<span class="ident">on_chain_config</span>()<span class="question-mark">?</span>
-            .<span class="ident">publishing_option</span>
-            .<span class="ident">is_allowed_module</span>(<span class="kw-2">&amp;</span><span class="ident">txn_data</span>.<span class="ident">sender</span>)
-        {
-            <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;[VM] Custom modules not allowed&quot;</span>);
-            <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_PUBLISHER</span>))
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Ok</span>(())
-        }
-    }
-
-    <span class="doccomment">/// Run the prologue of a transaction by calling into `PROLOGUE_NAME` function stored</span>
+    <span class="doccomment">/// Run the prologue of a transaction by calling into `SCRIPT_PROLOGUE_NAME` function stored</span>
     <span class="doccomment">/// in the `ACCOUNT_MODULE` on chain.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">run_prologue</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">run_script_prologue</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
@@ -751,7 +744,44 @@
         <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">chain_id</span>();
         <span class="ident">session</span>.<span class="ident">execute_function</span>(
             <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">PROLOGUE_NAME</span>,
+            <span class="kw-2">&amp;</span><span class="ident">SCRIPT_PROLOGUE_NAME</span>,
+            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
+            <span class="macro">vec</span><span class="macro">!</span>[
+                <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
+                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_sequence_number</span>),
+                <span class="ident">Value</span>::<span class="ident">vector_u8</span>(<span class="ident">txn_public_key</span>),
+                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_gas_price</span>),
+                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_max_gas_units</span>),
+                <span class="ident">Value</span>::<span class="ident">u64</span>(<span class="ident">txn_expiration_timestamp_secs</span>),
+                <span class="ident">Value</span>::<span class="ident">u8</span>(<span class="ident">chain_id</span>.<span class="ident">id</span>()),
+                <span class="ident">Value</span>::<span class="ident">vector_u8</span>(<span class="ident">txn_data</span>.<span class="ident">script_hash</span>.<span class="ident">clone</span>()),
+            ],
+            <span class="ident">txn_data</span>.<span class="ident">sender</span>,
+            <span class="ident">cost_strategy</span>,
+            <span class="ident">convert_normal_prologue_error</span>,
+        )
+    }
+
+    <span class="doccomment">/// Run the prologue of a transaction by calling into `MODULE_PROLOGUE_NAME` function stored</span>
+    <span class="doccomment">/// in the `ACCOUNT_MODULE` on chain.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">run_module_prologue</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
+        <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
+        <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
+        <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
+            <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
+        <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
+        <span class="kw">let</span> <span class="ident">txn_public_key</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">authentication_key_preimage</span>().<span class="ident">to_vec</span>();
+        <span class="kw">let</span> <span class="ident">txn_gas_price</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>();
+        <span class="kw">let</span> <span class="ident">txn_max_gas_units</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>();
+        <span class="kw">let</span> <span class="ident">txn_expiration_timestamp_secs</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">expiration_timestamp_secs</span>();
+        <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">chain_id</span>();
+        <span class="ident">session</span>.<span class="ident">execute_function</span>(
+            <span class="kw-2">&amp;</span><span class="ident">account_config</span>::<span class="ident">ACCOUNT_MODULE</span>,
+            <span class="kw-2">&amp;</span><span class="ident">MODULE_PROLOGUE_NAME</span>,
             <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">gas_currency_ty</span>],
             <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
@@ -845,7 +875,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">gas_schedule</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
         <span class="ident">session</span>.<span class="ident">execute_function</span>(
             <span class="kw-2">&amp;</span><span class="ident">LIBRA_WRITESET_MANAGER_MODULE</span>,
-            <span class="kw-2">&amp;</span><span class="ident">PROLOGUE_NAME</span>,
+            <span class="kw-2">&amp;</span><span class="ident">WRITESET_PROLOGUE_NAME</span>,
             <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>),
