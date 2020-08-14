@@ -351,17 +351,6 @@
 <span id="351">351</span>
 <span id="352">352</span>
 <span id="353">353</span>
-<span id="354">354</span>
-<span id="355">355</span>
-<span id="356">356</span>
-<span id="357">357</span>
-<span id="358">358</span>
-<span id="359">359</span>
-<span id="360">360</span>
-<span id="361">361</span>
-<span id="362">362</span>
-<span id="363">363</span>
-<span id="364">364</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -395,12 +384,11 @@
 <span class="doccomment">//! use serde_json::Value;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! pub struct StructuredLogEntry {</span>
-<span class="doccomment">//!     text: Option&lt;String&gt;,</span>
+<span class="doccomment">//!     log: Option&lt;String&gt;,</span>
 <span class="doccomment">//!     pattern: Option&lt;&amp;&#39;static str&gt;,</span>
 <span class="doccomment">//!     name: Option&lt;&amp;&#39;static str&gt;,</span>
 <span class="doccomment">//!     module: Option&lt;&amp;&#39;static str&gt;,</span>
 <span class="doccomment">//!     location: Option&lt;&amp;&#39;static str&gt;,</span>
-<span class="doccomment">//!     git_rev: Option&lt;&amp;&#39;static str&gt;,</span>
 <span class="doccomment">//!     data: HashMap&lt;&amp;&#39;static str, Value&gt;,</span>
 <span class="doccomment">//! }</span>
 <span class="doccomment">//!</span>
@@ -421,7 +409,7 @@
 <span class="doccomment">//! Only static strings are allowed as field names.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! send_struct_log! should be used to send structured log entry.</span>
-<span class="doccomment">//! This macro populates metadata such as git_rev, location and module, and also skips evaluation of StructuredLogEntry entirely, if structured logging is disabled</span>
+<span class="doccomment">//! This macro populates metadata such as location and module, and also skips evaluation of StructuredLogEntry entirely, if structured logging is disabled</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Log macro bridge</span>
 <span class="doccomment">//!</span>
@@ -617,9 +605,8 @@
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">struct_log_enabled</span><span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">entry</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>;
-            <span class="ident">entry</span>.<span class="ident">module</span>(<span class="macro">module_path</span><span class="macro">!</span>());
-            <span class="ident">entry</span>.<span class="ident">location</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">location</span><span class="op">!</span>());
-            <span class="ident">entry</span>.<span class="ident">git_rev</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">git_rev</span><span class="op">!</span>());
+            <span class="ident">entry</span>.<span class="ident">add_module</span>(<span class="macro">module_path</span><span class="macro">!</span>());
+            <span class="ident">entry</span>.<span class="ident">add_location</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">location</span><span class="op">!</span>());
             <span class="ident">entry</span> <span class="op">=</span> <span class="ident">entry</span>.<span class="ident">level</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>);
             <span class="ident">entry</span>.<span class="ident">send</span>();
             <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">counters</span>::<span class="ident">STRUCT_LOG_COUNT</span>.<span class="ident">inc</span>();
@@ -629,9 +616,8 @@
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">struct_logger_set</span>() {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">entry</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>;
-            <span class="ident">entry</span>.<span class="ident">module</span>(<span class="macro">module_path</span><span class="macro">!</span>());
-            <span class="ident">entry</span>.<span class="ident">location</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">location</span><span class="op">!</span>());
-            <span class="ident">entry</span>.<span class="ident">git_rev</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">git_rev</span><span class="op">!</span>());
+            <span class="ident">entry</span>.<span class="ident">add_module</span>(<span class="macro">module_path</span><span class="macro">!</span>());
+            <span class="ident">entry</span>.<span class="ident">add_location</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">location</span><span class="op">!</span>());
             <span class="ident">entry</span>.<span class="ident">send</span>();
             <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">counters</span>::<span class="ident">STRUCT_LOG_COUNT</span>.<span class="ident">inc</span>();
         }
@@ -645,27 +631,19 @@
     };
 }
 
-<span class="comment">// GIT_REV env need to be set during _compile_ time to have this var populated</span>
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">git_rev</span> {
-    () <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro">option_env</span><span class="macro">!</span>(<span class="string">&quot;GIT_REV&quot;</span>)
-    };
-}
-
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">format_struct_args_and_pattern</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>));
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
     };
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>:<span class="ident">expr</span>,) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>));
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
     };
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>:<span class="ident">expr</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">tt</span>)<span class="op">+</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)<span class="op">+</span>));
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)<span class="op">+</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_pattern</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fmt</span>);
         <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">format_struct_args</span><span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>, <span class="number">0</span>, $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)<span class="op">+</span>);
     }
 }
@@ -698,13 +676,13 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">format_struct_arg</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">acc</span>:<span class="ident">tt</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_name</span>:<span class="ident">ident</span><span class="op">=</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">data_mutref</span>(<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_name</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_data</span>(<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg_name</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
     };
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">acc</span>:<span class="ident">tt</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">ident</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">data_mutref</span>(<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_data</span>(<span class="macro">stringify</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
     };
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">acc</span>:<span class="ident">tt</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">data_mutref</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">format_index</span><span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">acc</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
+        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>.<span class="ident">add_data</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">format_index</span><span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">acc</span>), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>));
     };
 }
 
