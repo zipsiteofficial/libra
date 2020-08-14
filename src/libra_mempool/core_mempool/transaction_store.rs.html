@@ -451,6 +451,21 @@
 <span id="451">451</span>
 <span id="452">452</span>
 <span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -864,15 +879,28 @@
         };
         <span class="ident">OP_COUNTERS</span>.<span class="ident">inc</span>(<span class="ident">index_name</span>);
 
-        <span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident">index</span>.<span class="ident">gc</span>(<span class="ident">now</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gc_txns</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">gc</span>(<span class="ident">now</span>);
+        <span class="comment">// sort the expired txns by order of sequence number per account</span>
+        <span class="ident">gc_txns</span>.<span class="ident">sort_by_key</span>(<span class="op">|</span><span class="ident">key</span><span class="op">|</span> (<span class="ident">key</span>.<span class="ident">address</span>, <span class="ident">key</span>.<span class="ident">sequence_number</span>));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gc_iter</span> <span class="op">=</span> <span class="ident">gc_txns</span>.<span class="ident">iter</span>().<span class="ident">peekable</span>();
+
+        <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span> <span class="ident">gc_iter</span>.<span class="ident">next</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">txns</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>.<span class="ident">address</span>) {
-                <span class="comment">// mark all following transactions as non-ready</span>
-                <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">t</span>) <span class="kw">in</span> <span class="ident">txns</span>.<span class="ident">range</span>((<span class="ident">Bound</span>::<span class="ident">Excluded</span>(<span class="ident">key</span>.<span class="ident">sequence_number</span>), <span class="ident">Bound</span>::<span class="ident">Unbounded</span>)) {
+                <span class="kw">let</span> <span class="ident">park_range_start</span> <span class="op">=</span> <span class="ident">Bound</span>::<span class="ident">Excluded</span>(<span class="ident">key</span>.<span class="ident">sequence_number</span>);
+                <span class="kw">let</span> <span class="ident">park_range_end</span> <span class="op">=</span> <span class="ident">gc_iter</span>
+                    .<span class="ident">peek</span>()
+                    .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">next_key</span><span class="op">|</span> <span class="ident">key</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">next_key</span>.<span class="ident">address</span>)
+                    .<span class="ident">map_or</span>(<span class="ident">Bound</span>::<span class="ident">Unbounded</span>, <span class="op">|</span><span class="ident">next_key</span><span class="op">|</span> {
+                        <span class="ident">Bound</span>::<span class="ident">Excluded</span>(<span class="ident">next_key</span>.<span class="ident">sequence_number</span>)
+                    });
+                <span class="comment">// mark all following txns as non-ready, i.e. park them</span>
+                <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">t</span>) <span class="kw">in</span> <span class="ident">txns</span>.<span class="ident">range</span>((<span class="ident">park_range_start</span>, <span class="ident">park_range_end</span>)) {
                     <span class="self">self</span>.<span class="ident">parking_lot_index</span>.<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>);
                     <span class="self">self</span>.<span class="ident">priority_index</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>);
                     <span class="self">self</span>.<span class="ident">timeline_index</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">t</span>);
                 }
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">txn</span>) <span class="op">=</span> <span class="ident">txns</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>.<span class="ident">sequence_number</span>) {
+                    <span class="comment">// log the txn to be removed</span>
                     <span class="kw">let</span> <span class="ident">is_active</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">priority_index</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>);
                     <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_active</span> {
                         <span class="ident">counters</span>::<span class="ident">GC_ACTIVE_TXN_LABEL</span>
@@ -889,6 +917,8 @@
                                 .<span class="ident">observe</span>(<span class="ident">time_delta</span>.<span class="ident">as_secs_f64</span>());
                         }
                     }
+
+                    <span class="comment">// remove txn</span>
                     <span class="self">self</span>.<span class="ident">index_remove</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>);
                 }
             }
