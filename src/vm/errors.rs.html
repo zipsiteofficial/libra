@@ -373,6 +373,18 @@
 <span id="373">373</span>
 <span id="374">374</span>
 <span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -480,37 +492,6 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">expect_no_verification_errors</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">status_type</span>() {
-            <span class="ident">status_type</span> @ <span class="ident">StatusType</span>::<span class="ident">Deserialization</span> <span class="op">|</span> <span class="ident">status_type</span> @ <span class="ident">StatusType</span>::<span class="ident">Verification</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Unexpected verifier/deserialization error! This likely means there is code stored on chain is unverifiable!\nPrevious error {:?}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>);
-                <span class="kw">let</span> <span class="self">Self</span> {
-                    <span class="ident">major_status</span>: <span class="ident">_old_status</span>,
-                    <span class="ident">sub_status</span>: <span class="ident">_old_sub_status</span>,
-                    <span class="ident">message</span>: <span class="ident">_old_message</span>,
-                    <span class="ident">location</span>,
-                    <span class="ident">indices</span>,
-                    <span class="ident">offsets</span>,
-                } <span class="op">=</span> <span class="self">self</span>;
-                <span class="kw">let</span> <span class="ident">major_status</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">status_type</span> {
-                    <span class="ident">StatusType</span>::<span class="ident">Deserialization</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_DESERIALIZATION_ERROR</span>,
-                    <span class="ident">StatusType</span>::<span class="ident">Verification</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_VERIFIER_ERROR</span>,
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
-                };
-                <span class="kw">let</span> <span class="ident">sub_status</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-                <span class="self">Self</span> {
-                    <span class="ident">major_status</span>,
-                    <span class="ident">sub_status</span>,
-                    <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>),
-                    <span class="ident">location</span>,
-                    <span class="ident">indices</span>,
-                    <span class="ident">offsets</span>,
-                }
-            }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>,
-        }
-    }
-
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">major_status</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusCode</span> {
         <span class="self">self</span>.<span class="ident">major_status</span>
     }
@@ -537,6 +518,34 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">status_type</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatusType</span> {
         <span class="self">self</span>.<span class="ident">major_status</span>.<span class="ident">status_type</span>()
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all_data</span>(
+        <span class="self">self</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> (
+        <span class="ident">StatusCode</span>,
+        <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+        <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+        <span class="ident">Location</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">IndexKind</span>, <span class="ident">TableIndex</span>)<span class="op">&gt;</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">FunctionDefinitionIndex</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>,
+    ) {
+        <span class="kw">let</span> <span class="ident">VMError</span> {
+            <span class="ident">major_status</span>,
+            <span class="ident">sub_status</span>,
+            <span class="ident">message</span>,
+            <span class="ident">location</span>,
+            <span class="ident">indices</span>,
+            <span class="ident">offsets</span>,
+        } <span class="op">=</span> <span class="self">self</span>;
+        (
+            <span class="ident">major_status</span>,
+            <span class="ident">sub_status</span>,
+            <span class="ident">message</span>,
+            <span class="ident">location</span>,
+            <span class="ident">indices</span>,
+            <span class="ident">offsets</span>,
+        )
     }
 }
 
@@ -604,9 +613,24 @@
         <span class="self">Self</span> { <span class="ident">indices</span>, ..<span class="self">self</span> }
     }
 
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">at_indices</span>(<span class="self">self</span>, <span class="ident">additional_indices</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">IndexKind</span>, <span class="ident">TableIndex</span>)<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">indices</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">indices</span>;
+        <span class="ident">indices</span>.<span class="ident">extend</span>(<span class="ident">additional_indices</span>);
+        <span class="self">Self</span> { <span class="ident">indices</span>, ..<span class="self">self</span> }
+    }
+
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">at_code_offset</span>(<span class="self">self</span>, <span class="ident">function</span>: <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">offset</span>: <span class="ident">CodeOffset</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">offsets</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">offsets</span>;
         <span class="ident">offsets</span>.<span class="ident">push</span>((<span class="ident">function</span>, <span class="ident">offset</span>));
+        <span class="self">Self</span> { <span class="ident">offsets</span>, ..<span class="self">self</span> }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">at_code_offsets</span>(
+        <span class="self">self</span>,
+        <span class="ident">additional_offsets</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">FunctionDefinitionIndex</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">offsets</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">offsets</span>;
+        <span class="ident">offsets</span>.<span class="ident">extend</span>(<span class="ident">additional_offsets</span>);
         <span class="self">Self</span> { <span class="ident">offsets</span>, ..<span class="self">self</span> }
     }
 
