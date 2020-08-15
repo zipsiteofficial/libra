@@ -1,1 +1,1 @@
-initSidebarItems({"static":[["COUNTERS",""]],"struct":[["Counters",""]]});
+initSidebarItems({"fn":[["increment_state",""]]});

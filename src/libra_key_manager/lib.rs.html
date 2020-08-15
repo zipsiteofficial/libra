@@ -415,8 +415,6 @@
 <span id="415">415</span>
 <span id="416">416</span>
 <span id="417">417</span>
-<span id="418">418</span>
-<span id="419">419</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -440,7 +438,6 @@
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">counters</span>::<span class="ident">COUNTERS</span>,
     <span class="ident">libra_interface</span>::<span class="ident">LibraInterface</span>,
     <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogEvent</span>, <span class="ident">LogField</span>},
 };
@@ -588,7 +585,6 @@
             <span class="prelude-val">Some</span>(<span class="ident">LogEvent</span>::<span class="ident">Pending</span>),
             <span class="prelude-val">Some</span>((<span class="ident">LogField</span>::<span class="ident">SleepDuration</span>, <span class="self">self</span>.<span class="ident">sleep_period_secs</span>.<span class="ident">to_string</span>())),
         );
-        <span class="ident">COUNTERS</span>.<span class="ident">sleeps</span>.<span class="ident">inc</span>();
         <span class="self">self</span>.<span class="ident">time_service</span>.<span class="ident">sleep</span>(<span class="self">self</span>.<span class="ident">sleep_period_secs</span>);
 
         <span class="self">self</span>.<span class="ident">log</span>(<span class="ident">LogEntry</span>::<span class="ident">Sleep</span>, <span class="prelude-val">Some</span>(<span class="ident">LogEvent</span>::<span class="ident">Success</span>), <span class="prelude-val">None</span>);
@@ -644,7 +640,7 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resubmit_consensus_key_transaction</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">consensus_key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">get_public_key</span>(<span class="ident">CONSENSUS_KEY</span>)<span class="question-mark">?</span>.<span class="ident">public_key</span>;
-        <span class="ident">COUNTERS</span>.<span class="ident">consensus_rotation_tx_resubmissions</span>.<span class="ident">inc</span>();
+        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;submit_tx&quot;</span>);
         <span class="self">self</span>.<span class="ident">submit_key_rotation_transaction</span>(<span class="ident">consensus_key</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
     }
@@ -656,7 +652,7 @@
             <span class="prelude-val">Some</span>(<span class="ident">LogEvent</span>::<span class="ident">Success</span>),
             <span class="prelude-val">Some</span>((<span class="ident">LogField</span>::<span class="ident">ConsensusKey</span>, <span class="ident">consensus_key</span>.<span class="ident">to_string</span>())),
         );
-        <span class="ident">COUNTERS</span>.<span class="ident">completed_consensus_key_rotations</span>.<span class="ident">inc</span>();
+        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;complete&quot;</span>);
         <span class="self">self</span>.<span class="ident">submit_key_rotation_transaction</span>(<span class="ident">consensus_key</span>)
     }
 
@@ -732,7 +728,7 @@
         <span class="comment">// If this is inconsistent, then we are waiting on a reconfiguration...</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ConfigInfoKeyMismatch</span>(..)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">compare_info_to_config</span>() {
             <span class="self">self</span>.<span class="ident">log</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForReconfiguration</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
-            <span class="ident">COUNTERS</span>.<span class="ident">waiting_on_consensus_reconfiguration</span>.<span class="ident">inc</span>();
+            <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;waiting_on_reconfiguration&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>);
         }
 
@@ -770,7 +766,7 @@
             }
             <span class="ident">Action</span>::<span class="ident">NoAction</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">log</span>(<span class="ident">LogEntry</span>::<span class="ident">NoAction</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
-                <span class="ident">COUNTERS</span>.<span class="ident">no_actions_required</span>.<span class="ident">inc</span>();
+                <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;no_action&quot;</span>);
                 <span class="prelude-val">Ok</span>(())
             }
         }
