@@ -465,6 +465,9 @@
 <span id="465">465</span>
 <span id="466">466</span>
 <span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -474,7 +477,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>,
     <span class="ident">peer_manager</span>::<span class="ident">PeerManagerError</span>,
-    <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::<span class="ident">NetworkMessage</span>,
+    <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">ErrorCode</span>, <span class="ident">NetworkMessage</span>},
     <span class="ident">transport</span>,
     <span class="ident">transport</span>::{<span class="ident">Connection</span>, <span class="ident">ConnectionMetadata</span>},
     <span class="ident">ProtocolId</span>,
@@ -789,7 +792,19 @@
         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Received message from Peer {}&quot;</span>, <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>());
         <span class="comment">// Read inbound message from stream.</span>
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">freeze</span>();
-        <span class="kw">let</span> <span class="ident">message</span>: <span class="ident">NetworkMessage</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>) {
+            <span class="prelude-val">Ok</span>(<span class="ident">message</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">message</span>,
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// Don&#39;t bother returning errors for tiny messages</span>
+                <span class="kw">if</span> <span class="ident">message</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span> {
+                    <span class="kw">let</span> <span class="ident">error</span> <span class="op">=</span> <span class="ident">ErrorCode</span>::<span class="ident">parsing_error</span>(<span class="ident">message</span>[<span class="number">0</span>], <span class="ident">message</span>[<span class="number">1</span>]);
+                    <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">NetworkMessage</span>::<span class="ident">Error</span>(<span class="ident">error</span>);
+                    <span class="kw">let</span> (<span class="ident">ack_tx</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
+                    <span class="ident">write_reqs_tx</span>.<span class="ident">send</span>((<span class="ident">message</span>, <span class="ident">ack_tx</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+                }
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>.<span class="ident">into</span>());
+            }
+        };
         <span class="kw">match</span> <span class="ident">message</span> {
             <span class="ident">NetworkMessage</span>::<span class="ident">DirectSendMsg</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">PeerNotification</span>::<span class="ident">NewMessage</span>(<span class="ident">message</span>);
@@ -810,15 +825,6 @@
                     <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
                     <span class="ident">error</span>,
                 );
-            }
-            <span class="ident">NetworkMessage</span>::<span class="ident">Ping</span>(<span class="ident">nonce</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">pong</span> <span class="op">=</span> <span class="ident">NetworkMessage</span>::<span class="ident">Pong</span>(<span class="ident">nonce</span>);
-                <span class="kw">let</span> (<span class="ident">ack_tx</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
-                <span class="comment">// Resond to a ping right away.</span>
-                <span class="ident">write_reqs_tx</span>.<span class="ident">send</span>((<span class="ident">pong</span>, <span class="ident">ack_tx</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-            }
-            <span class="ident">NetworkMessage</span>::<span class="ident">Pong</span>(<span class="ident">_nonce</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="comment">// TODO(davidiw) forward to a pong pub/sub and move HealthChecker to leverage this</span>
             }
             <span class="ident">NetworkMessage</span>::<span class="ident">RpcRequest</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">NetworkMessage</span>::<span class="ident">RpcResponse</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">PeerNotification</span>::<span class="ident">NewMessage</span>(<span class="ident">message</span>);
