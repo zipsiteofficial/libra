@@ -623,6 +623,24 @@
 <span id="623">623</span>
 <span id="624">624</span>
 <span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -684,6 +702,7 @@
     <span class="ident">AbortsIf</span>,
     <span class="ident">AbortsWith</span>,
     <span class="ident">SucceedsIf</span>,
+    <span class="ident">Modifies</span>,
     <span class="ident">Ensures</span>,
     <span class="ident">Requires</span>,
     <span class="ident">RequiresModule</span>,
@@ -717,7 +736,7 @@
         <span class="kw">use</span> <span class="ident">ConditionKind</span>::<span class="kw-2">*</span>;
         <span class="macro">matches</span><span class="macro">!</span>(
             <span class="self">self</span>,
-            <span class="ident">Requires</span> <span class="op">|</span> <span class="ident">RequiresModule</span> <span class="op">|</span> <span class="ident">AbortsIf</span> <span class="op">|</span> <span class="ident">AbortsWith</span> <span class="op">|</span> <span class="ident">SucceedsIf</span> <span class="op">|</span> <span class="ident">Ensures</span>
+            <span class="ident">Requires</span> <span class="op">|</span> <span class="ident">RequiresModule</span> <span class="op">|</span> <span class="ident">AbortsIf</span> <span class="op">|</span> <span class="ident">AbortsWith</span> <span class="op">|</span> <span class="ident">SucceedsIf</span> <span class="op">|</span> <span class="ident">Ensures</span> <span class="op">|</span> <span class="ident">Modifies</span>
         )
     }
 
@@ -726,7 +745,7 @@
         <span class="kw">use</span> <span class="ident">ConditionKind</span>::<span class="kw-2">*</span>;
         <span class="macro">matches</span><span class="macro">!</span>(
             <span class="self">self</span>,
-            <span class="ident">Requires</span> <span class="op">|</span> <span class="ident">RequiresModule</span> <span class="op">|</span> <span class="ident">AbortsIf</span> <span class="op">|</span> <span class="ident">AbortsWith</span> <span class="op">|</span> <span class="ident">SucceedsIf</span> <span class="op">|</span> <span class="ident">Ensures</span>
+            <span class="ident">Requires</span> <span class="op">|</span> <span class="ident">RequiresModule</span> <span class="op">|</span> <span class="ident">AbortsIf</span> <span class="op">|</span> <span class="ident">AbortsWith</span> <span class="op">|</span> <span class="ident">SucceedsIf</span> <span class="op">|</span> <span class="ident">Ensures</span> <span class="op">|</span> <span class="ident">Modifies</span>
         )
     }
 
@@ -759,6 +778,7 @@
             <span class="ident">AbortsIf</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;aborts_if&quot;</span>),
             <span class="ident">AbortsWith</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;aborts_with&quot;</span>),
             <span class="ident">SucceedsIf</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;succeeds_if&quot;</span>),
+            <span class="ident">Modifies</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;modifies&quot;</span>),
             <span class="ident">Ensures</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;ensures&quot;</span>),
             <span class="ident">Requires</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;requires&quot;</span>),
             <span class="ident">RequiresModule</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;requires module&quot;</span>),
@@ -894,6 +914,13 @@
         }
     }
 
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call_args</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Exp</span>] {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">args</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">args</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;function must be called on Exp::Call(...)&quot;</span>),
+        }
+    }
+
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">node_ids</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NodeId</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ids</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="self">self</span>.<span class="ident">visit</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
@@ -956,6 +983,14 @@
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[],
         }
     }
+
+    <span class="doccomment">/// Optionally extracts list of modify targets from the special `Operation::ModifyTargets`.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">extract_modify_targets</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Exp</span>] {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="kw">_</span>, <span class="ident">Operation</span>::<span class="ident">ModifyTargets</span>, <span class="ident">args</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">args</span>.<span class="ident">as_slice</span>(),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[],
+        }
+    }
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>)]</span>
@@ -969,9 +1004,10 @@
     <span class="ident">Index</span>,
     <span class="ident">Slice</span>,
 
-    <span class="comment">// Pseudo operators for aborts condition.</span>
+    <span class="comment">// Pseudo operators for expressions which have a special treatment in the translation.</span>
     <span class="ident">CondWithAbortCode</span>, <span class="comment">// aborts_if E with C</span>
     <span class="ident">AbortCodes</span>,        <span class="comment">// aborts_with C1, ..., Cn</span>
+    <span class="ident">ModifyTargets</span>,     <span class="comment">// modifies E1, ..., En</span>
 
     <span class="comment">// Binary operators</span>
     <span class="ident">Range</span>,

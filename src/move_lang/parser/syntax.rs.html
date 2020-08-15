@@ -2287,6 +2287,7 @@
 <span id="2287">2287</span>
 <span id="2288">2288</span>
 <span id="2289">2289</span>
+<span id="2290">2290</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -4089,7 +4090,7 @@
         <span class="ident">Tok</span>::<span class="ident">Define</span> <span class="op">|</span> <span class="ident">Tok</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_spec_function</span>(<span class="ident">tokens</span>),
         <span class="ident">Tok</span>::<span class="ident">IdentifierValue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">tokens</span>.<span class="ident">content</span>() {
             <span class="string">&quot;assert&quot;</span> <span class="op">|</span> <span class="string">&quot;assume&quot;</span> <span class="op">|</span> <span class="string">&quot;decreases&quot;</span> <span class="op">|</span> <span class="string">&quot;aborts_if&quot;</span> <span class="op">|</span> <span class="string">&quot;aborts_with&quot;</span> <span class="op">|</span> <span class="string">&quot;succeeds_if&quot;</span>
-            <span class="op">|</span> <span class="string">&quot;ensures&quot;</span> <span class="op">|</span> <span class="string">&quot;requires&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_condition</span>(<span class="ident">tokens</span>),
+            <span class="op">|</span> <span class="string">&quot;modifies&quot;</span> <span class="op">|</span> <span class="string">&quot;ensures&quot;</span> <span class="op">|</span> <span class="string">&quot;requires&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_condition</span>(<span class="ident">tokens</span>),
             <span class="string">&quot;include&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_spec_include</span>(<span class="ident">tokens</span>),
             <span class="string">&quot;apply&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_spec_apply</span>(<span class="ident">tokens</span>),
             <span class="string">&quot;pragma&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">parse_spec_pragma</span>(<span class="ident">tokens</span>),
@@ -4102,8 +4103,8 @@
         },
         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">unexpected_token_error</span>(
             <span class="ident">tokens</span>,
-            <span class="string">&quot;one of `assert`, `assume`, `decreases`, `aborts_if`, `succeeds_if`, `ensures`, \
-             `requires`, `include`, `apply`, `pragma`, `global`, or a name&quot;</span>,
+            <span class="string">&quot;one of `assert`, `assume`, `decreases`, `aborts_if`, `succeeds_if`, `modifies`, \
+            `ensures`, `requires`, `include`, `apply`, `pragma`, `global`, or a name&quot;</span>,
         )),
     }
 }
@@ -4122,6 +4123,7 @@
         <span class="string">&quot;aborts_if&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsIf</span>,
         <span class="string">&quot;aborts_with&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsWith</span>,
         <span class="string">&quot;succeeds_if&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">SucceedsIf</span>,
+        <span class="string">&quot;modifies&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">Modifies</span>,
         <span class="string">&quot;ensures&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SpecConditionKind</span>::<span class="ident">Ensures</span>,
         <span class="string">&quot;requires&quot;</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">if</span> <span class="ident">tokens</span>.<span class="ident">lookahead</span>()<span class="question-mark">?</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Tok</span>::<span class="ident">Module</span> {
@@ -4135,14 +4137,14 @@
     };
     <span class="ident">tokens</span>.<span class="ident">advance</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="ident">parse_condition_properties</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsWith</span> {
+    <span class="kw">let</span> <span class="ident">exp</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsWith</span> <span class="op">|</span><span class="op">|</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">Modifies</span> {
         <span class="comment">// Use a dummy expression as a placeholder for this field.</span>
         <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="ident">make_loc</span>(<span class="ident">tokens</span>.<span class="ident">file_name</span>(), <span class="ident">start_loc</span>, <span class="ident">start_loc</span> <span class="op">+</span> <span class="number">1</span>);
         <span class="ident">sp</span>(<span class="ident">loc</span>, <span class="ident">Exp_</span>::<span class="ident">Value</span>(<span class="ident">sp</span>(<span class="ident">loc</span>, <span class="ident">Value_</span>::<span class="ident">Bool</span>(<span class="bool-val">false</span>))))
     } <span class="kw">else</span> {
         <span class="ident">parse_exp</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>
     };
-    <span class="kw">let</span> <span class="ident">abort_codes</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsIf</span>
+    <span class="kw">let</span> <span class="ident">additional_exps</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsIf</span>
         <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">tokens</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">Tok</span>::<span class="ident">IdentifierValue</span>
         <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">tokens</span>.<span class="ident">content</span>() <span class="op">=</span><span class="op">=</span> <span class="string">&quot;with&quot;</span>
     {
@@ -4150,14 +4152,14 @@
         <span class="kw">let</span> <span class="ident">codes</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">parse_exp</span>(<span class="ident">tokens</span>)<span class="question-mark">?</span>];
         <span class="ident">consume_token</span>(<span class="ident">tokens</span>, <span class="ident">Tok</span>::<span class="ident">Semicolon</span>)<span class="question-mark">?</span>;
         <span class="ident">codes</span>
-    } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsWith</span> {
+    } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">AbortsWith</span> <span class="op">|</span><span class="op">|</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SpecConditionKind</span>::<span class="ident">Modifies</span> {
         <span class="ident">parse_comma_list_after_start</span>(
             <span class="ident">tokens</span>,
             <span class="ident">tokens</span>.<span class="ident">start_loc</span>(),
             <span class="ident">tokens</span>.<span class="ident">peek</span>(),
             <span class="ident">Tok</span>::<span class="ident">Semicolon</span>,
             <span class="ident">parse_exp</span>,
-            <span class="string">&quot;a aborts code&quot;</span>,
+            <span class="string">&quot;an aborts code or modifies target&quot;</span>,
         )<span class="question-mark">?</span>
     } <span class="kw">else</span> {
         <span class="ident">consume_token</span>(<span class="ident">tokens</span>, <span class="ident">Tok</span>::<span class="ident">Semicolon</span>)<span class="question-mark">?</span>;
@@ -4172,7 +4174,7 @@
             <span class="ident">kind</span>,
             <span class="ident">properties</span>,
             <span class="ident">exp</span>,
-            <span class="ident">abort_codes</span>,
+            <span class="ident">additional_exps</span>,
         },
     ))
 }
@@ -4240,7 +4242,7 @@
             <span class="ident">kind</span>,
             <span class="ident">properties</span>,
             <span class="ident">exp</span>,
-            <span class="ident">abort_codes</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="ident">additional_exps</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         },
     ))
 }

@@ -5282,6 +5282,33 @@
 <span id="5282">5282</span>
 <span id="5283">5283</span>
 <span id="5284">5284</span>
+<span id="5285">5285</span>
+<span id="5286">5286</span>
+<span id="5287">5287</span>
+<span id="5288">5288</span>
+<span id="5289">5289</span>
+<span id="5290">5290</span>
+<span id="5291">5291</span>
+<span id="5292">5292</span>
+<span id="5293">5293</span>
+<span id="5294">5294</span>
+<span id="5295">5295</span>
+<span id="5296">5296</span>
+<span id="5297">5297</span>
+<span id="5298">5298</span>
+<span id="5299">5299</span>
+<span id="5300">5300</span>
+<span id="5301">5301</span>
+<span id="5302">5302</span>
+<span id="5303">5303</span>
+<span id="5304">5304</span>
+<span id="5305">5305</span>
+<span id="5306">5306</span>
+<span id="5307">5307</span>
+<span id="5308">5308</span>
+<span id="5309">5309</span>
+<span id="5310">5310</span>
+<span id="5311">5311</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -6700,7 +6727,7 @@
                             <span class="ident">kind</span>,
                             <span class="ident">properties</span>,
                             <span class="ident">exp</span>,
-                            <span class="ident">abort_codes</span>,
+                            <span class="ident">additional_exps</span>,
                         } <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">FunctionCode</span>(
                                 <span class="ident">qsym</span>.<span class="ident">clone</span>(),
@@ -6716,7 +6743,7 @@
                                     <span class="ident">kind</span>,
                                     <span class="ident">properties</span>,
                                     <span class="ident">exp</span>,
-                                    <span class="ident">abort_codes</span>,
+                                    <span class="ident">additional_exps</span>,
                                 );
                             }
                         }
@@ -6924,11 +6951,11 @@
                     <span class="ident">kind</span>,
                     <span class="ident">properties</span>,
                     <span class="ident">exp</span>,
-                    <span class="ident">abort_codes</span>,
+                    <span class="ident">additional_exps</span>,
                 } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">kind</span>, <span class="ident">exp</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_condition_kind</span>(<span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">exp</span>) {
                         <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>);
-                        <span class="self">self</span>.<span class="ident">def_ana_condition</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">properties</span>, <span class="ident">exp</span>, <span class="ident">abort_codes</span>)
+                        <span class="self">self</span>.<span class="ident">def_ana_condition</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">properties</span>, <span class="ident">exp</span>, <span class="ident">additional_exps</span>)
                     }
                 }
                 <span class="ident">Function</span> {
@@ -7410,7 +7437,7 @@
         <span class="ident">kind</span>: <span class="ident">ConditionKind</span>,
         <span class="ident">properties</span>: <span class="ident">PropertyBag</span>,
         <span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">Exp</span>,
-        <span class="ident">abort_codes</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">Exp</span>],
+        <span class="ident">additional_exps</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">Exp</span>],
     ) {
         <span class="kw">if</span> <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ConditionKind</span>::<span class="ident">Decreases</span> {
             <span class="self">self</span>.<span class="ident">parent</span>
@@ -7420,22 +7447,35 @@
         <span class="kw">let</span> <span class="ident">expected_type</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">expected_type_for_condition</span>(<span class="kw-2">&amp;</span><span class="ident">kind</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">et</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">exp_translator_for_context</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">kind</span>), <span class="bool-val">false</span>);
         <span class="kw">let</span> <span class="ident">translated</span> <span class="op">=</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">exp</span>, <span class="kw-2">&amp;</span><span class="ident">expected_type</span>);
-        <span class="kw">let</span> <span class="ident">translated_with_codes</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">abort_codes</span>.<span class="ident">is_empty</span>() {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">abort_codes</span>
-                .<span class="ident">iter</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">code</span><span class="op">|</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">code</span>, <span class="kw-2">&amp;</span><span class="ident">Type</span>::<span class="ident">Primitive</span>(<span class="ident">PrimitiveType</span>::<span class="ident">Num</span>)))
-                .<span class="ident">collect_vec</span>();
+        <span class="kw">let</span> <span class="ident">translated_with_additional_exps</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">additional_exps</span>.<span class="ident">is_empty</span>() {
             <span class="kw">let</span> <span class="ident">node_id</span> <span class="op">=</span> <span class="ident">et</span>.<span class="ident">new_node_id_with_type_loc</span>(<span class="kw-2">&amp;</span><span class="ident">expected_type</span>, <span class="ident">loc</span>);
             <span class="kw">match</span> <span class="ident">kind</span> {
                 <span class="ident">ConditionKind</span>::<span class="ident">AbortsIf</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">additional_exps</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">code</span><span class="op">|</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">code</span>, <span class="kw-2">&amp;</span><span class="ident">Type</span>::<span class="ident">Primitive</span>(<span class="ident">PrimitiveType</span>::<span class="ident">Num</span>)))
+                        .<span class="ident">collect_vec</span>();
                     <span class="ident">args</span>.<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">translated</span>);
                     <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">node_id</span>, <span class="ident">Operation</span>::<span class="ident">CondWithAbortCode</span>, <span class="ident">args</span>)
                 }
-                <span class="ident">ConditionKind</span>::<span class="ident">AbortsWith</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">node_id</span>, <span class="ident">Operation</span>::<span class="ident">AbortCodes</span>, <span class="ident">args</span>),
+                <span class="ident">ConditionKind</span>::<span class="ident">AbortsWith</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">additional_exps</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">code</span><span class="op">|</span> <span class="ident">et</span>.<span class="ident">translate_exp</span>(<span class="ident">code</span>, <span class="kw-2">&amp;</span><span class="ident">Type</span>::<span class="ident">Primitive</span>(<span class="ident">PrimitiveType</span>::<span class="ident">Num</span>)))
+                        .<span class="ident">collect_vec</span>();
+                    <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">node_id</span>, <span class="ident">Operation</span>::<span class="ident">AbortCodes</span>, <span class="ident">args</span>)
+                }
+                <span class="ident">ConditionKind</span>::<span class="ident">Modifies</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">additional_exps</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">target</span><span class="op">|</span> <span class="ident">et</span>.<span class="ident">translate_modify_target</span>(<span class="ident">target</span>))
+                        .<span class="ident">collect_vec</span>();
+                    <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="ident">node_id</span>, <span class="ident">Operation</span>::<span class="ident">ModifyTargets</span>, <span class="ident">args</span>)
+                }
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="ident">et</span>.<span class="ident">error</span>(
                         <span class="ident">loc</span>,
-                        <span class="string">&quot;abort codes only allowed with `aborts_if` or `aborts_with`&quot;</span>,
+                        <span class="string">&quot;additional expressions only allowed with `aborts_if`, `aborts_with`, or `modifies`&quot;</span>,
                     );
                     <span class="ident">et</span>.<span class="ident">new_error_exp</span>()
                 }
@@ -7451,7 +7491,7 @@
                 <span class="ident">loc</span>: <span class="ident">loc</span>.<span class="ident">clone</span>(),
                 <span class="ident">kind</span>,
                 <span class="ident">properties</span>,
-                <span class="ident">exp</span>: <span class="ident">translated_with_codes</span>,
+                <span class="ident">exp</span>: <span class="ident">translated_with_additional_exps</span>,
             }],
             <span class="ident">PropertyBag</span>::<span class="ident">default</span>(),
             <span class="string">&quot;&quot;</span>,
@@ -7496,6 +7536,7 @@
             <span class="ident">PK</span>::<span class="ident">Assert</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Assert</span>, <span class="ident">exp</span>)),
             <span class="ident">PK</span>::<span class="ident">Assume</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Assume</span>, <span class="ident">exp</span>)),
             <span class="ident">PK</span>::<span class="ident">Decreases</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Decreases</span>, <span class="ident">exp</span>)),
+            <span class="ident">PK</span>::<span class="ident">Modifies</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Modifies</span>, <span class="ident">exp</span>)),
             <span class="ident">PK</span>::<span class="ident">Ensures</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Ensures</span>, <span class="ident">exp</span>)),
             <span class="ident">PK</span>::<span class="ident">Requires</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">Requires</span>, <span class="ident">exp</span>)),
             <span class="ident">PK</span>::<span class="ident">AbortsIf</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">AbortsIf</span>, <span class="ident">exp</span>)),
@@ -7762,7 +7803,7 @@
                     <span class="ident">kind</span>,
                     <span class="ident">properties</span>,
                     <span class="ident">exp</span>,
-                    <span class="ident">abort_codes</span>,
+                    <span class="ident">additional_exps</span>,
                 } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">Schema</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">kind</span>, <span class="ident">exp</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_condition_kind</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">exp</span>) {
@@ -7773,7 +7814,7 @@
                             <span class="ident">kind</span>,
                             <span class="ident">properties</span>,
                             <span class="ident">exp</span>,
-                            <span class="ident">abort_codes</span>,
+                            <span class="ident">additional_exps</span>,
                         );
                     } <span class="kw">else</span> {
                         <span class="comment">// Error reported.</span>
@@ -9341,6 +9382,19 @@
 <span class="doccomment">/// ## Expression Translation</span>
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span>, <span class="lifetime">&#39;translator</span>, <span class="lifetime">&#39;module_translator</span><span class="op">&gt;</span> <span class="ident">ExpTranslator</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span>, <span class="lifetime">&#39;translator</span>, <span class="lifetime">&#39;module_translator</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Translates an expression representing a modify target</span>
+    <span class="kw">fn</span> <span class="ident">translate_modify_target</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">Exp</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Exp</span> {
+        <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">exp</span>.<span class="ident">loc</span>);
+        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">exp</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_exp_free</span>(<span class="ident">exp</span>);
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">exp</span> {
+            <span class="ident">Exp</span>::<span class="ident">Call</span>(<span class="kw">_</span>, <span class="ident">Operation</span>::<span class="ident">Global</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="self">self</span>.<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">loc</span>, <span class="string">&quot;global resource access expected&quot;</span>);
+                <span class="self">self</span>.<span class="ident">new_error_exp</span>()
+            }
+        }
+    }
+
     <span class="doccomment">/// Translates an expression, with given expected type, which might be a type variable.</span>
     <span class="kw">fn</span> <span class="ident">translate_exp</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">Exp</span>, <span class="ident">expected_type</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Exp</span> {
         <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">exp</span>.<span class="ident">loc</span>);
