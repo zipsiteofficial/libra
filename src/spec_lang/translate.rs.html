@@ -5309,6 +5309,23 @@
 <span id="5309">5309</span>
 <span id="5310">5310</span>
 <span id="5311">5311</span>
+<span id="5312">5312</span>
+<span id="5313">5313</span>
+<span id="5314">5314</span>
+<span id="5315">5315</span>
+<span id="5316">5316</span>
+<span id="5317">5317</span>
+<span id="5318">5318</span>
+<span id="5319">5319</span>
+<span id="5320">5320</span>
+<span id="5321">5321</span>
+<span id="5322">5322</span>
+<span id="5323">5323</span>
+<span id="5324">5324</span>
+<span id="5325">5325</span>
+<span id="5326">5326</span>
+<span id="5327">5327</span>
+<span id="5328">5328</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -5356,9 +5373,10 @@
         <span class="ident">SpecVarDecl</span>, <span class="ident">Value</span>,
     },
     <span class="ident">env</span>::{
-        <span class="ident">FieldId</span>, <span class="ident">FunId</span>, <span class="ident">FunctionData</span>, <span class="ident">GlobalEnv</span>, <span class="ident">Loc</span>, <span class="ident">ModuleEnv</span>, <span class="ident">ModuleId</span>, <span class="ident">MoveIrLoc</span>, <span class="ident">NodeId</span>,
-        <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">SpecFunId</span>, <span class="ident">SpecVarId</span>, <span class="ident">StructData</span>, <span class="ident">StructId</span>, <span class="ident">TypeConstraint</span>,
-        <span class="ident">TypeParameter</span>, <span class="ident">CONDITION_GLOBAL_PROP</span>, <span class="ident">CONDITION_INJECTED_PROP</span>, <span class="ident">SCRIPT_BYTECODE_FUN_NAME</span>,
+        <span class="ident">FieldId</span>, <span class="ident">FunId</span>, <span class="ident">FunctionData</span>, <span class="ident">GlobalEnv</span>, <span class="ident">Loc</span>, <span class="ident">ModuleEnv</span>, <span class="ident">ModuleId</span>, <span class="ident">MoveIrLoc</span>,
+        <span class="ident">NamedConstantData</span>, <span class="ident">NamedConstantId</span>, <span class="ident">NodeId</span>, <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">SpecFunId</span>, <span class="ident">SpecVarId</span>,
+        <span class="ident">StructData</span>, <span class="ident">StructId</span>, <span class="ident">TypeConstraint</span>, <span class="ident">TypeParameter</span>, <span class="ident">CONDITION_GLOBAL_PROP</span>,
+        <span class="ident">CONDITION_INJECTED_PROP</span>, <span class="ident">SCRIPT_BYTECODE_FUN_NAME</span>,
     },
     <span class="ident">project_1st</span>, <span class="ident">project_2nd</span>,
     <span class="ident">symbol</span>::{<span class="ident">Symbol</span>, <span class="ident">SymbolPool</span>},
@@ -8727,10 +8745,26 @@
                 }
             })
             .<span class="ident">collect</span>();
+        <span class="kw">let</span> <span class="ident">named_constants</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">NamedConstantId</span>, <span class="ident">NamedConstantData</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">parent</span>
+            .<span class="ident">const_table</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">name</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">name</span>.<span class="ident">module_name</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">module_name</span>)
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">name</span>, <span class="ident">const_entry</span>)<span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">ConstEntry</span> { <span class="ident">loc</span>, <span class="ident">value</span>, <span class="ident">ty</span> } <span class="op">=</span> <span class="ident">const_entry</span>.<span class="ident">clone</span>();
+                (
+                    <span class="ident">NamedConstantId</span>::<span class="ident">new</span>(<span class="ident">name</span>.<span class="ident">symbol</span>),
+                    <span class="self">self</span>.<span class="ident">parent</span>
+                        .<span class="ident">env</span>
+                        .<span class="ident">create_named_constant_data</span>(<span class="ident">name</span>.<span class="ident">symbol</span>, <span class="ident">loc</span>, <span class="ident">ty</span>, <span class="ident">value</span>),
+                )
+            })
+            .<span class="ident">collect</span>();
         <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">env</span>.<span class="ident">add</span>(
             <span class="ident">loc</span>,
             <span class="ident">module</span>,
             <span class="ident">source_map</span>,
+            <span class="ident">named_constants</span>,
             <span class="ident">struct_data</span>,
             <span class="ident">function_data</span>,
             <span class="ident">std</span>::<span class="ident">mem</span>::<span class="ident">take</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">spec_vars</span>),
