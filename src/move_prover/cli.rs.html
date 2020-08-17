@@ -591,6 +591,10 @@
 <span id="591">591</span>
 <span id="592">592</span>
 <span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1135,7 +1139,19 @@
             <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;-proverOpt:PROVER_PATH={}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">z3_exe</span>)]);
         }
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">use_array_theory</span> {
-            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-useArrayTheory&quot;</span>]);
+            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[
+                <span class="string">&quot;-useArrayTheory&quot;</span>,
+                <span class="string">&quot;/proverOpt:O:smt.array.extensional=false&quot;</span>,
+            ]);
+        } <span class="kw">else</span> {
+            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;-proverOpt:O:smt.QI.EAGER_THRESHOLD={}&quot;</span>,
+                <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">eager_threshold</span>
+            )]);
+            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;-proverOpt:O:smt.QI.LAZY_THRESHOLD={}&quot;</span>,
+                <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">lazy_threshold</span>
+            )]);
         }
         <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
             <span class="string">&quot;-vcsCores:{}&quot;</span>,
@@ -1146,14 +1162,6 @@
             } <span class="kw">else</span> {
                 <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">proc_cores</span>
             }
-        )]);
-        <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;-proverOpt:O:smt.QI.EAGER_THRESHOLD={}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">eager_threshold</span>
-        )]);
-        <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;-proverOpt:O:smt.QI.LAZY_THRESHOLD={}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">lazy_threshold</span>
         )]);
         <span class="comment">// TODO: see what we can make out of these flags.</span>
         <span class="comment">//add(&amp;[&quot;-proverOpt:O:smt.QI.PROFILE=true&quot;]);</span>
