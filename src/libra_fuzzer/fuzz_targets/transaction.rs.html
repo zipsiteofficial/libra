@@ -52,17 +52,20 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">FuzzTargetImpl</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">corpus_from_strategy</span>, <span class="ident">fuzz_data_to_value</span>, <span class="ident">FuzzTargetImpl</span>};
 <span class="kw">use</span> <span class="ident">language_e2e_tests</span>::<span class="ident">account_universe</span>::{
-    <span class="ident">all_transactions_strategy</span>, <span class="ident">log_balance_strategy</span>, <span class="ident">run_and_assert_universe</span>, <span class="ident">AccountUniverseGen</span>,
+    <span class="ident">all_transactions_strategy</span>, <span class="ident">log_balance_strategy</span>, <span class="ident">run_and_assert_universe</span>, <span class="ident">AUTransactionGen</span>,
+    <span class="ident">AccountUniverseGen</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_proptest_helpers</span>::<span class="ident">ValueGenerator</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::<span class="ident">SignedTransaction</span>;
-<span class="kw">use</span> <span class="ident">proptest</span>::{<span class="ident">collection</span>::<span class="ident">vec</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">test_runner</span>};
+<span class="kw">use</span> <span class="ident">proptest</span>::{<span class="ident">collection</span>::<span class="ident">vec</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LanguageTransactionExecution</span>;
@@ -72,21 +75,22 @@
         <span class="string">&quot;Language execute randomly generated transactions&quot;</span>
     }
 
+    <span class="kw">fn</span> <span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_idx</span>: <span class="ident">usize</span>, <span class="ident">_gen</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ValueGenerator</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">corpus_from_strategy</span>(<span class="ident">run_and_assert_universe_input</span>()))
+    }
+
     <span class="kw">fn</span> <span class="ident">fuzz</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
-        <span class="kw">let</span> <span class="ident">passthrough_rng</span> <span class="op">=</span>
-            <span class="ident">test_runner</span>::<span class="ident">TestRng</span>::<span class="ident">from_seed</span>(<span class="ident">test_runner</span>::<span class="ident">RngAlgorithm</span>::<span class="ident">PassThrough</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>);
-
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">generator</span> <span class="op">=</span> <span class="ident">ValueGenerator</span>::<span class="ident">new_with_rng</span>(<span class="ident">passthrough_rng</span>);
-        <span class="kw">let</span> <span class="ident">txn_strategy</span> <span class="op">=</span> <span class="ident">vec</span>(<span class="ident">all_transactions_strategy</span>(<span class="number">1</span>, <span class="number">1_000_000</span>), <span class="number">1</span>..<span class="number">40</span>);
-
-        <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> <span class="ident">generator</span>.<span class="ident">generate</span>(<span class="ident">txn_strategy</span>);
-
-        <span class="kw">let</span> <span class="ident">universe_strategy</span> <span class="op">=</span>
-            <span class="ident">AccountUniverseGen</span>::<span class="ident">strategy</span>(<span class="number">2</span>..<span class="number">20</span>, <span class="ident">log_balance_strategy</span>(<span class="number">10_000_000</span>));
-
-        <span class="kw">let</span> <span class="ident">universe</span> <span class="op">=</span> <span class="ident">generator</span>.<span class="ident">generate</span>(<span class="ident">universe_strategy</span>);
-
+        <span class="kw">let</span> (<span class="ident">universe</span>, <span class="ident">txns</span>) <span class="op">=</span> <span class="ident">fuzz_data_to_value</span>(<span class="ident">data</span>, <span class="ident">run_and_assert_universe_input</span>());
         <span class="ident">run_and_assert_universe</span>(<span class="ident">universe</span>, <span class="ident">txns</span>).<span class="ident">unwrap</span>();
+    }
+}
+
+<span class="macro">prop_compose</span><span class="macro">!</span> {
+    <span class="kw">fn</span> <span class="ident">run_and_assert_universe_input</span>()(
+        <span class="ident">universe</span> <span class="kw">in</span> <span class="ident">AccountUniverseGen</span>::<span class="ident">strategy</span>(<span class="number">2</span>..<span class="number">20</span>, <span class="ident">log_balance_strategy</span>(<span class="number">10_000_000</span>)),
+        <span class="ident">txns</span> <span class="kw">in</span> <span class="ident">vec</span>(<span class="ident">all_transactions_strategy</span>(<span class="number">1</span>, <span class="number">1_000_000</span>), <span class="number">1</span>..<span class="number">40</span>)
+    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountUniverseGen</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">AUTransactionGen</span> <span class="op">+</span> <span class="ident">Clone</span><span class="op">&gt;</span>) {
+        (<span class="ident">universe</span>, <span class="ident">txns</span>)
     }
 }
 

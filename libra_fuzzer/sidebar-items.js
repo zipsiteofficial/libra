@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["commands",""],["fuzz_targets",""]],"struct":[["FuzzTarget","A fuzz target."]],"trait":[["FuzzTargetImpl","Implementation for a particular target of a fuzz operation."]]});
+initSidebarItems({"fn":[["fuzz_data_to_value","Helper to convert a bytearray to a value implenting the Arbitrary trait."]],"mod":[["commands",""],["fuzz_targets",""]],"struct":[["FuzzTarget","A fuzz target."]],"trait":[["FuzzTargetImpl","Implementation for a particular target of a fuzz operation."]]});
