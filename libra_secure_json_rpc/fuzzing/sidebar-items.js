@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["fuzz_account_state_response",""],["fuzz_submit_transaction_response",""],["fuzz_transaction_status_response",""],["generate_account_state_corpus",""],["generate_submit_transaction_corpus",""],["generate_transaction_status_corpus",""]]});
+initSidebarItems({"fn":[["arb_account_state_response",""],["arb_submit_transaction_response",""],["arb_transaction_status_response",""]]});
