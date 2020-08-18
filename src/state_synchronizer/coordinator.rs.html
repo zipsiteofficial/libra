@@ -1106,6 +1106,17 @@
 <span id="1106">1106</span>
 <span id="1107">1107</span>
 <span id="1108">1108</span>
+<span id="1109">1109</span>
+<span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
+<span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
+<span id="1116">1116</span>
+<span id="1117">1117</span>
+<span id="1118">1118</span>
+<span id="1119">1119</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1187,20 +1198,31 @@
     <span class="comment">// In-memory store of ledger infos that are pending commits</span>
     <span class="comment">// (k, v) - (LI version, LI)</span>
     <span class="ident">pending_li_queue</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Version</span>, <span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
+    <span class="comment">// max size limit on `pending_li_queue`, to prevent OOM</span>
+    <span class="ident">max_pending_li_limit</span>: <span class="ident">usize</span>,
     <span class="comment">// target li</span>
     <span class="ident">target_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">PendingLedgerInfos</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">max_pending_li_limit</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">pending_li_queue</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+            <span class="ident">max_pending_li_limit</span>,
             <span class="ident">target_li</span>: <span class="prelude-val">None</span>,
         }
     }
 
     <span class="doccomment">/// Adds `new_li` to the queue of pending LI&#39;s</span>
     <span class="kw">fn</span> <span class="ident">add_li</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">new_li</span>: <span class="ident">LedgerInfoWithSignatures</span>) {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">pending_li_queue</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_pending_li_limit</span> {
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="string">&quot;[state sync] pending LI store reached max capacity, failed to add LI {}&quot;</span>,
+                <span class="ident">new_li</span>
+            );
+            <span class="kw">return</span>;
+        }
+
         <span class="comment">// update pending_ledgers if new LI is ahead of target LI (in terms of version)</span>
         <span class="kw">let</span> <span class="ident">target_version</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">target_li</span>
@@ -1304,7 +1326,7 @@
             <span class="ident">client_events</span>,
             <span class="ident">state_sync_to_mempool_sender</span>,
             <span class="ident">local_state</span>: <span class="ident">initial_state</span>,
-            <span class="ident">pending_ledger_infos</span>: <span class="ident">PendingLedgerInfos</span>::<span class="ident">new</span>(),
+            <span class="ident">pending_ledger_infos</span>: <span class="ident">PendingLedgerInfos</span>::<span class="ident">new</span>(<span class="ident">config</span>.<span class="ident">max_pending_li_limit</span>),
             <span class="ident">config</span>,
             <span class="ident">role</span>,
             <span class="ident">waypoint</span>,
