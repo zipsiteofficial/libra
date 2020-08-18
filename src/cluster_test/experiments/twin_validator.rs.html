@@ -136,6 +136,25 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -206,6 +225,7 @@
         <span class="kw">let</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">60</span>);
         <span class="kw">let</span> <span class="ident">window</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">240</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_instances</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">origin_instances</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> <span class="ident">inst</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">twin_validators</span>.<span class="ident">iter</span>() {
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Stopping origin validator {}&quot;</span>, <span class="ident">inst</span>);
             <span class="ident">inst</span>.<span class="ident">stop</span>().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -236,6 +256,7 @@
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Twin node {} is up&quot;</span>, <span class="ident">new_inst</span>);
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Restarting origin validator {}&quot;</span>, <span class="ident">inst</span>);
             <span class="ident">inst</span>.<span class="ident">start</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">origin_instances</span>.<span class="ident">push</span>(<span class="ident">inst</span>.<span class="ident">clone</span>());
             <span class="ident">new_instances</span>.<span class="ident">push</span>(<span class="ident">new_inst</span>.<span class="ident">clone</span>());
         }
         <span class="kw">let</span> <span class="ident">instances</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">instances</span>.<span class="ident">clone</span>();
@@ -252,9 +273,26 @@
             <span class="string">&quot;Link to dashboard : {}&quot;</span>,
             <span class="ident">context</span>.<span class="ident">prometheus</span>.<span class="ident">link_to_dashboard</span>(<span class="ident">start</span>, <span class="ident">end</span>)
         );
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Stopping origin validators&quot;</span>);
+        <span class="kw">let</span> <span class="ident">futures</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">origin_instances</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">ic</span><span class="op">|</span> <span class="ident">ic</span>.<span class="ident">stop</span>()).<span class="ident">collect</span>();
+        <span class="ident">try_join_all</span>(<span class="ident">futures</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">10</span>)).<span class="kw">await</span>;
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Stopping twin validators&quot;</span>);
         <span class="kw">let</span> <span class="ident">futures</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">new_instances</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">ic</span><span class="op">|</span> <span class="ident">ic</span>.<span class="ident">stop</span>()).<span class="ident">collect</span>();
         <span class="ident">try_join_all</span>(<span class="ident">futures</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">10</span>)).<span class="kw">await</span>;
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Restarting origin validators&quot;</span>);
+        <span class="kw">let</span> <span class="ident">futures</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">origin_instances</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">ic</span><span class="op">|</span> <span class="ident">ic</span>.<span class="ident">start</span>()).<span class="ident">collect</span>();
+        <span class="ident">try_join_all</span>(<span class="ident">futures</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">10</span>)).<span class="kw">await</span>;
+
+        <span class="kw">for</span> <span class="ident">inst</span> <span class="kw">in</span> <span class="ident">origin_instances</span>.<span class="ident">iter</span>() {
+            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Waiting for origin node to be up: {}&quot;</span>, <span class="ident">inst</span>);
+            <span class="ident">inst</span>.<span class="ident">wait_json_rpc</span>(<span class="ident">Instant</span>::<span class="ident">now</span>() <span class="op">+</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">120</span>))
+                .<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Origin node {} is up&quot;</span>, <span class="ident">inst</span>);
+        }
+
         <span class="ident">context</span>
             .<span class="ident">report</span>
             .<span class="ident">report_txn_stats</span>(<span class="self">self</span>.<span class="ident">to_string</span>(), <span class="ident">stats</span>, <span class="ident">window</span>);
