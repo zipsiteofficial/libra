@@ -554,6 +554,7 @@
 <span id="554">554</span>
 <span id="555">555</span>
 <span id="556">556</span>
+<span id="557">557</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -987,11 +988,12 @@
             <span class="ident">ConsensusMsg</span>::<span class="ident">EpochChangeProof</span>(<span class="ident">proof</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">msg_epoch</span> <span class="op">=</span> <span class="ident">proof</span>.<span class="ident">epoch</span>()<span class="question-mark">?</span>;
                 <span class="kw">if</span> <span class="ident">msg_epoch</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">epoch</span>() {
-                    <span class="self">self</span>.<span class="ident">start_new_epoch</span>(<span class="kw-2">*</span><span class="ident">proof</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                    <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;process_epoch_proof&quot;</span>, <span class="self">self</span>.<span class="ident">start_new_epoch</span>(<span class="kw-2">*</span><span class="ident">proof</span>).<span class="kw">await</span><span class="question-mark">?</span>);
                 } <span class="kw">else</span> {
-                    <span class="macro">monitor</span><span class="macro">!</span>(
-                        <span class="string">&quot;process_epoch_change_proof&quot;</span>,
-                        <span class="self">self</span>.<span class="ident">process_different_epoch</span>(<span class="ident">msg_epoch</span>, <span class="ident">peer_id</span>).<span class="kw">await</span><span class="question-mark">?</span>
+                    <span class="macro">bail</span><span class="macro">!</span>(
+                        <span class="string">&quot;[EpochManager] Unexpected epoch proof from epoch {}, local epoch {}&quot;</span>,
+                        <span class="ident">msg_epoch</span>,
+                        <span class="self">self</span>.<span class="ident">epoch</span>()
                     );
                 }
             }
