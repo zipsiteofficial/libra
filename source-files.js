@@ -21,6 +21,7 @@ sourcesIndex["datatest_stable"] = {"name":"","files":["lib.rs","macros.rs","runn
 sourcesIndex["debug_interface"] = {"name":"","files":["lib.rs","node_debug_service.rs"]};
 sourcesIndex["disassembler"] = {"name":"","files":["disassembler.rs","lib.rs"]};
 sourcesIndex["docgen"] = {"name":"","files":["docgen.rs","lib.rs"]};
+sourcesIndex["errmapgen"] = {"name":"","files":["errmapgen.rs","lib.rs"]};
 sourcesIndex["execution_correctness"] = {"name":"","files":["execution_correctness.rs","execution_correctness_manager.rs","lib.rs","local.rs","process.rs","remote_service.rs","serializer.rs","thread.rs"]};
 sourcesIndex["executor"] = {"name":"","dirs":[{"name":"speculation_cache","files":["mod.rs"]}],"files":["db_bootstrapper.rs","fuzzing.rs","lib.rs","metrics.rs","types.rs"]};
 sourcesIndex["executor_benchmark"] = {"name":"","files":["lib.rs"]};

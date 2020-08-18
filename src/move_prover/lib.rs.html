@@ -363,6 +363,26 @@
 <span id="363">363</span>
 <span id="364">364</span>
 <span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -379,6 +399,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="ident">anyhow</span>;
 <span class="kw">use</span> <span class="ident">codespan_reporting</span>::<span class="ident">term</span>::<span class="ident">termcolor</span>::{<span class="ident">ColorChoice</span>, <span class="ident">StandardStream</span>, <span class="ident">WriteColor</span>};
 <span class="kw">use</span> <span class="ident">docgen</span>::<span class="ident">Docgen</span>;
+<span class="kw">use</span> <span class="ident">errmapgen</span>::<span class="ident">ErrmapGen</span>;
 <span class="kw">use</span> <span class="ident">handlebars</span>::<span class="ident">Handlebars</span>;
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
@@ -447,6 +468,10 @@
     <span class="comment">// Same for ABI generator.</span>
     <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_abigen</span> {
         <span class="kw">return</span> <span class="ident">run_abigen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="ident">now</span>);
+    }
+    <span class="comment">// Same for the error map generator</span>
+    <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_errmapgen</span> {
+        <span class="kw">return</span> <span class="ident">run_errmapgen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="ident">now</span>);
     }
     <span class="kw">let</span> <span class="ident">targets</span> <span class="op">=</span> <span class="ident">create_and_process_bytecode</span>(<span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="kw-2">&amp;</span><span class="ident">env</span>);
     <span class="kw">if</span> <span class="ident">env</span>.<span class="ident">has_errors</span>() {
@@ -543,6 +568,21 @@
         <span class="ident">fs</span>::<span class="ident">create_dir_all</span>(<span class="ident">path</span>.<span class="ident">parent</span>().<span class="ident">unwrap</span>())<span class="question-mark">?</span>;
         <span class="ident">fs</span>::<span class="ident">write</span>(<span class="ident">path</span>.<span class="ident">as_path</span>(), <span class="ident">content</span>)<span class="question-mark">?</span>;
     }
+    <span class="kw">let</span> <span class="ident">generating_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
+    <span class="macro">info</span><span class="macro">!</span>(
+        <span class="string">&quot;{:.3}s checking, {:.3}s generating&quot;</span>,
+        <span class="ident">checking_elapsed</span>.<span class="ident">as_secs_f64</span>(),
+        (<span class="ident">generating_elapsed</span> <span class="op">-</span> <span class="ident">checking_elapsed</span>).<span class="ident">as_secs_f64</span>()
+    );
+    <span class="prelude-val">Ok</span>(())
+}
+
+<span class="kw">fn</span> <span class="ident">run_errmapgen</span>(<span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>, <span class="ident">options</span>: <span class="kw-2">&amp;</span><span class="ident">Options</span>, <span class="ident">now</span>: <span class="ident">Instant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">generator</span> <span class="op">=</span> <span class="ident">ErrmapGen</span>::<span class="ident">new</span>(<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>.<span class="ident">errmapgen</span>);
+    <span class="kw">let</span> <span class="ident">checking_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
+    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;generating error map&quot;</span>);
+    <span class="ident">generator</span>.<span class="ident">gen</span>();
+    <span class="ident">generator</span>.<span class="ident">save_result</span>();
     <span class="kw">let</span> <span class="ident">generating_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
     <span class="macro">info</span><span class="macro">!</span>(
         <span class="string">&quot;{:.3}s checking, {:.3}s generating&quot;</span>,

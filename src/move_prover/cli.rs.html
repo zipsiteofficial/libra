@@ -595,6 +595,22 @@
 <span id="595">595</span>
 <span id="596">596</span>
 <span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -607,6 +623,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="ident">anyhow</span>;
 <span class="kw">use</span> <span class="ident">clap</span>::{<span class="ident">App</span>, <span class="ident">Arg</span>};
 <span class="kw">use</span> <span class="ident">docgen</span>::<span class="ident">DocgenOptions</span>;
+<span class="kw">use</span> <span class="ident">errmapgen</span>::<span class="ident">ErrmapOptions</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="ident">LevelFilter</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">simplelog</span>::{
@@ -651,6 +668,8 @@
     <span class="kw">pub</span> <span class="ident">run_docgen</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Whether to run the ABI generator instead of the prover.</span>
     <span class="kw">pub</span> <span class="ident">run_abigen</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Whether to run the error map generator instead of the prover.</span>
+    <span class="kw">pub</span> <span class="ident">run_errmapgen</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// An account address to use if none is specified in the source.</span>
     <span class="kw">pub</span> <span class="ident">account_address</span>: <span class="ident">String</span>,
     <span class="doccomment">/// The paths to the Move sources.</span>
@@ -666,6 +685,8 @@
     <span class="kw">pub</span> <span class="ident">docgen</span>: <span class="ident">DocgenOptions</span>,
     <span class="doccomment">/// Options for the ABI generator.</span>
     <span class="kw">pub</span> <span class="ident">abigen</span>: <span class="ident">AbigenOptions</span>,
+    <span class="doccomment">/// Options for the error map generator.</span>
+    <span class="kw">pub</span> <span class="ident">errmapgen</span>: <span class="ident">ErrmapOptions</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Options</span> {
@@ -675,6 +696,7 @@
             <span class="ident">output_path</span>: <span class="string">&quot;output.bpl&quot;</span>.<span class="ident">to_string</span>(),
             <span class="ident">run_docgen</span>: <span class="bool-val">false</span>,
             <span class="ident">run_abigen</span>: <span class="bool-val">false</span>,
+            <span class="ident">run_errmapgen</span>: <span class="bool-val">false</span>,
             <span class="ident">account_address</span>: <span class="string">&quot;0x234567&quot;</span>.<span class="ident">to_string</span>(),
             <span class="ident">verbosity_level</span>: <span class="ident">LevelFilter</span>::<span class="ident">Info</span>,
             <span class="ident">move_sources</span>: <span class="macro">vec</span><span class="macro">!</span>[],
@@ -683,6 +705,7 @@
             <span class="ident">backend</span>: <span class="ident">BackendOptions</span>::<span class="ident">default</span>(),
             <span class="ident">docgen</span>: <span class="ident">DocgenOptions</span>::<span class="ident">default</span>(),
             <span class="ident">abigen</span>: <span class="ident">AbigenOptions</span>::<span class="ident">default</span>(),
+            <span class="ident">errmapgen</span>: <span class="ident">ErrmapOptions</span>::<span class="ident">default</span>(),
         }
     }
 }
@@ -943,6 +966,12 @@
                     Generated ABIs will be written into the directory `./abi` unless configured otherwise via toml&quot;</span>),
             )
             .<span class="ident">arg</span>(
+                <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;errmapgen&quot;</span>)
+                    .<span class="ident">long</span>(<span class="string">&quot;errmapgen&quot;</span>)
+                    .<span class="ident">help</span>(<span class="string">&quot;run the error map generator instead of the prover. \
+                    The generated error map will be written to `errmap` unless configured otherwise&quot;</span>),
+            )
+            .<span class="ident">arg</span>(
                 <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;verify&quot;</span>)
                     .<span class="ident">long</span>(<span class="string">&quot;verify&quot;</span>)
                     .<span class="ident">takes_value</span>(<span class="bool-val">true</span>)
@@ -1062,6 +1091,9 @@
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;abigen&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">run_abigen</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        }
+        <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;errmapgen&quot;</span>) {
+            <span class="ident">options</span>.<span class="ident">run_errmapgen</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;warn&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">report_warnings</span> <span class="op">=</span> <span class="bool-val">true</span>;
