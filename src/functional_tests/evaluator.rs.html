@@ -650,6 +650,16 @@
 <span id="650">650</span>
 <span id="651">651</span>
 <span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -998,16 +1008,26 @@
     <span class="kw">let</span> <span class="ident">script</span> <span class="op">=</span> <span class="ident">TransactionScript</span>::<span class="ident">new</span>(<span class="ident">blob</span>, <span class="ident">config</span>.<span class="ident">ty_args</span>.<span class="ident">clone</span>(), <span class="ident">config</span>.<span class="ident">args</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="ident">params</span> <span class="op">=</span> <span class="ident">get_transaction_parameters</span>(<span class="ident">exec</span>, <span class="ident">config</span>);
-    <span class="prelude-val">Ok</span>(<span class="ident">RawTransaction</span>::<span class="ident">new_script</span>(
-        <span class="ident">params</span>.<span class="ident">sender_addr</span>,
-        <span class="ident">params</span>.<span class="ident">sequence_number</span>,
-        <span class="ident">script</span>,
-        <span class="ident">params</span>.<span class="ident">max_gas_amount</span>,
-        <span class="ident">params</span>.<span class="ident">gas_unit_price</span>,
-        <span class="ident">params</span>.<span class="ident">gas_currency_code</span>,
-        <span class="ident">params</span>.<span class="ident">expiration_timestamp_secs</span>,
-        <span class="ident">ChainId</span>::<span class="ident">test</span>(),
-    )
+    <span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">execute_as</span>) <span class="op">=</span> <span class="ident">config</span>.<span class="ident">execute_as</span> {
+        <span class="ident">RawTransaction</span>::<span class="ident">new_writeset_script</span>(
+            <span class="ident">params</span>.<span class="ident">sender_addr</span>,
+            <span class="ident">params</span>.<span class="ident">sequence_number</span>,
+            <span class="ident">script</span>,
+            <span class="ident">execute_as</span>,
+            <span class="ident">ChainId</span>::<span class="ident">test</span>(),
+        )
+    } <span class="kw">else</span> {
+        <span class="ident">RawTransaction</span>::<span class="ident">new_script</span>(
+            <span class="ident">params</span>.<span class="ident">sender_addr</span>,
+            <span class="ident">params</span>.<span class="ident">sequence_number</span>,
+            <span class="ident">script</span>,
+            <span class="ident">params</span>.<span class="ident">max_gas_amount</span>,
+            <span class="ident">params</span>.<span class="ident">gas_unit_price</span>,
+            <span class="ident">params</span>.<span class="ident">gas_currency_code</span>,
+            <span class="ident">params</span>.<span class="ident">expiration_timestamp_secs</span>,
+            <span class="ident">ChainId</span>::<span class="ident">test</span>(),
+        )
+    }
     .<span class="ident">sign</span>(<span class="ident">params</span>.<span class="ident">privkey</span>, <span class="ident">params</span>.<span class="ident">pubkey</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>
     .<span class="ident">into_inner</span>())
 }
