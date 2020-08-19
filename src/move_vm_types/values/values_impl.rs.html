@@ -3175,7 +3175,6 @@
 <span id="3175">3175</span>
 <span id="3176">3176</span>
 <span id="3177">3177</span>
-<span id="3178">3178</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -5785,9 +5784,8 @@
         <span class="ident">blob</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
         <span class="ident">kind_info</span>: <span class="kw-2">&amp;</span><span class="ident">MoveKindInfo</span>,
         <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">MoveTypeLayout</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
-        <span class="ident">lcs</span>::<span class="ident">from_bytes_seed</span>(<span class="ident">SeedWrapper</span> { <span class="ident">kind_info</span>, <span class="ident">layout</span> }, <span class="ident">blob</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_DATA</span>).<span class="ident">with_message</span>(<span class="ident">e</span>.<span class="ident">to_string</span>()))
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
+        <span class="ident">lcs</span>::<span class="ident">from_bytes_seed</span>(<span class="ident">SeedWrapper</span> { <span class="ident">kind_info</span>, <span class="ident">layout</span> }, <span class="ident">blob</span>).<span class="ident">ok</span>()
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">MoveTypeLayout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -5805,7 +5803,7 @@
         <span class="ident">is_resource</span>: <span class="ident">bool</span>,
         <span class="ident">field_kinds</span>: <span class="kw-2">&amp;</span>[<span class="ident">MoveKindInfo</span>],
         <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">MoveStructLayout</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span><span class="ident">Struct</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Struct</span><span class="op">&gt;</span> {
         <span class="ident">lcs</span>::<span class="ident">from_bytes_seed</span>(
             <span class="ident">SeedWrapper</span> {
                 <span class="ident">kind_info</span>: (<span class="ident">MoveKind</span>::<span class="ident">from_bool</span>(<span class="ident">is_resource</span>), <span class="ident">field_kinds</span>),
@@ -5813,7 +5811,7 @@
             },
             <span class="ident">blob</span>,
         )
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_DATA</span>).<span class="ident">with_message</span>(<span class="ident">e</span>.<span class="ident">to_string</span>()))
+        .<span class="ident">ok</span>()
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">simple_serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">MoveStructLayout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
@@ -6136,7 +6134,7 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize_constant</span>(<span class="ident">constant</span>: <span class="kw-2">&amp;</span><span class="ident">Constant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Value</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">kind_info</span>, <span class="ident">layout</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">constant_sig_token_to_layout</span>(<span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">type_</span>)<span class="question-mark">?</span>;
-        <span class="ident">Value</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">data</span>, <span class="kw-2">&amp;</span><span class="ident">kind_info</span>, <span class="kw-2">&amp;</span><span class="ident">layout</span>).<span class="ident">ok</span>()
+        <span class="ident">Value</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">data</span>, <span class="kw-2">&amp;</span><span class="ident">kind_info</span>, <span class="kw-2">&amp;</span><span class="ident">layout</span>)
     }
 }
 
