@@ -1029,15 +1029,6 @@
 <span id="1029">1029</span>
 <span id="1030">1030</span>
 <span id="1031">1031</span>
-<span id="1032">1032</span>
-<span id="1033">1033</span>
-<span id="1034">1034</span>
-<span id="1035">1035</span>
-<span id="1036">1036</span>
-<span id="1037">1037</span>
-<span id="1038">1038</span>
-<span id="1039">1039</span>
-<span id="1040">1040</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1558,7 +1549,8 @@
                         );
                     }
                 } <span class="kw">else</span> {
-                    <span class="self">self</span>.<span class="ident">dial_peer</span>(<span class="ident">requested_peer_id</span>, <span class="ident">addr</span>, <span class="ident">response_tx</span>).<span class="kw">await</span>;
+                    <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">TransportRequest</span>::<span class="ident">DialPeer</span>(<span class="ident">requested_peer_id</span>, <span class="ident">addr</span>, <span class="ident">response_tx</span>);
+                    <span class="self">self</span>.<span class="ident">transport_reqs_tx</span>.<span class="ident">send</span>(<span class="ident">request</span>).<span class="kw">await</span>.<span class="ident">unwrap</span>();
                 };
             }
             <span class="ident">ConnectionRequest</span>::<span class="ident">DisconnectPeer</span>(<span class="ident">peer_id</span>, <span class="ident">resp_tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -1754,16 +1746,6 @@
                 );
             }
         }
-    }
-
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">dial_peer</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">peer_id</span>: <span class="ident">PeerId</span>,
-        <span class="ident">address</span>: <span class="ident">NetworkAddress</span>,
-        <span class="ident">response_tx</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) {
-        <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">TransportRequest</span>::<span class="ident">DialPeer</span>(<span class="ident">peer_id</span>, <span class="ident">address</span>, <span class="ident">response_tx</span>);
-        <span class="self">self</span>.<span class="ident">transport_reqs_tx</span>.<span class="ident">send</span>(<span class="ident">request</span>).<span class="kw">await</span>.<span class="ident">unwrap</span>();
     }
 
     <span class="kw">fn</span> <span class="ident">spawn_peer_network_events_handler</span>(

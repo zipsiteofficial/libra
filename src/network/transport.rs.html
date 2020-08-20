@@ -926,8 +926,6 @@
 <span id="926">926</span>
 <span id="927">927</span>
 <span id="928">928</span>
-<span id="929">929</span>
-<span id="930">930</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -945,7 +943,7 @@
     <span class="ident">io</span>::{<span class="ident">AsyncRead</span>, <span class="ident">AsyncWrite</span>},
     <span class="ident">stream</span>::{<span class="ident">Stream</span>, <span class="ident">StreamExt</span>, <span class="ident">TryStreamExt</span>},
 };
-<span class="kw">use</span> <span class="ident">libra_config</span>::{<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>, <span class="ident">network_id</span>::<span class="ident">NetworkId</span>};
+<span class="kw">use</span> <span class="ident">libra_config</span>::{<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>, <span class="ident">network_id</span>::<span class="ident">NetworkContext</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">x25519</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{<span class="ident">parse_dns_tcp</span>, <span class="ident">parse_ip_tcp</span>, <span class="ident">parse_memory</span>, <span class="ident">NetworkAddress</span>};
@@ -1241,15 +1239,14 @@
 {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">base_transport</span>: <span class="ident">TTransport</span>,
-        <span class="ident">self_peer_id</span>: <span class="ident">PeerId</span>,
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">identity_key</span>: <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>,
         <span class="ident">trusted_peers</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">handshake_version</span>: <span class="ident">u8</span>,
         <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-        <span class="ident">network_id</span>: <span class="ident">NetworkId</span>,
         <span class="ident">application_protocols</span>: <span class="ident">SupportedProtocols</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">own_handshake</span> <span class="op">=</span> <span class="ident">HandshakeMsg</span>::<span class="ident">new</span>(<span class="ident">chain_id</span>, <span class="ident">network_id</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">own_handshake</span> <span class="op">=</span> <span class="ident">HandshakeMsg</span>::<span class="ident">new</span>(<span class="ident">chain_id</span>, <span class="ident">network_context</span>.<span class="ident">network_id</span>().<span class="ident">clone</span>());
         <span class="ident">own_handshake</span>.<span class="ident">add</span>(<span class="ident">SUPPORTED_MESSAGING_PROTOCOL</span>, <span class="ident">application_protocols</span>);
         <span class="kw">let</span> <span class="ident">identity_pubkey</span> <span class="op">=</span> <span class="ident">identity_key</span>.<span class="ident">public_key</span>();
 
@@ -1260,7 +1257,7 @@
 
         <span class="self">Self</span> {
             <span class="ident">ctxt</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">UpgradeContext</span> {
-                <span class="ident">noise</span>: <span class="ident">NoiseUpgrader</span>::<span class="ident">new</span>(<span class="ident">self_peer_id</span>, <span class="ident">identity_key</span>, <span class="ident">auth_mode</span>),
+                <span class="ident">noise</span>: <span class="ident">NoiseUpgrader</span>::<span class="ident">new</span>(<span class="ident">network_context</span>, <span class="ident">identity_key</span>, <span class="ident">auth_mode</span>),
                 <span class="ident">handshake_version</span>,
                 <span class="ident">own_handshake</span>,
             }),
@@ -1465,6 +1462,7 @@
     <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">handshake</span>::<span class="ident">v1</span>::{<span class="ident">ProtocolId</span>, <span class="ident">SupportedProtocols</span>};
     <span class="kw">use</span> <span class="ident">bytes</span>::{<span class="ident">Bytes</span>, <span class="ident">BytesMut</span>};
     <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">executor</span>::<span class="ident">block_on</span>, <span class="ident">future</span>, <span class="ident">io</span>::<span class="ident">AsyncWriteExt</span>};
+    <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkId</span>;
     <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">traits</span>::<span class="ident">Uniform</span>};
     <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">Protocol</span>::<span class="kw-2">*</span>;
     <span class="kw">use</span> <span class="ident">memsocket</span>::<span class="ident">MemorySocket</span>;
@@ -1546,23 +1544,21 @@
         <span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">ChainId</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">listener_transport</span> <span class="op">=</span> <span class="ident">LibraNetTransport</span>::<span class="ident">new</span>(
             <span class="ident">base_transport</span>.<span class="ident">clone</span>(),
-            <span class="ident">listener_peer_id</span>,
+            <span class="ident">NetworkContext</span>::<span class="ident">mock_with_peer_id</span>(<span class="ident">listener_peer_id</span>),
             <span class="ident">listener_key</span>,
             <span class="ident">trusted_peers</span>.<span class="ident">clone</span>(),
             <span class="ident">HANDSHAKE_VERSION</span>,
             <span class="ident">chain_id</span>,
-            <span class="ident">NetworkId</span>::<span class="ident">Validator</span>,
             <span class="ident">supported_protocols</span>.<span class="ident">clone</span>(),
         );
 
         <span class="kw">let</span> <span class="ident">dialer_transport</span> <span class="op">=</span> <span class="ident">LibraNetTransport</span>::<span class="ident">new</span>(
             <span class="ident">base_transport</span>,
-            <span class="ident">dialer_peer_id</span>,
+            <span class="ident">NetworkContext</span>::<span class="ident">mock_with_peer_id</span>(<span class="ident">dialer_peer_id</span>),
             <span class="ident">dialer_key</span>,
             <span class="ident">trusted_peers</span>.<span class="ident">clone</span>(),
             <span class="ident">HANDSHAKE_VERSION</span>,
             <span class="ident">chain_id</span>,
-            <span class="ident">NetworkId</span>::<span class="ident">Validator</span>,
             <span class="ident">supported_protocols</span>.<span class="ident">clone</span>(),
         );
 
