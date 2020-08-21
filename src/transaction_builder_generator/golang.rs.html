@@ -567,7 +567,7 @@ func EncodeScript(call ScriptCall) libratypes.Script {{&quot;#</span>
                 .<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>);
             <span class="macro">writeln</span><span class="macro">!</span>(
                 <span class="self">self</span>.<span class="ident">out</span>,
-                <span class="string">r#&quot;case ScriptCall__{0}:
+                <span class="string">r#&quot;case *ScriptCall__{0}:
 	return Encode{0}Script({1})&quot;#</span>,
                 <span class="ident">abi</span>.<span class="ident">name</span>().<span class="ident">to_camel_case</span>(),
                 <span class="ident">params</span>,
@@ -584,7 +584,7 @@ func EncodeScript(call ScriptCall) libratypes.Script {{&quot;#</span>
             <span class="self">self</span>.<span class="ident">out</span>,
             <span class="string">r#&quot;
 // Try to recognize a Libra `Script` and convert it into a structured object `ScriptCall`.
-func DecodeScript(script libratypes.Script) (ScriptCall, error) {{
+func DecodeScript(script *libratypes.Script) (ScriptCall, error) {{
 	if helper := script_decoder_map[string(script.Code)]; helper != nil {{
 		val, err := helper(script)
                 return val, err
@@ -627,7 +627,7 @@ func DecodeScript(script libratypes.Script) (ScriptCall, error) {{
     <span class="kw">fn</span> <span class="ident">output_script_decoder_function</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">abi</span>: <span class="kw-2">&amp;</span><span class="ident">ScriptABI</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">writeln</span><span class="macro">!</span>(
             <span class="self">self</span>.<span class="ident">out</span>,
-            <span class="string">&quot;\nfunc decode_{}_script(script libratypes.Script) (ScriptCall, error) {{&quot;</span>,
+            <span class="string">&quot;\nfunc decode_{}_script(script *libratypes.Script) (ScriptCall, error) {{&quot;</span>,
             <span class="ident">abi</span>.<span class="ident">name</span>(),
         )<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">out</span>.<span class="ident">indent</span>();
@@ -668,7 +668,7 @@ func DecodeScript(script libratypes.Script) (ScriptCall, error) {{
                 <span class="ident">arg</span>.<span class="ident">name</span>().<span class="ident">to_camel_case</span>(),
             )<span class="question-mark">?</span>;
         }
-        <span class="macro">writeln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">out</span>, <span class="string">&quot;return call, nil&quot;</span>)<span class="question-mark">?</span>;
+        <span class="macro">writeln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">out</span>, <span class="string">&quot;return &amp;call, nil&quot;</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">out</span>.<span class="ident">unindent</span>();
         <span class="macro">writeln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">out</span>, <span class="string">&quot;}}&quot;</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
@@ -678,7 +678,7 @@ func DecodeScript(script libratypes.Script) (ScriptCall, error) {{
         <span class="macro">writeln</span><span class="macro">!</span>(
             <span class="self">self</span>.<span class="ident">out</span>,
             <span class="string">r#&quot;
-var script_decoder_map = map[string]func(libratypes.Script) (ScriptCall, error) {{&quot;#</span>
+var script_decoder_map = map[string]func(*libratypes.Script) (ScriptCall, error) {{&quot;#</span>
         )<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">out</span>.<span class="ident">indent</span>();
         <span class="kw">for</span> <span class="ident">abi</span> <span class="kw">in</span> <span class="ident">abis</span> {
@@ -720,7 +720,7 @@ var script_decoder_map = map[string]func(libratypes.Script) (ScriptCall, error) 
             <span class="self">self</span>.<span class="ident">out</span>,
             <span class="string">r#&quot;
 func decode_{}_argument(arg libratypes.TransactionArgument) (value {}, err error) {{
-	if arg, ok := arg.(libratypes.TransactionArgument__{}); ok {{
+	if arg, ok := arg.(*libratypes.TransactionArgument__{}); ok {{
 		{}
 	}} else {{
 		err = fmt.Errorf(&quot;Was expecting a {} argument&quot;)
@@ -803,13 +803,13 @@ func decode_{}_argument(arg libratypes.TransactionArgument) (value {}, err error
     <span class="kw">fn</span> <span class="ident">quote_transaction_argument</span>(<span class="ident">type_tag</span>: <span class="kw-2">&amp;</span><span class="ident">TypeTag</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="kw">use</span> <span class="ident">TypeTag</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="ident">type_tag</span> {
-            <span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__Bool{{{}}}&quot;</span>, <span class="ident">name</span>),
-            <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__U8{{{}}}&quot;</span>, <span class="ident">name</span>),
-            <span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__U64{{{}}}&quot;</span>, <span class="ident">name</span>),
-            <span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__U128{{{}}}&quot;</span>, <span class="ident">name</span>),
-            <span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__Address{{{}}}&quot;</span>, <span class="ident">name</span>),
+            <span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__Bool{{{}}}&quot;</span>, <span class="ident">name</span>),
+            <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__U8{{{}}}&quot;</span>, <span class="ident">name</span>),
+            <span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__U64{{{}}}&quot;</span>, <span class="ident">name</span>),
+            <span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__U128{{{}}}&quot;</span>, <span class="ident">name</span>),
+            <span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__Address{{{}}}&quot;</span>, <span class="ident">name</span>),
             <span class="ident">Vector</span>(<span class="ident">type_tag</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">type_tag</span>.<span class="ident">as_ref</span>() {
-                <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;libratypes.TransactionArgument__U8Vector{{{}}}&quot;</span>, <span class="ident">name</span>),
+                <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;&amp;libratypes.TransactionArgument__U8Vector{{{}}}&quot;</span>, <span class="ident">name</span>),
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">common</span>::<span class="ident">type_not_allowed</span>(<span class="ident">type_tag</span>),
             },
 
