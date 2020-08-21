@@ -552,12 +552,6 @@
 <span id="552">552</span>
 <span id="553">553</span>
 <span id="554">554</span>
-<span id="555">555</span>
-<span id="556">556</span>
-<span id="557">557</span>
-<span id="558">558</span>
-<span id="559">559</span>
-<span id="560">560</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -583,10 +577,11 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fs</span>::<span class="ident">File</span>, <span class="ident">io</span>::<span class="ident">Write</span>, <span class="ident">path</span>::<span class="ident">Path</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
+<span class="kw">use</span> <span class="ident">consensus_types</span>::<span class="ident">safety_data</span>::<span class="ident">SafetyData</span>;
 <span class="kw">use</span> <span class="ident">libra_genesis_tool</span>::<span class="ident">layout</span>::<span class="ident">Layout</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
-    <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EPOCH</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">LIBRA_ROOT_KEY</span>,
-    <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>, <span class="ident">PREFERRED_ROUND</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
+    <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>,
+    <span class="ident">SAFETY_DATA</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Value</span>, <span class="ident">VaultStorage</span>};
@@ -958,18 +953,11 @@
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}__{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">key</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
             }
             <span class="ident">vault_storage</span>
-                .<span class="ident">set</span>(<span class="ident">EPOCH</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">EPOCH</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-            <span class="ident">vault_storage</span>
-                .<span class="ident">set</span>(<span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">LAST_VOTED_ROUND</span>, <span class="ident">e</span>)
-                })<span class="question-mark">?</span>;
-            <span class="ident">vault_storage</span>
-                .<span class="ident">set</span>(<span class="ident">PREFERRED_ROUND</span>, <span class="ident">Value</span>::<span class="ident">U64</span>(<span class="number">0</span>))
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">PREFERRED_ROUND</span>, <span class="ident">e</span>)
-                })<span class="question-mark">?</span>;
+                .<span class="ident">set</span>(
+                    <span class="ident">SAFETY_DATA</span>,
+                    <span class="ident">Value</span>::<span class="ident">SafetyData</span>(<span class="ident">SafetyData</span>::<span class="ident">new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="prelude-val">None</span>)),
+                )
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{}: {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">SAFETY_DATA</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
             <span class="ident">vault_storage</span>
                 .<span class="ident">set</span>(<span class="ident">WAYPOINT</span>, <span class="ident">Value</span>::<span class="ident">String</span>(<span class="string">&quot;&quot;</span>.<span class="ident">into</span>()))
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">WAYPOINT</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
