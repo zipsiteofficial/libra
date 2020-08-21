@@ -49,12 +49,25 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">missing_docs</span>)]</span>
+<span class="doccomment">//! This feature gets turned on only if libra-crypto is compiled via MIRAI in a nightly build.</span>
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">mirai</span>, <span class="ident">allow</span>(<span class="ident">incomplete_features</span>), <span class="ident">feature</span>(<span class="ident">const_generics</span>))]</span>
 
 <span class="doccomment">//! A library supplying various cryptographic primitives</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">compat</span>;
@@ -70,6 +83,9 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">unit_tests</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">mirai</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tags</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="self">self</span>::<span class="ident">traits</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">hash</span>::<span class="ident">HashValue</span>;
@@ -101,5 +117,11 @@
     <span class="string">&quot;at most one dalek arithmetic backend cargo feature should be enabled! \
      please enable one of: fiat, vanilla&quot;</span>
 );
+
+<span class="comment">// MIRAI&#39;s tag analysis makes use of the incomplete const_generics feature, so the module</span>
+<span class="comment">// containing the definitions of MIRAI tag types should not get compiled in a release build.</span>
+<span class="comment">// The code below fails a build of the crate if mirai is on but debug_assertions is not.</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">all</span>(<span class="ident">mirai</span>, <span class="ident">not</span>(<span class="ident">debug_assertions</span>)))]</span>
+<span class="macro">compile_error</span><span class="macro">!</span>(<span class="string">&quot;MIRAI can only be used to compile the crate in a debug build!&quot;</span>);
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libra_crypto";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
