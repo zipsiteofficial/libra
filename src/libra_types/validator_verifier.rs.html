@@ -603,6 +603,41 @@
 <span id="603">603</span>
 <span id="604">604</span>
 <span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -614,7 +649,6 @@
     <span class="ident">hash</span>::<span class="ident">CryptoHash</span>,
     <span class="ident">Signature</span>, <span class="ident">VerifyingKey</span>,
 };
-<span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="kw-2">*</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">proptest_derive</span>::<span class="ident">Arbitrary</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
@@ -688,10 +722,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">address_to_validator_info</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">ValidatorConsensusInfo</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">total_voting_power</span> <span class="op">=</span> <span class="ident">address_to_validator_info</span>
-            .<span class="ident">values</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">voting_power</span>)
-            .<span class="ident">sum</span>();
+        <span class="kw">let</span> <span class="ident">total_voting_power</span> <span class="op">=</span> <span class="ident">sum_voting_power</span>(<span class="kw-2">&amp;</span><span class="ident">address_to_validator_info</span>);
         <span class="kw">let</span> <span class="ident">quorum_voting_power</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">address_to_validator_info</span>.<span class="ident">is_empty</span>() {
             <span class="number">0</span>
         } <span class="kw">else</span> {
@@ -710,11 +741,7 @@
         <span class="ident">address_to_validator_info</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">ValidatorConsensusInfo</span><span class="op">&gt;</span>,
         <span class="ident">quorum_voting_power</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">total_voting_power</span> <span class="op">=</span> <span class="ident">address_to_validator_info</span>.<span class="ident">values</span>().<span class="ident">fold</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">sum</span>, <span class="ident">x</span><span class="op">|</span> {
-            <span class="comment">// The voting power of any node is assumed to be small relative to u64::max_value()</span>
-            <span class="macro">assume</span><span class="macro">!</span>(<span class="ident">sum</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">u64</span>::<span class="ident">max_value</span>() <span class="op">-</span> <span class="ident">x</span>.<span class="ident">voting_power</span>);
-            <span class="ident">sum</span> <span class="op">+</span> <span class="ident">x</span>.<span class="ident">voting_power</span>
-        });
+        <span class="kw">let</span> <span class="ident">total_voting_power</span> <span class="op">=</span> <span class="ident">sum_voting_power</span>(<span class="kw-2">&amp;</span><span class="ident">address_to_validator_info</span>);
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">quorum_voting_power</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">total_voting_power</span>,
             <span class="string">&quot;Quorum voting power is greater than the sum of all voting power of authors: {}, \
@@ -873,6 +900,16 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">quorum_voting_power</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">quorum_voting_power</span>
     }
+}
+
+<span class="doccomment">/// Returns sum of voting power from Map of validator account addresses, validator consensus info</span>
+<span class="kw">fn</span> <span class="ident">sum_voting_power</span>(
+    <span class="ident">address_to_validator_info</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">ValidatorConsensusInfo</span><span class="op">&gt;</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="ident">address_to_validator_info</span>.<span class="ident">values</span>().<span class="ident">fold</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">sum</span>, <span class="ident">x</span><span class="op">|</span> {
+        <span class="ident">sum</span>.<span class="ident">checked_add</span>(<span class="ident">x</span>.<span class="ident">voting_power</span>)
+            .<span class="ident">expect</span>(<span class="string">&quot;sum of all voting power is greater than u64::max&quot;</span>)
+    })
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">ValidatorVerifier</span> {
@@ -1113,6 +1150,39 @@
                 .<span class="ident">batch_verify_aggregated_signatures</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>, <span class="kw-2">&amp;</span><span class="ident">author_to_signature_map</span>),
             <span class="prelude-val">Err</span>(<span class="ident">VerifyError</span>::<span class="ident">UnknownAuthor</span>)
         );
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="attribute">#[<span class="ident">should_panic</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_very_unequal_vote_quorum_validators</span>() {
+        <span class="kw">const</span> <span class="ident">NUM_SIGNERS</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">4</span>;
+        <span class="comment">// Generate NUM_SIGNERS random signers.</span>
+        <span class="kw">let</span> <span class="ident">validator_signers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorSigner</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">NUM_SIGNERS</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">ValidatorSigner</span>::<span class="ident">random</span>([<span class="ident">i</span>; <span class="number">32</span>]))
+            .<span class="ident">collect</span>();
+        <span class="kw">let</span> <span class="ident">dummy_struct</span> <span class="op">=</span> <span class="ident">TestLibraCrypto</span>(<span class="string">&quot;Hello, World&quot;</span>.<span class="ident">to_string</span>());
+
+        <span class="comment">// Create a map from authors to public keys with increasing weights (0, 1, 2, 3) and</span>
+        <span class="comment">// a map of author to signature.</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">author_to_public_key_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">author_to_signature_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+        <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">validator_signer</span>) <span class="kw">in</span> <span class="ident">validator_signers</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">voting_power</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">i</span> <span class="kw">as</span> <span class="ident">u64</span>;
+            <span class="kw">if</span> <span class="ident">i</span> <span class="op">=</span><span class="op">=</span> <span class="number">3</span> {
+                <span class="ident">voting_power</span> <span class="op">=</span> <span class="ident">u64</span>::<span class="ident">max_value</span>()
+            }
+            <span class="ident">author_to_public_key_map</span>.<span class="ident">insert</span>(
+                <span class="ident">validator_signer</span>.<span class="ident">author</span>(),
+                <span class="ident">ValidatorConsensusInfo</span>::<span class="ident">new</span>(<span class="ident">validator_signer</span>.<span class="ident">public_key</span>(), <span class="ident">voting_power</span>),
+            );
+            <span class="ident">author_to_signature_map</span>.<span class="ident">insert</span>(
+                <span class="ident">validator_signer</span>.<span class="ident">author</span>(),
+                <span class="ident">validator_signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_struct</span>),
+            );
+        }
+
+        <span class="comment">// expect this to panic</span>
+        <span class="kw">let</span> <span class="ident">_validator_verifier</span> <span class="op">=</span> <span class="ident">ValidatorVerifier</span>::<span class="ident">new</span>(<span class="ident">author_to_public_key_map</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
