@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ValidatorConfig",""]]});
+initSidebarItems({"fn":[["validate_address","Validates an address to have a DNS/IP and a port, as well as to be resolvable"]],"struct":[["ValidatorConfig",""]]});
