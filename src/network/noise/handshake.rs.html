@@ -708,9 +708,6 @@
 <span id="708">708</span>
 <span id="709">709</span>
 <span id="710">710</span>
-<span id="711">711</span>
-<span id="712">712</span>
-<span id="713">713</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -732,6 +729,7 @@
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">noise</span>, <span class="ident">x25519</span>};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">sl_debug</span>;
+<span class="kw">use</span> <span class="ident">libra_time</span>::<span class="ident">duration_since_epoch</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -740,7 +738,6 @@
     <span class="ident">fmt</span>::<span class="ident">Debug</span>,
     <span class="ident">io</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
-    <span class="ident">time</span>,
 };
 
 <span class="doccomment">/// In a mutually authenticated network, a client message is accompanied with a timestamp.</span>
@@ -764,10 +761,7 @@
 
     <span class="doccomment">/// obtain the current timestamp</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">now</span>() <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="self">Self</span>::<span class="ident">TIMESTAMP_SIZE</span>] {
-        <span class="kw">let</span> <span class="ident">now</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">SystemTime</span>::<span class="ident">now</span>()
-            .<span class="ident">duration_since</span>(<span class="ident">time</span>::<span class="ident">UNIX_EPOCH</span>)
-            .<span class="ident">expect</span>(<span class="string">&quot;system clock should work&quot;</span>)
-            .<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>; <span class="comment">// (TIMESTAMP_SIZE)</span>
+        <span class="kw">let</span> <span class="ident">now</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">duration_since_epoch</span>().<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>; <span class="comment">// (TIMESTAMP_SIZE)</span>
 
         <span class="comment">// e.g. [157, 126, 253, 97, 114, 1, 0, 0]</span>
         <span class="ident">now</span>.<span class="ident">to_le_bytes</span>()

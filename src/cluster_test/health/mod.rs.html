@@ -245,6 +245,8 @@
 <span id="245">245</span>
 <span id="246">246</span>
 <span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -257,7 +259,7 @@
 <span class="kw">mod</span> <span class="ident">liveness_check</span>;
 <span class="kw">mod</span> <span class="ident">log_tail</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">cluster</span>::<span class="ident">Cluster</span>, <span class="ident">util</span>::<span class="ident">unix_timestamp_now</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">cluster</span>::<span class="ident">Cluster</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">commit_check</span>::<span class="ident">CommitHistoryHealthCheck</span>;
@@ -270,7 +272,7 @@
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">env</span>, <span class="ident">fmt</span>,
     <span class="ident">iter</span>::<span class="ident">FromIterator</span>,
-    <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>, <span class="ident">SystemTime</span>},
+    <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
 <span class="kw">use</span> <span class="ident">termion</span>::<span class="ident">color</span>::<span class="kw-2">*</span>;
 
@@ -381,7 +383,7 @@
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">debug</span> {
                 <span class="ident">messages</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(
                     <span class="string">&quot;{} {}, on_event time: {}ms, verify time: {}ms, events: {}&quot;</span>,
-                    <span class="ident">unix_timestamp_now</span>().<span class="ident">as_millis</span>(),
+                    <span class="ident">libra_time</span>::<span class="ident">duration_since_epoch</span>().<span class="ident">as_millis</span>(),
                     <span class="ident">health_check</span>.<span class="ident">name</span>(),
                     (<span class="ident">events_processed</span> <span class="op">-</span> <span class="ident">start</span>).<span class="ident">as_millis</span>(),
                     (<span class="ident">verified</span> <span class="op">-</span> <span class="ident">events_processed</span>).<span class="ident">as_millis</span>(),
@@ -391,7 +393,11 @@
         }
         <span class="kw">for</span> <span class="ident">err</span> <span class="kw">in</span> <span class="ident">context</span>.<span class="ident">err_acc</span> {
             <span class="ident">node_health</span>.<span class="ident">insert</span>(<span class="ident">err</span>.<span class="ident">validator</span>.<span class="ident">clone</span>(), <span class="bool-val">false</span>);
-            <span class="ident">messages</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{} {:?}&quot;</span>, <span class="ident">unix_timestamp_now</span>().<span class="ident">as_millis</span>(), <span class="ident">err</span>));
+            <span class="ident">messages</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(
+                <span class="string">&quot;{} {:?}&quot;</span>,
+                <span class="ident">libra_time</span>::<span class="ident">duration_since_epoch</span>().<span class="ident">as_millis</span>(),
+                <span class="ident">err</span>
+            ));
         }
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">failed</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -470,9 +476,7 @@
 
 <span class="kw">impl</span> <span class="ident">HealthCheckContext</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>()
-            .<span class="ident">duration_since</span>(<span class="ident">SystemTime</span>::<span class="ident">UNIX_EPOCH</span>)
-            .<span class="ident">expect</span>(<span class="string">&quot;Now is behind UNIX_EPOCH&quot;</span>);
+        <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">libra_time</span>::<span class="ident">duration_since_epoch</span>();
         <span class="self">Self</span> {
             <span class="ident">now</span>,
             <span class="ident">err_acc</span>: <span class="macro">vec</span><span class="macro">!</span>[],
