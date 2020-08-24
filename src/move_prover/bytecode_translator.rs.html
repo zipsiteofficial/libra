@@ -1971,10 +1971,6 @@
 <span id="1971">1971</span>
 <span id="1972">1972</span>
 <span id="1973">1973</span>
-<span id="1974">1974</span>
-<span id="1975">1975</span>
-<span id="1976">1976</span>
-<span id="1977">1977</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2970,6 +2966,7 @@
                     <span class="ident">GlobalRoot</span>(<span class="ident">struct_decl</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">struct_decl</span>.<span class="ident">module_id</span>.<span class="ident">qualified</span>(<span class="ident">struct_decl</span>.<span class="ident">struct_id</span>);
                         <span class="kw">let</span> <span class="ident">spec_translator</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_spec_translator_for_module</span>();
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_update_global_invariant_assumes</span>(<span class="ident">memory</span>);
                         <span class="ident">spec_translator</span>.<span class="ident">save_memory_for_update_invariants</span>(<span class="ident">memory</span>);
                         <span class="kw">let</span> <span class="ident">memory_name</span> <span class="op">=</span>
                             <span class="ident">boogie_resource_memory_name</span>(<span class="ident">func_target</span>.<span class="ident">global_env</span>(), <span class="ident">memory</span>);
@@ -2980,10 +2977,7 @@
                             <span class="ident">memory_name</span>,
                             <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">src</span>),
                         );
-                        <span class="ident">spec_translator</span>.<span class="ident">emit_global_invariants_for_memory</span>(
-                            <span class="bool-val">false</span>, <span class="comment">// assert</span>
-                            <span class="ident">memory</span>,
-                        );
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_update_global_invariant_asserts</span>(<span class="ident">memory</span>);
                     }
                     <span class="ident">LocalRoot</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">emitln</span><span class="macro">!</span>(
@@ -3412,6 +3406,8 @@
                         <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
                         <span class="kw">let</span> <span class="ident">addr_name</span> <span class="op">=</span> <span class="ident">str_local</span>(<span class="ident">addr</span>);
                         <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">sid</span>);
+                        <span class="kw">let</span> <span class="ident">spec_translator</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_spec_translator_for_module</span>();
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_access_global_invariant_assumes</span>(<span class="ident">memory</span>);
                         <span class="kw">let</span> <span class="ident">memory_name</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">memory</span>);
                         <span class="ident">emit_modifies_check</span>(<span class="ident">memory</span>, <span class="kw-2">&amp;</span><span class="ident">type_args</span>, <span class="kw-2">&amp;</span><span class="ident">addr_name</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
@@ -3440,12 +3436,14 @@
                         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="ident">dests</span>[<span class="number">0</span>];
                         <span class="kw">let</span> <span class="ident">type_args</span> <span class="op">=</span> <span class="ident">boogie_type_value_array</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">type_actuals</span>);
-                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span>
-                            <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">sid</span>));
+                        <span class="kw">let</span> <span class="ident">memory</span> <span class="op">=</span> <span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">sid</span>);
+                        <span class="kw">let</span> <span class="ident">spec_translator</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_spec_translator_for_module</span>();
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_access_global_invariant_assumes</span>(<span class="ident">memory</span>);
+                        <span class="kw">let</span> <span class="ident">memory_name</span> <span class="op">=</span> <span class="ident">boogie_resource_memory_name</span>(<span class="self">self</span>.<span class="ident">module_env</span>.<span class="ident">env</span>, <span class="ident">memory</span>);
                         <span class="macro">emitln</span><span class="macro">!</span>(
                             <span class="self">self</span>.<span class="ident">writer</span>,
                             <span class="string">&quot;call $tmp := $GetGlobal({}, {}, {});&quot;</span>,
-                            <span class="ident">memory</span>,
+                            <span class="ident">memory_name</span>,
                             <span class="ident">str_local</span>(<span class="ident">addr</span>),
                             <span class="ident">type_args</span>,
                         );
@@ -3489,10 +3487,7 @@
                             <span class="ident">signer_name</span>,
                         );
                         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">propagate_abort</span>());
-                        <span class="ident">spec_translator</span>.<span class="ident">emit_global_invariants_for_memory</span>(
-                            <span class="bool-val">false</span>, <span class="comment">// assert</span>
-                            <span class="ident">memory</span>,
-                        );
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_update_global_invariant_asserts</span>(<span class="ident">memory</span>);
                     }
                     <span class="ident">MoveFrom</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
@@ -3525,10 +3520,7 @@
                                 )
                             );
                         }
-                        <span class="ident">spec_translator</span>.<span class="ident">emit_global_invariants_for_memory</span>(
-                            <span class="bool-val">false</span>, <span class="comment">// assert</span>
-                            <span class="ident">memory</span>,
-                        );
+                        <span class="ident">spec_translator</span>.<span class="ident">emit_on_update_global_invariant_asserts</span>(<span class="ident">memory</span>);
                     }
                     <span class="ident">CastU8</span> <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="ident">srcs</span>[<span class="number">0</span>];
