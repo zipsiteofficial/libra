@@ -1297,14 +1297,14 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_libra_root_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instance</span>: <span class="kw-2">&amp;</span><span class="ident">Instance</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_tc_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instance</span>: <span class="kw-2">&amp;</span><span class="ident">Instance</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">instance</span>.<span class="ident">json_rpc_client</span>();
-        <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">libra_root_address</span>();
+        <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">treasury_compliance_account_address</span>();
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">query_sequence_numbers</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span>[<span class="ident">address</span>])
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
                 <span class="macro">format_err</span><span class="macro">!</span>(
-                    <span class="string">&quot;query_sequence_numbers on {:?} for libra root account failed: {}&quot;</span>,
+                    <span class="string">&quot;query_sequence_numbers on {:?} for treasury compliance account failed: {}&quot;</span>,
                     <span class="ident">client</span>,
                     <span class="ident">e</span>
                 )
@@ -1330,8 +1330,8 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">faucet_account</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">load_faucet_account</span>(<span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>))
             .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">libra_root_account</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">load_libra_root_account</span>(<span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>))
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tc_account</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">load_tc_account</span>(<span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>))
             .<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">coins_per_account</span> <span class="op">=</span> (<span class="ident">SEND_AMOUNT</span> <span class="op">+</span> <span class="kw-2">*</span><span class="ident">GAS_UNIT_PRICE</span>) <span class="op">*</span> <span class="ident">MAX_TXNS</span>;
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Minting additional {} accounts&quot;</span>, <span class="ident">num_accounts</span>);
@@ -1348,7 +1348,7 @@
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to mint into faucet account: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">seed_accounts</span> <span class="op">=</span> <span class="ident">create_seed_accounts</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">libra_root_account</span>,
+            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tc_account</span>,
             <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>(),
             <span class="number">100</span>,
             <span class="self">self</span>.<span class="ident">pick_mint_client</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>),
