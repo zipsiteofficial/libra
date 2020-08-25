@@ -110,29 +110,12 @@
 <span id="110">110</span>
 <span id="111">111</span>
 <span id="112">112</span>
-<span id="113">113</span>
-<span id="114">114</span>
-<span id="115">115</span>
-<span id="116">116</span>
-<span id="117">117</span>
-<span id="118">118</span>
-<span id="119">119</span>
-<span id="120">120</span>
-<span id="121">121</span>
-<span id="122">122</span>
-<span id="123">123</span>
-<span id="124">124</span>
-<span id="125">125</span>
-<span id="126">126</span>
-<span id="127">127</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">validator_config</span>::<span class="ident">ValidatorConfig</span>};
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">Uniform</span>;
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>, <span class="ident">x25519</span>};
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
     <span class="ident">encrypted</span>::{
@@ -190,9 +173,6 @@
         <span class="ident">consensus_public_key</span>: <span class="ident">Ed25519PublicKey</span>,
         <span class="ident">consensus_voting_power</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">private_key</span> <span class="op">=</span> <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>::<span class="ident">generate_for_testing</span>();
-        <span class="kw">let</span> <span class="ident">validator_network_identity_public_key</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">public_key</span>();
-
         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>();
         <span class="kw">let</span> <span class="ident">raw_addr</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">encrypt</span>(
@@ -203,16 +183,11 @@
             <span class="number">0</span>,
         );
         <span class="kw">let</span> <span class="ident">validator_network_address</span> <span class="op">=</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">unwrap</span>();
-
-        <span class="kw">let</span> <span class="ident">private_key</span> <span class="op">=</span> <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>::<span class="ident">generate_for_testing</span>();
-        <span class="kw">let</span> <span class="ident">full_node_network_identity_public_key</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">public_key</span>();
         <span class="kw">let</span> <span class="ident">full_node_network_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ValidatorConfig</span>::<span class="ident">new</span>(
             <span class="ident">consensus_public_key</span>,
-            <span class="ident">validator_network_identity_public_key</span>,
-            <span class="ident">validator_network_address</span>,
-            <span class="ident">full_node_network_identity_public_key</span>,
-            <span class="ident">full_node_network_address</span>,
+            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">validator_network_address</span>]).<span class="ident">unwrap</span>(),
+            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">full_node_network_address</span>]).<span class="ident">unwrap</span>(),
         );
 
         <span class="self">Self</span> {
@@ -236,11 +211,6 @@
     <span class="doccomment">/// Returns the voting power for this validator</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">consensus_voting_power</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">consensus_voting_power</span>
-    }
-
-    <span class="doccomment">/// Returns the key that establishes a validator&#39;s identity in the p2p network</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">network_identity_public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">x25519</span>::<span class="ident">PublicKey</span> {
-        <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">validator_network_identity_public_key</span>
     }
 
     <span class="doccomment">/// Returns the validator&#39;s config</span>

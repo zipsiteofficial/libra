@@ -539,6 +539,16 @@
 <span id="539">539</span>
 <span id="540">540</span>
 <span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -568,10 +578,10 @@
 <span class="kw">use</span> <span class="ident">libra_genesis_tool</span>::<span class="ident">layout</span>::<span class="ident">Layout</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
     <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>,
-    <span class="ident">SAFETY_DATA</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
+    <span class="ident">SAFETY_DATA</span>, <span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
-<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">VaultStorage</span>};
+<span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>, <span class="ident">VaultStorage</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
 
@@ -904,7 +914,7 @@
         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">vault_node</span>.<span class="ident">internal_ip</span>.<span class="ident">clone</span>();
         <span class="ident">tokio</span>::<span class="ident">task</span>::<span class="ident">spawn_blocking</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">validator_pod_name</span>(<span class="ident">validator_index</span>);
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vault_storage</span> <span class="op">=</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">VaultStorage</span>::<span class="ident">new</span>(
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vault_storage</span> <span class="op">=</span> <span class="ident">Storage</span>::<span class="ident">from</span>(<span class="ident">VaultStorage</span>::<span class="ident">new</span>(
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">addr</span>, <span class="ident">VAULT_PORT</span>),
                 <span class="ident">VAULT_TOKEN</span>.<span class="ident">to_string</span>(),
                 <span class="prelude-val">Some</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
@@ -935,6 +945,16 @@
             <span class="ident">vault_storage</span>
                 .<span class="ident">set</span>(<span class="ident">WAYPOINT</span>, <span class="ident">Waypoint</span>::<span class="ident">default</span>())
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}/{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">WAYPOINT</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            <span class="ident">libra_network_address_encryption</span>::<span class="ident">Encryptor</span>::<span class="ident">new</span>(<span class="ident">vault_storage</span>)
+                .<span class="ident">initialize_for_testing</span>()
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                    <span class="macro">format_err</span><span class="macro">!</span>(
+                        <span class="string">&quot;Failed to create {}/{} : {}&quot;</span>,
+                        <span class="ident">pod_name</span>,
+                        <span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>,
+                        <span class="ident">e</span>
+                    )
+                })<span class="question-mark">?</span>;
             <span class="prelude-val">Ok</span>::<span class="op">&lt;</span>(), <span class="ident">anyhow</span>::<span class="ident">Error</span><span class="op">&gt;</span>(())
         })
         .<span class="kw">await</span><span class="question-mark">?</span><span class="question-mark">?</span>;

@@ -505,13 +505,6 @@
 <span id="505">505</span>
 <span id="506">506</span>
 <span id="507">507</span>
-<span id="508">508</span>
-<span id="509">509</span>
-<span id="510">510</span>
-<span id="511">511</span>
-<span id="512">512</span>
-<span id="513">513</span>
-<span id="514">514</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -532,10 +525,8 @@
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">x25519</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::<span class="ident">IntCounterVec</span>;
-<span class="kw">use</span> <span class="ident">libra_network_address</span>::{
-    <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
-    <span class="ident">NetworkAddress</span>,
-};
+<span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
+<span class="kw">use</span> <span class="ident">libra_network_address_encryption</span>::<span class="ident">Encryptor</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">PeerId</span>};
 <span class="kw">use</span> <span class="ident">network</span>::{
     <span class="ident">connectivity_manager</span>::{<span class="ident">builder</span>::<span class="ident">ConnectivityManagerBuilder</span>, <span class="ident">ConnectivityRequest</span>},
@@ -557,7 +548,6 @@
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">clone</span>::<span class="ident">Clone</span>,
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
-    <span class="ident">iter</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
 };
 <span class="kw">use</span> <span class="ident">subscription_service</span>::<span class="ident">ReconfigSubscription</span>;
@@ -702,18 +692,17 @@
             );
         }
 
-        <span class="comment">// Setup the discovery mechanisms</span>
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">discovery_method</span> {
             <span class="ident">DiscoveryMethod</span>::<span class="ident">Gossip</span>(<span class="ident">gossip_config</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">network_builder</span>.<span class="ident">add_gossip_discovery</span>(<span class="ident">gossip_config</span>.<span class="ident">clone</span>(), <span class="ident">pubkey</span>);
                 <span class="comment">// HACK: gossip relies on on-chain discovery for the eligible peers update.</span>
                 <span class="comment">// TODO:  it should be safe to enable the configuraction_change_listener always.</span>
                 <span class="kw">if</span> <span class="ident">role</span> <span class="op">=</span><span class="op">=</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> {
-                    <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>);
+                    <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>, <span class="ident">config</span>.<span class="ident">encryptor</span>());
                 }
             }
             <span class="ident">DiscoveryMethod</span>::<span class="ident">Onchain</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>);
+                <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>, <span class="ident">config</span>.<span class="ident">encryptor</span>());
             }
             <span class="ident">DiscoveryMethod</span>::<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {}
         }
@@ -848,7 +837,11 @@
         <span class="self">self</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">add_configuration_change_listener</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">role</span>: <span class="ident">RoleType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">add_configuration_change_listener</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">role</span>: <span class="ident">RoleType</span>,
+        <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">conn_mgr_reqs_tx</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">conn_mgr_reqs_tx</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;ConnectivityManager must be installed for validator&quot;</span>);
@@ -857,17 +850,10 @@
         <span class="self">self</span>.<span class="ident">reconfig_subscriptions</span>
             .<span class="ident">push</span>(<span class="ident">simple_discovery_reconfig_subscription</span>);
 
-        <span class="comment">// TODO(philiphayes): remove once we get real keys from key manager</span>
-        <span class="kw">let</span> <span class="ident">shared_val_netaddr_key_map</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">iter</span>::<span class="ident">once</span>((
-            <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-            <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
-        ))
-        .<span class="ident">collect</span>();
-
         <span class="self">self</span>.<span class="ident">configuration_change_listener_builder</span> <span class="op">=</span>
             <span class="prelude-val">Some</span>(<span class="ident">ConfigurationChangeListenerBuilder</span>::<span class="ident">create</span>(
                 <span class="ident">role</span>,
-                <span class="ident">shared_val_netaddr_key_map</span>,
+                <span class="ident">encryptor</span>,
                 <span class="ident">conn_mgr_reqs_tx</span>,
                 <span class="ident">simple_discovery_reconfig_rx</span>,
             ));
