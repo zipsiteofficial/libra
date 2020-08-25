@@ -383,6 +383,29 @@
 <span id="383">383</span>
 <span id="384">384</span>
 <span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -418,7 +441,7 @@
     <span class="ident">reaching_def_analysis</span>::<span class="ident">ReachingDefProcessor</span>,
     <span class="ident">stackless_bytecode</span>::{<span class="ident">Bytecode</span>, <span class="ident">Operation</span>},
     <span class="ident">test_instrumenter</span>::<span class="ident">TestInstrumenter</span>,
-    <span class="ident">usage_analysis</span>::{<span class="ident">TransitiveUsage</span>, <span class="ident">UsageProcessor</span>},
+    <span class="ident">usage_analysis</span>::{<span class="self">self</span>, <span class="ident">UsageProcessor</span>},
     <span class="ident">writeback_analysis</span>::<span class="ident">WritebackAnalysisProcessor</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -478,11 +501,15 @@
         <span class="ident">env</span>.<span class="ident">report_errors</span>(<span class="ident">error_writer</span>);
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;exiting with transformation errors&quot;</span>));
     }
+    <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_packed_types_gen</span> {
+        <span class="kw">return</span> <span class="ident">run_packed_types_gen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>, <span class="ident">now</span>);
+    }
     <span class="ident">check_modifies</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>);
     <span class="kw">if</span> <span class="ident">env</span>.<span class="ident">has_errors</span>() {
         <span class="ident">env</span>.<span class="ident">report_errors</span>(<span class="ident">error_writer</span>);
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;exiting with modifies checking errors&quot;</span>));
     }
+
     <span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">CodeWriter</span>::<span class="ident">new</span>(<span class="ident">env</span>.<span class="ident">internal_loc</span>());
     <span class="ident">add_prelude</span>(<span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="kw-2">&amp;</span><span class="ident">writer</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">translator</span> <span class="op">=</span> <span class="ident">BoogieTranslator</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>, <span class="kw-2">&amp;</span><span class="ident">writer</span>);
@@ -592,6 +619,30 @@
     <span class="prelude-val">Ok</span>(())
 }
 
+<span class="kw">fn</span> <span class="ident">run_packed_types_gen</span>(
+    <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
+    <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
+    <span class="ident">now</span>: <span class="ident">Instant</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">checking_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
+    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;generating packed_types&quot;</span>);
+    <span class="kw">let</span> <span class="ident">packed_types</span> <span class="op">=</span> <span class="ident">usage_analysis</span>::<span class="ident">get_packed_types</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>);
+    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;found {:?} packed types&quot;</span>, <span class="ident">packed_types</span>.<span class="ident">len</span>());
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">access_path_type_map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+    <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="ident">packed_types</span> {
+        <span class="ident">access_path_type_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">access_vector</span>(), <span class="ident">ty</span>);
+    }
+    <span class="comment">// TODO: save to disk, resource-viewer and an LCS schema extractor should look at this</span>
+
+    <span class="kw">let</span> <span class="ident">generating_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
+    <span class="macro">info</span><span class="macro">!</span>(
+        <span class="string">&quot;{:.3}s checking, {:.3}s generating&quot;</span>,
+        <span class="ident">checking_elapsed</span>.<span class="ident">as_secs_f64</span>(),
+        (<span class="ident">generating_elapsed</span> <span class="op">-</span> <span class="ident">checking_elapsed</span>).<span class="ident">as_secs_f64</span>()
+    );
+    <span class="prelude-val">Ok</span>(())
+}
+
 <span class="doccomment">/// Adds the prelude to the generated output.</span>
 <span class="kw">fn</span> <span class="ident">add_prelude</span>(<span class="ident">options</span>: <span class="kw-2">&amp;</span><span class="ident">Options</span>, <span class="ident">writer</span>: <span class="kw-2">&amp;</span><span class="ident">CodeWriter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="macro">emit</span><span class="macro">!</span>(<span class="ident">writer</span>, <span class="string">&quot;\n// ** prelude from {}\n\n&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>.<span class="ident">prelude_path</span>);
@@ -619,7 +670,6 @@
     <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
     <span class="kw">use</span> <span class="ident">Operation</span>::<span class="kw-2">*</span>;
 
-    <span class="kw">let</span> <span class="ident">usage</span> <span class="op">=</span> <span class="ident">TransitiveUsage</span>::<span class="ident">default</span>();
     <span class="kw">for</span> <span class="ident">module_env</span> <span class="kw">in</span> <span class="ident">env</span>.<span class="ident">get_modules</span>() {
         <span class="kw">for</span> <span class="ident">func_env</span> <span class="kw">in</span> <span class="ident">module_env</span>.<span class="ident">get_functions</span>() {
             <span class="kw">let</span> <span class="ident">caller_func_target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
@@ -627,14 +677,10 @@
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">oper</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">code</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Function</span>(<span class="ident">mid</span>, <span class="ident">fid</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">oper</span> {
                         <span class="kw">let</span> <span class="ident">callee</span> <span class="op">=</span> <span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">fid</span>);
-                        <span class="kw">let</span> <span class="ident">callee_func_env</span> <span class="op">=</span>
-                            <span class="ident">env</span>.<span class="ident">get_module</span>(<span class="ident">callee</span>.<span class="ident">module_id</span>).<span class="ident">into_function</span>(<span class="ident">callee</span>.<span class="ident">id</span>);
+                        <span class="kw">let</span> <span class="ident">callee_func_env</span> <span class="op">=</span> <span class="ident">env</span>.<span class="ident">get_function</span>(<span class="ident">callee</span>);
                         <span class="kw">let</span> <span class="ident">callee_func_target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">callee_func_env</span>);
-                        <span class="kw">let</span> <span class="ident">callee_modified_memory</span> <span class="op">=</span> <span class="ident">usage</span>.<span class="ident">get_modified_memory</span>(
-                            <span class="ident">env</span>,
-                            <span class="ident">targets</span>,
-                            <span class="ident">callee_func_env</span>.<span class="ident">get_qualified_id</span>(),
-                        );
+                        <span class="kw">let</span> <span class="ident">callee_modified_memory</span> <span class="op">=</span>
+                            <span class="ident">usage_analysis</span>::<span class="ident">get_modified_memory</span>(<span class="kw-2">&amp;</span><span class="ident">callee_func_target</span>);
                         <span class="ident">caller_func_target</span>.<span class="ident">get_modify_targets</span>().<span class="ident">keys</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">target</span><span class="op">|</span> {
                                 <span class="kw">if</span> <span class="ident">callee_modified_memory</span>.<span class="ident">contains</span>(<span class="ident">target</span>) <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">callee_func_target</span>.<span class="ident">get_modify_targets_for_type</span>(<span class="ident">target</span>).<span class="ident">is_none</span>() {
                                     <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="ident">caller_func_target</span>.<span class="ident">get_bytecode_loc</span>(<span class="ident">code</span>.<span class="ident">get_attr_id</span>());

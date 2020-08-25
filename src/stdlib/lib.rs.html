@@ -323,6 +323,32 @@
 <span id="323">323</span>
 <span id="324">324</span>
 <span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -363,6 +389,9 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ERROR_DESC_DIR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;error_descriptions&quot;</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ERROR_DESC_FILENAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;error_descriptions&quot;</span>;
 
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PACKED_TYPES_FILENAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;packed_types&quot;</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PACKED_TYPES_EXTENSION</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;txt&quot;</span>;
+
 <span class="doccomment">/// The output path under which compiled script files can be found</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">COMPILED_TRANSACTION_SCRIPTS_DIR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;compiled/transaction_scripts&quot;</span>;
 <span class="doccomment">/// The output path for transaction script ABIs.</span>
@@ -385,6 +414,15 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">stdlib_files</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="macro">env</span><span class="macro">!</span>(<span class="string">&quot;CARGO_MANIFEST_DIR&quot;</span>));
     <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">STD_LIB_DIR</span>);
+    <span class="kw">let</span> <span class="ident">dirfiles</span> <span class="op">=</span> <span class="ident">datatest_stable</span>::<span class="ident">utils</span>::<span class="ident">iterate_directory</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>);
+    <span class="ident">filter_move_files</span>(<span class="ident">dirfiles</span>)
+        .<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">path</span>.<span class="ident">into_os_string</span>().<span class="ident">into_string</span>())
+        .<span class="ident">collect</span>()
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">script_files</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="macro">env</span><span class="macro">!</span>(<span class="string">&quot;CARGO_MANIFEST_DIR&quot;</span>));
+    <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">TRANSACTION_SCRIPTS</span>);
     <span class="kw">let</span> <span class="ident">dirfiles</span> <span class="op">=</span> <span class="ident">datatest_stable</span>::<span class="ident">utils</span>::<span class="ident">iterate_directory</span>(<span class="kw-2">&amp;</span><span class="ident">path</span>);
     <span class="ident">filter_move_files</span>(<span class="ident">dirfiles</span>)
         .<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">path</span>.<span class="ident">into_os_string</span>().<span class="ident">into_string</span>())
@@ -501,6 +539,20 @@
     <span class="ident">options</span>.<span class="ident">abigen</span>.<span class="ident">output_directory</span> <span class="op">=</span> <span class="ident">output_path</span>.<span class="ident">to_string</span>();
     <span class="ident">options</span>.<span class="ident">abigen</span>.<span class="ident">compiled_script_directory</span> <span class="op">=</span> <span class="ident">compiled_script_path</span>.<span class="ident">to_string</span>();
     <span class="ident">options</span>.<span class="ident">setup_logging_for_test</span>();
+    <span class="ident">move_prover</span>::<span class="ident">run_move_prover_errors_to_stderr</span>(<span class="ident">options</span>).<span class="ident">unwrap</span>();
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_packed_types_map</span>() {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">options</span> <span class="op">=</span> <span class="ident">move_prover</span>::<span class="ident">cli</span>::<span class="ident">Options</span>::<span class="ident">default</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">COMPILED_OUTPUT_PATH</span>);
+    <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">PACKED_TYPES_FILENAME</span>);
+    <span class="ident">path</span>.<span class="ident">set_extension</span>(<span class="ident">PACKED_TYPES_EXTENSION</span>);
+    <span class="ident">options</span>.<span class="ident">output_path</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">to_str</span>().<span class="ident">unwrap</span>().<span class="ident">to_string</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sources</span> <span class="op">=</span> <span class="ident">stdlib_files</span>();
+    <span class="ident">sources</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">script_files</span>());
+    <span class="ident">options</span>.<span class="ident">move_sources</span> <span class="op">=</span> <span class="ident">sources</span>.<span class="ident">to_vec</span>();
+    <span class="ident">options</span>.<span class="ident">verbosity_level</span> <span class="op">=</span> <span class="ident">LevelFilter</span>::<span class="ident">Warn</span>;
+    <span class="ident">options</span>.<span class="ident">run_packed_types_gen</span> <span class="op">=</span> <span class="bool-val">true</span>;
     <span class="ident">move_prover</span>::<span class="ident">run_move_prover_errors_to_stderr</span>(<span class="ident">options</span>).<span class="ident">unwrap</span>();
 }
 

@@ -617,6 +617,18 @@
 <span id="617">617</span>
 <span id="618">618</span>
 <span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -676,6 +688,9 @@
     <span class="kw">pub</span> <span class="ident">run_abigen</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Whether to run the error map generator instead of the prover.</span>
     <span class="kw">pub</span> <span class="ident">run_errmapgen</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Whether to run a static analysis that computes the set of types that may be packed by the</span>
+    <span class="doccomment">/// Move code under analysis instead of the prover.</span>
+    <span class="kw">pub</span> <span class="ident">run_packed_types_gen</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// An account address to use if none is specified in the source.</span>
     <span class="kw">pub</span> <span class="ident">account_address</span>: <span class="ident">String</span>,
     <span class="doccomment">/// The paths to the Move sources.</span>
@@ -703,6 +718,7 @@
             <span class="ident">run_docgen</span>: <span class="bool-val">false</span>,
             <span class="ident">run_abigen</span>: <span class="bool-val">false</span>,
             <span class="ident">run_errmapgen</span>: <span class="bool-val">false</span>,
+            <span class="ident">run_packed_types_gen</span>: <span class="bool-val">false</span>,
             <span class="ident">account_address</span>: <span class="string">&quot;0x234567&quot;</span>.<span class="ident">to_string</span>(),
             <span class="ident">verbosity_level</span>: <span class="ident">LevelFilter</span>::<span class="ident">Info</span>,
             <span class="ident">move_sources</span>: <span class="macro">vec</span><span class="macro">!</span>[],
@@ -984,6 +1000,11 @@
                     The generated error map will be written to `errmap` unless configured otherwise&quot;</span>),
             )
             .<span class="ident">arg</span>(
+                <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;packedtypesgen&quot;</span>)
+                    .<span class="ident">long</span>(<span class="string">&quot;packedtypesgen&quot;</span>)
+                    .<span class="ident">help</span>(<span class="string">&quot;run the packed types generator instead of the prover.&quot;</span>)
+            )
+            .<span class="ident">arg</span>(
                 <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;verify&quot;</span>)
                     .<span class="ident">long</span>(<span class="string">&quot;verify&quot;</span>)
                     .<span class="ident">takes_value</span>(<span class="bool-val">true</span>)
@@ -1106,6 +1127,9 @@
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;errmapgen&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">run_errmapgen</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        }
+        <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;packedtypesgen&quot;</span>) {
+            <span class="ident">options</span>.<span class="ident">run_packed_types_gen</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;warn&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">report_warnings</span> <span class="op">=</span> <span class="bool-val">true</span>;

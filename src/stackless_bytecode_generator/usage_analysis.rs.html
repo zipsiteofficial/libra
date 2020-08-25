@@ -194,6 +194,22 @@
 <span id="194">194</span>
 <span id="195">195</span>
 <span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -203,140 +219,100 @@
     <span class="ident">function_target_pipeline</span>::{<span class="ident">FunctionTargetProcessor</span>, <span class="ident">FunctionTargetsHolder</span>},
     <span class="ident">stackless_bytecode</span>::{<span class="ident">Bytecode</span>, <span class="ident">Operation</span>},
 };
-<span class="kw">use</span> <span class="ident">spec_lang</span>::<span class="ident">env</span>::{<span class="ident">FunId</span>, <span class="ident">FunctionEnv</span>, <span class="ident">GlobalEnv</span>, <span class="ident">QualifiedId</span>, <span class="ident">StructId</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">cell</span>::<span class="ident">RefCell</span>,
-    <span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">BTreeSet</span>},
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_config</span>;
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">language_storage</span>::{<span class="ident">StructTag</span>, <span class="ident">TypeTag</span>};
+<span class="kw">use</span> <span class="ident">spec_lang</span>::{
+    <span class="ident">env</span>::{<span class="ident">FunctionEnv</span>, <span class="ident">GlobalEnv</span>, <span class="ident">QualifiedId</span>, <span class="ident">StructId</span>},
+    <span class="ident">ty</span>::<span class="ident">Type</span>,
 };
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">BTreeSet</span>;
 
-<span class="doccomment">/// A data structure to retrieve transitive enriched usage data. This internally</span>
-<span class="doccomment">/// uses the result of the usage processor, which must be installed in</span>
-<span class="doccomment">/// function target pipeline for this to work.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransitiveUsage</span> {
-    <span class="ident">cache</span>: <span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>, <span class="ident">TransitiveFunctionUsage</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_used_memory</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span><span class="op">&gt;</span>(
+    <span class="ident">target</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;env</span> <span class="ident">FunctionTarget</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;env</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw-2">&amp;</span><span class="ident">target</span>
+        .<span class="ident">get_annotations</span>()
+        .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">UsageAnnotation</span><span class="op">&gt;</span>()
+        .<span class="ident">expect</span>(<span class="string">&quot;Invariant violation: target not analyzed&quot;</span>)
+        .<span class="ident">used_memory</span>
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">TransitiveFunctionUsage</span> {
-    <span class="ident">called_functions</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">used_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">modified_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_modified_memory</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span><span class="op">&gt;</span>(
+    <span class="ident">target</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;env</span> <span class="ident">FunctionTarget</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;env</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw-2">&amp;</span><span class="ident">target</span>
+        .<span class="ident">get_annotations</span>()
+        .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">UsageAnnotation</span><span class="op">&gt;</span>()
+        .<span class="ident">expect</span>(<span class="string">&quot;Invariant violation: target not analyzed&quot;</span>)
+        .<span class="ident">modified_memory</span>
 }
 
-<span class="kw">impl</span> <span class="ident">TransitiveUsage</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_called_functions</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
-        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
-        <span class="ident">fun</span>: <span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow</span>().<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>) {
-            <span class="self">Self</span>::<span class="ident">populate_cache</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>(),
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow_mut</span>(),
-                <span class="ident">env</span>,
-                <span class="ident">targets</span>,
-                <span class="ident">fun</span>,
-            );
-        }
-        <span class="self">self</span>.<span class="ident">cache</span>
-            .<span class="ident">borrow</span>()
-            .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>)
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">called_functions</span>
-            .<span class="ident">clone</span>()
-    }
+<span class="doccomment">/// Get all closed types that may be packed by (1) genesis and (2) all transaction scripts.</span>
+<span class="doccomment">/// This makes some simplifying assumptions that are not correct in general, but hold for the</span>
+<span class="doccomment">/// current Libra Framework:</span>
+<span class="doccomment">/// - Transaction scripts have at most 1 type argument</span>
+<span class="doccomment">/// - The only values that can be bound to a transaction script type argument are Coin1, Coin2, and</span>
+<span class="doccomment">///   LBR. Passing any other values will lead to an aborted transaction.</span>
+<span class="doccomment">/// The first assumption is checked and will trigger an assert failure if violated. The second</span>
+<span class="doccomment">/// is unchecked, but would be a nice property for the prover.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_packed_types</span>(<span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>, <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">StructTag</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">packed_types</span> <span class="op">=</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>();
+    <span class="kw">for</span> <span class="ident">module_env</span> <span class="kw">in</span> <span class="ident">env</span>.<span class="ident">get_modules</span>() {
+        <span class="kw">let</span> <span class="ident">module_name</span> <span class="op">=</span> <span class="ident">module_env</span>.<span class="ident">get_identifier</span>().<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">is_script</span> <span class="op">=</span> <span class="ident">module_env</span>.<span class="ident">is_script_module</span>();
+        <span class="kw">if</span> <span class="ident">is_script</span> <span class="op">|</span><span class="op">|</span> <span class="ident">module_name</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;Genesis&quot;</span> {
+            <span class="kw">for</span> <span class="ident">func_env</span> <span class="kw">in</span> <span class="ident">module_env</span>.<span class="ident">get_functions</span>() {
+                <span class="kw">let</span> <span class="ident">fun_target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
+                <span class="kw">let</span> <span class="ident">annotation</span> <span class="op">=</span> <span class="ident">fun_target</span>
+                    .<span class="ident">get_annotations</span>()
+                    .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">UsageAnnotation</span><span class="op">&gt;</span>()
+                    .<span class="ident">expect</span>(
+                        <span class="string">&quot;Invariant violation: usage analysis should be run before calling this&quot;</span>,
+                    );
+                <span class="ident">packed_types</span>.<span class="ident">extend</span>(<span class="ident">annotation</span>.<span class="ident">closed_types</span>.<span class="ident">clone</span>());
+                <span class="comment">// instantiate the tx script open types with Coin1, Coin2, LBR</span>
+                <span class="kw">if</span> <span class="ident">is_script</span> {
+                    <span class="kw">let</span> <span class="ident">num_type_parameters</span> <span class="op">=</span> <span class="ident">func_env</span>.<span class="ident">get_type_parameters</span>().<span class="ident">len</span>();
+                    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">num_type_parameters</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">1</span>, <span class="string">&quot;Assuming that transaction scripts have &lt;= 1 type parameters for simplicity. If there can be &gt;1 type parameter, the code here must account for all permutations of type params&quot;</span>);
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_used_memory</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
-        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
-        <span class="ident">fun</span>: <span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow</span>().<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>) {
-            <span class="self">Self</span>::<span class="ident">populate_cache</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>(),
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow_mut</span>(),
-                <span class="ident">env</span>,
-                <span class="ident">targets</span>,
-                <span class="ident">fun</span>,
-            );
-        }
-        <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>).<span class="ident">unwrap</span>().<span class="ident">used_memory</span>.<span class="ident">clone</span>()
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_modified_memory</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
-        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
-        <span class="ident">fun</span>: <span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow</span>().<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>) {
-            <span class="self">Self</span>::<span class="ident">populate_cache</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>(),
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">borrow_mut</span>(),
-                <span class="ident">env</span>,
-                <span class="ident">targets</span>,
-                <span class="ident">fun</span>,
-            );
-        }
-        <span class="self">self</span>.<span class="ident">cache</span>
-            .<span class="ident">borrow</span>()
-            .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">fun</span>)
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">modified_memory</span>
-            .<span class="ident">clone</span>()
-    }
-
-    <span class="kw">fn</span> <span class="ident">populate_cache</span>(
-        <span class="ident">visited</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>, <span class="ident">TransitiveFunctionUsage</span><span class="op">&gt;</span>,
-        <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
-        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
-        <span class="ident">fun</span>: <span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span>,
-    ) {
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">visited</span>.<span class="ident">insert</span>(<span class="ident">fun</span>) {
-            <span class="kw">return</span>;
-        }
-        <span class="kw">let</span> <span class="ident">func_env</span> <span class="op">=</span> <span class="ident">env</span>.<span class="ident">get_module</span>(<span class="ident">fun</span>.<span class="ident">module_id</span>).<span class="ident">into_function</span>(<span class="ident">fun</span>.<span class="ident">id</span>);
-        <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">usage</span> <span class="op">=</span> <span class="ident">TransitiveFunctionUsage</span>::<span class="ident">default</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">annotation</span>) <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">get_annotations</span>().<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">UsageAnnotation</span><span class="op">&gt;</span>() {
-            <span class="comment">// Account for direct usage of this function.</span>
-            <span class="ident">usage</span>
-                .<span class="ident">called_functions</span>
-                .<span class="ident">extend</span>(<span class="ident">annotation</span>.<span class="ident">called_functions</span>.<span class="ident">iter</span>());
-            <span class="ident">usage</span>.<span class="ident">used_memory</span>.<span class="ident">extend</span>(<span class="ident">annotation</span>.<span class="ident">used_memory</span>.<span class="ident">iter</span>());
-            <span class="ident">usage</span>
-                .<span class="ident">modified_memory</span>
-                .<span class="ident">extend</span>(<span class="ident">annotation</span>.<span class="ident">modified_memory</span>.<span class="ident">iter</span>());
-            <span class="comment">// Recursively visit all called functions and add their usage.</span>
-            <span class="kw">for</span> <span class="ident">called</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">annotation</span>.<span class="ident">called_functions</span> {
-                <span class="self">Self</span>::<span class="ident">populate_cache</span>(<span class="ident">visited</span>, <span class="ident">cache</span>, <span class="ident">env</span>, <span class="ident">targets</span>, <span class="kw-2">*</span><span class="ident">called</span>);
-                <span class="kw">let</span> <span class="ident">called_usage</span> <span class="op">=</span> <span class="ident">cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">called</span>).<span class="ident">unwrap</span>();
-                <span class="ident">usage</span>
-                    .<span class="ident">called_functions</span>
-                    .<span class="ident">extend</span>(<span class="ident">called_usage</span>.<span class="ident">called_functions</span>.<span class="ident">iter</span>());
-                <span class="ident">usage</span>.<span class="ident">used_memory</span>.<span class="ident">extend</span>(<span class="ident">called_usage</span>.<span class="ident">used_memory</span>.<span class="ident">iter</span>());
-                <span class="ident">usage</span>
-                    .<span class="ident">modified_memory</span>
-                    .<span class="ident">extend</span>(<span class="ident">annotation</span>.<span class="ident">modified_memory</span>.<span class="ident">iter</span>());
+                    <span class="kw">if</span> <span class="ident">num_type_parameters</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+                        <span class="kw">let</span> <span class="ident">coin_types</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
+                            <span class="ident">account_config</span>::<span class="ident">coin1_tag</span>(),
+                            <span class="ident">account_config</span>::<span class="ident">coin2_tag</span>(),
+                            <span class="ident">account_config</span>::<span class="ident">lbr_type_tag</span>(),
+                        ]
+                        .<span class="ident">into_iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">Type</span>::<span class="ident">from_type_tag</span>(<span class="ident">t</span>, <span class="ident">env</span>))
+                        .<span class="ident">collect</span>();
+                        <span class="kw">for</span> <span class="ident">open_ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">annotation</span>.<span class="ident">open_types</span> {
+                            <span class="kw">for</span> <span class="ident">coin_ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">coin_types</span> {
+                                <span class="kw">match</span> <span class="ident">open_ty</span>.<span class="ident">instantiate</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">coin_ty</span>.<span class="ident">clone</span>()].<span class="ident">as_slice</span>()).<span class="ident">into_type_tag</span>(<span class="ident">env</span>) {
+                                    <span class="prelude-val">Some</span>(<span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">s</span>)) <span class="op">=</span><span class="op">&gt;</span>     {
+                                        <span class="ident">packed_types</span>.<span class="ident">insert</span>(<span class="ident">s</span>);
+                                    }
+                                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Invariant violation: failed to specialize tx script open type {:?} into struct&quot;</span>, <span class="ident">open_ty</span>),
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        <span class="ident">cache</span>.<span class="ident">insert</span>(<span class="ident">fun</span>, <span class="ident">usage</span>);
     }
+    <span class="ident">packed_types</span>
 }
 
 <span class="doccomment">/// The annotation for usage of functions. This is computed by the function target processor.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">struct</span> <span class="ident">UsageAnnotation</span> {
-    <span class="comment">// The functions which are directly called by this function.</span>
-    <span class="ident">called_functions</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">FunId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="comment">// The memory which is directly accessed by this function.</span>
+    <span class="comment">// The memory which is directly and transitively accessed by this function.</span>
     <span class="ident">used_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="comment">// The memory which is directly modfied by this function.</span>
+    <span class="comment">// The memory which is directly and transitiviely modfied by this function.</span>
     <span class="ident">modified_memory</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">QualifiedId</span><span class="op">&lt;</span><span class="ident">StructId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="comment">// Closed types (i.e., with no free type variables) that may be directly or transitively packed by this function.</span>
+    <span class="ident">closed_types</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">StructTag</span><span class="op">&gt;</span>,
+    <span class="comment">// Open types (i.e., with free type variables) that may be directly or transitively packed by this function.</span>
+    <span class="ident">open_types</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Type</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">UsageProcessor</span>();
@@ -350,7 +326,7 @@
 <span class="kw">impl</span> <span class="ident">FunctionTargetProcessor</span> <span class="kw">for</span> <span class="ident">UsageProcessor</span> {
     <span class="kw">fn</span> <span class="ident">process</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">_targets</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FunctionTargetsHolder</span>,
+        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FunctionTargetsHolder</span>,
         <span class="ident">func_env</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionEnv</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="kw-2">mut</span> <span class="ident">data</span>: <span class="ident">FunctionTargetData</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FunctionTargetData</span> {
@@ -361,7 +337,7 @@
             <span class="ident">annotation</span>.<span class="ident">modified_memory</span>.<span class="ident">insert</span>(<span class="kw-2">*</span><span class="ident">target</span>);
         });
         <span class="kw">if</span> <span class="op">!</span><span class="ident">func_env</span>.<span class="ident">is_native</span>() {
-            <span class="self">Self</span>::<span class="ident">analyze</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">annotation</span>, <span class="ident">func_target</span>);
+            <span class="self">self</span>.<span class="ident">analyze</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">annotation</span>, <span class="ident">func_target</span>, <span class="ident">targets</span>);
         }
         <span class="ident">data</span>.<span class="ident">annotations</span>.<span class="ident">set</span>(<span class="ident">annotation</span>);
         <span class="ident">data</span>
@@ -369,14 +345,53 @@
 }
 
 <span class="kw">impl</span> <span class="ident">UsageProcessor</span> {
-    <span class="kw">fn</span> <span class="ident">analyze</span>(<span class="ident">annotation</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">UsageAnnotation</span>, <span class="ident">func_target</span>: <span class="ident">FunctionTarget</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">analyze</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">annotation</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">UsageAnnotation</span>,
+        <span class="ident">func_target</span>: <span class="ident">FunctionTarget</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
+        <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
+    ) {
         <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
         <span class="kw">use</span> <span class="ident">Operation</span>::<span class="kw-2">*</span>;
+
         <span class="kw">for</span> <span class="ident">code</span> <span class="kw">in</span> <span class="ident">func_target</span>.<span class="ident">get_bytecode</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">oper</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">code</span> {
                 <span class="kw">match</span> <span class="ident">oper</span> {
-                    <span class="ident">Function</span>(<span class="ident">mid</span>, <span class="ident">fid</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="ident">annotation</span>.<span class="ident">called_functions</span>.<span class="ident">insert</span>(<span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">fid</span>));
+                    <span class="ident">Function</span>(<span class="ident">mid</span>, <span class="ident">fid</span>, <span class="ident">types</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">let</span> <span class="ident">func_env</span> <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">global_env</span>().<span class="ident">get_function</span>(<span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">fid</span>));
+                        <span class="kw">if</span> <span class="op">!</span><span class="ident">func_env</span>.<span class="ident">is_native</span>() {
+                            <span class="kw">let</span> <span class="ident">func_target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
+                            <span class="kw">let</span> <span class="ident">summary</span> <span class="op">=</span> <span class="ident">func_target</span>
+                                .<span class="ident">get_annotations</span>()
+                                .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">UsageAnnotation</span><span class="op">&gt;</span>()
+                                .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                                    <span class="macro">panic</span><span class="macro">!</span>(
+                                        <span class="string">&quot;Failed to look up summary for {:?} in module {:?}&quot;</span>,
+                                        <span class="ident">func_target</span>.<span class="ident">func_env</span>.<span class="ident">get_identifier</span>(),
+                                        <span class="ident">func_target</span>.<span class="ident">func_env</span>.<span class="ident">module_env</span>.<span class="ident">get_identifier</span>()
+                                    )
+                                });
+
+                            <span class="ident">annotation</span>.<span class="ident">modified_memory</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">summary</span>.<span class="ident">modified_memory</span>);
+                            <span class="ident">annotation</span>.<span class="ident">used_memory</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">summary</span>.<span class="ident">used_memory</span>);
+                            <span class="comment">// add closed types</span>
+                            <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">summary</span>.<span class="ident">closed_types</span> {
+                                <span class="ident">annotation</span>.<span class="ident">closed_types</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">clone</span>());
+                            }
+                            <span class="comment">// instantiate open types with the type parameters at this call site</span>
+                            <span class="kw">for</span> <span class="ident">open_ty</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">summary</span>.<span class="ident">open_types</span> {
+                                <span class="kw">let</span> <span class="ident">specialized_ty</span> <span class="op">=</span> <span class="ident">open_ty</span>.<span class="ident">instantiate</span>(<span class="ident">types</span>);
+                                <span class="kw">if</span> <span class="ident">specialized_ty</span>.<span class="ident">is_open</span>() {
+                                    <span class="ident">annotation</span>.<span class="ident">open_types</span>.<span class="ident">insert</span>(<span class="ident">specialized_ty</span>);
+                                } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">s</span>)) <span class="op">=</span>
+                                    <span class="ident">specialized_ty</span>.<span class="ident">into_type_tag</span>(<span class="ident">func_target</span>.<span class="ident">global_env</span>())
+                                {
+                                    <span class="ident">annotation</span>.<span class="ident">closed_types</span>.<span class="ident">insert</span>(<span class="ident">s</span>);
+                                } <span class="kw">else</span> {
+                                    <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Invariant violation: struct type {:?} became non-struct type after substitution&quot;</span>, <span class="ident">open_ty</span>)
+                                }
+                            }
+                        }
                     }
                     <span class="ident">MoveTo</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">MoveFrom</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">BorrowGlobal</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="ident">annotation</span>.<span class="ident">modified_memory</span>.<span class="ident">insert</span>(<span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">sid</span>));
@@ -384,6 +399,23 @@
                     }
                     <span class="ident">Exists</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">GetField</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, ..) <span class="op">|</span> <span class="ident">GetGlobal</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="ident">annotation</span>.<span class="ident">used_memory</span>.<span class="ident">insert</span>(<span class="ident">mid</span>.<span class="ident">qualified</span>(<span class="kw-2">*</span><span class="ident">sid</span>));
+                    }
+                    <span class="ident">Pack</span>(<span class="ident">mid</span>, <span class="ident">sid</span>, <span class="ident">types</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">let</span> <span class="ident">env</span> <span class="op">=</span> <span class="ident">func_target</span>.<span class="ident">global_env</span>();
+                        <span class="kw">match</span> <span class="ident">env</span>.<span class="ident">get_struct_tag</span>(<span class="kw-2">*</span><span class="ident">mid</span>, <span class="kw-2">*</span><span class="ident">sid</span>, <span class="ident">types</span>) {
+                            <span class="prelude-val">Some</span>(<span class="ident">tag</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                                <span class="comment">// type is closed. add to closed types summary</span>
+                                <span class="ident">annotation</span>.<span class="ident">closed_types</span>.<span class="ident">insert</span>(<span class="ident">tag</span>);
+                            }
+                            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                                <span class="comment">// type is open. add to open types summary</span>
+                                <span class="ident">annotation</span>.<span class="ident">open_types</span>.<span class="ident">insert</span>(<span class="ident">Type</span>::<span class="ident">Struct</span>(
+                                    <span class="kw-2">*</span><span class="ident">mid</span>,
+                                    <span class="kw-2">*</span><span class="ident">sid</span>,
+                                    <span class="ident">types</span>.<span class="ident">clone</span>(),
+                                ));
+                            }
+                        }
                     }
                     <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
                 }
