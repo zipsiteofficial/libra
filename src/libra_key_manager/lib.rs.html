@@ -409,12 +409,6 @@
 <span id="409">409</span>
 <span id="410">410</span>
 <span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
-<span id="417">417</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -453,7 +447,6 @@
     <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
     <span class="ident">transaction</span>::{<span class="ident">RawTransaction</span>, <span class="ident">SignedTransaction</span>, <span class="ident">Transaction</span>},
 };
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
 <span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">counters</span>;
@@ -773,15 +766,10 @@
     }
 
     <span class="kw">fn</span> <span class="ident">get_account_from_storage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">account_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>
-            .<span class="ident">storage</span>
-            .<span class="ident">get</span>(<span class="ident">account_name</span>)
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">response</span><span class="op">|</span> <span class="ident">response</span>.<span class="ident">value</span>.<span class="ident">string</span>())
-        {
-            <span class="prelude-val">Ok</span>(<span class="ident">account_address</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AccountAddress</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">account_address</span>)
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">UnknownError</span>(<span class="ident">e</span>.<span class="ident">to_string</span>())),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">MissingAccountAddress</span>(<span class="ident">e</span>)),
-        }
+        <span class="self">self</span>.<span class="ident">storage</span>
+            .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;</span>(<span class="ident">account_name</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">value</span>)
+            .<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">MissingAccountAddress</span>)
     }
 
     <span class="doccomment">/// Logs to structured logging using the given log entry, event and data.</span>

@@ -35,13 +35,27 @@
 <span id="35">35</span>
 <span id="36">36</span>
 <span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
-<span class="kw">mod</span> <span class="ident">cached_storage</span>;
 <span class="kw">mod</span> <span class="ident">crypto_kv_storage</span>;
 <span class="kw">mod</span> <span class="ident">crypto_storage</span>;
 <span class="kw">mod</span> <span class="ident">error</span>;
@@ -52,11 +66,9 @@
 <span class="kw">mod</span> <span class="ident">on_disk</span>;
 <span class="kw">mod</span> <span class="ident">policy</span>;
 <span class="kw">mod</span> <span class="ident">storage</span>;
-<span class="kw">mod</span> <span class="ident">value</span>;
 <span class="kw">mod</span> <span class="ident">vault</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">cached_storage</span>::<span class="ident">CachedStorage</span>,
     <span class="ident">crypto_kv_storage</span>::<span class="ident">CryptoKVStorage</span>,
     <span class="ident">crypto_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">PublicKeyResponse</span>},
     <span class="ident">error</span>::<span class="ident">Error</span>,
@@ -67,9 +79,27 @@
     <span class="ident">on_disk</span>::{<span class="ident">OnDiskStorage</span>, <span class="ident">OnDiskStorageInternal</span>},
     <span class="ident">policy</span>::{<span class="ident">Capability</span>, <span class="ident">Identity</span>, <span class="ident">Permission</span>, <span class="ident">Policy</span>},
     <span class="ident">storage</span>::<span class="ident">Storage</span>,
-    <span class="ident">value</span>::<span class="ident">Value</span>,
     <span class="ident">vault</span>::<span class="ident">VaultStorage</span>,
 };
+
+<span class="comment">// Some common serializations for interacting with bytes these must be manually added to types via:</span>
+<span class="comment">// #[serde(serialize_with = &quot;to_base64&quot;, deserialize_with = &quot;from_base64&quot;)]</span>
+<span class="comment">// some_value: Vec&lt;u8&gt;</span>
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_base64</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="ident">bytes</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>], <span class="ident">serializer</span>: <span class="ident">S</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span>::<span class="prelude-val">Ok</span>, <span class="ident">S</span>::<span class="ident">Error</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">S</span>: <span class="ident">serde</span>::<span class="ident">Serializer</span>,
+{
+    <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="ident">base64</span>::<span class="ident">encode</span>(<span class="ident">bytes</span>))
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_base64</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">D</span>::<span class="ident">Error</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">D</span>: <span class="ident">serde</span>::<span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+{
+    <span class="kw">let</span> <span class="ident">s</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span>::<span class="ident">deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
+    <span class="ident">base64</span>::<span class="ident">decode</span>(<span class="ident">s</span>).<span class="ident">map_err</span>(<span class="ident">serde</span>::<span class="ident">de</span>::<span class="ident">Error</span>::<span class="ident">custom</span>)
+}
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
