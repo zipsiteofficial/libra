@@ -302,6 +302,18 @@
 <span id="302">302</span>
 <span id="303">303</span>
 <span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -322,7 +334,10 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">types</span>::<span class="ident">ProcessedVMOutput</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">logging</span>::{<span class="self">self</span>, <span class="ident">executor_log</span>, <span class="ident">LogEntry</span>},
+    <span class="ident">types</span>::<span class="ident">ProcessedVMOutput</span>,
+};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">consensus_types</span>::<span class="ident">block</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span>, <span class="ident">ExecutedTrees</span>};
@@ -398,7 +413,9 @@
             .<span class="ident">unwrap</span>()
             .<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">id</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Speculation block must exist in block_map before being dropped.&quot;</span>);
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Speculation block {} is dropped.&quot;</span>, <span class="self">self</span>.<span class="ident">id</span>())
+        <span class="macro">sl_debug</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Cache</span>)
+            .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;Block dropped&quot;</span>)
+            .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="self">self</span>.<span class="ident">id</span>()));
     }
 }
 
@@ -489,15 +506,22 @@
             <span class="comment">// Update the root block id with reconfig virtual block id, to be consistent</span>
             <span class="comment">// with the logic of Consensus.</span>
             <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">Block</span>::<span class="ident">make_genesis_block_from_ledger_info</span>(<span class="ident">committed_ledger_info</span>).<span class="ident">id</span>();
-            <span class="macro">debug</span><span class="macro">!</span>(
-                <span class="string">&quot;Updated with a new root block {} as a virtual block of reconfiguration block {}&quot;</span>,
-                <span class="ident">id</span>,
-                <span class="ident">committed_ledger_info</span>.<span class="ident">consensus_block_id</span>()
-            );
+            <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Cache</span>)
+                .<span class="ident">data</span>(
+                    <span class="ident">logging</span>::<span class="ident">EVENT</span>,
+                    <span class="string">&quot;Updated with a new root block as a virtual block of reconfiguration block&quot;</span>
+                )
+                .<span class="ident">data</span>(<span class="string">&quot;root_block_id&quot;</span>, <span class="ident">id</span>)
+                .<span class="ident">data</span>(
+                    <span class="string">&quot;original_reconfiguration_block_id&quot;</span>,
+                    <span class="ident">committed_ledger_info</span>.<span class="ident">consensus_block_id</span>()
+                ));
             <span class="ident">id</span>
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">committed_ledger_info</span>.<span class="ident">consensus_block_id</span>();
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;updated with a new root block {}&quot;</span>, <span class="ident">id</span>);
+            <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Cache</span>)
+                .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;Updated with a new root block&quot;</span>)
+                .<span class="ident">data</span>(<span class="string">&quot;root_block_id&quot;</span>, <span class="ident">id</span>));
             <span class="ident">id</span>
         };
         <span class="self">self</span>.<span class="ident">committed_block_id</span> <span class="op">=</span> <span class="ident">new_root_block_id</span>;
