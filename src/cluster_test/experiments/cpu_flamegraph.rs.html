@@ -111,6 +111,7 @@
 <span id="111">111</span>
 <span id="112">112</span>
 <span id="113">113</span>
+<span id="114">114</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -122,7 +123,7 @@
     <span class="ident">time</span>::<span class="ident">Duration</span>,
 };
 
-<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">future</span>::<span class="ident">FutureExt</span>, <span class="ident">join</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
@@ -180,7 +181,8 @@
             .<span class="ident">tx_emitter</span>
             .<span class="ident">emit_txn_for</span>(<span class="ident">tx_emitter_duration</span>, <span class="ident">emit_job_request</span>)
             .<span class="ident">boxed</span>();
-        <span class="kw">let</span> <span class="ident">run_id</span> <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;RUN_ID&quot;</span>).<span class="ident">expect</span>(<span class="string">&quot;RUN_ID is not set&quot;</span>);
+        <span class="kw">let</span> <span class="ident">run_id</span> <span class="op">=</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;RUN_ID&quot;</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;RUN_ID could not be read from the environment, Error:{}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">filename</span> <span class="op">=</span> <span class="string">&quot;libra-node-perf.svg&quot;</span>;
         <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">generate_perf_flamegraph_command</span>(<span class="kw-2">&amp;</span><span class="ident">filename</span>, <span class="kw-2">&amp;</span><span class="ident">run_id</span>, <span class="self">self</span>.<span class="ident">duration_secs</span>);
         <span class="kw">let</span> <span class="ident">flame_graph</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">perf_instance</span>.<span class="ident">util_cmd</span>(<span class="ident">command</span>, <span class="string">&quot;generate-flamegraph&quot;</span>);
