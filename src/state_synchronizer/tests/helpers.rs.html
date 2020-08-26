@@ -155,11 +155,6 @@
 <span id="155">155</span>
 <span id="156">156</span>
 <span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -171,10 +166,8 @@
 <span class="kw">use</span> <span class="ident">executor_types</span>::<span class="ident">ExecutedTrees</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">ACCUMULATOR_PLACEHOLDER_HASH</span>, <span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span>};
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
-    <span class="ident">encrypted</span>::{
-        <span class="ident">RawEncNetworkAddress</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-    },
-    <span class="ident">NetworkAddress</span>, <span class="ident">RawNetworkAddress</span>,
+    <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
+    <span class="ident">NetworkAddress</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
@@ -185,7 +178,6 @@
 };
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">rngs</span>::<span class="ident">StdRng</span>, <span class="ident">SeedableRng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">convert</span>::<span class="ident">TryFrom</span>,
     <span class="ident">str</span>::<span class="ident">FromStr</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
 };
@@ -218,20 +210,18 @@
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">signer</span>) <span class="kw">in</span> <span class="ident">signers</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">voting_power</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">idx</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> { <span class="number">1000</span> } <span class="kw">else</span> { <span class="number">1</span> };
             <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">from_str</span>(<span class="string">&quot;/memory/0&quot;</span>).<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">raw_addr</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(
+            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(
                 <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
                 <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
                 <span class="kw-2">&amp;</span><span class="ident">signer</span>.<span class="ident">author</span>(),
                 <span class="number">0</span>,
                 <span class="number">0</span>,
             );
-            <span class="kw">let</span> <span class="ident">raw_enc_addr</span> <span class="op">=</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">unwrap</span>();
 
             <span class="kw">let</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">ValidatorConfig</span>::<span class="ident">new</span>(
                 <span class="ident">signer</span>.<span class="ident">public_key</span>(),
-                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">raw_enc_addr</span>]).<span class="ident">unwrap</span>(),
-                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">raw_addr</span>]).<span class="ident">unwrap</span>(),
+                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">enc_addr</span>.<span class="ident">unwrap</span>()]).<span class="ident">unwrap</span>(),
+                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>]).<span class="ident">unwrap</span>(),
             );
             <span class="kw">let</span> <span class="ident">validator_info</span> <span class="op">=</span>
                 <span class="ident">ValidatorInfo</span>::<span class="ident">new</span>(<span class="ident">signer</span>.<span class="ident">author</span>(), <span class="ident">voting_power</span>, <span class="ident">validator_config</span>);

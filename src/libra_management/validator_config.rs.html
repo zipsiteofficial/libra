@@ -196,16 +196,6 @@
 <span id="196">196</span>
 <span id="197">197</span>
 <span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -222,12 +212,9 @@
     <span class="ident">CONSENSUS_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">OPERATOR_ACCOUNT</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_ACCOUNT</span>,
     <span class="ident">VALIDATOR_NETWORK_KEY</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_network_address</span>::{<span class="ident">NetworkAddress</span>, <span class="ident">Protocol</span>, <span class="ident">RawNetworkAddress</span>};
+<span class="kw">use</span> <span class="ident">libra_network_address</span>::{<span class="ident">NetworkAddress</span>, <span class="ident">Protocol</span>};
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">transaction</span>::<span class="ident">Transaction</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">convert</span>::<span class="ident">TryFrom</span>,
-    <span class="ident">net</span>::{<span class="ident">Ipv4Addr</span>, <span class="ident">ToSocketAddrs</span>},
-};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">net</span>::{<span class="ident">Ipv4Addr</span>, <span class="ident">ToSocketAddrs</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
@@ -287,15 +274,8 @@
         <span class="comment">// Build Fullnode address including protocols</span>
         <span class="kw">let</span> <span class="ident">fullnode_address</span> <span class="op">=</span>
             <span class="ident">fullnode_address</span>.<span class="ident">append_prod_protos</span>(<span class="ident">fullnode_network_key</span>, <span class="ident">HANDSHAKE_VERSION</span>);
-        <span class="kw">let</span> <span class="ident">raw_fullnode_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">fullnode_address</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-            <span class="ident">Error</span>::<span class="ident">UnexpectedError</span>(<span class="macro">format</span><span class="macro">!</span>(
-                <span class="string">&quot;Error serializing address: &#39;{}&#39;, error: {}&quot;</span>,
-                <span class="ident">fullnode_address</span>, <span class="ident">e</span>
-            ))
-        })<span class="question-mark">?</span>;
 
         <span class="comment">// Generate the validator config script</span>
-        <span class="comment">// TODO(philiphayes): remove network identity pubkey field from struct</span>
         <span class="kw">let</span> <span class="ident">transaction_callback</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">reconfigure</span> {
             <span class="ident">transaction_builder</span>::<span class="ident">encode_set_validator_config_and_reconfigure_script</span>
         } <span class="kw">else</span> {
@@ -305,7 +285,7 @@
             <span class="ident">owner_account</span>,
             <span class="ident">consensus_key</span>.<span class="ident">to_bytes</span>().<span class="ident">to_vec</span>(),
             <span class="ident">validator_addresses</span>,
-            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">raw_fullnode_address</span>]).<span class="ident">unwrap</span>(),
+            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">fullnode_address</span>]).<span class="ident">unwrap</span>(),
         );
 
         <span class="comment">// Create and sign the validator-config transaction</span>

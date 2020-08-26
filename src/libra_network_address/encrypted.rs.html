@@ -407,78 +407,11 @@
 <span id="407">407</span>
 <span id="408">408</span>
 <span id="409">409</span>
-<span id="410">410</span>
-<span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
-<span id="417">417</span>
-<span id="418">418</span>
-<span id="419">419</span>
-<span id="420">420</span>
-<span id="421">421</span>
-<span id="422">422</span>
-<span id="423">423</span>
-<span id="424">424</span>
-<span id="425">425</span>
-<span id="426">426</span>
-<span id="427">427</span>
-<span id="428">428</span>
-<span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
-<span id="432">432</span>
-<span id="433">433</span>
-<span id="434">434</span>
-<span id="435">435</span>
-<span id="436">436</span>
-<span id="437">437</span>
-<span id="438">438</span>
-<span id="439">439</span>
-<span id="440">440</span>
-<span id="441">441</span>
-<span id="442">442</span>
-<span id="443">443</span>
-<span id="444">444</span>
-<span id="445">445</span>
-<span id="446">446</span>
-<span id="447">447</span>
-<span id="448">448</span>
-<span id="449">449</span>
-<span id="450">450</span>
-<span id="451">451</span>
-<span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
-<span id="458">458</span>
-<span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-<span id="470">470</span>
-<span id="471">471</span>
-<span id="472">472</span>
-<span id="473">473</span>
-<span id="474">474</span>
-<span id="475">475</span>
-<span id="476">476</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">RawNetworkAddress</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">NetworkAddress</span>, <span class="ident">ParseError</span>};
 <span class="kw">use</span> <span class="ident">aes_gcm</span>::{
     <span class="ident">aead</span>::{<span class="ident">generic_array</span>::<span class="ident">GenericArray</span>, <span class="ident">AeadInPlace</span>, <span class="ident">NewAead</span>},
     <span class="ident">Aes256Gcm</span>,
@@ -488,8 +421,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">mem</span>};
-<span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">mem</span>;
 
 <span class="doccomment">/// The length in bytes of the AES-256-GCM authentication tag.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AES_GCM_TAG_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">16</span>;
@@ -533,11 +465,7 @@
     <span class="number">0x27</span>, <span class="number">0x54</span>, <span class="number">0x19</span>, <span class="number">0xeb</span>, <span class="number">0xaa</span>, <span class="number">0xd1</span>, <span class="number">0xdb</span>, <span class="number">0x27</span>, <span class="number">0xd2</span>, <span class="number">0xa1</span>, <span class="number">0x91</span>, <span class="number">0xb6</span>, <span class="number">0xd1</span>, <span class="number">0xdb</span>, <span class="number">0x6d</span>, <span class="number">0x13</span>,
 ];
 
-<span class="doccomment">/// A serialized `EncNetworkAddress`.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RawEncNetworkAddress</span>(<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;serde_bytes&quot;</span>)]</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>);
-
-<span class="doccomment">/// An encrypted `RawNetworkAddress`.</span>
+<span class="doccomment">/// An encrypted `NetworkAddress`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ### Threat Model</span>
 <span class="doccomment">///</span>
@@ -587,7 +515,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// where `nonce` is a 96-bit integer as described below, `key_version` is</span>
 <span class="doccomment">/// the key version as a u32 big-endian integer, `addr` is the serialized</span>
-<span class="doccomment">/// `RawNetworkAddress`, and `enc_addr` is the encrypted network address</span>
+<span class="doccomment">/// `NetworkAddress`, and `enc_addr` is the encrypted network address</span>
 <span class="doccomment">/// concatenated with the 16-byte authentication tag.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ### Nonce</span>
@@ -610,61 +538,12 @@
 <span class="doccomment">/// The `EncNetworkAddress` struct contains a `key_version` field, which</span>
 <span class="doccomment">/// identifies the specific `shared_val_netaddr_key` used to encrypt/decrypt the</span>
 <span class="doccomment">/// `EncNetworkAddress`.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// TODO(philiphayes): expand this section</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EncNetworkAddress</span> {
     <span class="ident">key_version</span>: <span class="ident">KeyVersion</span>,
     <span class="ident">seq_num</span>: <span class="ident">u64</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">with</span> <span class="op">=</span> <span class="string">&quot;serde_bytes&quot;</span>)]</span>
     <span class="ident">enc_addr</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Error</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;error decrypting network address&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DecryptError</span>;
-
-<span class="comment">//////////////////////////</span>
-<span class="comment">// RawEncNetworkAddress //</span>
-<span class="comment">//////////////////////////</span>
-
-<span class="kw">impl</span> <span class="ident">RawEncNetworkAddress</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span>(<span class="ident">bytes</span>)
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RawEncNetworkAddress</span> {
-    <span class="kw">fn</span> <span class="ident">into</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RawEncNetworkAddress</span> {
-    <span class="kw">fn</span> <span class="ident">as_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">as_ref</span>()
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">EncNetworkAddress</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RawEncNetworkAddress</span> {
-    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">Error</span>;
-
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">EncNetworkAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">lcs</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="ident">value</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">RawEncNetworkAddress</span>::<span class="ident">new</span>(<span class="ident">bytes</span>))
-    }
-}
-
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
-<span class="kw">impl</span> <span class="ident">Arbitrary</span> <span class="kw">for</span> <span class="ident">RawEncNetworkAddress</span> {
-    <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> ();
-    <span class="kw">type</span> <span class="ident">Strategy</span> <span class="op">=</span> <span class="ident">BoxedStrategy</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
-
-    <span class="kw">fn</span> <span class="ident">arbitrary_with</span>(<span class="ident">_args</span>: <span class="self">Self</span>::<span class="ident">Parameters</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Strategy</span> {
-        <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">EncNetworkAddress</span><span class="op">&gt;</span>()
-            .<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">enc_addr</span><span class="op">|</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">unwrap</span>())
-            .<span class="ident">boxed</span>()
-    }
 }
 
 <span class="comment">///////////////////////</span>
@@ -676,15 +555,15 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// encrypt will panic if `addr` length &gt; 64 GiB.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encrypt</span>(
-        <span class="ident">addr</span>: <span class="ident">RawNetworkAddress</span>,
+        <span class="ident">addr</span>: <span class="ident">NetworkAddress</span>,
         <span class="ident">shared_val_netaddr_key</span>: <span class="kw-2">&amp;</span><span class="ident">Key</span>,
         <span class="ident">key_version</span>: <span class="ident">KeyVersion</span>,
         <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">seq_num</span>: <span class="ident">u64</span>,
         <span class="ident">addr_idx</span>: <span class="ident">u32</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="comment">// unpack the RawNetworkAddress into its base Vec&lt;u8&gt;</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">addr_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">into</span>();
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ParseError</span><span class="op">&gt;</span> {
+        <span class="comment">// unpack the NetworkAddress into its base Vec&lt;u8&gt;</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">addr_vec</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">derived_key</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">derive_key</span>(<span class="ident">shared_val_netaddr_key</span>, <span class="ident">account</span>);
         <span class="kw">let</span> <span class="ident">aead</span> <span class="op">=</span> <span class="ident">Aes256Gcm</span>::<span class="ident">new</span>(<span class="ident">GenericArray</span>::<span class="ident">from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">derived_key</span>));
@@ -715,11 +594,11 @@
         <span class="comment">// append the authentication tag</span>
         <span class="ident">addr_vec</span>.<span class="ident">extend_from_slice</span>(<span class="ident">auth_tag</span>.<span class="ident">as_slice</span>());
 
-        <span class="self">Self</span> {
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">key_version</span>,
             <span class="ident">seq_num</span>,
             <span class="ident">enc_addr</span>: <span class="ident">addr_vec</span>,
-        }
+        })
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">decrypt</span>(
@@ -727,7 +606,7 @@
         <span class="ident">shared_val_netaddr_key</span>: <span class="kw-2">&amp;</span><span class="ident">Key</span>,
         <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">addr_idx</span>: <span class="ident">u32</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RawNetworkAddress</span>, <span class="ident">DecryptError</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span>, <span class="ident">ParseError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">key_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">key_version</span>;
         <span class="kw">let</span> <span class="ident">seq_num</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">seq_num</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">enc_addr</span>;
@@ -735,7 +614,7 @@
         <span class="comment">// ciphertext is too small to even contain the authentication tag, so it</span>
         <span class="comment">// must be invalid.</span>
         <span class="kw">if</span> <span class="ident">enc_addr</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">AES_GCM_TAG_LEN</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">DecryptError</span>);
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ParseError</span>::<span class="ident">DecryptError</span>);
         }
 
         <span class="kw">let</span> <span class="ident">derived_key</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">derive_key</span>(<span class="ident">shared_val_netaddr_key</span>, <span class="ident">account</span>);
@@ -763,12 +642,12 @@
         <span class="kw">let</span> <span class="ident">auth_tag_slice</span> <span class="op">=</span> <span class="ident">GenericArray</span>::<span class="ident">from_slice</span>(<span class="ident">auth_tag_slice</span>);
 
         <span class="ident">aead</span>.<span class="ident">decrypt_in_place_detached</span>(<span class="ident">nonce_slice</span>, <span class="ident">ad_slice</span>, <span class="ident">enc_addr_slice</span>, <span class="ident">auth_tag_slice</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">DecryptError</span>)<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">ParseError</span>::<span class="ident">DecryptError</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// remove the auth tag suffix, leaving just the decrypted network address</span>
         <span class="ident">enc_addr</span>.<span class="ident">truncate</span>(<span class="ident">auth_tag_offset</span>);
 
-        <span class="prelude-val">Ok</span>(<span class="ident">RawNetworkAddress</span>::<span class="ident">new</span>(<span class="ident">enc_addr</span>))
+        <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into</span>())
     }
 
     <span class="doccomment">/// Given the shared `shared_val_netaddr_key`, derive the per-validator</span>
@@ -791,15 +670,6 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RawEncNetworkAddress</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EncNetworkAddress</span> {
-    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">Error</span>;
-
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">RawEncNetworkAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">lcs</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">enc_addr</span>: <span class="ident">EncNetworkAddress</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="ident">value</span>.<span class="ident">as_ref</span>())<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">enc_addr</span>)
-    }
-}
-
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">impl</span> <span class="ident">Arbitrary</span> <span class="kw">for</span> <span class="ident">EncNetworkAddress</span> {
     <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> ();
@@ -812,7 +682,7 @@
         <span class="kw">let</span> <span class="ident">seq_num</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">addr_idx</span> <span class="op">=</span> <span class="number">0</span>;
 
-        <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">RawNetworkAddress</span><span class="op">&gt;</span>()
+        <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>()
             .<span class="ident">prop_map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">addr</span><span class="op">|</span> {
                 <span class="ident">EncNetworkAddress</span>::<span class="ident">encrypt</span>(
                     <span class="ident">addr</span>,
@@ -822,6 +692,7 @@
                     <span class="ident">seq_num</span>,
                     <span class="ident">addr_idx</span>,
                 )
+                .<span class="ident">unwrap</span>()
             })
             .<span class="ident">boxed</span>()
     }
@@ -846,21 +717,23 @@
         <span class="kw">let</span> <span class="ident">seq_num</span> <span class="op">=</span> <span class="number">0x4589</span>;
         <span class="kw">let</span> <span class="ident">addr_idx</span> <span class="op">=</span> <span class="number">123</span>;
         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>();
-        <span class="kw">let</span> <span class="ident">raw_addr</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(
-            <span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>,
-            <span class="ident">key_version</span>,
-            <span class="kw-2">&amp;</span><span class="ident">account</span>,
-            <span class="ident">seq_num</span>,
-            <span class="ident">addr_idx</span>,
-        );
+        <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>
+            .<span class="ident">clone</span>()
+            .<span class="ident">encrypt</span>(
+                <span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>,
+                <span class="ident">key_version</span>,
+                <span class="kw-2">&amp;</span><span class="ident">account</span>,
+                <span class="ident">seq_num</span>,
+                <span class="ident">addr_idx</span>,
+            )
+            .<span class="ident">unwrap</span>();
 
         <span class="comment">// we expect decrypting a properly encrypted address to work</span>
         <span class="kw">let</span> <span class="ident">dec_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>
             .<span class="ident">clone</span>()
             .<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">addr_idx</span>)
             .<span class="ident">unwrap</span>();
-        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">raw_addr</span>, <span class="ident">dec_addr</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addr</span>, <span class="ident">dec_addr</span>);
 
         <span class="comment">// modifying the seq_num should cause decryption failure</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">malicious_enc_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">clone</span>();
@@ -916,16 +789,16 @@
     <span class="macro">proptest</span><span class="macro">!</span> {
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">encrypt_decrypt_roundtrip</span>(
-            <span class="ident">raw_addr</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">RawNetworkAddress</span><span class="op">&gt;</span>(),
+            <span class="ident">addr</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>(),
         ) {
             <span class="kw">let</span> <span class="ident">shared_val_netaddr_key</span> <span class="op">=</span> <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>;
             <span class="kw">let</span> <span class="ident">key_version</span> <span class="op">=</span> <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>;
             <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">AccountAddress</span>::<span class="ident">ZERO</span>;
             <span class="kw">let</span> <span class="ident">seq_num</span> <span class="op">=</span> <span class="number">0</span>;
             <span class="kw">let</span> <span class="ident">addr_idx</span> <span class="op">=</span> <span class="number">0</span>;
-            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="ident">key_version</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">seq_num</span>, <span class="ident">addr_idx</span>);
-            <span class="kw">let</span> <span class="ident">dec_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">addr_idx</span>).<span class="ident">unwrap</span>();
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">raw_addr</span>, <span class="ident">dec_addr</span>);
+            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="ident">key_version</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">seq_num</span>, <span class="ident">addr_idx</span>);
+            <span class="kw">let</span> <span class="ident">dec_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">unwrap</span>().<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">addr_idx</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addr</span>, <span class="ident">dec_addr</span>.<span class="ident">unwrap</span>());
         }
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
@@ -935,19 +808,12 @@
             <span class="ident">account</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="ident">AccountAddress</span>::<span class="ident">LENGTH</span>]<span class="op">&gt;</span>(),
             <span class="ident">seq_num</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
             <span class="ident">addr_idx</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>(),
-            <span class="ident">raw_addr</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">RawNetworkAddress</span><span class="op">&gt;</span>(),
+            <span class="ident">addr</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>(),
         ) {
             <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">AccountAddress</span>::<span class="ident">new</span>(<span class="ident">account</span>);
-            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="ident">key_version</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">seq_num</span>, <span class="ident">addr_idx</span>);
-            <span class="kw">let</span> <span class="ident">dec_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">addr_idx</span>).<span class="ident">unwrap</span>();
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">raw_addr</span>, <span class="ident">dec_addr</span>);
-        }
-
-        <span class="attribute">#[<span class="ident">test</span>]</span>
-        <span class="kw">fn</span> <span class="ident">enc_network_address_serde</span>(<span class="ident">enc_addr</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">EncNetworkAddress</span><span class="op">&gt;</span>()) {
-            <span class="kw">let</span> <span class="ident">raw_enc_addr</span> <span class="op">=</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">enc_addr_2</span> <span class="op">=</span> <span class="ident">EncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">raw_enc_addr</span>).<span class="ident">unwrap</span>();
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">enc_addr</span>, <span class="ident">enc_addr_2</span>);
+            <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="ident">key_version</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">seq_num</span>, <span class="ident">addr_idx</span>);
+            <span class="kw">let</span> <span class="ident">dec_addr</span> <span class="op">=</span> <span class="ident">enc_addr</span>.<span class="ident">unwrap</span>().<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">shared_val_netaddr_key</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">addr_idx</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addr</span>, <span class="ident">dec_addr</span>.<span class="ident">unwrap</span>());
         }
     }
 }

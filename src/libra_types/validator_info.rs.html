@@ -103,13 +103,6 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
-<span id="111">111</span>
-<span id="112">112</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -118,16 +111,12 @@
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
-    <span class="ident">encrypted</span>::{
-        <span class="ident">RawEncNetworkAddress</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-    },
-    <span class="ident">NetworkAddress</span>, <span class="ident">RawNetworkAddress</span>,
+    <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
+    <span class="ident">NetworkAddress</span>,
 };
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">use</span> <span class="ident">proptest_derive</span>::<span class="ident">Arbitrary</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>;
 
 <span class="doccomment">/// After executing a special transaction indicates a change to the next epoch, consensus</span>
@@ -174,20 +163,17 @@
         <span class="ident">consensus_voting_power</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">mock</span>();
-        <span class="kw">let</span> <span class="ident">raw_addr</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">raw_addr</span>.<span class="ident">encrypt</span>(
+        <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(
             <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
             <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
             <span class="kw-2">&amp;</span><span class="ident">account_address</span>,
             <span class="number">0</span>,
             <span class="number">0</span>,
         );
-        <span class="kw">let</span> <span class="ident">validator_network_address</span> <span class="op">=</span> <span class="ident">RawEncNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addr</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">full_node_network_address</span> <span class="op">=</span> <span class="ident">RawNetworkAddress</span>::<span class="ident">try_from</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ValidatorConfig</span>::<span class="ident">new</span>(
             <span class="ident">consensus_public_key</span>,
-            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">validator_network_address</span>]).<span class="ident">unwrap</span>(),
-            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">full_node_network_address</span>]).<span class="ident">unwrap</span>(),
+            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">enc_addr</span>.<span class="ident">unwrap</span>()]).<span class="ident">unwrap</span>(),
+            <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>]).<span class="ident">unwrap</span>(),
         );
 
         <span class="self">Self</span> {
