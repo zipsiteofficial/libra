@@ -296,6 +296,54 @@
 <span id="296">296</span>
 <span id="297">297</span>
 <span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -390,68 +438,45 @@
     }
 }
 
-<span class="comment">// This generates an arbitrary generic input for the handle_message() method call.</span>
+<span class="comment">// This generates an arbitrary MaybeSignedVoteProposal.</span>
 <span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_handle_message_input</span>(
-    )(
-        <span class="ident">verify_vote_proposal_sig</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(),
-        <span class="ident">signer_byte</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>(),
-        <span class="ident">safety_rules_input</span> <span class="kw">in</span> <span class="ident">arb_safety_rules_input</span>(),
-    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">SafetyRulesInput</span>, <span class="ident">bool</span>, <span class="ident">u8</span>) {
-        (<span class="ident">safety_rules_input</span>, <span class="ident">verify_vote_proposal_sig</span>, <span class="ident">signer_byte</span>)
-    }
-}
-
-<span class="comment">// This generates an arbitrary SafetyRulesInput::ConstructAndSignVote enum instance.</span>
-<span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_safety_rules_input_construct_and_sign_vote</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_maybe_signed_vote_proposal</span>(
     )(
         <span class="ident">signature</span> <span class="kw">in</span> <span class="ident">arb_ed25519_signature</span>(),
         <span class="ident">vote_proposal</span> <span class="kw">in</span> <span class="ident">arb_vote_proposal</span>(),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SafetyRulesInput</span> {
-        <span class="kw">let</span> <span class="ident">maybe_signed_voted_proposal</span> <span class="op">=</span> <span class="ident">MaybeSignedVoteProposal</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MaybeSignedVoteProposal</span> {
+        <span class="ident">MaybeSignedVoteProposal</span> {
             <span class="ident">vote_proposal</span>,
             <span class="ident">signature</span>
-        };
-        <span class="ident">SafetyRulesInput</span>::<span class="ident">ConstructAndSignVote</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">maybe_signed_voted_proposal</span>))
+        }
     }
 }
 
-<span class="comment">// This generates an arbitrary SafetyRulesInput::Initialize enum instance.</span>
+<span class="comment">// This generates an arbitrary EpochChangeProof.</span>
 <span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_safety_rules_input_initialize</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_epoch_change_proof</span>(
     )(
         <span class="ident">more</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(),
         <span class="ident">ledger_info_with_sigs</span> <span class="kw">in</span> <span class="ident">prop</span>::<span class="ident">collection</span>::<span class="ident">vec</span>(
             <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>(),
             <span class="number">0</span>..<span class="ident">MAX_NUM_LEDGER_INFO_WITH_SIGS</span>
         ),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SafetyRulesInput</span> {
-        <span class="ident">SafetyRulesInput</span>::<span class="ident">Initialize</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">EpochChangeProof</span> {
+        <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(
             <span class="ident">ledger_info_with_sigs</span>,
             <span class="ident">more</span>,
-        )))
+        )
     }
 }
 
-<span class="comment">// This generates an arbitrary SafetyRulesInput::SignProposal enum instance.</span>
+<span class="comment">// This generates an arbitrary Timeout.</span>
 <span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_safety_rules_input_sign_proposal</span>(
-    )(
-        <span class="ident">block_data</span> <span class="kw">in</span> <span class="ident">arb_block_data</span>(),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SafetyRulesInput</span> {
-        <span class="ident">SafetyRulesInput</span>::<span class="ident">SignProposal</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">block_data</span>))
-    }
-}
-
-<span class="comment">// This generates an arbitrary SafetyRulesInput::SignTimeout enum instance.</span>
-<span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_safety_rules_input_sign_timeout</span>(
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_timeout</span>(
     )(
         <span class="ident">epoch</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
         <span class="ident">round</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SafetyRulesInput</span> {
-        <span class="ident">SafetyRulesInput</span>::<span class="ident">SignTimeout</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Timeout</span>::<span class="ident">new</span>(<span class="ident">epoch</span>, <span class="ident">round</span>)))
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Timeout</span> {
+        <span class="ident">Timeout</span>::<span class="ident">new</span>(<span class="ident">epoch</span>, <span class="ident">round</span>)
     }
 }
 
@@ -563,35 +588,106 @@
 }
 
 <span class="comment">// This generates an arbitrary SafetyRulesInput enum.</span>
-<span class="kw">fn</span> <span class="ident">arb_safety_rules_input</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">SafetyRulesInput</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_safety_rules_input</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">SafetyRulesInput</span><span class="op">&gt;</span> {
     <span class="macro">prop_oneof</span><span class="macro">!</span>[
         <span class="ident">Just</span>(<span class="ident">SafetyRulesInput</span>::<span class="ident">ConsensusState</span>),
-        <span class="ident">arb_safety_rules_input_initialize</span>(),
-        <span class="ident">arb_safety_rules_input_construct_and_sign_vote</span>(),
-        <span class="ident">arb_safety_rules_input_sign_proposal</span>(),
-        <span class="ident">arb_safety_rules_input_sign_timeout</span>(),
+        <span class="ident">arb_epoch_change_proof</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> <span class="ident">SafetyRulesInput</span>::<span class="ident">Initialize</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">input</span>))),
+        <span class="ident">arb_maybe_signed_vote_proposal</span>()
+            .<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> { <span class="ident">SafetyRulesInput</span>::<span class="ident">ConstructAndSignVote</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">input</span>)) }),
+        <span class="ident">arb_block_data</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> { <span class="ident">SafetyRulesInput</span>::<span class="ident">SignProposal</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">input</span>)) }),
+        <span class="ident">arb_timeout</span>().<span class="ident">prop_map</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> { <span class="ident">SafetyRulesInput</span>::<span class="ident">SignTimeout</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">input</span>)) }),
     ]
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fuzzing</span> {
+    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">serializer</span>::<span class="ident">SafetyRulesInput</span>, <span class="ident">test_utils</span>, <span class="ident">TSafetyRules</span>};
+    <span class="kw">use</span> <span class="ident">consensus_types</span>::{
+        <span class="ident">block</span>::<span class="ident">Block</span>, <span class="ident">block_data</span>::<span class="ident">BlockData</span>, <span class="ident">timeout</span>::<span class="ident">Timeout</span>, <span class="ident">vote</span>::<span class="ident">Vote</span>,
+        <span class="ident">vote_proposal</span>::<span class="ident">MaybeSignedVoteProposal</span>,
+    };
+    <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">ed25519</span>::<span class="ident">Ed25519Signature</span>;
+    <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">epoch_change</span>::<span class="ident">EpochChangeProof</span>;
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_initialize</span>(<span class="ident">proof</span>: <span class="ident">EpochChangeProof</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules</span>();
+        <span class="ident">safety_rules</span>.<span class="ident">initialize</span>(<span class="kw-2">&amp;</span><span class="ident">proof</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_construct_and_sign_vote</span>(
+        <span class="ident">maybe_signed_vote_proposal</span>: <span class="ident">MaybeSignedVoteProposal</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vote</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules</span>();
+        <span class="ident">safety_rules</span>.<span class="ident">construct_and_sign_vote</span>(<span class="kw-2">&amp;</span><span class="ident">maybe_signed_vote_proposal</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_handle_message</span>(<span class="ident">safety_rules_input</span>: <span class="ident">SafetyRulesInput</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="comment">// Create a safety rules serializer test instance for fuzzing</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">serializer_service</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_serializer</span>();
+
+        <span class="comment">// LCS encode the safety_rules_input and fuzz the handle_message() method</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">safety_rules_input</span>) <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">safety_rules_input</span>) {
+            <span class="ident">serializer_service</span>.<span class="ident">handle_message</span>(<span class="ident">safety_rules_input</span>)
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">SerializationError</span>(
+                <span class="string">&quot;Unable to serialize safety rules input for fuzzer!&quot;</span>.<span class="ident">into</span>(),
+            ))
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_sign_proposal</span>(<span class="ident">block_data</span>: <span class="ident">BlockData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules</span>();
+        <span class="ident">safety_rules</span>.<span class="ident">sign_proposal</span>(<span class="ident">block_data</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_sign_timeout</span>(<span class="ident">timeout</span>: <span class="ident">Timeout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules</span>();
+        <span class="ident">safety_rules</span>.<span class="ident">sign_timeout</span>(<span class="kw-2">&amp;</span><span class="ident">timeout</span>)
+    }
 }
 
 <span class="comment">// Note: these tests ensure that the various fuzzers are maintained (i.e., not broken</span>
 <span class="comment">// at some time in the future and only discovered when a fuzz test fails).</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">fuzzing_utils</span>::<span class="ident">arb_handle_message_input</span>, <span class="ident">test_utils</span>};
+    <span class="kw">use</span> <span class="kw">crate</span>::{
+        <span class="ident">fuzzing</span>::{
+            <span class="ident">fuzz_construct_and_sign_vote</span>, <span class="ident">fuzz_handle_message</span>, <span class="ident">fuzz_initialize</span>, <span class="ident">fuzz_sign_proposal</span>,
+            <span class="ident">fuzz_sign_timeout</span>,
+        },
+        <span class="ident">fuzzing_utils</span>::{
+            <span class="ident">arb_block_data</span>, <span class="ident">arb_epoch_change_proof</span>, <span class="ident">arb_maybe_signed_vote_proposal</span>,
+            <span class="ident">arb_safety_rules_input</span>, <span class="ident">arb_timeout</span>,
+        },
+    };
     <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
     <span class="macro">proptest</span><span class="macro">!</span> {
         <span class="attribute">#![<span class="ident">proptest_config</span>(<span class="ident">ProptestConfig</span>::<span class="ident">with_cases</span>(<span class="number">10</span>))]</span>
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
-        <span class="kw">fn</span> <span class="ident">handle_message_proptest</span>(<span class="ident">safety_rules_input</span> <span class="kw">in</span> <span class="ident">arb_handle_message_input</span>()) {
-            <span class="comment">// Create a safety rules serializer test instance for fuzzing</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">serializer_service</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_serializer</span>();
+        <span class="kw">fn</span> <span class="ident">handle_message_proptest</span>(<span class="ident">input</span> <span class="kw">in</span> <span class="ident">arb_safety_rules_input</span>()) {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fuzz_handle_message</span>(<span class="ident">input</span>);
+        }
 
-            <span class="comment">// LCS encode the safety_rules_input and fuzz the handle_message() method</span>
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">safety_rules_input</span>) <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">safety_rules_input</span>) {
-                <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">serializer_service</span>.<span class="ident">handle_message</span>(<span class="ident">safety_rules_input</span>);
-            };
+        <span class="attribute">#[<span class="ident">test</span>]</span>
+        <span class="kw">fn</span> <span class="ident">initialize_proptest</span>(<span class="ident">input</span> <span class="kw">in</span> <span class="ident">arb_epoch_change_proof</span>()) {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fuzz_initialize</span>(<span class="ident">input</span>);
+        }
+
+        <span class="attribute">#[<span class="ident">test</span>]</span>
+        <span class="kw">fn</span> <span class="ident">construct_and_sign_vote_proptest</span>(<span class="ident">input</span> <span class="kw">in</span> <span class="ident">arb_maybe_signed_vote_proposal</span>()) {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fuzz_construct_and_sign_vote</span>(<span class="ident">input</span>);
+        }
+
+        <span class="attribute">#[<span class="ident">test</span>]</span>
+        <span class="kw">fn</span> <span class="ident">sign_proposal_proptest</span>(<span class="ident">input</span> <span class="kw">in</span> <span class="ident">arb_block_data</span>()) {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fuzz_sign_proposal</span>(<span class="ident">input</span>);
+        }
+
+        <span class="attribute">#[<span class="ident">test</span>]</span>
+        <span class="kw">fn</span> <span class="ident">sign_timeout_proptest</span>(<span class="ident">input</span> <span class="kw">in</span> <span class="ident">arb_timeout</span>()) {
+            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">fuzz_sign_timeout</span>(<span class="ident">input</span>);
         }
     }
 }
