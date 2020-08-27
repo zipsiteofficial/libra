@@ -3187,8 +3187,6 @@
 <span id="3187">3187</span>
 <span id="3188">3188</span>
 <span id="3189">3189</span>
-<span id="3190">3190</span>
-<span id="3191">3191</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -3198,8 +3196,8 @@
 <span class="kw">use</span> <span class="ident">move_core_types</span>::{
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
     <span class="ident">gas_schedule</span>::{
-        <span class="ident">words_in</span>, <span class="ident">AbstractMemorySize</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>, <span class="ident">CONST_SIZE</span>, <span class="ident">REFERENCE_SIZE</span>,
-        <span class="ident">STRUCT_SIZE</span>,
+        <span class="ident">AbstractMemorySize</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>, <span class="ident">CONST_SIZE</span>, <span class="ident">MIN_EXISTS_DATA_SIZE</span>,
+        <span class="ident">REFERENCE_SIZE</span>, <span class="ident">STRUCT_SIZE</span>,
     },
     <span class="ident">value</span>::{<span class="ident">MoveKind</span>, <span class="ident">MoveKindInfo</span>, <span class="ident">MoveStructLayout</span>, <span class="ident">MoveTypeLayout</span>},
 };
@@ -5292,13 +5290,13 @@
 
 <span class="kw">impl</span> <span class="ident">ContainerRef</span> {
     <span class="kw">fn</span> <span class="ident">size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
-        <span class="ident">words_in</span>(<span class="ident">REFERENCE_SIZE</span>)
+        <span class="ident">REFERENCE_SIZE</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">IndexedRef</span> {
     <span class="kw">fn</span> <span class="ident">size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
-        <span class="ident">words_in</span>(<span class="ident">REFERENCE_SIZE</span>)
+        <span class="ident">REFERENCE_SIZE</span>
     }
 }
 
@@ -5355,10 +5353,8 @@
         <span class="comment">// REVIEW: this doesn&#39;t seem quite right. Consider changing it to</span>
         <span class="comment">// a constant positive size or better, something proportional to the size of the value.</span>
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span> {
-            <span class="ident">GlobalValueImpl</span>::<span class="ident">Fresh</span> { .. } <span class="op">|</span> <span class="ident">GlobalValueImpl</span>::<span class="ident">Cached</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">words_in</span>(<span class="ident">REFERENCE_SIZE</span>)
-            }
-            <span class="ident">GlobalValueImpl</span>::<span class="ident">Deleted</span> <span class="op">|</span> <span class="ident">GlobalValueImpl</span>::<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AbstractMemorySize</span>::<span class="ident">new</span>(<span class="number">0</span>),
+            <span class="ident">GlobalValueImpl</span>::<span class="ident">Fresh</span> { .. } <span class="op">|</span> <span class="ident">GlobalValueImpl</span>::<span class="ident">Cached</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">REFERENCE_SIZE</span>,
+            <span class="ident">GlobalValueImpl</span>::<span class="ident">Deleted</span> <span class="op">|</span> <span class="ident">GlobalValueImpl</span>::<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">MIN_EXISTS_DATA_SIZE</span>,
         }
     }
 }

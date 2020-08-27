@@ -27,14 +27,22 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::<span class="ident">ZERO_GAS_UNITS</span>;
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::<span class="ident">GasAlgebra</span>;
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::{
+    <span class="ident">gas_schedule</span>::<span class="ident">NativeCostIndex</span>,
     <span class="ident">loaded_data</span>::<span class="ident">runtime_types</span>::<span class="ident">Type</span>,
-    <span class="ident">natives</span>::<span class="ident">function</span>::{<span class="ident">NativeContext</span>, <span class="ident">NativeResult</span>},
+    <span class="ident">natives</span>::<span class="ident">function</span>::{<span class="ident">native_gas</span>, <span class="ident">NativeContext</span>, <span class="ident">NativeResult</span>},
     <span class="ident">values</span>::<span class="ident">Value</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">VecDeque</span>;
@@ -53,9 +61,15 @@
     <span class="kw">let</span> <span class="ident">seq_num</span> <span class="op">=</span> <span class="macro">pop_arg</span><span class="macro">!</span>(<span class="ident">arguments</span>, <span class="ident">u64</span>);
     <span class="kw">let</span> <span class="ident">guid</span> <span class="op">=</span> <span class="macro">pop_arg</span><span class="macro">!</span>(<span class="ident">arguments</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>);
 
+    <span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">native_gas</span>(
+        <span class="ident">context</span>.<span class="ident">cost_table</span>(),
+        <span class="ident">NativeCostIndex</span>::<span class="ident">EMIT_EVENT</span>,
+        <span class="ident">msg</span>.<span class="ident">size</span>().<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
+    );
+
     <span class="ident">context</span>.<span class="ident">save_event</span>(<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">msg</span>);
 
-    <span class="prelude-val">Ok</span>(<span class="ident">NativeResult</span>::<span class="ident">ok</span>(<span class="ident">ZERO_GAS_UNITS</span>, <span class="macro">vec</span><span class="macro">!</span>[]))
+    <span class="prelude-val">Ok</span>(<span class="ident">NativeResult</span>::<span class="ident">ok</span>(<span class="ident">cost</span>, <span class="macro">vec</span><span class="macro">!</span>[]))
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "move_vm_natives";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
