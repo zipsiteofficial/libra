@@ -240,6 +240,12 @@
 <span id="240">240</span>
 <span id="241">241</span>
 <span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -274,7 +280,7 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountDataCache</span> {
-    <span class="ident">data_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Type</span>, <span class="ident">GlobalValue</span><span class="op">&gt;</span>,
+    <span class="ident">data_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Type</span>, (<span class="ident">MoveTypeLayout</span>, <span class="ident">GlobalValue</span>)<span class="op">&gt;</span>,
     <span class="ident">module_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">ModuleId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
@@ -304,7 +310,7 @@
     <span class="ident">remote</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;r</span> <span class="ident">R</span>,
     <span class="ident">loader</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;l</span> <span class="ident">Loader</span>,
     <span class="ident">account_map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">AccountDataCache</span><span class="op">&gt;</span>,
-    <span class="ident">event_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>, <span class="ident">Type</span>, <span class="ident">Value</span>)<span class="op">&gt;</span>,
+    <span class="ident">event_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">u64</span>, <span class="ident">Type</span>, <span class="ident">MoveTypeLayout</span>, <span class="ident">Value</span>)<span class="op">&gt;</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionEffects</span> {
@@ -337,7 +343,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resources</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> (<span class="ident">addr</span>, <span class="ident">account_cache</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">account_map</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-            <span class="kw">for</span> (<span class="ident">ty</span>, <span class="ident">gv</span>) <span class="kw">in</span> <span class="ident">account_cache</span>.<span class="ident">data_map</span> {
+            <span class="kw">for</span> (<span class="ident">ty</span>, (<span class="ident">ty_layout</span>, <span class="ident">gv</span>)) <span class="kw">in</span> <span class="ident">account_cache</span>.<span class="ident">data_map</span> {
                 <span class="kw">match</span> <span class="ident">gv</span>.<span class="ident">into_effect</span>()<span class="question-mark">?</span> {
                     <span class="ident">GlobalValueEffect</span>::<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> (),
                     <span class="ident">GlobalValueEffect</span>::<span class="ident">Deleted</span> <span class="op">=</span><span class="op">&gt;</span> {
@@ -346,7 +352,6 @@
                     }
                     <span class="ident">GlobalValueEffect</span>::<span class="ident">Changed</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
                         <span class="ident">vals</span>.<span class="ident">push</span>((<span class="ident">ty_tag</span>, <span class="prelude-val">Some</span>((<span class="ident">ty_layout</span>, <span class="ident">val</span>))));
                     }
                 }
@@ -363,9 +368,8 @@
         }
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">events</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-        <span class="kw">for</span> (<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">val</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">event_data</span> {
+        <span class="kw">for</span> (<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">ty_layout</span>, <span class="ident">val</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">event_data</span> {
             <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
             <span class="ident">events</span>.<span class="ident">push</span>((<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty_tag</span>, <span class="ident">ty_layout</span>, <span class="ident">val</span>))
         }
 
@@ -409,10 +413,10 @@
 
         <span class="kw">if</span> <span class="op">!</span><span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">contains_key</span>(<span class="ident">ty</span>) {
             <span class="kw">let</span> <span class="ident">ty_tag</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_tag</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">gv</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_resource</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="kw-2">&amp;</span><span class="ident">ty_tag</span>)<span class="question-mark">?</span> {
                 <span class="prelude-val">Some</span>(<span class="ident">blob</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
                     <span class="kw">let</span> <span class="ident">ty_kind_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_kind_info</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
                     <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">Value</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>, <span class="kw-2">&amp;</span><span class="ident">ty_kind_info</span>, <span class="kw-2">&amp;</span><span class="ident">ty_layout</span>) {
                         <span class="prelude-val">Some</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">val</span>,
@@ -436,12 +440,13 @@
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">GlobalValue</span>::<span class="ident">none</span>(),
             };
 
-            <span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">clone</span>(), <span class="ident">gv</span>);
+            <span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">clone</span>(), (<span class="ident">ty_layout</span>, <span class="ident">gv</span>));
         }
 
         <span class="prelude-val">Ok</span>(<span class="ident">account_cache</span>
             .<span class="ident">data_map</span>
             .<span class="ident">get_mut</span>(<span class="ident">ty</span>)
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">_ty_layout</span>, <span class="ident">gv</span>)<span class="op">|</span> <span class="ident">gv</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;global value must exist&quot;</span>))
     }
 
@@ -479,8 +484,15 @@
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_module</span>(<span class="ident">module_id</span>)<span class="question-mark">?</span>.<span class="ident">is_some</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">emit_event</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">guid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">seq_num</span>: <span class="ident">u64</span>, <span class="ident">ty</span>: <span class="ident">Type</span>, <span class="ident">val</span>: <span class="ident">Value</span>) {
-        <span class="self">self</span>.<span class="ident">event_data</span>.<span class="ident">push</span>((<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">val</span>))
+    <span class="kw">fn</span> <span class="ident">emit_event</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">guid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        <span class="ident">seq_num</span>: <span class="ident">u64</span>,
+        <span class="ident">ty</span>: <span class="ident">Type</span>,
+        <span class="ident">val</span>: <span class="ident">Value</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="kw-2">&amp;</span><span class="ident">ty</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">event_data</span>.<span class="ident">push</span>((<span class="ident">guid</span>, <span class="ident">seq_num</span>, <span class="ident">ty</span>, <span class="ident">ty_layout</span>, <span class="ident">val</span>)))
     }
 }
 </pre></div>
