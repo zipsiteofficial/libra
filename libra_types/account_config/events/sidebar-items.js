@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["burn",""],["cancel_burn",""],["exchange_rate_update",""],["mint",""],["new_block",""],["new_epoch",""],["preburn",""],["received_mint",""],["received_payment",""],["sent_payment",""],["upgrade",""]]});
+initSidebarItems({"mod":[["base_url_rotation",""],["burn",""],["cancel_burn",""],["compliance_key_rotation",""],["exchange_rate_update",""],["mint",""],["new_block",""],["new_epoch",""],["preburn",""],["received_mint",""],["received_payment",""],["sent_payment",""],["upgrade",""]]});
