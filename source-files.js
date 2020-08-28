@@ -31,7 +31,6 @@ sourcesIndex["functional_tests"] = {"name":"","dirs":[{"name":"checker","files":
 sourcesIndex["futures_semaphore"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["generate_format"] = {"name":"","files":["consensus.rs","lib.rs","libra.rs","linter.rs","move_abi.rs","network.rs"]};
 sourcesIndex["generate_key"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["inject_error"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["invalid_mutations"] = {"name":"","dirs":[{"name":"bounds","files":["code_unit.rs"]}],"files":["bounds.rs","lib.rs","signature.rs"]};
 sourcesIndex["ir_to_bytecode"] = {"name":"","files":["compiler.rs","context.rs","errors.rs","lib.rs","parser.rs"]};
 sourcesIndex["ir_to_bytecode_syntax"] = {"name":"","files":["lexer.rs","lib.rs","syntax.rs"]};
