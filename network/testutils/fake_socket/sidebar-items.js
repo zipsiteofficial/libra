@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["ReadOnlyTestSocket",""],["ReadWriteTestSocket",""]]});
+initSidebarItems({"struct":[["ReadOnlyTestSocket",""],["ReadOnlyTestSocketVec",""],["ReadWriteTestSocket",""]]});

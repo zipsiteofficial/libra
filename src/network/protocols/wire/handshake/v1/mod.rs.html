@@ -194,6 +194,49 @@
 <span id="194">194</span>
 <span id="195">195</span>
 <span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -211,9 +254,17 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">chain_id</span>::<span class="ident">ChainId</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">export</span>::<span class="ident">Formatter</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">BTreeMap</span>, <span class="ident">convert</span>::<span class="ident">TryInto</span>, <span class="ident">fmt</span>, <span class="ident">iter</span>::<span class="ident">Iterator</span>};
+<span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
+<span class="kw">use</span> <span class="ident">proptest_derive</span>::<span class="ident">Arbitrary</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
+
+<span class="comment">//</span>
+<span class="comment">// ProtocolId</span>
+<span class="comment">//</span>
 
 <span class="doccomment">/// Unique identifier associated with each application protocol.</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
@@ -253,59 +304,13 @@
     }
 }
 
+<span class="comment">//</span>
+<span class="comment">// SupportedProtocols</span>
+<span class="comment">//</span>
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">PartialEq</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">derive</span>(<span class="ident">Arbitrary</span>))]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SupportedProtocols</span>(<span class="ident">bitvec</span>::<span class="ident">BitVec</span>);
-
-<span class="doccomment">/// The HandshakeMsg contains a mapping from MessagingProtocolVersion suppported by the node to a</span>
-<span class="doccomment">/// bit-vector specifying application-level protocols supported over that version.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">HandshakeMsg</span> {
-    <span class="kw">pub</span> <span class="ident">supported_protocols</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">MessagingProtocolVersion</span>, <span class="ident">SupportedProtocols</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-    <span class="kw">pub</span> <span class="ident">network_id</span>: <span class="ident">NetworkId</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">HandshakeMsg</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">HandshakeMsg</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(
-            <span class="ident">f</span>,
-            <span class="string">&quot;[{},{},{:?}]&quot;</span>,
-            <span class="self">self</span>.<span class="ident">chain_id</span>, <span class="self">self</span>.<span class="ident">network_id</span>, <span class="self">self</span>.<span class="ident">supported_protocols</span>
-        )
-    }
-}
-
-<span class="doccomment">/// Enum representing different versions of the Libra network protocol. These should be listed from</span>
-<span class="doccomment">/// old to new, old having the smallest value.</span>
-<span class="doccomment">/// We derive `PartialOrd` since nodes need to find highest intersecting protocol version.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Hash</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">MessagingProtocolVersion</span> {
-    <span class="ident">V1</span> <span class="op">=</span> <span class="number">0</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">MessagingProtocolVersion</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">MessagingProtocolVersion</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
-        <span class="macro">write</span><span class="macro">!</span>(
-            <span class="ident">f</span>,
-            <span class="string">&quot;{}&quot;</span>,
-            <span class="kw">match</span> <span class="self">self</span> {
-                <span class="ident">MessagingProtocolVersion</span>::<span class="ident">V1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;V1&quot;</span>,
-            }
-        )
-    }
-}
 
 <span class="kw">impl</span> <span class="ident">TryInto</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ProtocolId</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SupportedProtocols</span> {
     <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">Error</span>;
@@ -339,48 +344,111 @@
     }
 }
 
+<span class="comment">//</span>
+<span class="comment">// MessageProtocolVersion</span>
+<span class="comment">//</span>
+
+<span class="doccomment">/// Enum representing different versions of the Libra network protocol. These should be listed from</span>
+<span class="doccomment">/// old to new, old having the smallest value.</span>
+<span class="doccomment">/// We derive `PartialOrd` since nodes need to find highest intersecting protocol version.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Hash</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>), <span class="ident">derive</span>(<span class="ident">Arbitrary</span>))]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">MessagingProtocolVersion</span> {
+    <span class="ident">V1</span> <span class="op">=</span> <span class="number">0</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">MessagingProtocolVersion</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">MessagingProtocolVersion</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(
+            <span class="ident">f</span>,
+            <span class="string">&quot;{}&quot;</span>,
+            <span class="kw">match</span> <span class="self">self</span> {
+                <span class="ident">MessagingProtocolVersion</span>::<span class="ident">V1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;V1&quot;</span>,
+            }
+        )
+    }
+}
+
+<span class="comment">//</span>
+<span class="comment">// HandshakeMsg</span>
+<span class="comment">//</span>
+
+<span class="doccomment">/// An enum to list the possible errors during the libra handshake negotiation</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">HandshakeError</span> {
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: the received message has an invalid chain id: {0}&quot;</span>)]</span>
+    <span class="ident">InvalidChainId</span>(<span class="ident">ChainId</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: the received message has an invalid network id: {0}&quot;</span>)]</span>
+    <span class="ident">InvalidNetworkId</span>(<span class="ident">NetworkId</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: could not find an intersection of supported protocol with the peer&quot;</span>)]</span>
+    <span class="ident">NoCommonProtocols</span>,
+}
+
+<span class="doccomment">/// The HandshakeMsg contains a mapping from MessagingProtocolVersion suppported by the node to a</span>
+<span class="doccomment">/// bit-vector specifying application-level protocols supported over that version.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Default</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">HandshakeMsg</span> {
+    <span class="kw">pub</span> <span class="ident">supported_protocols</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">MessagingProtocolVersion</span>, <span class="ident">SupportedProtocols</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
+    <span class="kw">pub</span> <span class="ident">network_id</span>: <span class="ident">NetworkId</span>,
+}
+
 <span class="kw">impl</span> <span class="ident">HandshakeMsg</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">chain_id</span>: <span class="ident">ChainId</span>, <span class="ident">network_id</span>: <span class="ident">NetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="doccomment">/// Useful function for tests</span>
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_for_testing</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">supported_protocols</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+        <span class="ident">supported_protocols</span>.<span class="ident">insert</span>(
+            <span class="ident">MessagingProtocolVersion</span>::<span class="ident">V1</span>,
+            [<span class="ident">ProtocolId</span>::<span class="ident">StateSynchronizerDirectSend</span>].<span class="ident">iter</span>().<span class="ident">into</span>(),
+        );
         <span class="self">Self</span> {
-            <span class="ident">supported_protocols</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
-            <span class="ident">network_id</span>,
-            <span class="ident">chain_id</span>,
+            <span class="ident">chain_id</span>: <span class="ident">ChainId</span>::<span class="ident">test</span>(),
+            <span class="ident">network_id</span>: <span class="ident">NetworkId</span>::<span class="ident">Validator</span>,
+            <span class="ident">supported_protocols</span>,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">messaging_protocol</span>: <span class="ident">MessagingProtocolVersion</span>,
-        <span class="ident">application_protocols</span>: <span class="ident">SupportedProtocols</span>,
-    ) {
-        <span class="self">self</span>.<span class="ident">supported_protocols</span>
-            .<span class="ident">insert</span>(<span class="ident">messaging_protocol</span>, <span class="ident">application_protocols</span>);
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">HandshakeMsg</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">chain_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">chain_id</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">network_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">network_id</span>
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_common_protocols</span>(
+    <span class="doccomment">/// This function:</span>
+    <span class="doccomment">/// 1. verifies that both HandshakeMsg are compatible and</span>
+    <span class="doccomment">/// 2. finds out the intersection of protocols that is supported</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">perform_handshake</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">HandshakeMsg</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">MessagingProtocolVersion</span>, <span class="ident">SupportedProtocols</span>)<span class="op">&gt;</span> {
-        <span class="comment">// First, find the highest MessagingProtocolVersion supported by both nodes.</span>
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MessagingProtocolVersion</span>, <span class="ident">SupportedProtocols</span>), <span class="ident">HandshakeError</span><span class="op">&gt;</span> {
+        <span class="comment">// verify that both peers are on the same chain</span>
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">chain_id</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidChainId</span>(<span class="ident">other</span>.<span class="ident">chain_id</span>));
+        }
+
+        <span class="comment">// verify that both peers are on the same type of network</span>
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">network_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">network_id</span> {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidNetworkId</span>(<span class="ident">other</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>()));
+        }
+
+        <span class="comment">// first, find the highest MessagingProtocolVersion supported by both nodes.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">supported_protocols</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">peekable</span>();
-        <span class="comment">// Iterate over all supported protocol versions in decreasing order.</span>
+
+        <span class="comment">// iterate over all supported protocol versions in decreasing order.</span>
         <span class="kw">for</span> (<span class="ident">k_outer</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">supported_protocols</span>.<span class="ident">iter</span>().<span class="ident">rev</span>() {
             <span class="comment">// Remove all elements from inner iterator that are larger than the current head of the</span>
             <span class="comment">// outer iterator.</span>
             <span class="kw">match</span> <span class="ident">inner</span>.<span class="ident">by_ref</span>().<span class="ident">find</span>(<span class="op">|</span>(<span class="ident">k_inner</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="kw-2">*</span><span class="ident">k_inner</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">k_outer</span>) {
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="kw">return</span> <span class="prelude-val">None</span>;
+                    <span class="kw">break</span>;
                 }
                 <span class="prelude-val">Some</span>((<span class="ident">k_inner</span>, <span class="kw">_</span>)) <span class="kw">if</span> <span class="ident">k_inner</span> <span class="op">=</span><span class="op">=</span> <span class="ident">k_outer</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Find all protocols supported by both nodes for the above protocol version.</span>
                     <span class="comment">// Both `self` and `other` shold have entry in map for `key`.</span>
                     <span class="kw">let</span> <span class="ident">protocols_self</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">supported_protocols</span>.<span class="ident">get</span>(<span class="ident">k_inner</span>).<span class="ident">unwrap</span>();
                     <span class="kw">let</span> <span class="ident">protocols_other</span> <span class="op">=</span> <span class="ident">other</span>.<span class="ident">supported_protocols</span>.<span class="ident">get</span>(<span class="ident">k_inner</span>).<span class="ident">unwrap</span>();
-                    <span class="kw">return</span> <span class="prelude-val">Some</span>((
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>((
                         <span class="kw-2">*</span><span class="ident">k_inner</span>,
                         <span class="ident">protocols_self</span>.<span class="ident">clone</span>().<span class="ident">intersection</span>(<span class="ident">protocols_other</span>.<span class="ident">clone</span>()),
                     ));
@@ -388,7 +456,25 @@
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {}
             }
         }
-        <span class="prelude-val">None</span>
+
+        <span class="comment">// no intersection found</span>
+        <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">NoCommonProtocols</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">HandshakeMsg</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">HandshakeMsg</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+        <span class="macro">write</span><span class="macro">!</span>(
+            <span class="ident">f</span>,
+            <span class="string">&quot;[{},{},{:?}]&quot;</span>,
+            <span class="self">self</span>.<span class="ident">chain_id</span>, <span class="self">self</span>.<span class="ident">network_id</span>, <span class="self">self</span>.<span class="ident">supported_protocols</span>
+        )
     }
 }
 </pre></div>
