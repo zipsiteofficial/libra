@@ -597,10 +597,10 @@
 
     <span class="doccomment">/// pos count start from 0 on each level</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_level_and_pos</span>(<span class="ident">level</span>: <span class="ident">u32</span>, <span class="ident">pos</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">level</span> <span class="op">&lt;</span> <span class="number">63</span>);
+        <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">level</span> <span class="op">&lt;</span> <span class="number">64</span>);
         <span class="macro">assume</span><span class="macro">!</span>(<span class="number">1u64</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">level</span> <span class="op">&gt;</span> <span class="number">0</span>); <span class="comment">// bitwise and integer operations don&#39;t mix.</span>
         <span class="kw">let</span> <span class="ident">level_one_bits</span> <span class="op">=</span> (<span class="number">1u64</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">level</span>) <span class="op">-</span> <span class="number">1</span>;
-        <span class="kw">let</span> <span class="ident">shifted_pos</span> <span class="op">=</span> <span class="ident">pos</span> <span class="op">&lt;</span><span class="op">&lt;</span> (<span class="ident">level</span> <span class="op">+</span> <span class="number">1</span>);
+        <span class="kw">let</span> <span class="ident">shifted_pos</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">level</span> <span class="op">=</span><span class="op">=</span> <span class="number">63</span> { <span class="number">0</span> } <span class="kw">else</span> { <span class="ident">pos</span> <span class="op">&lt;</span><span class="op">&lt;</span> (<span class="ident">level</span> <span class="op">+</span> <span class="number">1</span>) };
         <span class="ident">Position</span>(<span class="ident">shifted_pos</span> <span class="op">|</span> <span class="ident">level_one_bits</span>)
     }
 
@@ -614,8 +614,8 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_postorder_index</span>(<span class="ident">index</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">index</span> <span class="op">&lt;</span> (<span class="op">!</span><span class="number">0u64</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">2</span>),
-            <span class="string">&quot;node index {} is invalid (greater than 2^63 - 1)&quot;</span>,
+            <span class="ident">index</span> <span class="op">&lt;</span> <span class="op">!</span><span class="number">0u64</span>,
+            <span class="string">&quot;node index {} is invalid (equal to 2^64 - 1)&quot;</span>,
             <span class="ident">index</span>
         );
         <span class="prelude-val">Ok</span>(<span class="ident">Position</span>(<span class="ident">postorder_to_inorder</span>(<span class="ident">index</span>)))
