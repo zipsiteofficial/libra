@@ -943,6 +943,8 @@
 <span id="943">943</span>
 <span id="944">944</span>
 <span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1687,9 +1689,13 @@
             .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="ident">block_id_to_commit</span>));
 
         <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
+
+        <span class="kw">let</span> <span class="ident">num_txns_in_li</span> <span class="op">=</span> <span class="ident">version</span>
+            .<span class="ident">checked_add</span>(<span class="number">1</span>)
+            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;version + 1 overflows&quot;</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">num_persistent_txns</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">synced_trees</span>().<span class="ident">txn_accumulator</span>().<span class="ident">num_leaves</span>();
 
-        <span class="kw">if</span> <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span> <span class="op">&lt;</span> <span class="ident">num_persistent_txns</span> {
+        <span class="kw">if</span> <span class="ident">num_txns_in_li</span> <span class="op">&lt;</span> <span class="ident">num_persistent_txns</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InternalError</span> {
                 <span class="ident">error</span>: <span class="macro">format</span><span class="macro">!</span>(
                     <span class="string">&quot;Try to commit stale transactions with the last version as {}&quot;</span>,
@@ -1698,7 +1704,7 @@
             });
         }
 
-        <span class="kw">if</span> <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span> <span class="op">=</span><span class="op">=</span> <span class="ident">num_persistent_txns</span> {
+        <span class="kw">if</span> <span class="ident">num_txns_in_li</span> <span class="op">=</span><span class="op">=</span> <span class="ident">num_persistent_txns</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">committed_txns_and_events</span>());
         }
 
@@ -1730,7 +1736,7 @@
 
         <span class="kw">let</span> <span class="ident">last_block</span> <span class="op">=</span> <span class="ident">blocks</span>
             .<span class="ident">last</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;CommittableBlockBatch has at least 1 block.&quot;</span>);
+            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;CommittableBlockBatch is empty&quot;</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// Check that the version in ledger info (computed by consensus) matches the version</span>
         <span class="comment">// computed by us.</span>
@@ -1740,18 +1746,16 @@
             .<span class="ident">txn_accumulator</span>()
             .<span class="ident">num_leaves</span>();
         <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span>,
-            <span class="ident">num_txns_in_speculative_accumulator</span> <span class="kw">as</span> <span class="ident">Version</span>,
+            <span class="ident">num_txns_in_li</span>, <span class="ident">num_txns_in_speculative_accumulator</span> <span class="kw">as</span> <span class="ident">Version</span>,
             <span class="string">&quot;Number of transactions in ledger info ({}) does not match number of transactions \
              in accumulator ({}).&quot;</span>,
-            <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span>,
-            <span class="ident">num_txns_in_speculative_accumulator</span>,
+            <span class="ident">num_txns_in_li</span>, <span class="ident">num_txns_in_speculative_accumulator</span>,
         );
 
         <span class="kw">let</span> <span class="ident">num_txns_to_keep</span> <span class="op">=</span> <span class="ident">txns_to_keep</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
 
         <span class="comment">// Skip txns that are already committed to allow failures in state sync process.</span>
-        <span class="kw">let</span> <span class="ident">first_version_to_keep</span> <span class="op">=</span> <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span> <span class="op">-</span> <span class="ident">num_txns_to_keep</span>;
+        <span class="kw">let</span> <span class="ident">first_version_to_keep</span> <span class="op">=</span> <span class="ident">num_txns_in_li</span> <span class="op">-</span> <span class="ident">num_txns_to_keep</span>;
         <span class="macro">assert</span><span class="macro">!</span>(
             <span class="ident">first_version_to_keep</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">num_persistent_txns</span>,
             <span class="string">&quot;first_version {} in the blocks to commit cannot exceed # of committed txns: {}.&quot;</span>,
@@ -1781,7 +1785,7 @@
             <span class="ident">OP_COUNTERS</span>.<span class="ident">observe</span>(<span class="string">&quot;storage_save_transactions.count&quot;</span>, <span class="ident">num_txns_to_commit</span> <span class="kw">as</span> <span class="ident">f64</span>);
             <span class="ident">LIBRA_EXECUTOR_TRANSACTIONS_SAVED</span>.<span class="ident">observe</span>(<span class="ident">num_txns_to_commit</span> <span class="kw">as</span> <span class="ident">f64</span>);
 
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">first_version_to_commit</span>, <span class="ident">version</span> <span class="op">+</span> <span class="number">1</span> <span class="op">-</span> <span class="ident">num_txns_to_commit</span>);
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">first_version_to_commit</span>, <span class="ident">num_txns_in_li</span> <span class="op">-</span> <span class="ident">num_txns_to_commit</span>);
             <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">writer</span>.<span class="ident">save_transactions</span>(
                 <span class="ident">txns_to_commit</span>,
                 <span class="ident">first_version_to_commit</span>,

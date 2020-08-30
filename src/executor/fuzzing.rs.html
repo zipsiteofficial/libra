@@ -181,14 +181,33 @@
 <span id="181">181</span>
 <span id="182">182</span>
 <span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Executor</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
-<span class="kw">use</span> <span class="ident">executor_types</span>::<span class="ident">ChunkExecutor</span>;
-<span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
+<span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">BlockExecutor</span>, <span class="ident">ChunkExecutor</span>};
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span>, <span class="ident">HashValue</span>};
 <span class="kw">use</span> <span class="ident">libra_state_view</span>::<span class="ident">StateView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
@@ -207,17 +226,36 @@
 <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">VMExecutor</span>;
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">DbReader</span>, <span class="ident">DbReaderWriter</span>, <span class="ident">DbWriter</span>, <span class="ident">Order</span>, <span class="ident">StartupInfo</span>, <span class="ident">TreeState</span>};
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz</span>(
-    <span class="ident">txn_list_with_proof</span>: <span class="ident">TransactionListWithProof</span>,
-    <span class="ident">verified_target_li</span>: <span class="ident">LedgerInfoWithSignatures</span>,
-) {
+<span class="kw">fn</span> <span class="ident">create_test_executor</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Executor</span><span class="op">&lt;</span><span class="ident">FakeVM</span><span class="op">&gt;</span> {
     <span class="comment">// setup fake db</span>
     <span class="kw">let</span> <span class="ident">fake_db</span> <span class="op">=</span> <span class="ident">FakeDb</span> {};
     <span class="kw">let</span> <span class="ident">db_reader_writer</span> <span class="op">=</span> <span class="ident">DbReaderWriter</span>::<span class="ident">new</span>(<span class="ident">fake_db</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">Executor</span>::<span class="op">&lt;</span><span class="ident">FakeVM</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="ident">db_reader_writer</span>);
+    <span class="ident">Executor</span>::<span class="op">&lt;</span><span class="ident">FakeVM</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="ident">db_reader_writer</span>)
+}
 
-    <span class="comment">//</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_execute_and_commit_chunk</span>(
+    <span class="ident">txn_list_with_proof</span>: <span class="ident">TransactionListWithProof</span>,
+    <span class="ident">verified_target_li</span>: <span class="ident">LedgerInfoWithSignatures</span>,
+) {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">create_test_executor</span>();
     <span class="kw">let</span> <span class="ident">_events</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">execute_and_commit_chunk</span>(<span class="ident">txn_list_with_proof</span>, <span class="ident">verified_target_li</span>, <span class="prelude-val">None</span>);
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_execute_and_commit_blocks</span>(
+    <span class="ident">blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">HashValue</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    <span class="ident">ledger_info_with_sigs</span>: <span class="ident">LedgerInfoWithSignatures</span>,
+) {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">create_test_executor</span>();
+
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parent_block_id</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block_ids</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+    <span class="kw">for</span> <span class="ident">block</span> <span class="kw">in</span> <span class="ident">blocks</span> {
+        <span class="kw">let</span> <span class="ident">block_id</span> <span class="op">=</span> <span class="ident">block</span>.<span class="number">0</span>;
+        <span class="kw">let</span> <span class="ident">_execution_results</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">execute_block</span>(<span class="ident">block</span>, <span class="ident">parent_block_id</span>);
+        <span class="ident">parent_block_id</span> <span class="op">=</span> <span class="ident">block_id</span>;
+        <span class="ident">block_ids</span>.<span class="ident">push</span>(<span class="ident">block_id</span>);
+    }
+    <span class="kw">let</span> <span class="ident">_res</span> <span class="op">=</span> <span class="ident">executor</span>.<span class="ident">commit_blocks</span>(<span class="ident">block_ids</span>, <span class="ident">ledger_info_with_sigs</span>);
 }
 
 <span class="doccomment">/// A fake VM implementing VMExecutor</span>
