@@ -74,18 +74,47 @@
 <span id="74">74</span>
 <span id="75">75</span>
 <span id="76">76</span>
+<span id="77">77</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">StructuredLogEntry</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">Error</span>;
+<span class="kw">use</span> <span class="ident">consensus_types</span>::<span class="ident">common</span>::<span class="ident">Round</span>;
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">Schema</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">waypoint</span>::<span class="ident">Waypoint</span>;
+<span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">safety_log</span>(<span class="ident">entry</span>: <span class="ident">LogEntry</span>, <span class="ident">event</span>: <span class="ident">LogEvent</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StructuredLogEntry</span> {
-    <span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;safety_rules&quot;</span>, <span class="ident">entry</span>.<span class="ident">as_str</span>())
-        .<span class="ident">data</span>(<span class="ident">LogField</span>::<span class="ident">Event</span>.<span class="ident">as_str</span>(), <span class="ident">event</span>.<span class="ident">as_str</span>())
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Schema</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SafetyLogSchema</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="ident">name</span>: <span class="ident">LogEntry</span>,
+    <span class="ident">event</span>: <span class="ident">LogEvent</span>,
+    <span class="ident">round</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Round</span><span class="op">&gt;</span>,
+    <span class="ident">preferred_round</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="ident">last_voted_round</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="ident">epoch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">schema</span>(<span class="ident">display</span>)]</span>
+    <span class="ident">error</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Error</span><span class="op">&gt;</span>,
+    <span class="ident">waypoint</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Waypoint</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">SafetyLogSchema</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">LogEntry</span>, <span class="ident">event</span>: <span class="ident">LogEvent</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">name</span>,
+            <span class="ident">event</span>,
+            <span class="ident">round</span>: <span class="prelude-val">None</span>,
+            <span class="ident">preferred_round</span>: <span class="prelude-val">None</span>,
+            <span class="ident">last_voted_round</span>: <span class="prelude-val">None</span>,
+            <span class="ident">epoch</span>: <span class="prelude-val">None</span>,
+            <span class="ident">error</span>: <span class="prelude-val">None</span>,
+            <span class="ident">waypoint</span>: <span class="prelude-val">None</span>,
+        }
+    }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">LogEntry</span> {
     <span class="ident">ConsensusState</span>,
     <span class="ident">ConstructAndSignVote</span>,
@@ -116,40 +145,13 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">LogEvent</span> {
     <span class="ident">Error</span>,
     <span class="ident">Request</span>,
     <span class="ident">Success</span>,
     <span class="ident">Update</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">LogEvent</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_str</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">LogEvent</span>::<span class="ident">Error</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;error&quot;</span>,
-            <span class="ident">LogEvent</span>::<span class="ident">Request</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;request&quot;</span>,
-            <span class="ident">LogEvent</span>::<span class="ident">Success</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;success&quot;</span>,
-            <span class="ident">LogEvent</span>::<span class="ident">Update</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;update&quot;</span>,
-        }
-    }
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">LogField</span> {
-    <span class="ident">Event</span>,
-    <span class="ident">Message</span>,
-    <span class="ident">Round</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">LogField</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_str</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">LogField</span>::<span class="ident">Event</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;event&quot;</span>,
-            <span class="ident">LogField</span>::<span class="ident">Message</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;message&quot;</span>,
-            <span class="ident">LogField</span>::<span class="ident">Round</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;round&quot;</span>,
-        }
-    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "safety_rules";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

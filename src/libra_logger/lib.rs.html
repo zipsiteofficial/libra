@@ -356,6 +356,33 @@
 <span id="356">356</span>
 <span id="357">357</span>
 <span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -426,6 +453,28 @@
 <span class="doccomment">//! (`sl_info!`, `sl_error!`, etc.) should be used to send structured log entries based on log level.</span>
 <span class="doccomment">//! This macro populates the metadata such as code location and module, and skips the evaluation of</span>
 <span class="doccomment">//! `StructuredLogEntry` entirely if structured logging is disabled for the log level.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ## Typed Schema&#39;s</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The `Schema` trait can be used to implement typed logging schemas. This can either be</span>
+<span class="doccomment">//! implemented by hand or derived using the `Schema` derive proc-macro, implementing the `Schema`</span>
+<span class="doccomment">//! trait for the struct as well as providing setters for all fields.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! use libra_logger::Schema;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! #[derive(Schema)]</span>
+<span class="doccomment">//! struct LogSchema&lt;&#39;a&gt; {</span>
+<span class="doccomment">//!     // Log using this type&#39;s Serialize impl</span>
+<span class="doccomment">//!     a: usize,</span>
+<span class="doccomment">//!     // Log using this type&#39;s Debug impl</span>
+<span class="doccomment">//!     #[schema(debug)]</span>
+<span class="doccomment">//!     b: Option&lt;Vec&lt;bool&gt;&gt;,</span>
+<span class="doccomment">//!     // Log using this type&#39;s Display impl</span>
+<span class="doccomment">//!     #[schema(display)]</span>
+<span class="doccomment">//!     c: Option&lt;&amp;&#39;a str&gt;,</span>
+<span class="doccomment">//! }</span>
+<span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Log macro bridge</span>
 <span class="doccomment">//!</span>
@@ -500,6 +549,7 @@
 }
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">json_log</span>;
 
+<span class="kw">mod</span> <span class="ident">kv</span>;
 <span class="kw">mod</span> <span class="ident">security</span>;
 <span class="kw">mod</span> <span class="ident">struct_log</span>;
 
@@ -507,6 +557,9 @@
     <span class="ident">init_file_struct_log</span>, <span class="ident">init_println_struct_log</span>, <span class="ident">init_struct_log_from_env</span>, <span class="ident">set_struct_logger</span>,
     <span class="ident">struct_logger_enabled</span>, <span class="ident">struct_logger_set</span>, <span class="ident">LoggingField</span>, <span class="ident">StructLogSink</span>, <span class="ident">StructuredLogEntry</span>,
 };
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">kv</span>::{<span class="ident">Key</span>, <span class="ident">Schema</span>, <span class="ident">Value</span>, <span class="ident">Visitor</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">libra_log_derive</span>::<span class="ident">Schema</span>;
 
 <span class="kw">mod</span> <span class="ident">text_log</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">log</span>::<span class="ident">Level</span>;
@@ -622,6 +675,7 @@
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">struct_log_enabled</span><span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">entry</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">entry</span>;
+            <span class="ident">entry</span>.<span class="ident">add_category</span>(<span class="macro">module_path</span><span class="macro">!</span>().<span class="ident">split</span>(<span class="string">&quot;::&quot;</span>).<span class="ident">next</span>().<span class="ident">unwrap</span>());
             <span class="ident">entry</span>.<span class="ident">add_module</span>(<span class="macro">module_path</span><span class="macro">!</span>());
             <span class="ident">entry</span>.<span class="ident">add_location</span>(<span class="macro-nonterminal">$</span><span class="kw">crate</span>::<span class="macro-nonterminal">location</span><span class="op">!</span>());
             <span class="ident">entry</span> <span class="op">=</span> <span class="ident">entry</span>.<span class="ident">level</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">level</span>);
