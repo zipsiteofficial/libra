@@ -234,6 +234,23 @@
 <span id="234">234</span>
 <span id="235">235</span>
 <span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -419,14 +436,31 @@
             }
             <span class="comment">// Those to replay:</span>
             <span class="kw">if</span> <span class="ident">first_to_replay</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">last</span> {
+                <span class="comment">// ditch those beyond the target version</span>
                 <span class="kw">let</span> <span class="ident">num_to_replay</span> <span class="op">=</span> (<span class="ident">last</span> <span class="op">-</span> <span class="ident">first_to_replay</span> <span class="op">+</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>;
                 <span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">truncate</span>(<span class="ident">num_to_replay</span>);
                 <span class="ident">chunk</span>.<span class="ident">txn_infos</span>.<span class="ident">truncate</span>(<span class="ident">num_to_replay</span>);
-                <span class="self">self</span>.<span class="ident">transaction_replayer</span>(<span class="ident">first_to_replay</span>)<span class="question-mark">?</span>.<span class="ident">replay_chunk</span>(
-                    <span class="ident">first_to_replay</span>,
-                    <span class="ident">chunk</span>.<span class="ident">txns</span>,
-                    <span class="ident">chunk</span>.<span class="ident">txn_infos</span>,
-                )<span class="question-mark">?</span>;
+
+                <span class="comment">// replay in batches</span>
+                <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Replaying transactions {} to {}.&quot;</span>, <span class="ident">first_to_replay</span>, <span class="ident">last</span>);
+                <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
+                <span class="kw">const</span> <span class="ident">BATCH_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">10000</span>;
+                <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+                <span class="kw">const</span> <span class="ident">BATCH_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">2</span>;
+
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_version</span> <span class="op">=</span> <span class="ident">first_to_replay</span>;
+                <span class="kw">while</span> <span class="op">!</span><span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">is_empty</span>() {
+                    <span class="kw">let</span> <span class="ident">this_batch_size</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">BATCH_SIZE</span>, <span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">len</span>());
+                    <span class="self">self</span>.<span class="ident">transaction_replayer</span>(<span class="ident">current_version</span>)<span class="question-mark">?</span>.<span class="ident">replay_chunk</span>(
+                        <span class="ident">current_version</span>,
+                        <span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">drain</span>(<span class="number">0</span>..<span class="ident">this_batch_size</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+                        <span class="ident">chunk</span>
+                            .<span class="ident">txn_infos</span>
+                            .<span class="ident">drain</span>(<span class="number">0</span>..<span class="ident">this_batch_size</span>)
+                            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+                    )<span class="question-mark">?</span>;
+                    <span class="ident">current_version</span> <span class="op">+</span><span class="op">=</span> <span class="ident">this_batch_size</span> <span class="kw">as</span> <span class="ident">u64</span>;
+                }
             }
         }
 
