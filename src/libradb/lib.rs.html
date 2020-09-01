@@ -899,6 +899,8 @@
 <span id="899">899</span>
 <span id="900">900</span>
 <span id="901">901</span>
+<span id="902">902</span>
+<span id="903">903</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1589,18 +1591,20 @@
             .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_account_state_with_proof&quot;</span>])
             .<span class="ident">start_timer</span>();
 
-        <span class="kw">if</span> <span class="ident">version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_version</span> {
-            <span class="macro">warn</span><span class="macro">!</span>(
-                <span class="string">&quot;The queried version {} should be equal to or older than ledger version {}.&quot;</span>,
-                <span class="ident">version</span>, <span class="ident">ledger_version</span>
+        <span class="macro">ensure</span><span class="macro">!</span>(
+            <span class="ident">version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_version</span>,
+            <span class="string">&quot;The queried version {} should be equal to or older than ledger version {}.&quot;</span>,
+            <span class="ident">version</span>,
+            <span class="ident">ledger_version</span>
+        );
+        {
+            <span class="kw">let</span> <span class="ident">latest_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_latest_version</span>()<span class="question-mark">?</span>;
+            <span class="macro">ensure</span><span class="macro">!</span>(
+                <span class="ident">ledger_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">latest_version</span>,
+                <span class="string">&quot;ledger_version specified {} is greater than committed version {}.&quot;</span>,
+                <span class="ident">ledger_version</span>,
+                <span class="ident">latest_version</span>
             );
-        }
-        <span class="kw">let</span> <span class="ident">latest_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_latest_version</span>()<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">ledger_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">latest_version</span> {
-            <span class="macro">warn</span><span class="macro">!</span>(
-                <span class="string">&quot;The ledger version {} is greater than the latest version currently in ledger: {}&quot;</span>,
-                <span class="ident">ledger_version</span>, <span class="ident">latest_version</span>
-            )
         }
 
         <span class="kw">let</span> <span class="ident">txn_info_with_proof</span> <span class="op">=</span> <span class="self">self</span>
