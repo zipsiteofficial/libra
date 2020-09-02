@@ -1134,7 +1134,7 @@
         <span class="kw">let</span> <span class="ident">first_txn_version</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">first_transaction_version</span> {
             <span class="prelude-val">Some</span>(<span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">tx</span> <span class="kw">as</span> <span class="ident">Version</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">sl_error</span><span class="macro">!</span>(<span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;MUST_FIX&quot;</span>, <span class="string">&quot;assertion&quot;</span>)
+                <span class="macro">error</span><span class="macro">!</span>(<span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;MUST_FIX&quot;</span>, <span class="string">&quot;assertion&quot;</span>)
                     .<span class="ident">data</span>(<span class="string">&quot;details&quot;</span>, <span class="string">&quot;first_transaction_version should exist.&quot;</span>));
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;first_transaction_version should exist.&quot;</span>));
             }
@@ -1156,7 +1156,7 @@
         <span class="comment">// 2. Verify that skipped transactions match what&#39;s already persisted (no fork):</span>
         <span class="kw">let</span> <span class="ident">num_txns_to_skip</span> <span class="op">=</span> <span class="ident">num_committed_txns</span> <span class="op">-</span> <span class="ident">first_txn_version</span>;
 
-        <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
             .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;skipping_chunk_txns&quot;</span>)
             .<span class="ident">data</span>(<span class="string">&quot;num&quot;</span>, <span class="ident">num_txns_to_skip</span>));
 
@@ -1472,7 +1472,7 @@
         <span class="comment">// 1. Update the cache in executor to be consistent with latest synced state.</span>
         <span class="self">self</span>.<span class="ident">reset_cache</span>()<span class="question-mark">?</span>;
 
-        <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
             .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;sync_request_received&quot;</span>)
             .<span class="ident">data</span>(
                 <span class="string">&quot;local_synced_version&quot;</span>,
@@ -1522,7 +1522,7 @@
         }
         <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">reset</span>();
 
-        <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
             .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;synced_finished&quot;</span>)
             .<span class="ident">data</span>(
                 <span class="string">&quot;synced_to_version&quot;</span>,
@@ -1599,7 +1599,7 @@
             <span class="kw">let</span> <span class="ident">parent_block</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">parent_output</span> <span class="op">=</span> <span class="ident">parent_block</span>.<span class="ident">output</span>();
 
-            <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
+            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
                 .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;reconfig_descendant_block_received&quot;</span>,)
                 .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="ident">block_id</span>));
 
@@ -1620,7 +1620,7 @@
 
             (<span class="ident">output</span>, <span class="ident">state_compute_result</span>)
         } <span class="kw">else</span> {
-            <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
+            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
                 .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;execute_block&quot;</span>)
                 .<span class="ident">data</span>(<span class="string">&quot;block id&quot;</span>, <span class="ident">block_id</span>));
 
@@ -1684,7 +1684,7 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">block_id_to_commit</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">consensus_block_id</span>();
 
-        <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
             .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;commit_block&quot;</span>,)
             .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="ident">block_id_to_commit</span>));
 
@@ -1767,7 +1767,7 @@
         <span class="kw">let</span> <span class="ident">first_version_to_commit</span> <span class="op">=</span> <span class="ident">first_version_to_keep</span> <span class="op">+</span> <span class="ident">num_txns_to_skip</span>;
 
         <span class="kw">if</span> <span class="ident">num_txns_to_skip</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="macro">sl_info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
+            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
                 .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;skip_transactions_when_committing&quot;</span>)
                 .<span class="ident">data</span>(<span class="string">&quot;lastest_synced_version&quot;</span>, <span class="ident">num_persistent_txns</span> <span class="op">-</span> <span class="number">1</span>)
                 .<span class="ident">data</span>(<span class="string">&quot;first_version_to_keep&quot;</span>, <span class="ident">first_version_to_keep</span>)
