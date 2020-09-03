@@ -106,12 +106,22 @@
 <span id="106">106</span>
 <span id="107">107</span>
 <span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::<span class="ident">state_snapshot</span>::<span class="ident">manifest</span>::<span class="ident">StateSnapshotBackup</span>,
+    <span class="ident">metrics</span>::<span class="ident">restore</span>::{
+        <span class="ident">STATE_SNAPSHOT_LEAF_INDEX</span>, <span class="ident">STATE_SNAPSHOT_TARGET_LEAF_INDEX</span>, <span class="ident">STATE_SNAPSHOT_VERSION</span>,
+    },
     <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
     <span class="ident">utils</span>::{<span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">GlobalRestoreOpt</span>},
 };
@@ -188,11 +198,15 @@
             .<span class="ident">restore_handler</span>
             .<span class="ident">get_state_restore_receiver</span>(<span class="self">self</span>.<span class="ident">version</span>, <span class="ident">manifest</span>.<span class="ident">root_hash</span>)<span class="question-mark">?</span>;
 
+        <span class="ident">STATE_SNAPSHOT_VERSION</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">version</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">STATE_SNAPSHOT_TARGET_LEAF_INDEX</span>
+            .<span class="ident">set</span>(<span class="ident">manifest</span>.<span class="ident">chunks</span>.<span class="ident">last</span>().<span class="ident">map_or</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">last_idx</span> <span class="kw">as</span> <span class="ident">i64</span>));
         <span class="kw">for</span> <span class="ident">chunk</span> <span class="kw">in</span> <span class="ident">manifest</span>.<span class="ident">chunks</span> {
             <span class="kw">let</span> <span class="ident">blobs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_account_state_chunk</span>(<span class="ident">chunk</span>.<span class="ident">blobs</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">load_lcs_file</span>(<span class="kw-2">&amp;</span><span class="ident">chunk</span>.<span class="ident">proof</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
             <span class="ident">receiver</span>.<span class="ident">add_chunk</span>(<span class="ident">blobs</span>, <span class="ident">proof</span>)<span class="question-mark">?</span>;
+            <span class="ident">STATE_SNAPSHOT_LEAF_INDEX</span>.<span class="ident">set</span>(<span class="ident">chunk</span>.<span class="ident">last_idx</span> <span class="kw">as</span> <span class="ident">i64</span>);
         }
 
         <span class="ident">receiver</span>.<span class="ident">finish</span>()<span class="question-mark">?</span>;

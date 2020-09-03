@@ -251,12 +251,16 @@
 <span id="251">251</span>
 <span id="252">252</span>
 <span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::<span class="ident">transaction</span>::<span class="ident">manifest</span>::{<span class="ident">TransactionBackup</span>, <span class="ident">TransactionChunk</span>},
+    <span class="ident">metrics</span>::<span class="ident">restore</span>::{<span class="ident">TRANSACTION_REPLAY_VERSION</span>, <span class="ident">TRANSACTION_SAVE_VERSION</span>},
     <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
     <span class="ident">utils</span>::{<span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">GlobalRestoreOpt</span>},
 };
@@ -433,6 +437,7 @@
                 )<span class="question-mark">?</span>;
                 <span class="ident">chunk</span>.<span class="ident">txns</span>.<span class="ident">drain</span>(<span class="number">0</span>..<span class="ident">num_txns_to_save</span>);
                 <span class="ident">chunk</span>.<span class="ident">txn_infos</span>.<span class="ident">drain</span>(<span class="number">0</span>..<span class="ident">num_txns_to_save</span>);
+                <span class="ident">TRANSACTION_SAVE_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_to_save</span> <span class="kw">as</span> <span class="ident">i64</span>);
             }
             <span class="comment">// Those to replay:</span>
             <span class="kw">if</span> <span class="ident">first_to_replay</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">last</span> {
@@ -460,6 +465,7 @@
                             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
                     )<span class="question-mark">?</span>;
                     <span class="ident">current_version</span> <span class="op">+</span><span class="op">=</span> <span class="ident">this_batch_size</span> <span class="kw">as</span> <span class="ident">u64</span>;
+                    <span class="ident">TRANSACTION_REPLAY_VERSION</span>.<span class="ident">set</span>(<span class="ident">current_version</span> <span class="kw">as</span> <span class="ident">i64</span> <span class="op">-</span> <span class="number">1</span>);
                 }
             }
         }
