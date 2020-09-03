@@ -340,6 +340,9 @@
 <span id="340">340</span>
 <span id="341">341</span>
 <span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -357,6 +360,7 @@
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">stream</span>, <span class="ident">Future</span>, <span class="ident">StreamExt</span>};
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::<span class="ident">Version</span>;
 <span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">backup</span>::<span class="ident">backup_handler</span>::<span class="ident">DbState</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
@@ -467,7 +471,7 @@
             )
             .<span class="ident">boxed_local</span>();
 
-        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Backup coordinator started.&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Backup coordinator started.&quot;</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">all_work</span> <span class="op">=</span> <span class="ident">stream</span>::<span class="ident">select_all</span>(<span class="macro">vec</span><span class="macro">!</span>[
             <span class="ident">watch_db_state</span>,
             <span class="ident">backup_epoch_endings</span>,
@@ -475,7 +479,6 @@
             <span class="ident">backup_transactions</span>,
         ]);
 
-        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Backup coordinator started.&quot;</span>);
         <span class="kw">loop</span> {
             <span class="ident">all_work</span>
                 .<span class="ident">next</span>()
@@ -492,7 +495,10 @@
                 .<span class="ident">broadcast</span>(<span class="ident">s</span>.<span class="ident">expect</span>(<span class="string">&quot;Db should have been bootstrapped.&quot;</span>))
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Receivers should not be cancelled: {}&quot;</span>, <span class="ident">e</span>))
                 .<span class="ident">unwrap</span>(),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Failed pulling DbState from local Libra node: {}&quot;</span>, <span class="ident">e</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="string">&quot;Failed pulling DbState from local Libra node: {}. Will keep trying.&quot;</span>,
+                <span class="ident">e</span>
+            ),
         };
     }
 
@@ -607,7 +613,7 @@
                     .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;The broadcaster has been dropped.&quot;</span>))
                     .<span class="ident">unwrap</span>();
                 <span class="kw">let</span> <span class="ident">next_state</span> <span class="op">=</span> <span class="ident">worker</span>(<span class="self">self</span>, <span class="ident">s</span>, <span class="ident">db_state</span>).<span class="kw">await</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-                    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;backup failed: {}. Keep trying with state {:?}.&quot;</span>, <span class="ident">e</span>, <span class="ident">s</span>);
+                    <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;backup failed: {}. Keep trying with state {:?}.&quot;</span>, <span class="ident">e</span>, <span class="ident">s</span>);
                     <span class="ident">s</span>
                 });
                 <span class="prelude-val">Some</span>(((), (<span class="ident">next_state</span>, <span class="ident">rx</span>)))

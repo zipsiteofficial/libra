@@ -127,6 +127,7 @@
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_state_blob</span>::<span class="ident">AccountStateBlob</span>, <span class="ident">transaction</span>::<span class="ident">Version</span>};
 <span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">backup</span>::<span class="ident">restore_handler</span>::<span class="ident">RestoreHandler</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
@@ -168,14 +169,14 @@
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">println</span><span class="macro">!</span>(
+        <span class="macro">info</span><span class="macro">!</span>(
             <span class="string">&quot;State snapshot restore started. Manifest: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">manifest_handle</span>
         );
         <span class="self">self</span>.<span class="ident">run_impl</span>()
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;State snapshot restore failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;State snapshot restore succeeded.&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;State snapshot restore succeeded.&quot;</span>);
         <span class="prelude-val">Ok</span>(())
     }
 }
@@ -183,8 +184,8 @@
 <span class="kw">impl</span> <span class="ident">StateSnapshotRestoreController</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_impl</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">version</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_version</span> {
-            <span class="macro">println</span><span class="macro">!</span>(
-                <span class="string">&quot;Trying to restore state snapshot to version {}, which is newer than the target version {}.&quot;</span>,
+            <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="string">&quot;Trying to restore state snapshot to version {}, which is newer than the target version {}, skipping.&quot;</span>,
                 <span class="self">self</span>.<span class="ident">version</span>,
                 <span class="self">self</span>.<span class="ident">target_version</span>,
             );
@@ -210,7 +211,6 @@
         }
 
         <span class="ident">receiver</span>.<span class="ident">finish</span>()<span class="question-mark">?</span>;
-        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Finished restoring state snapshot.&quot;</span>);
         <span class="prelude-val">Ok</span>(())
     }
 

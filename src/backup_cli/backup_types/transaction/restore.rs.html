@@ -254,6 +254,7 @@
 <span id="254">254</span>
 <span id="255">255</span>
 <span id="256">256</span>
+<span id="257">257</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -267,6 +268,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">executor</span>::<span class="ident">Executor</span>;
 <span class="kw">use</span> <span class="ident">executor_types</span>::<span class="ident">TransactionReplayer</span>;
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
     <span class="ident">proof</span>::{<span class="ident">TransactionAccumulatorRangeProof</span>, <span class="ident">TransactionListProof</span>},
@@ -390,14 +392,14 @@
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">println</span><span class="macro">!</span>(
+        <span class="macro">info</span><span class="macro">!</span>(
             <span class="string">&quot;Transaction restore started. Manifest: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">manifest_handle</span>
         );
         <span class="self">self</span>.<span class="ident">run_impl</span>()
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Transaction restore failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Transaction restore succeeded.&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Transaction restore succeeded.&quot;</span>);
         <span class="prelude-val">Ok</span>(())
     }
 }
@@ -408,7 +410,7 @@
             <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">load_json_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manifest_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">manifest</span>.<span class="ident">verify</span>()<span class="question-mark">?</span>;
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">target_version</span> <span class="op">&lt;</span> <span class="ident">manifest</span>.<span class="ident">first_version</span> {
-            <span class="macro">println</span><span class="macro">!</span>(
+            <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="string">&quot;Manifest {} skipped since its entirety is newer than target version {}.&quot;</span>,
                 <span class="self">self</span>.<span class="ident">manifest_handle</span>, <span class="self">self</span>.<span class="ident">target_version</span>,
             );
@@ -447,7 +449,7 @@
                 <span class="ident">chunk</span>.<span class="ident">txn_infos</span>.<span class="ident">truncate</span>(<span class="ident">num_to_replay</span>);
 
                 <span class="comment">// replay in batches</span>
-                <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Replaying transactions {} to {}.&quot;</span>, <span class="ident">first_to_replay</span>, <span class="ident">last</span>);
+                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Replaying transactions {} to {}.&quot;</span>, <span class="ident">first_to_replay</span>, <span class="ident">last</span>);
                 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
                 <span class="kw">const</span> <span class="ident">BATCH_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">10000</span>;
                 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
@@ -471,7 +473,7 @@
         }
 
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">target_version</span> <span class="op">&lt;</span> <span class="ident">manifest</span>.<span class="ident">last_version</span> {
-            <span class="macro">println</span><span class="macro">!</span>(
+            <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="string">&quot;Transactions newer than target version {} ignored.&quot;</span>,
                 <span class="self">self</span>.<span class="ident">target_version</span>,
             )
