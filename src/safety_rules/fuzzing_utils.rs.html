@@ -336,14 +336,6 @@
 <span id="336">336</span>
 <span id="337">337</span>
 <span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
-<span id="343">343</span>
-<span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -358,8 +350,10 @@
     <span class="ident">vote_proposal</span>::{<span class="ident">MaybeSignedVoteProposal</span>, <span class="ident">VoteProposal</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
-    <span class="ident">ed25519</span>::{<span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>},
+    <span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>},
     <span class="ident">hash</span>::{<span class="ident">HashValue</span>, <span class="ident">TransactionAccumulatorHasher</span>},
+    <span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>,
+    <span class="ident">traits</span>::{<span class="ident">SigningKey</span>, <span class="ident">Uniform</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
@@ -372,7 +366,8 @@
     <span class="ident">validator_verifier</span>::{<span class="ident">ValidatorConsensusInfo</span>, <span class="ident">ValidatorVerifier</span>},
 };
 <span class="kw">use</span> <span class="ident">proptest</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">convert</span>::<span class="ident">TryFrom</span>;
+<span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span>;
+<span class="kw">use</span> <span class="ident">rand_core</span>::<span class="ident">SeedableRng</span>;
 
 <span class="kw">const</span> <span class="ident">MAX_BLOCK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">10000</span>;
 <span class="kw">const</span> <span class="ident">MAX_NUM_ADDR_TO_VALIDATOR_INFO</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">10</span>;
@@ -404,8 +399,16 @@
     )(
         <span class="ident">id</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>(),
         <span class="ident">block_data</span> <span class="kw">in</span> <span class="ident">arb_block_data</span>(),
-        <span class="ident">signature</span> <span class="kw">in</span> <span class="ident">arb_ed25519_signature</span>(),
+        <span class="ident">include_signature</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(),
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Block</span> {
+        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">include_signature</span> {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="ident">TEST_SEED</span>);
+            <span class="kw">let</span> <span class="ident">private_key</span> <span class="op">=</span> <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">block_data</span>);
+            <span class="prelude-val">Some</span>(<span class="ident">signature</span>)
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        };
         <span class="ident">Block</span>::<span class="ident">new_for_testing</span>(<span class="ident">id</span>, <span class="ident">block_data</span>, <span class="ident">signature</span>)
     }
 }
@@ -442,9 +445,21 @@
 <span class="macro">prop_compose</span><span class="macro">!</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_maybe_signed_vote_proposal</span>(
     )(
-        <span class="ident">signature</span> <span class="kw">in</span> <span class="ident">arb_ed25519_signature</span>(),
-        <span class="ident">vote_proposal</span> <span class="kw">in</span> <span class="ident">arb_vote_proposal</span>(),
+        <span class="ident">accumulator_extension_proof</span> <span class="kw">in</span> <span class="ident">arb_accumulator_extension_proof</span>(),
+        <span class="ident">block</span> <span class="kw">in</span> <span class="ident">arb_block</span>(),
+        <span class="ident">next_epoch_state</span> <span class="kw">in</span> <span class="ident">arb_epoch_state</span>(),
+        <span class="ident">include_signature</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(),
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MaybeSignedVoteProposal</span> {
+        <span class="kw">let</span> <span class="ident">vote_proposal</span> <span class="op">=</span> <span class="ident">VoteProposal</span>::<span class="ident">new</span>(<span class="ident">accumulator_extension_proof</span>, <span class="ident">block</span>, <span class="ident">next_epoch_state</span>);
+        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">include_signature</span> {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="ident">TEST_SEED</span>);
+            <span class="kw">let</span> <span class="ident">private_key</span> <span class="op">=</span> <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">private_key</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">vote_proposal</span>);
+            <span class="prelude-val">Some</span>(<span class="ident">signature</span>)
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        };
+
         <span class="ident">MaybeSignedVoteProposal</span> {
             <span class="ident">vote_proposal</span>,
             <span class="ident">signature</span>
@@ -477,25 +492,6 @@
         <span class="ident">round</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Timeout</span> {
         <span class="ident">Timeout</span>::<span class="ident">new</span>(<span class="ident">epoch</span>, <span class="ident">round</span>)
-    }
-}
-
-<span class="comment">// This generates an arbitrary and optional Ed25519Signature.</span>
-<span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_ed25519_signature</span>(
-    )(
-        <span class="ident">include_signature</span> <span class="kw">in</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>(),
-        <span class="ident">signature_bytes</span> <span class="kw">in</span> <span class="ident">prop</span>::<span class="ident">collection</span>::<span class="ident">vec</span>(<span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>(), <span class="number">0</span>..<span class="ident">Ed25519Signature</span>::<span class="ident">LENGTH</span>),
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">include_signature</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">signature</span>) <span class="op">=</span> <span class="ident">Ed25519Signature</span>::<span class="ident">try_from</span>(<span class="ident">signature_bytes</span>.<span class="ident">as_slice</span>()) {
-                <span class="prelude-val">Some</span>(<span class="ident">signature</span>)
-            } <span class="kw">else</span> {
-                <span class="prelude-val">None</span>
-            }
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        }
     }
 }
 
@@ -566,18 +562,6 @@
     }
 }
 
-<span class="comment">// This generates an arbitrary VoteProposal.</span>
-<span class="macro">prop_compose</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">arb_vote_proposal</span>(
-    )(
-        <span class="ident">accumulator_extension_proof</span> <span class="kw">in</span> <span class="ident">arb_accumulator_extension_proof</span>(),
-        <span class="ident">block</span> <span class="kw">in</span> <span class="ident">arb_block</span>(),
-        <span class="ident">next_epoch_state</span> <span class="kw">in</span> <span class="ident">arb_epoch_state</span>()
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VoteProposal</span> {
-        <span class="ident">VoteProposal</span>::<span class="ident">new</span>(<span class="ident">accumulator_extension_proof</span>, <span class="ident">block</span>, <span class="ident">next_epoch_state</span>)
-    }
-}
-
 <span class="comment">// This generates an arbitrary BlockType enum.</span>
 <span class="kw">fn</span> <span class="ident">arb_block_type</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">BlockType</span><span class="op">&gt;</span> {
     <span class="macro">prop_oneof</span><span class="macro">!</span>[
@@ -610,7 +594,7 @@
     <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">epoch_change</span>::<span class="ident">EpochChangeProof</span>;
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzz_initialize</span>(<span class="ident">proof</span>: <span class="ident">EpochChangeProof</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">test_utils</span>::<span class="ident">test_safety_rules_uninitialized</span>();
         <span class="ident">safety_rules</span>.<span class="ident">initialize</span>(<span class="kw-2">&amp;</span><span class="ident">proof</span>)
     }
 
