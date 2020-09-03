@@ -549,6 +549,33 @@
 <span id="549">549</span>
 <span id="550">550</span>
 <span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -578,7 +605,8 @@
 <span class="kw">use</span> <span class="ident">libra_genesis_tool</span>::<span class="ident">layout</span>::<span class="ident">Layout</span>;
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::{
     <span class="ident">CONSENSUS_KEY</span>, <span class="ident">EXECUTION_KEY</span>, <span class="ident">FULLNODE_NETWORK_KEY</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">OPERATOR_KEY</span>, <span class="ident">OWNER_KEY</span>,
-    <span class="ident">SAFETY_DATA</span>, <span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>, <span class="ident">WAYPOINT</span>,
+    <span class="ident">SAFETY_DATA</span>, <span class="ident">TREASURY_COMPLIANCE_KEY</span>, <span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>, <span class="ident">VALIDATOR_NETWORK_KEY</span>,
+    <span class="ident">WAYPOINT</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">CryptoStorage</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>, <span class="ident">VaultStorage</span>};
@@ -925,6 +953,21 @@
                 <span class="ident">vault_storage</span>.<span class="ident">create_key</span>(<span class="ident">LIBRA_ROOT_KEY</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
                     <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to create {}__{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">e</span>)
                 })<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">vault_storage</span>
+                    .<span class="ident">export_private_key</span>(<span class="ident">LIBRA_ROOT_KEY</span>)
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                        <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to export {}__{} : {}&quot;</span>, <span class="ident">pod_name</span>, <span class="ident">LIBRA_ROOT_KEY</span>, <span class="ident">e</span>)
+                    })<span class="question-mark">?</span>;
+                <span class="ident">vault_storage</span>
+                    .<span class="ident">import_private_key</span>(<span class="ident">TREASURY_COMPLIANCE_KEY</span>, <span class="ident">key</span>)
+                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                        <span class="macro">format_err</span><span class="macro">!</span>(
+                            <span class="string">&quot;Failed to import {}__{} : {}&quot;</span>,
+                            <span class="ident">pod_name</span>,
+                            <span class="ident">TREASURY_COMPLIANCE_KEY</span>,
+                            <span class="ident">e</span>
+                        )
+                    })<span class="question-mark">?</span>;
             }
             <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">OWNER_KEY</span>,
@@ -973,7 +1016,8 @@
         <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">Layout</span> {
             <span class="ident">owners</span>: <span class="ident">owners</span>.<span class="ident">clone</span>(),
             <span class="ident">operators</span>: <span class="ident">owners</span>,
-            <span class="ident">libra_root</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">LIBRA_ROOT_NS</span>.<span class="ident">to_string</span>()],
+            <span class="ident">libra_root</span>: <span class="ident">LIBRA_ROOT_NS</span>.<span class="ident">to_string</span>(),
+            <span class="ident">treasury_compliance</span>: <span class="ident">LIBRA_ROOT_NS</span>.<span class="ident">to_string</span>(),
         };
         <span class="kw">let</span> <span class="ident">layout_path</span> <span class="op">=</span> <span class="string">&quot;/tmp/layout.yaml&quot;</span>;
         <span class="macro">write</span><span class="macro">!</span>(
@@ -1003,6 +1047,16 @@
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to set_layout : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="ident">genesis_helper</span>
             .<span class="ident">libra_root_key</span>(
+                <span class="ident">VAULT_BACKEND</span>,
+                <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">vault_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
+                <span class="ident">token_path</span>,
+                <span class="ident">LIBRA_ROOT_NS</span>,
+                <span class="ident">LIBRA_ROOT_NS</span>,
+            )
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Failed to libra_root_key : {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="ident">genesis_helper</span>
+            .<span class="ident">treasury_compliance_key</span>(
                 <span class="ident">VAULT_BACKEND</span>,
                 <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;http://{}:{}&quot;</span>, <span class="ident">vault_nodes</span>[<span class="number">0</span>].<span class="ident">internal_ip</span>, <span class="ident">VAULT_PORT</span>).<span class="ident">as_str</span>(),
                 <span class="ident">token_path</span>,

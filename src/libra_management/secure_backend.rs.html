@@ -239,6 +239,10 @@
 <span id="239">239</span>
 <span id="240">240</span>
 <span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -369,13 +373,17 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">secure_backend</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">struct_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">field_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">purpose</span>:<span class="ident">literal</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="macro">secure_backend</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">struct_name</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">field_name</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">purpose</span>, <span class="string">&quot;ignore&quot;</span>);
+    };
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">struct_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">field_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">purpose</span>:<span class="ident">literal</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">required</span>:<span class="ident">literal</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
         <span class="kw">pub</span> <span class="kw">struct</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">struct_name</span> {
             <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>,
                 <span class="ident">help</span> <span class="op">=</span> <span class="macro">concat</span><span class="macro">!</span>(<span class="string">&quot;Backend for &quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">purpose</span>),
-                <span class="ident">required_unless</span>(<span class="string">&quot;config&quot;</span>),
+                <span class="ident">required_unless_one</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;config&quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">required</span>]</span>),
                 <span class="ident">long_help</span> <span class="op">=</span> <span class="macro">concat</span><span class="macro">!</span>(<span class="string">&quot;Backend for &quot;</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">purpose</span>, <span class="string">r#&quot;
 
 Secure backends are represented as a semi-colon deliminted key value
@@ -388,10 +396,10 @@ pair: &quot;k0=v0;k1=v1;...&quot;.  The current supported formats are:
     InMemory: &quot;backend=memory&quot;
     OnDisk: &quot;backend=disk;path=LOCAL_PATH&quot;
                 &quot;#</span>)
-            )]</span>
+            )]
             <span class="kw">pub</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">field_name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SecureBackend</span><span class="op">&gt;</span>,
         }
-    }
+    };
 }
 
 <span class="macro">secure_backend</span><span class="macro">!</span>(
