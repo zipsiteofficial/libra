@@ -83,7 +83,6 @@
 <span id="83">83</span>
 <span id="84">84</span>
 <span id="85">85</span>
-<span id="86">86</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -93,83 +92,82 @@
 <span class="doccomment">//! logs to detect malicious behavior from other validators.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ```</span>
-<span class="doccomment">//! use libra_logger::prelude::*;</span>
+<span class="doccomment">//! use libra_logger::{error, SecurityEvent};</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! error!(</span>
-<span class="doccomment">//!   security_log(security_events::INVALID_RETRIEVED_BLOCK)</span>
-<span class="doccomment">//!     .data(&quot;some_data&quot;, &quot;the data&quot;)</span>
+<span class="doccomment">//!     SecurityEvent::InvalidRetrievedBlock,</span>
+<span class="doccomment">//!     &quot;some_key&quot; = &quot;some data&quot;,</span>
 <span class="doccomment">//! );</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">StructuredLogEntry</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Key</span>, <span class="ident">Schema</span>, <span class="ident">Value</span>, <span class="ident">Visitor</span>};
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 
-<span class="doccomment">/// helper function to create a security log</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">security_log</span>(<span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StructuredLogEntry</span> {
-    <span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;security&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">name</span>)
-}
-
-<span class="doccomment">/// Security events that are possible</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">security_events</span> {
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SecurityEvent</span> {
+    <span class="comment">//</span>
     <span class="comment">// Mempool</span>
-    <span class="comment">// -------</span>
-
+    <span class="comment">//</span>
     <span class="doccomment">/// Mempool received a transaction from another peer with an invalid signature</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_TRANSACTION_MP</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidTransactionMP&quot;</span>;
+    <span class="ident">InvalidTransactionMempool</span>,
 
     <span class="doccomment">/// Mempool received an invalid network event</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_NETWORK_EVENT_MP</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;INVALID_NETWORK_EVENT_MP&quot;</span>;
+    <span class="ident">InvalidNetworkEventMempool</span>,
 
     <span class="comment">// Consensus</span>
     <span class="comment">// ---------</span>
-
     <span class="doccomment">/// Consensus received an invalid message (not well-formed or incorrect signature)</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONSENSUS_INVALID_MESSAGE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;ConsensusInvalidMessage&quot;</span>;
+    <span class="ident">ConsensusInvalidMessage</span>,
 
     <span class="doccomment">/// Consensus received an equivocating vote</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CONSENSUS_EQUIVOCATING_VOTE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;ConsensusEquivocatingVote&quot;</span>;
+    <span class="ident">ConsensusEquivocatingVote</span>,
 
     <span class="doccomment">/// Consensus received an invalid proposal</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_CONSENSUS_PROPOSAL</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidConsensusProposal&quot;</span>;
+    <span class="ident">InvalidConsensusProposal</span>,
 
     <span class="doccomment">/// Consensus received an invalid vote</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_CONSENSUS_VOTE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidConsensusVote&quot;</span>;
+    <span class="ident">InvalidConsensusVote</span>,
 
     <span class="doccomment">/// Consensus received an invalid new round message</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_CONSENSUS_ROUND</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidConsensusRound&quot;</span>;
+    <span class="ident">InvalidConsensusRound</span>,
 
     <span class="doccomment">/// Consensus received an invalid sync info message</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_SYNC_INFO_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidSyncInfoMsg&quot;</span>;
+    <span class="ident">InvalidSyncInfoMsg</span>,
 
     <span class="doccomment">/// A received block is invalid</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_RETRIEVED_BLOCK</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidRetrievedBlock&quot;</span>;
+    <span class="ident">InvalidRetrievedBlock</span>,
 
     <span class="doccomment">/// A block being committed or executed is invalid</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_BLOCK</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidBlock&quot;</span>;
+    <span class="ident">InvalidBlock</span>,
 
     <span class="comment">// State-Sync</span>
     <span class="comment">// ----------</span>
-
     <span class="doccomment">/// Invalid chunk of transactions received</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">STATE_SYNC_INVALID_CHUNK</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidChunk&quot;</span>;
+    <span class="ident">StateSyncInvalidChunk</span>,
 
     <span class="comment">// Health Checker</span>
     <span class="comment">// --------------</span>
-
     <span class="doccomment">/// HealthChecker received an invalid network event</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_NETWORK_EVENT_HC</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidNetworkEventHC&quot;</span>;
+    <span class="ident">InvalidNetworkEventHC</span>,
 
     <span class="doccomment">/// HealthChecker received an invalid message</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_HEALTHCHECKER_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidHealthCheckerMsg&quot;</span>;
+    <span class="ident">InvalidHealthCheckerMsg</span>,
 
     <span class="comment">// Network</span>
     <span class="comment">// -------</span>
-
     <span class="doccomment">/// Network identified an invalid peer</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_NETWORK_PEER</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidNetworkPeer&quot;</span>;
+    <span class="ident">InvalidNetworkPeer</span>,
 
     <span class="doccomment">/// Network couldn&#39;t negotiate</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">INVALID_NETWORK_HANDSHAKE_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;InvalidNetworkHandshakeMsg&quot;</span>;
+    <span class="ident">InvalidNetworkHandshakeMsg</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">Schema</span> <span class="kw">for</span> <span class="ident">SecurityEvent</span> {
+    <span class="kw">fn</span> <span class="ident">visit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">visitor</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw">dyn</span> <span class="ident">Visitor</span>) {
+        <span class="ident">visitor</span>.<span class="ident">visit_pair</span>(<span class="ident">Key</span>::<span class="ident">new</span>(<span class="string">&quot;security-event&quot;</span>), <span class="ident">Value</span>::<span class="ident">from_serde</span>(<span class="self">self</span>))
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libra_logger";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
