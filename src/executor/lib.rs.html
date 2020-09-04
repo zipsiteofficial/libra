@@ -944,7 +944,6 @@
 <span id="944">944</span>
 <span id="945">945</span>
 <span id="946">946</span>
-<span id="947">947</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -965,7 +964,7 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">db_bootstrapper</span>;
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">logging</span>::{<span class="ident">executor_log</span>, <span class="ident">LogEntry</span>},
+    <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogSchema</span>},
     <span class="ident">metrics</span>::{
         <span class="ident">LIBRA_EXECUTOR_EXECUTE_BLOCK_SECONDS</span>, <span class="ident">LIBRA_EXECUTOR_SAVE_TRANSACTIONS_SECONDS</span>,
         <span class="ident">LIBRA_EXECUTOR_TRANSACTIONS_SAVED</span>, <span class="ident">LIBRA_EXECUTOR_VM_EXECUTE_BLOCK_SECONDS</span>,
@@ -1134,8 +1133,10 @@
         <span class="kw">let</span> <span class="ident">first_txn_version</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">first_transaction_version</span> {
             <span class="prelude-val">Some</span>(<span class="ident">tx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">tx</span> <span class="kw">as</span> <span class="ident">Version</span>,
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">error</span><span class="macro">!</span>(<span class="ident">StructuredLogEntry</span>::<span class="ident">new_named</span>(<span class="string">&quot;MUST_FIX&quot;</span>, <span class="string">&quot;assertion&quot;</span>)
-                    .<span class="ident">data</span>(<span class="string">&quot;details&quot;</span>, <span class="string">&quot;first_transaction_version should exist.&quot;</span>));
+                <span class="macro">error</span><span class="macro">!</span>(
+                    <span class="ident">category</span> <span class="op">=</span> <span class="string">&quot;MUST_FIX&quot;</span>,
+                    <span class="string">&quot;first_transaction_version should exist&quot;</span>
+                );
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;first_transaction_version should exist.&quot;</span>));
             }
         };
@@ -1156,9 +1157,10 @@
         <span class="comment">// 2. Verify that skipped transactions match what&#39;s already persisted (no fork):</span>
         <span class="kw">let</span> <span class="ident">num_txns_to_skip</span> <span class="op">=</span> <span class="ident">num_committed_txns</span> <span class="op">-</span> <span class="ident">first_txn_version</span>;
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
-            .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;skipping_chunk_txns&quot;</span>)
-            .<span class="ident">data</span>(<span class="string">&quot;num&quot;</span>, <span class="ident">num_txns_to_skip</span>));
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ChunkExecutor</span>).<span class="ident">num</span>(<span class="ident">num_txns_to_skip</span>),
+            <span class="string">&quot;skipping_chunk_txns&quot;</span>
+        );
 
         <span class="comment">// If the proof is verified, then the length of txn_infos and txns must be the same.</span>
         <span class="kw">let</span> <span class="ident">skipped_transaction_infos</span> <span class="op">=</span>
@@ -1472,20 +1474,13 @@
         <span class="comment">// 1. Update the cache in executor to be consistent with latest synced state.</span>
         <span class="self">self</span>.<span class="ident">reset_cache</span>()<span class="question-mark">?</span>;
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
-            .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;sync_request_received&quot;</span>)
-            .<span class="ident">data</span>(
-                <span class="string">&quot;local_synced_version&quot;</span>,
-                <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">synced_trees</span>().<span class="ident">txn_accumulator</span>().<span class="ident">num_leaves</span>() <span class="op">-</span> <span class="number">1</span>
-            )
-            .<span class="ident">data</span>(
-                <span class="string">&quot;first_version_in_request&quot;</span>,
-                <span class="ident">txn_list_with_proof</span>.<span class="ident">first_transaction_version</span>
-            )
-            .<span class="ident">data</span>(
-                <span class="string">&quot;num_txns_in_request&quot;</span>,
-                <span class="ident">txn_list_with_proof</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()
-            ));
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ChunkExecutor</span>)
+                .<span class="ident">local_synced_version</span>(<span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">synced_trees</span>().<span class="ident">txn_accumulator</span>().<span class="ident">num_leaves</span>() <span class="op">-</span> <span class="number">1</span>)
+                .<span class="ident">first_version_in_request</span>(<span class="ident">txn_list_with_proof</span>.<span class="ident">first_transaction_version</span>)
+                .<span class="ident">num_txns_in_request</span>(<span class="ident">txn_list_with_proof</span>.<span class="ident">transactions</span>.<span class="ident">len</span>()),
+            <span class="string">&quot;sync_request_received&quot;</span>,
+        );
 
         <span class="comment">// 2. Verify input transaction list.</span>
         <span class="kw">let</span> (<span class="ident">transactions</span>, <span class="ident">transaction_infos</span>) <span class="op">=</span>
@@ -1522,19 +1517,17 @@
         }
         <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">reset</span>();
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Chunk</span>)
-            .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;synced_finished&quot;</span>)
-            .<span class="ident">data</span>(
-                <span class="string">&quot;synced_to_version&quot;</span>,
-                <span class="self">self</span>.<span class="ident">cache</span>
-                    .<span class="ident">synced_trees</span>()
-                    .<span class="ident">version</span>()
-                    .<span class="ident">expect</span>(<span class="string">&quot;version must exist&quot;</span>)
-            )
-            .<span class="ident">data</span>(
-                <span class="string">&quot;committed_with_ledger_info&quot;</span>,
-                <span class="ident">ledger_info_to_commit</span>.<span class="ident">is_some</span>()
-            ));
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ChunkExecutor</span>)
+                .<span class="ident">synced_to_version</span>(
+                    <span class="self">self</span>.<span class="ident">cache</span>
+                        .<span class="ident">synced_trees</span>()
+                        .<span class="ident">version</span>()
+                        .<span class="ident">expect</span>(<span class="string">&quot;version must exist&quot;</span>)
+                )
+                .<span class="ident">committed_with_ledger_info</span>(<span class="ident">ledger_info_to_commit</span>.<span class="ident">is_some</span>()),
+            <span class="string">&quot;sync_finished&quot;</span>,
+        );
 
         <span class="prelude-val">Ok</span>(<span class="ident">reconfig_events</span>)
     }
@@ -1599,9 +1592,10 @@
             <span class="kw">let</span> <span class="ident">parent_block</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">parent_output</span> <span class="op">=</span> <span class="ident">parent_block</span>.<span class="ident">output</span>();
 
-            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
-                .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;reconfig_descendant_block_received&quot;</span>,)
-                .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="ident">block_id</span>));
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">BlockExecutor</span>).<span class="ident">block_id</span>(<span class="ident">block_id</span>),
+                <span class="string">&quot;reconfig_descendant_block_received&quot;</span>
+            );
 
             <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">ProcessedVMOutput</span>::<span class="ident">new</span>(
                 <span class="macro">vec</span><span class="macro">!</span>[],
@@ -1620,9 +1614,10 @@
 
             (<span class="ident">output</span>, <span class="ident">state_compute_result</span>)
         } <span class="kw">else</span> {
-            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
-                .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;execute_block&quot;</span>)
-                .<span class="ident">data</span>(<span class="string">&quot;block id&quot;</span>, <span class="ident">block_id</span>));
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">BlockExecutor</span>).<span class="ident">block_id</span>(<span class="ident">block_id</span>),
+                <span class="string">&quot;execute_block&quot;</span>
+            );
 
             <span class="kw">let</span> <span class="ident">__timer</span> <span class="op">=</span> <span class="ident">OP_COUNTERS</span>.<span class="ident">timer</span>(<span class="string">&quot;block_execute_time_s&quot;</span>);
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_EXECUTOR_EXECUTE_BLOCK_SECONDS</span>.<span class="ident">start_timer</span>();
@@ -1684,9 +1679,10 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">block_id_to_commit</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">consensus_block_id</span>();
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
-            .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;commit_block&quot;</span>,)
-            .<span class="ident">data</span>(<span class="string">&quot;block_id&quot;</span>, <span class="ident">block_id_to_commit</span>));
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">BlockExecutor</span>).<span class="ident">block_id</span>(<span class="ident">block_id_to_commit</span>),
+            <span class="string">&quot;commit_block&quot;</span>
+        );
 
         <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
 
@@ -1767,12 +1763,14 @@
         <span class="kw">let</span> <span class="ident">first_version_to_commit</span> <span class="op">=</span> <span class="ident">first_version_to_keep</span> <span class="op">+</span> <span class="ident">num_txns_to_skip</span>;
 
         <span class="kw">if</span> <span class="ident">num_txns_to_skip</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">executor_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Block</span>)
-                .<span class="ident">data</span>(<span class="ident">logging</span>::<span class="ident">EVENT</span>, <span class="string">&quot;skip_transactions_when_committing&quot;</span>)
-                .<span class="ident">data</span>(<span class="string">&quot;lastest_synced_version&quot;</span>, <span class="ident">num_persistent_txns</span> <span class="op">-</span> <span class="number">1</span>)
-                .<span class="ident">data</span>(<span class="string">&quot;first_version_to_keep&quot;</span>, <span class="ident">first_version_to_keep</span>)
-                .<span class="ident">data</span>(<span class="string">&quot;num_txns_to_keep&quot;</span>, <span class="ident">num_txns_to_keep</span>)
-                .<span class="ident">data</span>(<span class="string">&quot;first_version_to_commit&quot;</span>, <span class="ident">first_version_to_commit</span>));
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">BlockExecutor</span>)
+                    .<span class="ident">latest_synced_version</span>(<span class="ident">num_persistent_txns</span> <span class="op">-</span> <span class="number">1</span>)
+                    .<span class="ident">first_version_to_keep</span>(<span class="ident">first_version_to_keep</span>)
+                    .<span class="ident">num_txns_to_keep</span>(<span class="ident">num_txns_to_keep</span>)
+                    .<span class="ident">first_version_to_commit</span>(<span class="ident">first_version_to_commit</span>),
+                <span class="string">&quot;skip_transactions_when_committing&quot;</span>
+            );
         }
 
         <span class="comment">// Skip duplicate txns that are already persistent.</span>
