@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["LogEntry",""],["LogEvent",""],["LogField",""]],"fn":[["key_manager_log",""]]});
+initSidebarItems({"enum":[["LogEntry",""],["LogEvent",""]],"struct":[["LogSchema",""]]});
