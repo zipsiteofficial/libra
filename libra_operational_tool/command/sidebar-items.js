@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Command",""],["CommandName",""]]});
+initSidebarItems({"enum":[["Command",""],["CommandName",""],["ResultWrapper",""]]});
