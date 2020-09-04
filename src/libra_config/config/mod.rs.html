@@ -442,13 +442,6 @@
 <span id="442">442</span>
 <span id="443">443</span>
 <span id="444">444</span>
-<span id="445">445</span>
-<span id="446">446</span>
-<span id="447">447</span>
-<span id="448">448</span>
-<span id="449">449</span>
-<span id="450">450</span>
-<span id="451">451</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -731,29 +724,22 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>([<span class="number">0u8</span>; <span class="number">32</span>]);
-        <span class="self">Self</span>::<span class="ident">random_with_rng</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>)
+        <span class="self">Self</span>::<span class="ident">random_with_template</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">NodeConfig</span>::<span class="ident">default</span>(), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_with_rng</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NodeConfig</span>::<span class="ident">default</span>();
-        <span class="ident">config</span>.<span class="ident">random_internal</span>(<span class="ident">rng</span>);
-        <span class="ident">config</span>
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_with_template</span>(<span class="ident">template</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_with_template</span>(<span class="ident">idx</span>: <span class="ident">u32</span>, <span class="ident">template</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-        <span class="ident">config</span>.<span class="ident">random_internal</span>(<span class="ident">rng</span>);
+        <span class="ident">config</span>.<span class="ident">random_internal</span>(<span class="ident">idx</span>, <span class="ident">rng</span>);
         <span class="ident">config</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">random_internal</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) {
+    <span class="kw">fn</span> <span class="ident">random_internal</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">idx</span>: <span class="ident">u32</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">test</span> <span class="op">=</span> <span class="ident">TestConfig</span>::<span class="ident">new_with_temp_dir</span>();
 
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">base</span>.<span class="ident">role</span> <span class="op">=</span><span class="op">=</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> {
             <span class="ident">test</span>.<span class="ident">random_account_key</span>(<span class="ident">rng</span>);
-            <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">from_public_key</span>(
-                <span class="kw-2">&amp;</span><span class="ident">test</span>.<span class="ident">owner_key</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">public_key</span>(),
-            );
+            <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span>
+                <span class="kw">crate</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="ident">idx</span>.<span class="ident">to_string</span>().<span class="ident">as_bytes</span>());
 
             <span class="kw">if</span> <span class="self">self</span>.<span class="ident">validator_network</span>.<span class="ident">is_none</span>() {
                 <span class="kw">let</span> <span class="ident">network_config</span> <span class="op">=</span> <span class="ident">NetworkConfig</span>::<span class="ident">network_with_id</span>(<span class="ident">NetworkId</span>::<span class="ident">Validator</span>);

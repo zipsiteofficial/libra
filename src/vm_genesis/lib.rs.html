@@ -617,6 +617,33 @@
 <span id="617">617</span>
 <span id="618">618</span>
 <span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -678,9 +705,14 @@
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">ZERO_COST_SCHEDULE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">CostTable</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="ident">zero_cost_schedule</span>);
 
+<span class="kw">const</span> <span class="ident">ZERO_AUTH_KEY</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">32</span>];
+
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Name</span> <span class="op">=</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OperatorAssignment</span> <span class="op">=</span> (<span class="ident">Ed25519PublicKey</span>, <span class="ident">Name</span>, <span class="ident">Script</span>); <span class="comment">// Assigns an operator to each owner</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OperatorRegistration</span> <span class="op">=</span> (<span class="ident">Ed25519PublicKey</span>, <span class="ident">Name</span>, <span class="ident">Script</span>); <span class="comment">// Registers a validator config</span>
+<span class="comment">// Defines a validator owner and maps that to an operator</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OperatorAssignment</span> <span class="op">=</span> (<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span>, <span class="ident">Name</span>, <span class="ident">Script</span>);
+
+<span class="comment">// Defines a validator operator and maps that to a validator (config)</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">OperatorRegistration</span> <span class="op">=</span> (<span class="ident">Ed25519PublicKey</span>, <span class="ident">Name</span>, <span class="ident">Script</span>);
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">encode_genesis_transaction</span>(
     <span class="ident">libra_root_key</span>: <span class="ident">Ed25519PublicKey</span>,
@@ -1015,17 +1047,34 @@
 ) {
     <span class="kw">let</span> <span class="ident">libra_root_address</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">libra_root_address</span>();
 
-    <span class="comment">// Create accounts for each validator owner</span>
-    <span class="kw">for</span> (<span class="ident">owner_key</span>, <span class="ident">owner_name</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
-        <span class="kw">let</span> <span class="ident">owner_auth_key</span> <span class="op">=</span> <span class="ident">AuthenticationKey</span>::<span class="ident">ed25519</span>(<span class="kw-2">&amp;</span><span class="ident">owner_key</span>);
-        <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="ident">owner_key</span>);
+    <span class="comment">// Create accounts for each validator owner. The inputs for creating an account are the auth</span>
+    <span class="comment">// key prefix and account address. Internally move then computes the auth key as auth key</span>
+    <span class="comment">// prefix || address. Because of this, the initial auth key will be invalid as we produce the</span>
+    <span class="comment">// account address from the name and not the public key.</span>
+    <span class="kw">for</span> (<span class="ident">owner_key</span>, <span class="ident">owner_name</span>, <span class="ident">_op_assignment</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
+        <span class="kw">let</span> <span class="ident">staged_owner_auth_key</span> <span class="op">=</span>
+            <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">default_validator_owner_auth_key_from_name</span>(<span class="ident">owner_name</span>);
+        <span class="kw">let</span> <span class="ident">owner_address</span> <span class="op">=</span> <span class="ident">staged_owner_auth_key</span>.<span class="ident">derived_address</span>();
         <span class="kw">let</span> <span class="ident">create_owner_script</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_create_validator_account_script</span>(
             <span class="number">0</span>,
-            <span class="ident">owner_account</span>,
-            <span class="ident">owner_auth_key</span>.<span class="ident">prefix</span>().<span class="ident">to_vec</span>(),
+            <span class="ident">owner_address</span>,
+            <span class="ident">staged_owner_auth_key</span>.<span class="ident">prefix</span>().<span class="ident">to_vec</span>(),
             <span class="ident">owner_name</span>.<span class="ident">clone</span>(),
         );
         <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">libra_root_address</span>, <span class="kw-2">&amp;</span><span class="ident">create_owner_script</span>);
+
+        <span class="comment">// If there is a key, make it the auth key, otherwise use a zero auth key.</span>
+        <span class="kw">let</span> <span class="ident">real_owner_auth_key</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">owner_key</span>) <span class="op">=</span> <span class="ident">owner_key</span> {
+            <span class="ident">AuthenticationKey</span>::<span class="ident">ed25519</span>(<span class="ident">owner_key</span>).<span class="ident">to_vec</span>()
+        } <span class="kw">else</span> {
+            <span class="ident">ZERO_AUTH_KEY</span>.<span class="ident">to_vec</span>()
+        };
+
+        <span class="ident">exec_script</span>(
+            <span class="ident">session</span>,
+            <span class="ident">owner_address</span>,
+            <span class="kw-2">&amp;</span><span class="ident">transaction_builder</span>::<span class="ident">encode_rotate_authentication_key_script</span>(<span class="ident">real_owner_auth_key</span>),
+        );
     }
 
     <span class="comment">// Create accounts for each validator operator</span>
@@ -1043,9 +1092,9 @@
     }
 
     <span class="comment">// Set the validator operator for each validator owner</span>
-    <span class="kw">for</span> (<span class="ident">owner_key</span>, <span class="kw">_</span>, <span class="ident">assignment</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
-        <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="ident">owner_key</span>);
-        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">owner_account</span>, <span class="ident">assignment</span>);
+    <span class="kw">for</span> (<span class="ident">_owner_key</span>, <span class="ident">owner_name</span>, <span class="ident">op_assignment</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
+        <span class="kw">let</span> <span class="ident">owner_address</span> <span class="op">=</span> <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="ident">owner_name</span>);
+        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">owner_address</span>, <span class="ident">op_assignment</span>);
     }
 
     <span class="comment">// Set the validator config for each validator</span>
@@ -1055,8 +1104,8 @@
     }
 
     <span class="comment">// Add each validator to the validator set</span>
-    <span class="kw">for</span> (<span class="ident">owner_key</span>, <span class="kw">_</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
-        <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="ident">owner_key</span>);
+    <span class="kw">for</span> (<span class="ident">_owner_key</span>, <span class="ident">owner_name</span>, <span class="ident">_op_assignment</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
+        <span class="kw">let</span> <span class="ident">owner_address</span> <span class="op">=</span> <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="ident">owner_name</span>);
         <span class="ident">exec_function</span>(
             <span class="ident">session</span>,
             <span class="ident">libra_root_address</span>,
@@ -1065,7 +1114,7 @@
             <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">libra_root_address</span>),
-                <span class="ident">Value</span>::<span class="ident">address</span>(<span class="ident">owner_account</span>),
+                <span class="ident">Value</span>::<span class="ident">address</span>(<span class="ident">owner_address</span>),
             ],
         );
     }
@@ -1176,18 +1225,22 @@
 
 <span class="doccomment">/// Generates an artificial set of OperatorAssignments using the given node configurations for</span>
 <span class="doccomment">/// testing.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator_assignments</span>(<span class="ident">node_configs</span>: <span class="kw-2">&amp;</span>[<span class="ident">NodeConfig</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OperatorRegistration</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator_assignments</span>(<span class="ident">node_configs</span>: <span class="kw-2">&amp;</span>[<span class="ident">NodeConfig</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OperatorAssignment</span><span class="op">&gt;</span> {
     <span class="ident">node_configs</span>
         .<span class="ident">iter</span>()
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> {
+        .<span class="ident">enumerate</span>()
+        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">idx</span>, <span class="ident">n</span>)<span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">test_config</span> <span class="op">=</span> <span class="ident">n</span>.<span class="ident">test</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">owner_key</span> <span class="op">=</span> <span class="ident">test_config</span>.<span class="ident">owner_key</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">public_key</span>();
             <span class="kw">let</span> <span class="ident">operator_key</span> <span class="op">=</span> <span class="ident">test_config</span>.<span class="ident">operator_key</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">public_key</span>();
             <span class="kw">let</span> <span class="ident">operator_account</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">operator_key</span>);
-            <span class="kw">let</span> <span class="ident">set_operator_script</span> <span class="op">=</span>
-                <span class="ident">transaction_builder</span>::<span class="ident">encode_set_validator_operator_script</span>(<span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">operator_account</span>);
+            <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">idx</span>.<span class="ident">to_string</span>().<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>();
+            <span class="kw">let</span> <span class="ident">set_operator_script</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_set_validator_operator_script</span>(
+                <span class="ident">name</span>.<span class="ident">clone</span>(),
+                <span class="ident">operator_account</span>,
+            );
 
-            (<span class="ident">owner_key</span>, <span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">set_operator_script</span>)
+            (<span class="prelude-val">Some</span>(<span class="ident">owner_key</span>), <span class="ident">name</span>, <span class="ident">set_operator_script</span>)
         })
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
 }
@@ -1197,10 +1250,11 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator_registrations</span>(<span class="ident">node_configs</span>: <span class="kw-2">&amp;</span>[<span class="ident">NodeConfig</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">OperatorRegistration</span><span class="op">&gt;</span> {
     <span class="ident">node_configs</span>
         .<span class="ident">iter</span>()
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> {
+        .<span class="ident">enumerate</span>()
+        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">idx</span>, <span class="ident">n</span>)<span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">test_config</span> <span class="op">=</span> <span class="ident">n</span>.<span class="ident">test</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
-            <span class="kw">let</span> <span class="ident">owner_key</span> <span class="op">=</span> <span class="ident">test_config</span>.<span class="ident">owner_key</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">public_key</span>();
-            <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">AuthenticationKey</span>::<span class="ident">ed25519</span>(<span class="kw-2">&amp;</span><span class="ident">owner_key</span>).<span class="ident">derived_address</span>();
+            <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">idx</span>.<span class="ident">to_string</span>().<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>();
+            <span class="kw">let</span> <span class="ident">owner_account</span> <span class="op">=</span> <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>);
             <span class="kw">let</span> <span class="ident">operator_key</span> <span class="op">=</span> <span class="ident">test_config</span>.<span class="ident">operator_key</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">public_key</span>();
 
             <span class="kw">let</span> <span class="ident">sr_test</span> <span class="op">=</span> <span class="ident">n</span>.<span class="ident">consensus</span>.<span class="ident">safety_rules</span>.<span class="ident">test</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
@@ -1233,7 +1287,7 @@
                 <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">enc_addr</span>.<span class="ident">unwrap</span>()]).<span class="ident">unwrap</span>(),
                 <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>]).<span class="ident">unwrap</span>(),
             );
-            (<span class="ident">operator_key</span>, <span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">script</span>)
+            (<span class="ident">operator_key</span>, <span class="ident">name</span>, <span class="ident">script</span>)
         })
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
 }

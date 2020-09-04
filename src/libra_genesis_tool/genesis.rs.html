@@ -155,6 +155,7 @@
 <span id="155">155</span>
 <span id="156">156</span>
 <span id="157">157</span>
+<span id="158">158</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -258,7 +259,7 @@
 
         <span class="kw">for</span> <span class="ident">owner</span> <span class="kw">in</span> <span class="ident">layout</span>.<span class="ident">owners</span>.<span class="ident">iter</span>() {
             <span class="kw">let</span> <span class="ident">owner_storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">shared_backend_with_namespace</span>(<span class="ident">owner</span>.<span class="ident">into</span>());
-            <span class="kw">let</span> <span class="ident">owner_key</span> <span class="op">=</span> <span class="ident">owner_storage</span>.<span class="ident">ed25519_key</span>(<span class="ident">OWNER_KEY</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">owner_key</span> <span class="op">=</span> <span class="ident">owner_storage</span>.<span class="ident">ed25519_key</span>(<span class="ident">OWNER_KEY</span>).<span class="ident">ok</span>();
 
             <span class="kw">let</span> <span class="ident">operator_name</span> <span class="op">=</span> <span class="ident">owner_storage</span>.<span class="ident">string</span>(<span class="ident">constants</span>::<span class="ident">VALIDATOR_OPERATOR</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">operator_storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">shared_backend_with_namespace</span>(<span class="ident">operator_name</span>.<span class="ident">clone</span>());
@@ -270,7 +271,8 @@
                 <span class="ident">operator_account</span>,
             );
 
-            <span class="ident">operator_assignments</span>.<span class="ident">push</span>((<span class="ident">owner_key</span>, <span class="ident">owner</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(), <span class="ident">set_operator_script</span>));
+            <span class="kw">let</span> <span class="ident">owner_name_vec</span> <span class="op">=</span> <span class="ident">owner</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>();
+            <span class="ident">operator_assignments</span>.<span class="ident">push</span>((<span class="ident">owner_key</span>, <span class="ident">owner_name_vec</span>, <span class="ident">set_operator_script</span>));
         }
 
         <span class="prelude-val">Ok</span>(<span class="ident">operator_assignments</span>)
