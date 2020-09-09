@@ -24,11 +24,35 @@
 <span id="24">24</span>
 <span id="25">25</span>
 <span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
+
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">function_target_pipeline</span>::<span class="ident">FunctionTargetsHolder</span>;
+<span class="kw">use</span> <span class="ident">spec_lang</span>::<span class="ident">env</span>::<span class="ident">GlobalEnv</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">annotations</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">borrow_analysis</span>;
@@ -51,5 +75,23 @@
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">unit_tests</span>;
+
+<span class="doccomment">/// Print function targets for testing and debugging.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_targets_for_test</span>(
+    <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
+    <span class="ident">header</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">text</span> <span class="op">=</span> <span class="ident">String</span>::<span class="ident">new</span>();
+    <span class="ident">text</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;============ {} ================\n&quot;</span>, <span class="ident">header</span>));
+    <span class="kw">for</span> <span class="ident">module_env</span> <span class="kw">in</span> <span class="ident">env</span>.<span class="ident">get_modules</span>() {
+        <span class="kw">for</span> <span class="ident">func_env</span> <span class="kw">in</span> <span class="ident">module_env</span>.<span class="ident">get_functions</span>() {
+            <span class="kw">let</span> <span class="ident">target</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">get_target</span>(<span class="kw-2">&amp;</span><span class="ident">func_env</span>);
+            <span class="ident">target</span>.<span class="ident">register_annotation_formatters_for_test</span>();
+            <span class="ident">text</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;\n{}\n&quot;</span>, <span class="ident">target</span>);
+        }
+    }
+    <span class="ident">text</span>
+}
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "stackless_bytecode_generator";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
