@@ -875,6 +875,58 @@
 <span id="875">875</span>
 <span id="876">876</span>
 <span id="877">877</span>
+<span id="878">878</span>
+<span id="879">879</span>
+<span id="880">880</span>
+<span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+<span id="901">901</span>
+<span id="902">902</span>
+<span id="903">903</span>
+<span id="904">904</span>
+<span id="905">905</span>
+<span id="906">906</span>
+<span id="907">907</span>
+<span id="908">908</span>
+<span id="909">909</span>
+<span id="910">910</span>
+<span id="911">911</span>
+<span id="912">912</span>
+<span id="913">913</span>
+<span id="914">914</span>
+<span id="915">915</span>
+<span id="916">916</span>
+<span id="917">917</span>
+<span id="918">918</span>
+<span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -909,16 +961,87 @@
 <span class="kw">use</span> <span class="ident">rusoto_core</span>::<span class="ident">Region</span>;
 <span class="kw">use</span> <span class="ident">rusoto_s3</span>::{<span class="ident">PutObjectRequest</span>, <span class="ident">S3Client</span>, <span class="ident">S3</span>};
 <span class="kw">use</span> <span class="ident">rusoto_sts</span>::<span class="ident">WebIdentityProvider</span>;
+<span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">de</span>::<span class="ident">DeserializeOwned</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashSet</span>, <span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">process</span>::<span class="ident">Command</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">sync</span>::<span class="ident">Semaphore</span>;
 
-<span class="kw">const</span> <span class="ident">DEFAULT_NAMESPACE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;default&quot;</span>;
-
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CFG_SEED</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;1337133713371337133713371337133713371337133713371337133713371337&quot;</span>;
-
+<span class="kw">const</span> <span class="ident">DEFAULT_NAMESPACE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;default&quot;</span>;
 <span class="kw">const</span> <span class="ident">ERROR_NOT_FOUND</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">404</span>;
-
 <span class="kw">const</span> <span class="ident">GENESIS_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/tmp/genesis.blob&quot;</span>;
+<span class="kw">const</span> <span class="ident">HEALTH_CHECK_URL</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;http://127.0.0.1:8001&quot;</span>;
+<span class="kw">const</span> <span class="ident">KUBECTL_BIN</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/usr/local/bin/kubectl&quot;</span>;
+
+<span class="comment">// We use the macros below to get around the current limitations of the</span>
+<span class="comment">// &quot;include_str!&quot; macro (which loads the file content at compile time, rather</span>
+<span class="comment">// than at runtime).</span>
+<span class="comment">// TODO(joshlind): Remove me once we support runtime file loading.</span>
+
+<span class="comment">// Config file names.</span>
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">FULLNODE_CONFIG</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;configs/fullnode.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">SAFETY_RULES_CONFIG</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;configs/safetyrules.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">VALIDATOR_CONFIG</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;configs/validator.yaml&quot;</span>
+    };
+}
+
+<span class="comment">// Fluent bit file names.</span>
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">FLUENT_BIT_CONF</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;fluent-bit/fluent-bit.conf&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">FLUENT_BIT_PARSERS_CONF</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;fluent-bit/parsers.conf&quot;</span>
+    };
+}
+
+<span class="comment">// Template file names.</span>
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">JOB_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/job_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">LIBRA_NODE_SERVICE_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/libra_node_service_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">LIBRA_NODE_SPEC_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/libra_node_spec_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">LSR_SERVICE_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/lsr_service_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">LSR_SPEC_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/lsr_spec_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">VAULT_SERVICE_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/vault_service_template.yaml&quot;</span>
+    };
+}
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">VAULT_SPEC_TEMPLATE</span> {
+    () <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="string">&quot;templates/vault_spec_template.yaml&quot;</span>
+    };
+}
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ClusterSwarmKube</span> {
@@ -932,21 +1055,18 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">http_client</span> <span class="op">=</span> <span class="ident">HttpClient</span>::<span class="ident">new</span>();
         <span class="comment">// This uses kubectl proxy locally to forward connections to kubernetes api server</span>
-        <span class="ident">Command</span>::<span class="ident">new</span>(<span class="string">&quot;/usr/local/bin/kubectl&quot;</span>)
-            .<span class="ident">arg</span>(<span class="string">&quot;proxy&quot;</span>)
-            .<span class="ident">spawn</span>()<span class="question-mark">?</span>;
+        <span class="ident">Command</span>::<span class="ident">new</span>(<span class="ident">KUBECTL_BIN</span>).<span class="ident">arg</span>(<span class="string">&quot;proxy&quot;</span>).<span class="ident">spawn</span>()<span class="question-mark">?</span>;
         <span class="ident">libra_retrier</span>::<span class="ident">retry_async</span>(<span class="ident">k8s_retry_strategy</span>(), <span class="op">|</span><span class="op">|</span> {
             <span class="ident">Box</span>::<span class="ident">pin</span>(<span class="kw">async</span> <span class="kw">move</span> {
-                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Running local kube pod healthcheck on http://127.0.0.1:8001&quot;</span>);
-                <span class="ident">reqwest</span>::<span class="ident">get</span>(<span class="string">&quot;http://127.0.0.1:8001&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>.<span class="ident">text</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Running local kube pod healthcheck on {}&quot;</span>, <span class="ident">HEALTH_CHECK_URL</span>);
+                <span class="ident">reqwest</span>::<span class="ident">get</span>(<span class="ident">HEALTH_CHECK_URL</span>).<span class="kw">await</span><span class="question-mark">?</span>.<span class="ident">text</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Local kube pod healthcheck passed&quot;</span>);
                 <span class="prelude-val">Ok</span>::<span class="op">&lt;</span>(), <span class="ident">reqwest</span>::<span class="ident">Error</span><span class="op">&gt;</span>(())
             })
         })
         .<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">Config</span>::<span class="ident">new</span>(
-            <span class="ident">reqwest</span>::<span class="ident">Url</span>::<span class="ident">parse</span>(<span class="string">&quot;http://127.0.0.1:8001&quot;</span>)
-                .<span class="ident">expect</span>(<span class="string">&quot;Failed to parse kubernetes endpoint url&quot;</span>),
+            <span class="ident">reqwest</span>::<span class="ident">Url</span>::<span class="ident">parse</span>(<span class="ident">HEALTH_CHECK_URL</span>).<span class="ident">expect</span>(<span class="string">&quot;Failed to parse kubernetes endpoint url&quot;</span>),
         );
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Client</span>::<span class="ident">new</span>(<span class="ident">config</span>);
         <span class="kw">let</span> <span class="ident">credentials_provider</span> <span class="op">=</span> <span class="ident">WebIdentityProvider</span>::<span class="ident">from_k8s_env</span>();
@@ -962,58 +1082,43 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">service_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer_id</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Service</span> {
+    <span class="kw">fn</span> <span class="ident">service_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer_id</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Service</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">service_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;libra_node_service_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">LIBRA_NODE_SERVICE_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">peer_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">peer_id</span>
         );
-        <span class="kw">let</span> <span class="ident">service_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">service_yaml</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">service_spec</span>).<span class="ident">unwrap</span>();
-        <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">service_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))
-            .<span class="ident">unwrap</span>()
+        <span class="ident">get_spec_instance_from_template</span>(<span class="ident">service_yaml</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">lsr_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">node_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">image_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Pod</span>, <span class="ident">Service</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;lsr_spec_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">LSR_SPEC_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,
             <span class="ident">image_tag</span> <span class="op">=</span> <span class="ident">image_tag</span>,
             <span class="ident">node_name</span> <span class="op">=</span> <span class="ident">node_name</span>,
         );
-        <span class="kw">let</span> <span class="ident">pod_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">pod_spec</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">pod_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">service_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;lsr_service_template.yaml&quot;</span>),
-            <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,
-        );
-        <span class="kw">let</span> <span class="ident">service_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">service_yaml</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">service_spec</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">service_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">get_spec_instance_from_template</span>(<span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">service_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">LSR_SERVICE_TEMPLATE</span><span class="macro">!</span>()), <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,);
+        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">get_spec_instance_from_template</span>(<span class="ident">service_yaml</span>)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>((<span class="ident">pod_spec</span>, <span class="ident">service_spec</span>))
     }
 
     <span class="kw">fn</span> <span class="ident">vault_spec</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">validator_index</span>: <span class="ident">u32</span>, <span class="ident">node_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Pod</span>, <span class="ident">Service</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;vault_spec_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">VAULT_SPEC_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">validator_index</span> <span class="op">=</span> <span class="ident">validator_index</span>,
             <span class="ident">node_name</span> <span class="op">=</span> <span class="ident">node_name</span>,
         );
-        <span class="kw">let</span> <span class="ident">pod_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">pod_spec</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">pod_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">get_spec_instance_from_template</span>(<span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
+
         <span class="kw">let</span> <span class="ident">service_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;vault_service_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">VAULT_SERVICE_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">validator_index</span> <span class="op">=</span> <span class="ident">validator_index</span>,
         );
-        <span class="kw">let</span> <span class="ident">service_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">service_yaml</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">service_spec</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">service_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">service_spec</span> <span class="op">=</span> <span class="ident">get_spec_instance_from_template</span>(<span class="ident">service_yaml</span>)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>((<span class="ident">pod_spec</span>, <span class="ident">service_spec</span>))
     }
 
@@ -1025,16 +1130,13 @@
         <span class="ident">image_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Pod</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pod_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;libra_node_spec_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">LIBRA_NODE_SPEC_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">pod_app</span> <span class="op">=</span> <span class="ident">pod_app</span>,
             <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>,
             <span class="ident">image_tag</span> <span class="op">=</span> <span class="ident">image_tag</span>,
             <span class="ident">node_name</span> <span class="op">=</span> <span class="ident">node_name</span>,
         );
-        <span class="kw">let</span> <span class="ident">pod_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">pod_yaml</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pod_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">pod_spec</span>)<span class="question-mark">?</span>;
-        <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">pod_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))
+        <span class="ident">get_spec_instance_from_template</span>(<span class="ident">pod_yaml</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">job_spec</span>(
@@ -1051,8 +1153,9 @@
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>()
             .<span class="ident">to_ascii_lowercase</span>();
         <span class="kw">let</span> <span class="ident">job_full_name</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}-{}&quot;</span>, <span class="ident">job_name</span>, <span class="ident">suffix</span>);
+
         <span class="kw">let</span> <span class="ident">job_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;job_template.yaml&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">JOB_TEMPLATE</span><span class="macro">!</span>()),
             <span class="ident">name</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">job_full_name</span>,
             <span class="ident">label</span> <span class="op">=</span> <span class="ident">job_name</span>,
             <span class="ident">image</span> <span class="op">=</span> <span class="ident">docker_image</span>,
@@ -1060,10 +1163,7 @@
             <span class="ident">command</span> <span class="op">=</span> <span class="ident">command</span>,
             <span class="ident">back_off_limit</span> <span class="op">=</span> <span class="ident">back_off_limit</span>,
         );
-        <span class="kw">let</span> <span class="ident">job_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">job_yaml</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">job_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">job_spec</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">job_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">job_spec</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">job_spec</span> <span class="op">=</span> <span class="ident">get_spec_instance_from_template</span>(<span class="ident">job_yaml</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((<span class="ident">job_spec</span>, <span class="ident">job_full_name</span>))
     }
 
@@ -1246,7 +1346,7 @@
                     .<span class="ident">to_ascii_lowercase</span>();
                 <span class="kw">let</span> <span class="ident">job_name</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;remove-network-effects-{}&quot;</span>, <span class="ident">suffix</span>);
                 <span class="kw">let</span> <span class="ident">job_yaml</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-                    <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;job_template.yaml&quot;</span>),
+                    <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">JOB_TEMPLATE</span><span class="macro">!</span>()),
                     <span class="ident">name</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">job_name</span>,
                     <span class="ident">label</span> <span class="op">=</span> <span class="string">&quot;remove-network-effects&quot;</span>,
                     <span class="ident">image</span> <span class="op">=</span> <span class="string">&quot;853397791086.dkr.ecr.us-west-2.amazonaws.com/cluster-test-util:latest&quot;</span>,
@@ -1255,10 +1355,7 @@
                     <span class="ident">back_off_limit</span> <span class="op">=</span> <span class="ident">back_off_limit</span>,
                 );
                 <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Removing network effects from node {}&quot;</span>, <span class="ident">node</span>.<span class="ident">name</span>);
-                <span class="kw">let</span> <span class="ident">job_spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">job_yaml</span>)<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="ident">job_spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">job_spec</span>)<span class="question-mark">?</span>;
-                <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">job_spec</span>)
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))
+                <span class="ident">get_spec_instance_from_template</span>(<span class="ident">job_yaml</span>)
             })
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">run_jobs</span>(<span class="ident">jobs</span>, <span class="ident">back_off_limit</span>).<span class="kw">await</span>
@@ -1368,7 +1465,7 @@
                     <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
                     <span class="kw-2">&amp;</span><span class="ident">validator_config</span>.<span class="ident">image_tag</span>,
                 )<span class="question-mark">?</span>,
-                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
+                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
             ),
             <span class="ident">Fullnode</span>(<span class="ident">fullnode_config</span>) <span class="op">=</span><span class="op">&gt;</span> (
                 <span class="self">self</span>.<span class="ident">libra_node_spec</span>(
@@ -1377,7 +1474,7 @@
                     <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>,
                     <span class="kw-2">&amp;</span><span class="ident">fullnode_config</span>.<span class="ident">image_tag</span>,
                 )<span class="question-mark">?</span>,
-                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>()),
+                <span class="self">self</span>.<span class="ident">service_spec</span>(<span class="ident">pod_name</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>,
             ),
             <span class="ident">Vault</span>(<span class="ident">_vault_config</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">self</span>.<span class="ident">vault_spec</span>(<span class="ident">instance_config</span>.<span class="ident">validator_group</span>.<span class="ident">index_only</span>(), <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">name</span>)<span class="question-mark">?</span>
@@ -1539,9 +1636,9 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">config_fluentbit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input_tag</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">pod_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">node</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">parsers_config</span> <span class="op">=</span> <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;fluent-bit/parsers.conf&quot;</span>).<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">parsers_config</span> <span class="op">=</span> <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">FLUENT_BIT_PARSERS_CONF</span><span class="macro">!</span>()).<span class="ident">to_string</span>();
         <span class="kw">let</span> <span class="ident">fluentbit_config</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
-            <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;fluent-bit/fluent-bit.conf&quot;</span>),
+            <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">FLUENT_BIT_CONF</span><span class="macro">!</span>()),
             <span class="ident">input_tag</span> <span class="op">=</span> <span class="ident">input_tag</span>,
             <span class="ident">pod_name</span> <span class="op">=</span> <span class="ident">pod_name</span>
         );
@@ -1584,7 +1681,7 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">node_config</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">instance_config</span>.<span class="ident">application_config</span> {
             <span class="ident">Validator</span>(<span class="ident">validator_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="macro">format</span><span class="macro">!</span>(
-                <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;configs/validator.yaml&quot;</span>),
+                <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">VALIDATOR_CONFIG</span><span class="macro">!</span>()),
                 <span class="ident">vault_addr</span> <span class="op">=</span> <span class="ident">validator_config</span>
                     .<span class="ident">vault_addr</span>
                     .<span class="ident">as_ref</span>()
@@ -1599,7 +1696,7 @@
                     .<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="string">&quot;&quot;</span>.<span class="ident">to_string</span>()),
             )),
             <span class="ident">Fullnode</span>(<span class="ident">fullnode_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="macro">format</span><span class="macro">!</span>(
-                <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;configs/fullnode.yaml&quot;</span>),
+                <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">FULLNODE_CONFIG</span><span class="macro">!</span>()),
                 <span class="ident">vault_addr</span> <span class="op">=</span> <span class="ident">fullnode_config</span>
                     .<span class="ident">vault_addr</span>
                     .<span class="ident">as_ref</span>()
@@ -1611,7 +1708,7 @@
                 <span class="ident">seed_peer_ip</span> <span class="op">=</span> <span class="ident">fullnode_config</span>.<span class="ident">seed_peer_ip</span>,
             )),
             <span class="ident">LSR</span>(<span class="ident">lsr_config</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="macro">format</span><span class="macro">!</span>(
-                <span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;configs/safetyrules.yaml&quot;</span>),
+                <span class="macro">include_str</span><span class="macro">!</span>(<span class="macro">SAFETY_RULES_CONFIG</span><span class="macro">!</span>()),
                 <span class="ident">vault_addr</span> <span class="op">=</span> <span class="ident">lsr_config</span>.<span class="ident">vault_addr</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="string">&quot;&quot;</span>.<span class="ident">to_string</span>()),
                 <span class="ident">vault_ns</span> <span class="op">=</span> <span class="ident">lsr_config</span>
                     .<span class="ident">vault_namespace</span>
@@ -1633,6 +1730,13 @@
 
         <span class="prelude-val">Ok</span>(())
     }
+}
+
+<span class="doccomment">/// Retrieves a spec instance of type T from a T template file.</span>
+<span class="kw">fn</span> <span class="ident">get_spec_instance_from_template</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(<span class="ident">template_yaml</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">spec</span>: <span class="ident">serde_yaml</span>::<span class="ident">Value</span> <span class="op">=</span> <span class="ident">serde_yaml</span>::<span class="ident">from_str</span>(<span class="kw-2">&amp;</span><span class="ident">template_yaml</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">value</span>::<span class="ident">to_value</span>(<span class="ident">spec</span>)<span class="question-mark">?</span>;
+    <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">spec</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;serde_json::from_value failed: {}&quot;</span>, <span class="ident">e</span>))
 }
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
