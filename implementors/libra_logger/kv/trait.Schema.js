@@ -1,3 +1,4 @@
 (function() {var implementors = {};
 implementors["libra_key_manager"] = [{"text":"impl&lt;'a&gt; <a class=\"trait\" href=\"libra_logger/kv/trait.Schema.html\" title=\"trait libra_logger::kv::Schema\">Schema</a> for <a class=\"struct\" href=\"libra_key_manager/logging/struct.LogSchema.html\" title=\"struct libra_key_manager::logging::LogSchema\">LogSchema</a>&lt;'a&gt;","synthetic":false,"types":["libra_key_manager::logging::LogSchema"]}];
+implementors["network"] = [{"text":"impl&lt;'a&gt; <a class=\"trait\" href=\"libra_logger/kv/trait.Schema.html\" title=\"trait libra_logger::kv::Schema\">Schema</a> for <a class=\"struct\" href=\"network/logging/struct.NetworkSchema.html\" title=\"struct network::logging::NetworkSchema\">NetworkSchema</a>&lt;'a&gt;","synthetic":false,"types":["network::logging::NetworkSchema"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
