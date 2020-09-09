@@ -773,9 +773,6 @@
 <span id="773">773</span>
 <span id="774">774</span>
 <span id="775">775</span>
-<span id="776">776</span>
-<span id="777">777</span>
-<span id="778">778</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -862,8 +859,7 @@
         <span class="ident">function</span>: <span class="ident">u16</span>,
         <span class="ident">code_offset</span>: <span class="ident">u16</span>,
     },
-    <span class="ident">VerificationError</span>,
-    <span class="ident">DeserializationError</span>,
+    <span class="ident">MiscellaneousError</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DiscardedVMStatus</span> <span class="op">=</span> <span class="ident">StatusCode</span>;
@@ -949,12 +945,12 @@
                     <span class="comment">// If the VM encountered an invalid internal state, we should discard the transaction.</span>
                     <span class="ident">StatusType</span>::<span class="ident">InvariantViolation</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">code</span>),
                     <span class="comment">// A transaction that publishes code that cannot be verified will be charged.</span>
-                    <span class="ident">StatusType</span>::<span class="ident">Verification</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">VerificationError</span>),
+                    <span class="ident">StatusType</span>::<span class="ident">Verification</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">MiscellaneousError</span>),
                     <span class="comment">// If we are able to decode the`SignedTransaction`, but failed to decode</span>
                     <span class="comment">// `SingedTransaction.raw_transaction.payload` (i.e., the transaction script),</span>
                     <span class="comment">// there should be a charge made to that user&#39;s account for the gas fees related</span>
                     <span class="comment">// to decoding, running the prologue etc.</span>
-                    <span class="ident">StatusType</span>::<span class="ident">Deserialization</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">DeserializationError</span>),
+                    <span class="ident">StatusType</span>::<span class="ident">Deserialization</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">MiscellaneousError</span>),
                     <span class="comment">// Any error encountered during the execution of the transaction will charge gas.</span>
                     <span class="ident">StatusType</span>::<span class="ident">Execution</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">ExecutionFailure</span> {
                         <span class="ident">location</span>: <span class="ident">AbortLocation</span>::<span class="ident">Script</span>,
@@ -1000,8 +996,7 @@
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">KeptVMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;EXECUTED&quot;</span>),
             <span class="ident">KeptVMStatus</span>::<span class="ident">OutOfGas</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;OUT_OF_GAS&quot;</span>),
-            <span class="ident">KeptVMStatus</span>::<span class="ident">VerificationError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;VERIFICATION_ERROR&quot;</span>),
-            <span class="ident">KeptVMStatus</span>::<span class="ident">DeserializationError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;DESERIALIZATION_ERROR&quot;</span>),
+            <span class="ident">KeptVMStatus</span>::<span class="ident">MiscellaneousError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;MISCELLANEOUS_ERROR&quot;</span>),
             <span class="ident">KeptVMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;ABORTED with code {} in {}&quot;</span>, <span class="ident">code</span>, <span class="ident">location</span>)
             }
@@ -1064,8 +1059,7 @@
                 .<span class="ident">field</span>(<span class="string">&quot;function_definition&quot;</span>, <span class="ident">function</span>)
                 .<span class="ident">field</span>(<span class="string">&quot;code_offset&quot;</span>, <span class="ident">code_offset</span>)
                 .<span class="ident">finish</span>(),
-            <span class="ident">KeptVMStatus</span>::<span class="ident">VerificationError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;VERIFICATION_ERROR&quot;</span>),
-            <span class="ident">KeptVMStatus</span>::<span class="ident">DeserializationError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;DESERIALIZATION_ERROR&quot;</span>),
+            <span class="ident">KeptVMStatus</span>::<span class="ident">MiscellaneousError</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;MISCELLANEOUS_ERROR&quot;</span>),
         }
     }
 }
