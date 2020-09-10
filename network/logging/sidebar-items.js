@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["network_log","A helper function to cut down on a bunch of repeated network struct log code"]],"mod":[["network_events","This module is to ensure no conflicts with already existing constants"]],"struct":[["NetworkSchema",""]]});
+initSidebarItems({"struct":[["NetworkSchema",""]]});

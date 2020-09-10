@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["CONNECTION_METADATA",""],["CONNECTION_REQUEST",""],["EVENT",""],["EVENT_ID",""],["NETWORK_ADDRESS",""],["NETWORK_CONTEXT","Specific fields for logging"],["NOISE_UPGRADE","Labels"],["PEER_MANAGER_REQUEST",""],["REMOTE_PEER",""],["START",""],["TERMINATION",""],["TRANSPORT_EVENT",""],["TYPE","Common terms"]]});
