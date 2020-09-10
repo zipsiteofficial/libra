@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["JsonRpcErrorResponse",""]]});
+initSidebarItems({"struct":[["JsonRpcErrorResponse",""],["JsonRpcResponse",""]]});
