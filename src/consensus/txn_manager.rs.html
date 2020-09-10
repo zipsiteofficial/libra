@@ -111,6 +111,10 @@
 <span id="111">111</span>
 <span id="112">112</span>
 <span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -119,6 +123,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{<span class="ident">block</span>::<span class="ident">Block</span>, <span class="ident">common</span>::<span class="ident">Payload</span>};
 <span class="kw">use</span> <span class="ident">executor_types</span>::<span class="ident">StateComputeResult</span>;
+<span class="kw">use</span> <span class="ident">fail</span>::<span class="ident">fail_point</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">channel</span>::{<span class="ident">mpsc</span>, <span class="ident">oneshot</span>};
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
 <span class="kw">use</span> <span class="ident">libra_mempool</span>::{
@@ -147,6 +152,9 @@
 <span class="attribute">#[<span class="ident">async_trait</span>::<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">TxnManager</span> <span class="kw">for</span> <span class="ident">MempoolProxy</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">pull_txns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">max_size</span>: <span class="ident">u64</span>, <span class="ident">exclude_payloads</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Payload</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Payload</span><span class="op">&gt;</span> {
+        <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;consensus::pull_txns&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in pull_txns&quot;</span>))
+        });
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exclude_txns</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> <span class="ident">payload</span> <span class="kw">in</span> <span class="ident">exclude_payloads</span> {
             <span class="kw">for</span> <span class="ident">transaction</span> <span class="kw">in</span> <span class="ident">payload</span> {
