@@ -640,6 +640,24 @@
 <span id="640">640</span>
 <span id="641">641</span>
 <span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -775,6 +793,8 @@
     <span class="kw">pub</span> <span class="ident">report_warnings</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Whether to dump the transformed stackless bytecode to a file</span>
     <span class="kw">pub</span> <span class="ident">dump_bytecode</span>: <span class="ident">bool</span>,
+    <span class="doccomment">/// Number of Boogie instances to be run concurrently.</span>
+    <span class="kw">pub</span> <span class="ident">num_instances</span>: <span class="ident">usize</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ProverOptions</span> {
@@ -792,6 +812,7 @@
             <span class="ident">report_warnings</span>: <span class="bool-val">false</span>,
             <span class="ident">assume_invariant_on_access</span>: <span class="bool-val">false</span>,
             <span class="ident">dump_bytecode</span>: <span class="bool-val">false</span>,
+            <span class="ident">num_instances</span>: <span class="number">1</span>,
         }
     }
 }
@@ -1076,6 +1097,14 @@
                     .<span class="ident">long</span>(<span class="string">&quot;dump-bytecode&quot;</span>)
                     .<span class="ident">help</span>(<span class="string">&quot;whether to dump the transformed bytecode to a file&quot;</span>)
             )
+            .<span class="ident">arg</span>(
+                <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;num-instances&quot;</span>)
+                    .<span class="ident">long</span>(<span class="string">&quot;num-instances&quot;</span>)
+                    .<span class="ident">takes_value</span>(<span class="bool-val">true</span>)
+                    .<span class="ident">value_name</span>(<span class="string">&quot;NUMBER&quot;</span>)
+                    .<span class="ident">validator</span>(<span class="ident">is_number</span>)
+                    .<span class="ident">help</span>(<span class="string">&quot;sets the number of Boogie instances to run concurrently (default 1)&quot;</span>)
+            )
             .<span class="ident">after_help</span>(<span class="string">&quot;More options available via `--config file` or `--config-str str`. \
             Use `--print-config` to see format and current values. \
             See `move-prover/src/cli.rs::Option` for documentation.&quot;</span>);
@@ -1158,6 +1187,13 @@
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;dump-bytecode&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">dump_bytecode</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        }
+        <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;num-instances&quot;</span>) {
+            <span class="kw">let</span> <span class="ident">num_instances</span> <span class="op">=</span> <span class="ident">matches</span>
+                .<span class="ident">value_of</span>(<span class="string">&quot;num-instances&quot;</span>)
+                .<span class="ident">unwrap</span>()
+                .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">num_instances</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">num_instances</span>, <span class="number">1</span>); <span class="comment">// at least one instance</span>
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;keep&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">keep_artifacts</span> <span class="op">=</span> <span class="bool-val">true</span>;
