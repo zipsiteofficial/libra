@@ -210,9 +210,6 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -236,16 +233,17 @@
 <span class="doccomment">//! of messages received at the Peer actor should be sufficient for safe-guarding against malicious</span>
 <span class="doccomment">//! actors.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">counters</span>,
+    <span class="ident">counters</span>::{<span class="self">self</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>, <span class="ident">SENT_LABEL</span>},
     <span class="ident">peer</span>::{<span class="ident">PeerHandle</span>, <span class="ident">PeerNotification</span>},
     <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">DirectSendMsg</span>, <span class="ident">NetworkMessage</span>, <span class="ident">Priority</span>},
     <span class="ident">ProtocolId</span>,
 };
 <span class="kw">use</span> <span class="ident">bytes</span>::<span class="ident">Bytes</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">sink</span>::<span class="ident">SinkExt</span>, <span class="ident">stream</span>::<span class="ident">StreamExt</span>};
+<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
@@ -265,7 +263,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Message</span> {
     <span class="doccomment">/// Message type.</span>
-    <span class="kw">pub</span> <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
+    <span class="kw">pub</span> <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
     <span class="doccomment">/// Serialized message data.</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip</span>)]</span>
     <span class="kw">pub</span> <span class="ident">mdata</span>: <span class="ident">Bytes</span>,
@@ -281,13 +279,15 @@
         <span class="macro">write</span><span class="macro">!</span>(
             <span class="ident">f</span>,
             <span class="string">&quot;Message {{ protocol: {:?}, mdata: {} }}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">protocol</span>, <span class="ident">mdata_str</span>
+            <span class="self">self</span>.<span class="ident">protocol_id</span>, <span class="ident">mdata_str</span>
         )
     }
 }
 
 <span class="doccomment">/// The DirectSend actor.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DirectSend</span> {
+    <span class="doccomment">/// The network instance this DirectSend actor is running under.</span>
+    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Channel to send requests to Peer.</span>
     <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
     <span class="doccomment">/// Channel to receive requests from other upstream actors.</span>
@@ -300,12 +300,14 @@
 
 <span class="kw">impl</span> <span class="ident">DirectSend</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
         <span class="ident">ds_requests_rx</span>: <span class="ident">channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">DirectSendRequest</span><span class="op">&gt;</span>,
         <span class="ident">ds_notifs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">DirectSendNotification</span><span class="op">&gt;</span>,
         <span class="ident">peer_notifs_rx</span>: <span class="ident">channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
+            <span class="ident">network_context</span>,
             <span class="ident">peer_handle</span>,
             <span class="ident">ds_requests_rx</span>,
             <span class="ident">ds_notifs_tx</span>,
@@ -352,21 +354,18 @@
             <span class="ident">PeerNotification</span>::<span class="ident">NewMessage</span>(<span class="ident">message</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">NetworkMessage</span>::<span class="ident">DirectSendMsg</span>(<span class="ident">message</span>) <span class="op">=</span> <span class="ident">message</span> {
-                    <span class="kw">let</span> <span class="ident">protocol</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">protocol_id</span>;
+                    <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">protocol_id</span>;
                     <span class="macro">trace</span><span class="macro">!</span>(
                         <span class="string">&quot;DirectSend: Received inbound message from peer {} for protocol {:?}&quot;</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
-                        <span class="ident">protocol</span>
+                        <span class="ident">protocol_id</span>
                     );
                     <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">raw_msg</span>;
-                    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_DIRECT_SEND_MESSAGES</span>
-                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;received&quot;</span>])
-                        .<span class="ident">inc</span>();
-                    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_DIRECT_SEND_BYTES</span>
-                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;received&quot;</span>])
-                        .<span class="ident">observe</span>(<span class="ident">data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>);
+                    <span class="ident">counters</span>::<span class="ident">direct_send_messages</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">RECEIVED_LABEL</span>).<span class="ident">inc</span>();
+                    <span class="ident">counters</span>::<span class="ident">direct_send_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">RECEIVED_LABEL</span>)
+                        .<span class="ident">inc_by</span>(<span class="ident">data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
                     <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">DirectSendNotification</span>::<span class="ident">RecvMessage</span>(<span class="ident">Message</span> {
-                        <span class="ident">protocol</span>,
+                        <span class="ident">protocol_id</span>,
                         <span class="ident">mdata</span>: <span class="ident">Bytes</span>::<span class="ident">from</span>(<span class="ident">data</span>),
                     });
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ds_notifs_tx</span>.<span class="ident">send</span>(<span class="ident">notif</span>).<span class="kw">await</span> {
@@ -389,7 +388,7 @@
         <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;DirectSendRequest::{:?}&quot;</span>, <span class="ident">req</span>);
         <span class="kw">match</span> <span class="ident">req</span> {
             <span class="ident">DirectSendRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol</span>;
+                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol_id</span>;
                 <span class="comment">// If send to PeerHandle fails, simply drop the message on the floor;</span>
                 <span class="kw">let</span> <span class="ident">msg_len</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">mdata</span>.<span class="ident">len</span>();
                 <span class="kw">let</span> <span class="ident">send_result</span> <span class="op">=</span> <span class="self">self</span>
@@ -406,12 +405,9 @@
                     .<span class="kw">await</span>;
                 <span class="kw">match</span> <span class="ident">send_result</span> {
                     <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_DIRECT_SEND_MESSAGES</span>
-                            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;sent&quot;</span>])
-                            .<span class="ident">inc</span>();
-                        <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_DIRECT_SEND_BYTES</span>
-                            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;sent&quot;</span>])
-                            .<span class="ident">observe</span>(<span class="ident">msg_len</span> <span class="kw">as</span> <span class="ident">f64</span>);
+                        <span class="ident">counters</span>::<span class="ident">direct_send_messages</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">SENT_LABEL</span>).<span class="ident">inc</span>();
+                        <span class="ident">counters</span>::<span class="ident">direct_send_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">SENT_LABEL</span>)
+                            .<span class="ident">inc_by</span>(<span class="ident">msg_len</span> <span class="kw">as</span> <span class="ident">i64</span>);
                     }
                     <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">warn</span><span class="macro">!</span>(
@@ -420,9 +416,7 @@
                             <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
                             <span class="ident">e</span>
                         );
-                        <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_DIRECT_SEND_MESSAGES</span>
-                            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;failed&quot;</span>])
-                            .<span class="ident">inc</span>();
+                        <span class="ident">counters</span>::<span class="ident">direct_send_messages</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">FAILED_LABEL</span>).<span class="ident">inc</span>();
                     }
                 }
             }

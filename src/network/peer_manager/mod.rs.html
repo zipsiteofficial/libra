@@ -1091,19 +1091,6 @@
 <span id="1091">1091</span>
 <span id="1092">1092</span>
 <span id="1093">1093</span>
-<span id="1094">1094</span>
-<span id="1095">1095</span>
-<span id="1096">1096</span>
-<span id="1097">1097</span>
-<span id="1098">1098</span>
-<span id="1099">1099</span>
-<span id="1100">1100</span>
-<span id="1101">1101</span>
-<span id="1102">1102</span>
-<span id="1103">1103</span>
-<span id="1104">1104</span>
-<span id="1105">1105</span>
-<span id="1106">1106</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1254,12 +1241,12 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">peer_id</span>: <span class="ident">PeerId</span>,
-        <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
+        <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
         <span class="ident">mdata</span>: <span class="ident">Bytes</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">push</span>(
-            (<span class="ident">peer_id</span>, <span class="ident">protocol</span>),
-            <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">peer_id</span>, <span class="ident">Message</span> { <span class="ident">protocol</span>, <span class="ident">mdata</span> }),
+            (<span class="ident">peer_id</span>, <span class="ident">protocol_id</span>),
+            <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">peer_id</span>, <span class="ident">Message</span> { <span class="ident">protocol_id</span>, <span class="ident">mdata</span> }),
         )<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
@@ -1278,17 +1265,17 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to_many</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">recipients</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">PeerId</span><span class="op">&gt;</span>,
-        <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
+        <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
         <span class="ident">mdata</span>: <span class="ident">Bytes</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">Message</span> { <span class="ident">protocol</span>, <span class="ident">mdata</span> };
+        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">Message</span> { <span class="ident">protocol_id</span>, <span class="ident">mdata</span> };
         <span class="kw">for</span> <span class="ident">recipient</span> <span class="kw">in</span> <span class="ident">recipients</span> {
             <span class="comment">// We return `Err` early here if the send fails. Since sending will</span>
             <span class="comment">// only fail if the queue is unexpectedly shutdown (i.e., receiver</span>
             <span class="comment">// dropped early), we know that we can&#39;t make further progress if</span>
             <span class="comment">// this send fails.</span>
             <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">push</span>(
-                (<span class="ident">recipient</span>, <span class="ident">protocol</span>),
+                (<span class="ident">recipient</span>, <span class="ident">protocol_id</span>),
                 <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">recipient</span>, <span class="ident">msg</span>.<span class="ident">clone</span>()),
             )<span class="question-mark">?</span>;
         }
@@ -1299,19 +1286,19 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_rpc</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">peer_id</span>: <span class="ident">PeerId</span>,
-        <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
+        <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
         <span class="ident">req</span>: <span class="ident">Bytes</span>,
         <span class="ident">timeout</span>: <span class="ident">Duration</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">RpcError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">res_tx</span>, <span class="ident">res_rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
         <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">OutboundRpcRequest</span> {
-            <span class="ident">protocol</span>,
+            <span class="ident">protocol_id</span>,
             <span class="ident">data</span>: <span class="ident">req</span>,
             <span class="ident">res_tx</span>,
             <span class="ident">timeout</span>,
         };
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">push</span>(
-            (<span class="ident">peer_id</span>, <span class="ident">protocol</span>),
+            (<span class="ident">peer_id</span>, <span class="ident">protocol_id</span>),
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">peer_id</span>, <span class="ident">request</span>),
         )<span class="question-mark">?</span>;
         <span class="ident">res_rx</span>.<span class="kw">await</span><span class="question-mark">?</span>
@@ -1468,20 +1455,14 @@
             .<span class="ident">count</span>();
         <span class="kw">let</span> <span class="ident">outbound</span> <span class="op">=</span> <span class="ident">total</span>.<span class="ident">saturating_sub</span>(<span class="ident">inbound</span>);
         <span class="kw">let</span> <span class="ident">role</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">role</span>().<span class="ident">as_str</span>();
+
         <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_PEERS</span>
             .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">role</span>, <span class="string">&quot;connected&quot;</span>])
             .<span class="ident">set</span>(<span class="ident">total</span> <span class="kw">as</span> <span class="ident">i64</span>);
 
-        <span class="ident">counters</span>::<span class="ident">update_libra_connections</span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>,
-            <span class="ident">inbound</span>,
-        );
-        <span class="ident">counters</span>::<span class="ident">update_libra_connections</span>(
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">ConnectionOrigin</span>::<span class="ident">Outbound</span>,
-            <span class="ident">outbound</span>,
-        );
+        <span class="ident">counters</span>::<span class="ident">connections</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>).<span class="ident">set</span>(<span class="ident">inbound</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">counters</span>::<span class="ident">connections</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">ConnectionOrigin</span>::<span class="ident">Outbound</span>)
+            .<span class="ident">set</span>(<span class="ident">outbound</span> <span class="kw">as</span> <span class="ident">i64</span>);
     }
 
     <span class="doccomment">/// Get the [`NetworkAddress`] we&#39;re listening for incoming connections on</span>
@@ -1669,13 +1650,12 @@
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">sender</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">active_peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">msg</span>.<span class="ident">protocol</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">msg</span>)) {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">msg</span>.<span class="ident">protocol_id</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">msg</span>))
+                    {
                         <span class="macro">info</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
-                            <span class="string">&quot;{} Failed to forward outbound message to downstream actor. Error:
-                              {:?}&quot;</span>,
-                            <span class="self">self</span>.<span class="ident">network_context</span>,
-                            <span class="ident">err</span>
+                            <span class="string">&quot;{} Failed to forward outbound message to downstream actor. Error: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">err</span>
                         );
                     }
                 } <span class="kw">else</span> {
@@ -1689,11 +1669,10 @@
             }
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">peer_id</span>, <span class="ident">req</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">sender</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">active_peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">req</span>.<span class="ident">protocol</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">req</span>)) {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">req</span>.<span class="ident">protocol_id</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">req</span>)) {
                         <span class="macro">info</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
-                            <span class="string">&quot;{} Failed to forward outbound rpc to downstream actor. Error:
-                            {:?}&quot;</span>,
+                            <span class="string">&quot;{} Failed to forward outbound rpc to downstream actor. Error: {:?}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">err</span>
                         );
@@ -1803,6 +1782,7 @@
 
         <span class="comment">// Initialize a new network stack for this connection.</span>
         <span class="kw">let</span> (<span class="ident">network_reqs_tx</span>, <span class="ident">network_notifs_rx</span>) <span class="op">=</span> <span class="ident">NetworkProvider</span>::<span class="ident">start</span>(
+            <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
             <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">clone</span>(),
             <span class="ident">connection</span>,
             <span class="self">self</span>.<span class="ident">transport_notifs_tx</span>.<span class="ident">clone</span>(),
@@ -1880,21 +1860,18 @@
     ) {
         <span class="kw">match</span> <span class="ident">inbound_event</span> {
             <span class="ident">NetworkNotification</span>::<span class="ident">RecvMessage</span>(<span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">protocol</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol</span>;
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handler</span>) <span class="op">=</span> <span class="ident">upstream_handlers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">protocol</span>) {
+                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol_id</span>;
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handler</span>) <span class="op">=</span> <span class="ident">upstream_handlers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">protocol_id</span>) {
                     <span class="comment">// Send over libra channel for fairness.</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">push</span>(
-                        (<span class="ident">peer_id</span>, <span class="ident">protocol</span>),
+                        (<span class="ident">peer_id</span>, <span class="ident">protocol_id</span>),
                         <span class="ident">PeerManagerNotification</span>::<span class="ident">RecvMessage</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>),
                     ) {
                         <span class="macro">warn</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
-                            <span class="ident">protocol</span> <span class="op">=</span> <span class="ident">protocol</span>,
-                            <span class="string">&quot;{} Upstream handler unable to handle messages for protocol: {}. Error:
-                            {:?}&quot;</span>,
-                            <span class="ident">network_context</span>,
-                            <span class="ident">protocol</span>,
-                            <span class="ident">err</span>
+                            <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">protocol_id</span>,
+                            <span class="string">&quot;{} Upstream handler unable to handle messages for protocol: {}. Error: {:?}&quot;</span>,
+                            <span class="ident">network_context</span>, <span class="ident">protocol_id</span>, <span class="ident">err</span>
                         );
                     }
                 } <span class="kw">else</span> {
@@ -1908,20 +1885,17 @@
                 }
             }
             <span class="ident">NetworkNotification</span>::<span class="ident">RecvRpc</span>(<span class="ident">rpc_req</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">protocol</span> <span class="op">=</span> <span class="ident">rpc_req</span>.<span class="ident">protocol</span>;
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handler</span>) <span class="op">=</span> <span class="ident">upstream_handlers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">protocol</span>) {
+                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">rpc_req</span>.<span class="ident">protocol_id</span>;
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">handler</span>) <span class="op">=</span> <span class="ident">upstream_handlers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">protocol_id</span>) {
                     <span class="comment">// Send over libra channel for fairness.</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">handler</span>.<span class="ident">push</span>(
-                        (<span class="ident">peer_id</span>, <span class="ident">protocol</span>),
+                        (<span class="ident">peer_id</span>, <span class="ident">protocol_id</span>),
                         <span class="ident">PeerManagerNotification</span>::<span class="ident">RecvRpc</span>(<span class="ident">peer_id</span>, <span class="ident">rpc_req</span>),
                     ) {
                         <span class="macro">warn</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
-                            <span class="string">&quot;{} Upstream handler unable to handle rpc for protocol: {}. Error:
-                              {:?}&quot;</span>,
-                            <span class="ident">network_context</span>,
-                            <span class="ident">protocol</span>,
-                            <span class="ident">err</span>
+                            <span class="string">&quot;{} Upstream handler unable to handle rpc for protocol: {}. Error: {:?}&quot;</span>,
+                            <span class="ident">network_context</span>, <span class="ident">protocol_id</span>, <span class="ident">err</span>
                         );
                     }
                 } <span class="kw">else</span> {

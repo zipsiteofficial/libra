@@ -588,6 +588,14 @@
 <span id="588">588</span>
 <span id="589">589</span>
 <span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -634,9 +642,8 @@
 <span class="doccomment">//! RPCs. The RequestIdGenerator increments the request id by 1 for each subsequent outbound RPC.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">counters</span>,
     <span class="ident">counters</span>::{
-        <span class="ident">CANCELED_LABEL</span>, <span class="ident">DECLINED_LABEL</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>, <span class="ident">REQUEST_LABEL</span>,
+        <span class="self">self</span>, <span class="ident">CANCELED_LABEL</span>, <span class="ident">DECLINED_LABEL</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>, <span class="ident">REQUEST_LABEL</span>,
         <span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>,
     },
     <span class="ident">peer</span>::{<span class="ident">PeerHandle</span>, <span class="ident">PeerNotification</span>},
@@ -654,10 +661,11 @@
     <span class="ident">stream</span>::{<span class="ident">FuturesUnordered</span>, <span class="ident">StreamExt</span>},
     <span class="ident">task</span>::<span class="ident">Context</span>,
 };
+<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
 
@@ -671,35 +679,43 @@
 <span class="doccomment">/// A wrapper struct for an inbound rpc request and its associated context.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InboundRpcRequest</span> {
-    <span class="doccomment">/// Rpc method identifier, e.g., `/libra/rpc/0.1.0/consensus/0.1.0`. This is used</span>
-    <span class="doccomment">/// to dispatch the request to the corresponding client handler.</span>
-    <span class="kw">pub</span> <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
-    <span class="doccomment">/// The serialized request data received from the sender.</span>
+    <span class="doccomment">/// The [`ProtocolId`] for which of our upstream application modules should</span>
+    <span class="doccomment">/// handle (i.e., deserialize and then respond to) this inbound rpc request.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// For example, if `protocol_id == ProtocolId::ConsensusRpc`, then this</span>
+    <span class="doccomment">/// inbound rpc request will be dispatched to consensus for handling.</span>
+    <span class="kw">pub</span> <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
+    <span class="doccomment">/// The serialized request data received from the sender. At this layer in</span>
+    <span class="doccomment">/// the stack, the request data is just an opaque blob and will only be fully</span>
+    <span class="doccomment">/// deserialized later in the handling application module.</span>
     <span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Bytes</span>,
-    <span class="doccomment">/// Channel over which the rpc response is sent from the upper client layer</span>
-    <span class="doccomment">/// to the rpc layer.</span>
+    <span class="doccomment">/// Channel over which the rpc response is sent from the upper application</span>
+    <span class="doccomment">/// layer to the network rpc layer.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The rpc actor holds onto the receiving end of this channel, awaiting the</span>
     <span class="doccomment">/// response from the upper layer. If there is an error in, e.g.,</span>
     <span class="doccomment">/// deserializing the request, the upper layer should send an [`RpcError`]</span>
     <span class="doccomment">/// down the channel to signify that there was an error while handling this</span>
-    <span class="doccomment">/// rpc request. Currently, we just log these errors and drop the substream;</span>
-    <span class="doccomment">/// in the future, we will send an error response to the peer and/or log any</span>
-    <span class="doccomment">/// malicious behaviour.</span>
+    <span class="doccomment">/// rpc request. Currently, we just log these errors and drop the request.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The upper client layer should be prepared for `res_tx` to be potentially</span>
-    <span class="doccomment">/// disconnected when trying to send their response, as the rpc call might</span>
-    <span class="doccomment">/// have timed out while handling the request.</span>
+    <span class="doccomment">/// The upper client layer should be prepared for `res_tx` to be disconnected</span>
+    <span class="doccomment">/// when trying to send their response, as the rpc call might have timed out</span>
+    <span class="doccomment">/// while handling the request.</span>
     <span class="kw">pub</span> <span class="ident">res_tx</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">RpcError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// A wrapper struct for an outbound rpc request and its associated context.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">OutboundRpcRequest</span> {
-    <span class="doccomment">/// Rpc method identifier, e.g., `/libra/rpc/0.1.0/consensus/0.1.0`. This is the</span>
-    <span class="doccomment">/// protocol we will negotiate our outbound substream to.</span>
-    <span class="kw">pub</span> <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
-    <span class="doccomment">/// The serialized request data to be sent to the receiver.</span>
+    <span class="doccomment">/// The remote peer&#39;s application module that should handle our outbound rpc</span>
+    <span class="doccomment">/// request.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// For example, if `protocol_id == ProtocolId::ConsensusRpc`, then this</span>
+    <span class="doccomment">/// outbound rpc request should be handled by the remote peer&#39;s consensus</span>
+    <span class="doccomment">/// application module.</span>
+    <span class="kw">pub</span> <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
+    <span class="doccomment">/// The serialized request data to be sent to the receiver. At this layer in</span>
+    <span class="doccomment">/// the stack, the request data is just an opaque blob.</span>
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip</span>)]</span>
     <span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">Bytes</span>,
     <span class="doccomment">/// Channel over which the rpc response is sent from the rpc layer to the</span>
@@ -761,6 +777,8 @@
 
 <span class="doccomment">/// The rpc actor.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Rpc</span> {
+    <span class="doccomment">/// The network instance this Rpc actor is running under.</span>
+    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Channel to send requests to Peer.</span>
     <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
     <span class="doccomment">/// Channel to receive requests from other upstream actors.</span>
@@ -786,6 +804,7 @@
 <span class="kw">impl</span> <span class="ident">Rpc</span> {
     <span class="doccomment">/// Create a new instance of the [`Rpc`] protocol actor.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
         <span class="ident">requests_rx</span>: <span class="ident">channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">OutboundRpcRequest</span><span class="op">&gt;</span>,
         <span class="ident">peer_notifs_rx</span>: <span class="ident">channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">PeerNotification</span><span class="op">&gt;</span>,
@@ -795,6 +814,7 @@
         <span class="ident">max_concurrent_inbound_rpcs</span>: <span class="ident">u32</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
+            <span class="ident">network_context</span>,
             <span class="ident">request_id_gen</span>: <span class="ident">RequestIdGenerator</span>::<span class="ident">new</span>(<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>()),
             <span class="ident">peer_handle</span>,
             <span class="ident">requests_rx</span>,
@@ -876,7 +896,7 @@
     <span class="kw">fn</span> <span class="ident">handle_inbound_response</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">response</span>: <span class="ident">RpcResponse</span>) {
         <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
         <span class="kw">let</span> <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">response</span>.<span class="ident">request_id</span>;
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">protocol</span>, <span class="ident">response_tx</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_outbound_rpcs</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">request_id</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">protocol_id</span>, <span class="ident">response_tx</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_outbound_rpcs</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">request_id</span>) {
             <span class="macro">trace</span><span class="macro">!</span>(
                 <span class="string">&quot;Waiting to notify outbound rpc task about inbound response for request_id {}&quot;</span>,
                 <span class="ident">request_id</span>
@@ -885,7 +905,7 @@
                 <span class="macro">warn</span><span class="macro">!</span>(
                     <span class="string">&quot;Failed to handle inbount RPC response from peer: {} for protocol: {}. Error: {:?}&quot;</span>,
                     <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
-                    <span class="ident">protocol</span>,
+                    <span class="ident">protocol_id</span>,
                     <span class="ident">e</span>
                 );
             } <span class="kw">else</span> {
@@ -909,35 +929,41 @@
         <span class="ident">request</span>: <span class="ident">RpcRequest</span>,
         <span class="ident">inbound_rpc_tasks</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">InboundRpcTasks</span>,
     ) {
-        <span class="kw">let</span> <span class="ident">notification_tx</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rpc_handler_tx</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">peer_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>();
+        <span class="kw">let</span> <span class="ident">network_context</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>);
+
+        <span class="comment">// Drop new inbound requests if our completion queue is at capacity.</span>
         <span class="kw">if</span> <span class="ident">inbound_rpc_tasks</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_concurrent_inbound_rpcs</span> {
             <span class="comment">// Increase counter of declined responses and log warning.</span>
-            <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">DECLINED_LABEL</span>])
-                .<span class="ident">inc</span>();
+            <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">DECLINED_LABEL</span>).<span class="ident">inc</span>();
             <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="string">&quot;Pending inbound RPCs are at limit ({}). Not processing new inbound rpc requests&quot;</span>,
                 <span class="self">self</span>.<span class="ident">max_concurrent_inbound_rpcs</span>
             );
             <span class="kw">return</span>;
         }
+
+        <span class="kw">let</span> <span class="ident">notification_tx</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rpc_handler_tx</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">peer_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>();
         <span class="kw">let</span> <span class="ident">timeout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inbound_rpc_timeout</span>;
+
         <span class="comment">// Handle request with timeout.</span>
         <span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">timeout</span>(
                 <span class="ident">timeout</span>,
-                <span class="ident">handle_inbound_request_inner</span>(<span class="ident">notification_tx</span>, <span class="ident">request</span>, <span class="ident">peer_handle</span>),
+                <span class="ident">handle_inbound_request_inner</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">network_context</span>,
+                    <span class="ident">notification_tx</span>,
+                    <span class="ident">request</span>,
+                    <span class="ident">peer_handle</span>,
+                ),
             )
             .<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="op">&lt;</span><span class="ident">RpcError</span><span class="op">&gt;</span>::<span class="ident">into</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>))
             .<span class="kw">await</span>
             {
                 <span class="comment">// Log any errors.</span>
-                <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">FAILED_LABEL</span>])
-                    .<span class="ident">inc</span>();
+                <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">FAILED_LABEL</span>).<span class="ident">inc</span>();
                 <span class="macro">warn</span><span class="macro">!</span>(
                     <span class="string">&quot;Error handling inbound rpc request from {}: {:?}&quot;</span>,
                     <span class="ident">peer_id_str</span>, <span class="ident">err</span>
@@ -959,27 +985,30 @@
         <span class="ident">req</span>: <span class="ident">OutboundRpcRequest</span>,
         <span class="ident">outbound_rpc_tasks</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">OutboundRpcTasks</span>,
     ) {
-        <span class="comment">// If we already have too many pending RPCs, return error immediately.</span>
-        <span class="kw">if</span> <span class="ident">outbound_rpc_tasks</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span> {
-            <span class="macro">warn</span><span class="macro">!</span>(
-                <span class="string">&quot;Pending outbound RPCs ({}) exceeding limit ({}).&quot;</span>,
-                <span class="ident">outbound_rpc_tasks</span>.<span class="ident">len</span>(),
-                <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span>,
-            );
-            <span class="kw">let</span> <span class="ident">_result</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">res_tx</span>.<span class="ident">send</span>(<span class="prelude-val">Err</span>(<span class="ident">RpcError</span>::<span class="ident">TooManyPending</span>(
-                <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span>,
-            )));
-            <span class="kw">return</span>;
-        }
+        <span class="kw">let</span> <span class="ident">network_context</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>);
 
         <span class="comment">// Unpack request.</span>
         <span class="kw">let</span> <span class="ident">OutboundRpcRequest</span> {
-            <span class="ident">protocol</span>,
+            <span class="ident">protocol_id</span>,
             <span class="ident">data</span>: <span class="ident">req_data</span>,
             <span class="ident">timeout</span>,
             <span class="kw-2">mut</span> <span class="ident">res_tx</span>,
             ..
         } <span class="op">=</span> <span class="ident">req</span>;
+
+        <span class="comment">// If we already have too many pending RPCs, return error immediately.</span>
+        <span class="kw">if</span> <span class="ident">outbound_rpc_tasks</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span> {
+            <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">DECLINED_LABEL</span>).<span class="ident">inc</span>();
+            <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="string">&quot;Pending outbound RPCs ({}) exceeding limit ({}).&quot;</span>,
+                <span class="ident">outbound_rpc_tasks</span>.<span class="ident">len</span>(),
+                <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span>,
+            );
+            <span class="kw">let</span> <span class="ident">_result</span> <span class="op">=</span> <span class="ident">res_tx</span>.<span class="ident">send</span>(<span class="prelude-val">Err</span>(<span class="ident">RpcError</span>::<span class="ident">TooManyPending</span>(
+                <span class="self">self</span>.<span class="ident">max_concurrent_outbound_rpcs</span>,
+            )));
+            <span class="kw">return</span>;
+        }
 
         <span class="kw">let</span> <span class="ident">peer_handle</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>();
@@ -991,14 +1020,21 @@
         <span class="kw">let</span> (<span class="ident">response_tx</span>, <span class="ident">response_rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
         <span class="comment">// Save send end of channel which moving receive end of the channel into the future.</span>
         <span class="self">self</span>.<span class="ident">pending_outbound_rpcs</span>
-            .<span class="ident">insert</span>(<span class="ident">request_id</span>, (<span class="ident">protocol</span>, <span class="ident">response_tx</span>));
+            .<span class="ident">insert</span>(<span class="ident">request_id</span>, (<span class="ident">protocol_id</span>, <span class="ident">response_tx</span>));
 
         <span class="kw">let</span> <span class="ident">f</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
             <span class="comment">// Wrap the outbound rpc protocol with the requested timeout window.</span>
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">f_rpc_res</span> <span class="op">=</span> <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">timeout</span>(
                 <span class="ident">timeout</span>,
                 <span class="comment">// Future to run the actual outbound rpc protocol.</span>
-                <span class="ident">handle_outbound_rpc_inner</span>(<span class="ident">peer_handle</span>, <span class="ident">request_id</span>, <span class="ident">protocol</span>, <span class="ident">req_data</span>, <span class="ident">response_rx</span>),
+                <span class="ident">handle_outbound_rpc_inner</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">network_context</span>,
+                    <span class="ident">peer_handle</span>,
+                    <span class="ident">request_id</span>,
+                    <span class="ident">protocol_id</span>,
+                    <span class="ident">req_data</span>,
+                    <span class="ident">response_rx</span>,
+                ),
             )
             .<span class="ident">map_err</span>(<span class="ident">Into</span>::<span class="op">&lt;</span><span class="ident">RpcError</span><span class="op">&gt;</span>::<span class="ident">into</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>))
@@ -1014,8 +1050,7 @@
                 <span class="ident">res</span> <span class="op">=</span> <span class="ident">f_rpc_res</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Log any errors.</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="kw-2">ref</span> <span class="ident">err</span>) <span class="op">=</span> <span class="ident">res</span> {
-                        <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-                            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">FAILED_LABEL</span>])
+                        <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">FAILED_LABEL</span>)
                             .<span class="ident">inc</span>();
                         <span class="macro">warn</span><span class="macro">!</span>(
                             <span class="string">&quot;Error making outbound rpc request with request_id {} to {}: {:?}&quot;</span>,
@@ -1024,16 +1059,14 @@
                     }
                     <span class="comment">// Propagate the results to the rpc client layer.</span>
                     <span class="kw">if</span> <span class="ident">res_tx</span>.<span class="ident">send</span>(<span class="ident">res</span>).<span class="ident">is_err</span>() {
-                        <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-                            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">CANCELED_LABEL</span>])
+                        <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">CANCELED_LABEL</span>)
                             .<span class="ident">inc</span>();
                         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Rpc client canceled outbound rpc call to {}&quot;</span>, <span class="ident">peer_id_str</span>);
                     }
                 },
                 <span class="comment">// The rpc client canceled the request</span>
                 <span class="ident">cancel</span> <span class="op">=</span> <span class="ident">f_rpc_cancel</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-                        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">CANCELED_LABEL</span>])
+                    <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">CANCELED_LABEL</span>)
                         .<span class="ident">inc</span>();
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Rpc client canceled outbound rpc call to {}&quot;</span>, <span class="ident">peer_id_str</span>);
                 },
@@ -1046,22 +1079,22 @@
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_outbound_rpc_inner</span>(
+    <span class="ident">network_context</span>: <span class="kw-2">&amp;</span><span class="ident">NetworkContext</span>,
     <span class="kw-2">mut</span> <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
     <span class="ident">request_id</span>: <span class="ident">RequestId</span>,
-    <span class="ident">protocol</span>: <span class="ident">ProtocolId</span>,
+    <span class="ident">protocol_id</span>: <span class="ident">ProtocolId</span>,
     <span class="ident">req_data</span>: <span class="ident">Bytes</span>,
     <span class="ident">response_rx</span>: <span class="ident">oneshot</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">RpcResponse</span><span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">RpcError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">req_len</span> <span class="op">=</span> <span class="ident">req_data</span>.<span class="ident">len</span>();
-    <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
-    <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_id</span>.<span class="ident">to_string</span>();
+    <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>();
 
     <span class="comment">// Create NetworkMessage to be sent over the wire.</span>
     <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">NetworkMessage</span>::<span class="ident">RpcRequest</span>(<span class="ident">RpcRequest</span> {
         <span class="ident">request_id</span>,
         <span class="comment">// TODO: Use default priority for now. To be exposed via network API.</span>
         <span class="ident">priority</span>: <span class="ident">Priority</span>::<span class="ident">default</span>(),
-        <span class="ident">protocol_id</span>: <span class="ident">protocol</span>,
+        <span class="ident">protocol_id</span>,
         <span class="ident">raw_request</span>: <span class="ident">Vec</span>::<span class="ident">from</span>(<span class="ident">req_data</span>.<span class="ident">as_ref</span>()),
     });
 
@@ -1069,29 +1102,21 @@
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="string">&quot;Sending outbound rpc request with request_id {} to peer: {:?}&quot;</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>
+        <span class="ident">peer_id_str</span>,
     );
-    <span class="kw">let</span> <span class="ident">prototol_id_descriptor</span> <span class="op">=</span> <span class="ident">protocol</span>.<span class="ident">as_str</span>();
     <span class="comment">// Start timer to collect RPC latency.</span>
-    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_LATENCY</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">prototol_id_descriptor</span>, <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
-        .<span class="ident">start_timer</span>();
-
-    <span class="ident">peer_handle</span>.<span class="ident">send_message</span>(<span class="ident">request</span>, <span class="ident">protocol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">rpc_latency</span>(<span class="ident">network_context</span>).<span class="ident">start_timer</span>();
+    <span class="ident">peer_handle</span>.<span class="ident">send_message</span>(<span class="ident">request</span>, <span class="ident">protocol_id</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="comment">// Collect counters for requests sent.</span>
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">SENT_LABEL</span>])
-        .<span class="ident">inc</span>();
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_BYTES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">SENT_LABEL</span>])
-        .<span class="ident">observe</span>(<span class="ident">req_len</span> <span class="kw">as</span> <span class="ident">f64</span>);
+    <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">SENT_LABEL</span>).<span class="ident">inc</span>();
+    <span class="ident">counters</span>::<span class="ident">rpc_bytes</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">SENT_LABEL</span>).<span class="ident">inc_by</span>(<span class="ident">req_len</span> <span class="kw">as</span> <span class="ident">i64</span>);
 
     <span class="comment">// Wait for listener&#39;s response.</span>
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="string">&quot;Waiting to receive response for request_id {} from peer: {:?}&quot;</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>
+        <span class="ident">peer_id_str</span>,
     );
     <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">response_rx</span>.<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">latency</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">stop_and_record</span>();
@@ -1101,21 +1126,19 @@
         <span class="ident">request_id</span>,
         <span class="ident">peer_id_str</span>,
         <span class="ident">latency</span>,
-        <span class="ident">prototol_id_descriptor</span>
+        <span class="ident">protocol_id</span>.<span class="ident">as_str</span>(),
     );
 
     <span class="comment">// Collect counters for received response.</span>
     <span class="kw">let</span> <span class="ident">res_data</span> <span class="op">=</span> <span class="ident">response</span>.<span class="ident">raw_response</span>;
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>])
-        .<span class="ident">inc</span>();
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_BYTES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>])
-        .<span class="ident">observe</span>(<span class="ident">res_data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>);
+    <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>).<span class="ident">inc</span>();
+    <span class="ident">counters</span>::<span class="ident">rpc_bytes</span>(<span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>)
+        .<span class="ident">inc_by</span>(<span class="ident">res_data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
     <span class="prelude-val">Ok</span>(<span class="ident">Bytes</span>::<span class="ident">from</span>(<span class="ident">res_data</span>))
 }
 
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_inbound_request_inner</span>(
+    <span class="ident">network_context</span>: <span class="kw-2">&amp;</span><span class="ident">NetworkContext</span>,
     <span class="kw-2">mut</span> <span class="ident">notification_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">RpcNotification</span><span class="op">&gt;</span>,
     <span class="ident">request</span>: <span class="ident">RpcRequest</span>,
     <span class="kw-2">mut</span> <span class="ident">peer_handle</span>: <span class="ident">PeerHandle</span>,
@@ -1130,17 +1153,14 @@
         <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
     );
     <span class="comment">// Collect counters for received request.</span>
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>])
-        .<span class="ident">inc</span>();
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_BYTES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>])
-        .<span class="ident">observe</span>(<span class="ident">req_data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>);
+    <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>).<span class="ident">inc</span>();
+    <span class="ident">counters</span>::<span class="ident">rpc_bytes</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>)
+        .<span class="ident">inc_by</span>(<span class="ident">req_data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
 
     <span class="comment">// Forward request to upper layer.</span>
     <span class="kw">let</span> (<span class="ident">res_tx</span>, <span class="ident">res_rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
     <span class="kw">let</span> <span class="ident">notification</span> <span class="op">=</span> <span class="ident">RpcNotification</span>::<span class="ident">RecvRpc</span>(<span class="ident">InboundRpcRequest</span> {
-        <span class="ident">protocol</span>: <span class="ident">request</span>.<span class="ident">protocol_id</span>,
+        <span class="ident">protocol_id</span>: <span class="ident">request</span>.<span class="ident">protocol_id</span>,
         <span class="ident">data</span>: <span class="ident">Bytes</span>::<span class="ident">from</span>(<span class="ident">req_data</span>),
         <span class="ident">res_tx</span>,
     });
@@ -1171,12 +1191,8 @@
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="comment">// Collect counters for sent response.</span>
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_MESSAGES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>])
-        .<span class="ident">inc</span>();
-    <span class="ident">counters</span>::<span class="ident">LIBRA_NETWORK_RPC_BYTES</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>])
-        .<span class="ident">observe</span>(<span class="ident">res_len</span> <span class="kw">as</span> <span class="ident">f64</span>);
+    <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>).<span class="ident">inc</span>();
+    <span class="ident">counters</span>::<span class="ident">rpc_bytes</span>(<span class="ident">network_context</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>).<span class="ident">inc_by</span>(<span class="ident">res_len</span> <span class="kw">as</span> <span class="ident">i64</span>);
     <span class="prelude-val">Ok</span>(())
 }
 </pre></div>
