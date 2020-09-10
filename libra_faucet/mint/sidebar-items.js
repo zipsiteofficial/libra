@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["MintParams",""],["Service",""]]});
