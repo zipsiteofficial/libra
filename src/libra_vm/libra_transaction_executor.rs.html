@@ -738,6 +738,12 @@
 <span id="738">738</span>
 <span id="739">739</span>
 <span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -830,6 +836,12 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
         <span class="kw">match</span> <span class="ident">TransactionStatus</span>::<span class="ident">from</span>(<span class="ident">error_code</span>.<span class="ident">clone</span>()) {
             <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">status</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// The transaction should be charged for gas, so run the epilogue to do that.</span>
+                <span class="comment">// This is running in a new session that drops any side effects from the</span>
+                <span class="comment">// attempted transaction (e.g., spending funds that were needed to pay for gas),</span>
+                <span class="comment">// so even if the previous failure occurred while running the epilogue, it</span>
+                <span class="comment">// should not fail now. If it somehow fails here, there is no choice but to</span>
+                <span class="comment">// discard the transaction.</span>
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">run_failure_epilogue</span>(
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
