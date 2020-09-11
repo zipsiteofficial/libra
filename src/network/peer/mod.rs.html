@@ -473,6 +473,12 @@
 <span id="473">473</span>
 <span id="474">474</span>
 <span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -608,15 +614,15 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">peer_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PeerId</span> {
-        <span class="self">self</span>.<span class="ident">connection_metadata</span>.<span class="ident">peer_id</span>
+    <span class="kw">fn</span> <span class="ident">remote_peer_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PeerId</span> {
+        <span class="self">self</span>.<span class="ident">connection_metadata</span>.<span class="ident">remote_peer_id</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">self_peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_id</span>();
+        <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">remote_peer_id</span>();
         <span class="macro">info</span><span class="macro">!</span>(
             <span class="string">&quot;Starting Peer actor for peer: {:?}&quot;</span>,
-            <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>()
+            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
         );
 
         <span class="comment">// Split the connection into a ReadHalf and a WriteHalf.</span>
@@ -641,7 +647,7 @@
         <span class="comment">// `write_reqs_tx`: Instruction to send a NetworkMessage on the wire.</span>
         <span class="comment">// `close_tx`: Instruction to close the underlying connection.</span>
         <span class="kw">let</span> (<span class="ident">write_reqs_tx</span>, <span class="ident">close_tx</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">start_writer_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>, <span class="ident">self_peer_id</span>, <span class="ident">writer</span>);
+            <span class="self">Self</span>::<span class="ident">start_writer_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>, <span class="ident">remote_peer_id</span>, <span class="ident">writer</span>);
         <span class="comment">// Start main Peer event loop.</span>
         <span class="kw">loop</span> {
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">state</span> {
@@ -661,17 +667,17 @@
                                 <span class="prelude-val">Some</span>(<span class="prelude-val">Ok</span>(<span class="ident">message</span>)) <span class="op">=</span><span class="op">&gt;</span>  {
                                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_inbound_message</span>(<span class="ident">message</span>, <span class="ident">write_reqs_tx</span>.<span class="ident">clone</span>()).<span class="kw">await</span> {
                                         <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Error in handling inbound message from peer: {}. Error: {:?}&quot;</span>,
-                                            <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
+                                            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
                                     }
                                 },
                                 <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                                     <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failure in reading messages from socket from peer: {}. Error: {:?}&quot;</span>,
-                                        <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
+                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
                                     <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
                                 }
                                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                                     <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Received connection closed event for peer: {}&quot;</span>,
-                                        <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>());
+                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
                                     <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
                                 }
                             }
@@ -698,11 +704,14 @@
                     {
                         <span class="macro">warn</span><span class="macro">!</span>(
                             <span class="string">&quot;Failed to notify upstream about disconnection of peer: {}; error: {:?}&quot;</span>,
-                            <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
+                            <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
                             <span class="ident">e</span>
                         );
                     }
-                    <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;Peer actor &#39;{}&#39; shutdown&quot;</span>, <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>());
+                    <span class="macro">debug</span><span class="macro">!</span>(
+                        <span class="string">&quot;Peer actor &#39;{}&#39; shutdown&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>()
+                    );
                     <span class="kw">break</span>;
                 }
             }
@@ -718,7 +727,7 @@
     <span class="comment">// them and immediately closes the connection.</span>
     <span class="kw">fn</span> <span class="ident">start_writer_task</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Unpin</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span>(
         <span class="ident">executor</span>: <span class="kw-2">&amp;</span><span class="ident">Handle</span>,
-        <span class="ident">self_peer_id</span>: <span class="ident">PeerId</span>,
+        <span class="ident">remote_peer_id</span>: <span class="ident">PeerId</span>,
         <span class="kw-2">mut</span> <span class="ident">writer</span>: <span class="ident">FramedWrite</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">LengthDelimitedCodec</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (
         <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span>(
@@ -751,7 +760,7 @@
                         {
                             <span class="macro">warn</span><span class="macro">!</span>(
                                 <span class="string">&quot;Error in sending message to peer: {}. Error: {:?}&quot;</span>,
-                                <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>(),
+                                <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                                 <span class="ident">e</span>
                             );
                             <span class="kw">break</span>;
@@ -762,7 +771,7 @@
                     }
                 }
             }
-            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closing connection to peer: {}&quot;</span>, <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>());
+            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closing connection to peer: {}&quot;</span>, <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
             <span class="kw">let</span> <span class="ident">flush_and_close</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
                 <span class="ident">writer</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="ident">writer</span>.<span class="ident">close</span>().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -772,18 +781,18 @@
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
                         <span class="string">&quot;Timeout in flush/close of connection to peer: {}&quot;</span>,
-                        <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>()
+                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
                     );
                 }
                 <span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(<span class="ident">e</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
                         <span class="string">&quot;Failure in flush/close of connection to peer: {}. Error: {:?}&quot;</span>,
-                        <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>(),
+                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                         <span class="ident">e</span>
                     );
                 }
                 <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(())) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closed connection to peer: {}&quot;</span>, <span class="ident">self_peer_id</span>.<span class="ident">short_str</span>());
+                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closed connection to peer: {}&quot;</span>, <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
                 }
             }
         };
@@ -799,7 +808,10 @@
             <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         )<span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span> {
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;Received message from Peer {}&quot;</span>, <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>());
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;Received message from Peer {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>()
+        );
         <span class="comment">// Read inbound message from stream.</span>
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">freeze</span>();
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>) {
@@ -832,7 +844,7 @@
             <span class="ident">NetworkMessage</span>::<span class="ident">Error</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">warn</span><span class="macro">!</span>(
                     <span class="string">&quot;Peer {} sent an error message: {:?}&quot;</span>,
-                    <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
+                    <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
                     <span class="ident">error</span>,
                 );
             }
@@ -857,7 +869,7 @@
     ) {
         <span class="macro">trace</span><span class="macro">!</span>(
             <span class="string">&quot;Peer {} PeerRequest::{:?}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
+            <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
             <span class="ident">request</span>
         );
         <span class="kw">match</span> <span class="ident">request</span> {
@@ -866,7 +878,7 @@
                     <span class="macro">error</span><span class="macro">!</span>(
                         <span class="string">&quot;Failed to send message for protocol {} to peer: {}. Error: {:?}&quot;</span>,
                         <span class="ident">protocol</span>,
-                        <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
+                        <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
                         <span class="ident">e</span>
                     );
                 }
