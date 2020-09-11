@@ -1020,6 +1020,17 @@
 <span id="1020">1020</span>
 <span id="1021">1021</span>
 <span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1036,8 +1047,8 @@
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">access</span>::<span class="ident">ModuleAccess</span>,
     <span class="ident">file_format</span>::{
-        <span class="ident">Bytecode</span>, <span class="ident">FieldHandleIndex</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionDefinitionIndex</span>, <span class="ident">Kind</span>, <span class="ident">Signature</span>,
-        <span class="ident">SignatureIndex</span>, <span class="ident">SignatureToken</span>, <span class="ident">StructDefinition</span>, <span class="ident">StructDefinitionIndex</span>,
+        <span class="ident">Bytecode</span>, <span class="ident">CompiledModule</span>, <span class="ident">FieldHandleIndex</span>, <span class="ident">FunctionDefinition</span>, <span class="ident">FunctionDefinitionIndex</span>,
+        <span class="ident">Kind</span>, <span class="ident">Signature</span>, <span class="ident">SignatureIndex</span>, <span class="ident">SignatureToken</span>, <span class="ident">StructDefinition</span>, <span class="ident">StructDefinitionIndex</span>,
         <span class="ident">StructFieldInformation</span>, <span class="ident">TableIndex</span>, <span class="ident">TypeSignature</span>,
     },
 };
@@ -1084,6 +1095,16 @@
             <span class="ident">options</span>,
             <span class="ident">coverage_map</span>: <span class="prelude-val">None</span>,
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_module</span>(<span class="ident">module</span>: <span class="ident">CompiledModule</span>, <span class="ident">default_loc</span>: <span class="ident">Location</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">options</span> <span class="op">=</span> <span class="ident">DisassemblerOptions</span>::<span class="ident">new</span>();
+        <span class="ident">options</span>.<span class="ident">print_code</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
+            <span class="ident">source_mapper</span>: <span class="ident">SourceMapping</span>::<span class="ident">new_from_module</span>(<span class="ident">module</span>, <span class="ident">default_loc</span>)<span class="question-mark">?</span>,
+            <span class="ident">options</span>,
+            <span class="ident">coverage_map</span>: <span class="prelude-val">None</span>,
+        })
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_coverage_map</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">coverage_map</span>: <span class="ident">CoverageMap</span>) {
@@ -1323,7 +1344,8 @@
             <span class="kw">let</span> <span class="ident">body_iter</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">locals</span>
                 .<span class="ident">into_iter</span>()
                 .<span class="ident">enumerate</span>()
-                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">local_idx</span>, <span class="ident">local</span>)<span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;L{}:\t{}&quot;</span>, <span class="ident">local_idx</span>, <span class="ident">local</span>))
+                <span class="comment">// + 1 because enumerate() starts at 0, but bytecode offsets start at 1</span>
+                .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">local_idx</span>, <span class="ident">local</span>)<span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;L{}:\t{}&quot;</span>, <span class="ident">local_idx</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">local</span>))
                 .<span class="ident">chain</span>(<span class="ident">bytecode</span>.<span class="ident">into_iter</span>())
                 .<span class="ident">collect</span>();
             <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot; {{\n{}\n}}&quot;</span>, <span class="ident">body_iter</span>.<span class="ident">join</span>(<span class="string">&quot;\n&quot;</span>))
