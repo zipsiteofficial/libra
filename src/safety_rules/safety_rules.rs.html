@@ -765,7 +765,6 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vote</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="comment">// Exit early if we cannot sign</span>
         <span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">safety_data</span>()<span class="question-mark">?</span>;
 
         <span class="kw">let</span> (<span class="ident">vote_proposal</span>, <span class="ident">execution_signature</span>) <span class="op">=</span> (
             <span class="kw-2">&amp;</span><span class="ident">maybe_signed_vote_proposal</span>.<span class="ident">vote_proposal</span>,
@@ -780,6 +779,7 @@
         }
 
         <span class="kw">let</span> <span class="ident">proposed_block</span> <span class="op">=</span> <span class="ident">vote_proposal</span>.<span class="ident">block</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">safety_data</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">verify_epoch</span>(<span class="ident">proposed_block</span>.<span class="ident">epoch</span>(), <span class="kw-2">&amp;</span><span class="ident">safety_data</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">verify_qc</span>(<span class="ident">proposed_block</span>.<span class="ident">quorum_cert</span>())<span class="question-mark">?</span>;
         <span class="ident">proposed_block</span>
@@ -800,15 +800,14 @@
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">safety_data</span>,
         )<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">vote_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">extension_check</span>(<span class="ident">vote_proposal</span>)<span class="question-mark">?</span>;
-
         <span class="kw">let</span> <span class="ident">validator_signer</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">vote</span> <span class="op">=</span> <span class="ident">Vote</span>::<span class="ident">new</span>(
-            <span class="ident">vote_data</span>,
+            <span class="self">self</span>.<span class="ident">extension_check</span>(<span class="ident">vote_proposal</span>)<span class="question-mark">?</span>,
             <span class="ident">validator_signer</span>.<span class="ident">author</span>(),
             <span class="self">self</span>.<span class="ident">construct_ledger_info</span>(<span class="ident">proposed_block</span>)<span class="question-mark">?</span>,
             <span class="ident">validator_signer</span>,
         );
+
         <span class="ident">safety_data</span>.<span class="ident">last_vote</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">vote</span>.<span class="ident">clone</span>());
         <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">set_safety_data</span>(<span class="ident">safety_data</span>)<span class="question-mark">?</span>;
 
@@ -816,10 +815,12 @@
     }
 
     <span class="kw">fn</span> <span class="ident">guarded_sign_proposal</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">block_data</span>: <span class="ident">BlockData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">safety_data</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">verify_author</span>(<span class="ident">block_data</span>.<span class="ident">author</span>())<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">safety_data</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">verify_epoch</span>(<span class="ident">block_data</span>.<span class="ident">epoch</span>(), <span class="kw-2">&amp;</span><span class="ident">safety_data</span>)<span class="question-mark">?</span>;
+
         <span class="kw">if</span> <span class="ident">block_data</span>.<span class="ident">round</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">safety_data</span>.<span class="ident">last_voted_round</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidProposal</span>(<span class="macro">format</span><span class="macro">!</span>(
                 <span class="string">&quot;Proposed round {} is not higher than last voted round {}&quot;</span>,
@@ -827,6 +828,7 @@
                 <span class="ident">safety_data</span>.<span class="ident">last_voted_round</span>
             )));
         }
+
         <span class="self">self</span>.<span class="ident">verify_qc</span>(<span class="ident">block_data</span>.<span class="ident">quorum_cert</span>())<span class="question-mark">?</span>;
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">verify_and_update_preferred_round</span>(<span class="ident">block_data</span>.<span class="ident">quorum_cert</span>(), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">safety_data</span>)<span class="question-mark">?</span> {
             <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">set_safety_data</span>(<span class="ident">safety_data</span>)<span class="question-mark">?</span>;
@@ -840,6 +842,7 @@
 
     <span class="kw">fn</span> <span class="ident">guarded_sign_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">timeout</span>: <span class="kw-2">&amp;</span><span class="ident">Timeout</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>;
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">safety_data</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">verify_epoch</span>(<span class="ident">timeout</span>.<span class="ident">epoch</span>(), <span class="kw-2">&amp;</span><span class="ident">safety_data</span>)<span class="question-mark">?</span>;
 
@@ -849,7 +852,6 @@
                 <span class="ident">safety_data</span>.<span class="ident">preferred_round</span>,
             ));
         }
-
         <span class="kw">if</span> <span class="ident">timeout</span>.<span class="ident">round</span>() <span class="op">&lt;</span> <span class="ident">safety_data</span>.<span class="ident">last_voted_round</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">IncorrectLastVotedRound</span>(
                 <span class="ident">timeout</span>.<span class="ident">round</span>(),
@@ -861,9 +863,7 @@
             <span class="self">self</span>.<span class="ident">persistent_storage</span>.<span class="ident">set_safety_data</span>(<span class="ident">safety_data</span>)<span class="question-mark">?</span>;
         }
 
-        <span class="kw">let</span> <span class="ident">validator_signer</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">timeout</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">validator_signer</span>);
-
+        <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">timeout</span>.<span class="ident">sign</span>(<span class="self">self</span>.<span class="ident">signer</span>()<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="ident">signature</span>)
     }
 }
