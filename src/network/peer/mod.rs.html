@@ -479,6 +479,90 @@
 <span id="479">479</span>
 <span id="480">480</span>
 <span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -487,6 +571,7 @@
 <span class="doccomment">//! and opening substreams as well as negotiating particular protocols on those substreams.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>,
+    <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer_manager</span>::<span class="ident">PeerManagerError</span>,
     <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">ErrorCode</span>, <span class="ident">NetworkMessage</span>},
     <span class="ident">transport</span>,
@@ -560,7 +645,7 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Peer</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The network instance this Peer actor is running under.</span>
-    <span class="ident">_network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
+    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="doccomment">/// A handle to a tokio executor.</span>
     <span class="ident">executor</span>: <span class="ident">Handle</span>,
     <span class="doccomment">/// Connection specific information.</span>
@@ -601,7 +686,7 @@
             <span class="ident">socket</span>,
         } <span class="op">=</span> <span class="ident">connection</span>;
         <span class="self">Self</span> {
-            <span class="ident">_network_context</span>: <span class="ident">network_context</span>,
+            <span class="ident">network_context</span>,
             <span class="ident">executor</span>,
             <span class="ident">connection_metadata</span>,
             <span class="ident">connection</span>: <span class="prelude-val">Some</span>(<span class="ident">socket</span>),
@@ -621,7 +706,10 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">remote_peer_id</span>();
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Starting Peer actor for peer: {:?}&quot;</span>,
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
+            <span class="string">&quot;{} Starting Peer actor for peer: {:?}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
         );
 
@@ -646,8 +734,12 @@
         <span class="comment">// the task:</span>
         <span class="comment">// `write_reqs_tx`: Instruction to send a NetworkMessage on the wire.</span>
         <span class="comment">// `close_tx`: Instruction to close the underlying connection.</span>
-        <span class="kw">let</span> (<span class="ident">write_reqs_tx</span>, <span class="ident">close_tx</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">start_writer_task</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>, <span class="ident">remote_peer_id</span>, <span class="ident">writer</span>);
+        <span class="kw">let</span> (<span class="ident">write_reqs_tx</span>, <span class="ident">close_tx</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">start_writer_task</span>(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executor</span>,
+            <span class="self">self</span>.<span class="ident">connection_metadata</span>.<span class="ident">clone</span>(),
+            <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">clone</span>(),
+            <span class="ident">writer</span>,
+        );
         <span class="comment">// Start main Peer event loop.</span>
         <span class="kw">loop</span> {
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">state</span> {
@@ -666,18 +758,37 @@
                             <span class="kw">match</span> <span class="ident">maybe_message</span> {
                                 <span class="prelude-val">Some</span>(<span class="prelude-val">Ok</span>(<span class="ident">message</span>)) <span class="op">=</span><span class="op">&gt;</span>  {
                                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_inbound_message</span>(<span class="ident">message</span>, <span class="ident">write_reqs_tx</span>.<span class="ident">clone</span>()).<span class="kw">await</span> {
-                                        <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Error in handling inbound message from peer: {}. Error: {:?}&quot;</span>,
-                                            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
+                                        <span class="macro">warn</span><span class="macro">!</span>(
+                                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                                                .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                                            <span class="string">&quot;{} Error in handling inbound message from peer: {}. Error: {:?}&quot;</span>,
+                                            <span class="self">self</span>.<span class="ident">network_context</span>,
+                                            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
+                                            <span class="ident">err</span>
+                                        );
                                     }
                                 },
                                 <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                                    <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failure in reading messages from socket from peer: {}. Error: {:?}&quot;</span>,
-                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>);
+                                    <span class="macro">warn</span><span class="macro">!</span>(
+                                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                                            .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                                        <span class="string">&quot;{} Failure in reading messages from socket from peer: {}. Error: {:?}&quot;</span>,
+                                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
+                                        <span class="ident">err</span>
+                                    );
                                     <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
                                 }
                                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                                    <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Received connection closed event for peer: {}&quot;</span>,
-                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
+                                    <span class="macro">warn</span><span class="macro">!</span>(
+                                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
+                                        <span class="string">&quot;{} Received connection closed event for peer: {}&quot;</span>,
+                                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
+                                    );
                                     <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
                                 }
                             }
@@ -689,7 +800,11 @@
                     <span class="comment">// task drops all pending outbound messages and closes the connection.</span>
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">close_tx</span>.<span class="ident">send</span>(()) {
                         <span class="macro">info</span><span class="macro">!</span>(
-                            <span class="string">&quot;Failed to send close instruction to writer task. It must already be terminating/terminated. Error: {:?}&quot;</span>,
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                                .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
+                            <span class="string">&quot;{} Failed to send close instruction to writer task. It must already be terminating/terminated. Error: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">e</span>
                         );
                     }
@@ -703,14 +818,21 @@
                         .<span class="kw">await</span>
                     {
                         <span class="macro">warn</span><span class="macro">!</span>(
-                            <span class="string">&quot;Failed to notify upstream about disconnection of peer: {}; error: {:?}&quot;</span>,
-                            <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                                .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
+                            <span class="string">&quot;{} Failed to notify upstream about disconnection of peer: {}; error: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
+                            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                             <span class="ident">e</span>
                         );
                     }
                     <span class="macro">debug</span><span class="macro">!</span>(
-                        <span class="string">&quot;Peer actor &#39;{}&#39; shutdown&quot;</span>,
-                        <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>()
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
+                        <span class="string">&quot;{} Peer actor &#39;{}&#39; shutdown&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
                     );
                     <span class="kw">break</span>;
                 }
@@ -727,7 +849,8 @@
     <span class="comment">// them and immediately closes the connection.</span>
     <span class="kw">fn</span> <span class="ident">start_writer_task</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Unpin</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span>(
         <span class="ident">executor</span>: <span class="kw-2">&amp;</span><span class="ident">Handle</span>,
-        <span class="ident">remote_peer_id</span>: <span class="ident">PeerId</span>,
+        <span class="ident">connection_metadata</span>: <span class="ident">ConnectionMetadata</span>,
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="kw-2">mut</span> <span class="ident">writer</span>: <span class="ident">FramedWrite</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">LengthDelimitedCodec</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (
         <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span>(
@@ -736,6 +859,7 @@
         )<span class="op">&gt;</span>,
         <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
     ) {
+        <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="ident">connection_metadata</span>.<span class="ident">remote_peer_id</span>;
         <span class="kw">let</span> (<span class="ident">write_reqs_tx</span>, <span class="kw-2">mut</span> <span class="ident">write_reqs_rx</span>): (
             <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span>(
                 <span class="ident">NetworkMessage</span>,
@@ -759,7 +883,11 @@
                             .<span class="kw">await</span>
                         {
                             <span class="macro">warn</span><span class="macro">!</span>(
-                                <span class="string">&quot;Error in sending message to peer: {}. Error: {:?}&quot;</span>,
+                                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
+                                    .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">connection_metadata</span>)
+                                    .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
+                                <span class="string">&quot;{} Error in sending message to peer: {}. Error: {:?}&quot;</span>,
+                                <span class="ident">network_context</span>,
                                 <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                                 <span class="ident">e</span>
                             );
@@ -771,7 +899,12 @@
                     }
                 }
             }
-            <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closing connection to peer: {}&quot;</span>, <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">connection_metadata</span>),
+                <span class="string">&quot;{} Closing connection to peer: {}&quot;</span>,
+                <span class="ident">network_context</span>,
+                <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
+            );
             <span class="kw">let</span> <span class="ident">flush_and_close</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
                 <span class="ident">writer</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="ident">writer</span>.<span class="ident">close</span>().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -780,19 +913,32 @@
             <span class="kw">match</span> <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">timeout</span>(<span class="ident">transport</span>::<span class="ident">TRANSPORT_TIMEOUT</span>, <span class="ident">flush_and_close</span>).<span class="kw">await</span> {
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
-                        <span class="string">&quot;Timeout in flush/close of connection to peer: {}&quot;</span>,
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">connection_metadata</span>),
+                        <span class="string">&quot;{} Timeout in flush/close of connection to peer: {}&quot;</span>,
+                        <span class="ident">network_context</span>,
                         <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
                     );
                 }
                 <span class="prelude-val">Ok</span>(<span class="prelude-val">Err</span>(<span class="ident">e</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
-                        <span class="string">&quot;Failure in flush/close of connection to peer: {}. Error: {:?}&quot;</span>,
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">connection_metadata</span>)
+                            .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
+                        <span class="string">&quot;{} Failure in flush/close of connection to peer: {}. Error: {:?}&quot;</span>,
+                        <span class="ident">network_context</span>,
                         <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                         <span class="ident">e</span>
                     );
                 }
                 <span class="prelude-val">Ok</span>(<span class="prelude-val">Ok</span>(())) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Closed connection to peer: {}&quot;</span>, <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>());
+                    <span class="macro">info</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="ident">connection_metadata</span>),
+                        <span class="string">&quot;{} Closed connection to peer: {}&quot;</span>,
+                        <span class="ident">network_context</span>,
+                        <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
+                    );
                 }
             }
         };
@@ -809,7 +955,10 @@
         )<span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span> {
         <span class="macro">trace</span><span class="macro">!</span>(
-            <span class="string">&quot;Received message from Peer {}&quot;</span>,
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
+            <span class="string">&quot;{} Received message from Peer {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>()
         );
         <span class="comment">// Read inbound message from stream.</span>
@@ -835,7 +984,11 @@
                     .<span class="kw">await</span>
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
                         <span class="macro">warn</span><span class="macro">!</span>(
-                            <span class="string">&quot;Failed to send notification to DirectSend actor. Error: {:?}&quot;</span>,
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                                .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                            <span class="string">&quot;{} Failed to send notification to DirectSend actor. Error: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">err</span>
                         );
                         <span class="ident">err</span>
@@ -843,7 +996,11 @@
             }
             <span class="ident">NetworkMessage</span>::<span class="ident">Error</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">warn</span><span class="macro">!</span>(
-                    <span class="string">&quot;Peer {} sent an error message: {:?}&quot;</span>,
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                        .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                        .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">error</span>),
+                    <span class="string">&quot;{} Peer {} sent an error message: {:?}&quot;</span>,
+                    <span class="self">self</span>.<span class="ident">network_context</span>,
                     <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
                     <span class="ident">error</span>,
                 );
@@ -851,7 +1008,14 @@
             <span class="ident">NetworkMessage</span>::<span class="ident">RpcRequest</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">NetworkMessage</span>::<span class="ident">RpcResponse</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">notif</span> <span class="op">=</span> <span class="ident">PeerNotification</span>::<span class="ident">NewMessage</span>(<span class="ident">message</span>);
                 <span class="self">self</span>.<span class="ident">rpc_notifs_tx</span>.<span class="ident">send</span>(<span class="ident">notif</span>).<span class="kw">await</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
-                    <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failed to send notification to RPC actor. Error: {:?}&quot;</span>, <span class="ident">err</span>);
+                    <span class="macro">warn</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                            .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                        <span class="string">&quot;{} Failed to send notification to RPC actor. Error: {:?}&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">err</span>
+                    );
                     <span class="ident">err</span>
                 })<span class="question-mark">?</span>;
             }
@@ -876,6 +1040,9 @@
             <span class="ident">PeerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">message</span>, <span class="ident">protocol</span>, <span class="ident">channel</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">write_reqs_tx</span>.<span class="ident">send</span>((<span class="ident">message</span>, <span class="ident">channel</span>)).<span class="kw">await</span> {
                     <span class="macro">error</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                            .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                            .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
                         <span class="string">&quot;Failed to send message for protocol {} to peer: {}. Error: {:?}&quot;</span>,
                         <span class="ident">protocol</span>,
                         <span class="self">self</span>.<span class="ident">remote_peer_id</span>().<span class="ident">short_str</span>(),
@@ -896,27 +1063,28 @@
     }
 }
 
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PeerHandle</span> {
-    <span class="ident">peer_id</span>: <span class="ident">PeerId</span>,
+    <span class="ident">connection_metadata</span>: <span class="ident">ConnectionMetadata</span>,
+    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="ident">sender</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerRequest</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">PeerHandle</span> {
-    <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">peer_id</span>: <span class="self">self</span>.<span class="ident">peer_id</span>,
-            <span class="ident">sender</span>: <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">clone</span>(),
-        }
-    }
-}
-
 <span class="kw">impl</span> <span class="ident">PeerHandle</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">peer_id</span>: <span class="ident">PeerId</span>, <span class="ident">sender</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerRequest</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">peer_id</span>, <span class="ident">sender</span> }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
+        <span class="ident">connection_metadata</span>: <span class="ident">ConnectionMetadata</span>,
+        <span class="ident">sender</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">PeerRequest</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">network_context</span>,
+            <span class="ident">connection_metadata</span>,
+            <span class="ident">sender</span>,
+        }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PeerId</span> {
-        <span class="self">self</span>.<span class="ident">peer_id</span>
+        <span class="self">self</span>.<span class="ident">connection_metadata</span>.<span class="ident">remote_peer_id</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_message</span>(
@@ -926,37 +1094,37 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PeerManagerError</span><span class="op">&gt;</span> {
         <span class="comment">// If we fail to send the request to the Peer, then it must have already been shutdown.</span>
         <span class="kw">let</span> (<span class="ident">oneshot_tx</span>, <span class="ident">oneshot_rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
-        <span class="kw">if</span> <span class="self">self</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">sender</span>
             .<span class="ident">send</span>(<span class="ident">PeerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">message</span>, <span class="ident">protocol</span>, <span class="ident">oneshot_tx</span>))
             .<span class="kw">await</span>
-            .<span class="ident">is_err</span>()
         {
             <span class="macro">error</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                    .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
                 <span class="string">&quot;Sending message to Peer {} \
                  failed because it has already been shutdown.&quot;</span>,
-                <span class="self">self</span>.<span class="ident">peer_id</span>.<span class="ident">short_str</span>()
+                <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>()
             );
         }
         <span class="ident">oneshot_rx</span>
             .<span class="kw">await</span>
             <span class="comment">// The send_message request can get dropped/canceled if the peer</span>
             <span class="comment">// connection is in the process of shutting down.</span>
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PeerManagerError</span>::<span class="ident">NotConnected</span>(<span class="self">self</span>.<span class="ident">peer_id</span>))<span class="question-mark">?</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PeerManagerError</span>::<span class="ident">NotConnected</span>(<span class="self">self</span>.<span class="ident">peer_id</span>()))<span class="question-mark">?</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">disconnect</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="comment">// If we fail to send the request to the Peer, then it must have already been shutdown.</span>
-        <span class="kw">if</span> <span class="self">self</span>
-            .<span class="ident">sender</span>
-            .<span class="ident">send</span>(<span class="ident">PeerRequest</span>::<span class="ident">CloseConnection</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">is_err</span>()
-        {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">send</span>(<span class="ident">PeerRequest</span>::<span class="ident">CloseConnection</span>).<span class="kw">await</span> {
             <span class="macro">error</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                    .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>)
+                    .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
                 <span class="string">&quot;Sending CloseConnection request to Peer {} \
                  failed because it has already been shutdown.&quot;</span>,
-                <span class="self">self</span>.<span class="ident">peer_id</span>.<span class="ident">short_str</span>()
+                <span class="self">self</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>()
             );
         }
     }

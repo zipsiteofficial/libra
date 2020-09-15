@@ -136,6 +136,8 @@
 <span id="136">136</span>
 <span id="137">137</span>
 <span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -146,6 +148,7 @@
         <span class="ident">rpc</span>::{<span class="self">self</span>, <span class="ident">RpcNotification</span>},
         <span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">NetworkMessage</span>, <span class="ident">RpcRequest</span>, <span class="ident">RpcResponse</span>},
     },
+    <span class="ident">transport</span>::<span class="ident">ConnectionMetadata</span>,
     <span class="ident">ProtocolId</span>,
 };
 <span class="kw">use</span> <span class="ident">futures</span>::{
@@ -202,6 +205,7 @@
 <span class="comment">// Fuzz the inbound rpc protocol.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fuzzer</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) {
     <span class="kw">let</span> <span class="ident">network_context</span> <span class="op">=</span> <span class="ident">NetworkContext</span>::<span class="ident">mock</span>();
+    <span class="kw">let</span> <span class="ident">connection_metadata</span> <span class="op">=</span> <span class="ident">ConnectionMetadata</span>::<span class="ident">mock</span>(<span class="ident">MOCK_PEER_ID</span>);
     <span class="kw">let</span> (<span class="ident">notification_tx</span>, <span class="kw-2">mut</span> <span class="ident">notification_rx</span>) <span class="op">=</span> <span class="ident">channel</span>::<span class="ident">new_test</span>(<span class="number">8</span>);
     <span class="kw">let</span> (<span class="ident">peer_reqs_tx</span>, <span class="kw-2">mut</span> <span class="ident">peer_reqs_rx</span>) <span class="op">=</span> <span class="ident">channel</span>::<span class="ident">new_test</span>(<span class="number">8</span>);
     <span class="kw">let</span> <span class="ident">raw_request</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">from</span>(<span class="ident">data</span>);
@@ -217,7 +221,7 @@
         <span class="kw-2">&amp;</span><span class="ident">network_context</span>,
         <span class="ident">notification_tx</span>,
         <span class="ident">inbound_request</span>,
-        <span class="ident">PeerHandle</span>::<span class="ident">new</span>(<span class="ident">MOCK_PEER_ID</span>, <span class="ident">peer_reqs_tx</span>),
+        <span class="ident">PeerHandle</span>::<span class="ident">new</span>(<span class="ident">network_context</span>.<span class="ident">clone</span>(), <span class="ident">connection_metadata</span>, <span class="ident">peer_reqs_tx</span>),
     )
     .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">io</span>::<span class="prelude-ty">Result</span>::<span class="prelude-val">Ok</span>(()));
 

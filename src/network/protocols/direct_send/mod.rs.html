@@ -210,6 +210,39 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -234,6 +267,7 @@
 <span class="doccomment">//! actors.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>::{<span class="self">self</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>, <span class="ident">SENT_LABEL</span>},
+    <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer</span>::{<span class="ident">PeerHandle</span>, <span class="ident">PeerNotification</span>},
     <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">DirectSendMsg</span>, <span class="ident">NetworkMessage</span>, <span class="ident">Priority</span>},
     <span class="ident">ProtocolId</span>,
@@ -318,7 +352,9 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Starting direct send actor for peer: {}&quot;</span>,
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+            <span class="string">&quot;{} Starting direct send actor for peer: {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
         );
         <span class="comment">// Outbound message queues for various protocols.</span>
@@ -342,21 +378,31 @@
             }
         }
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Terminating direct send actor for peer: {}&quot;</span>,
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+            <span class="string">&quot;{} Terminating direct send actor for peer: {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
         );
     }
 
     <span class="comment">// Handle PeerNotification, which can only be NewMessage for now.</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_peer_notification</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">notif</span>: <span class="ident">PeerNotification</span>) {
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;PeerNotification::{:?}&quot;</span>, <span class="ident">notif</span>);
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} PeerNotification::{:?}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
+            <span class="ident">notif</span>
+        );
         <span class="kw">match</span> <span class="ident">notif</span> {
             <span class="ident">PeerNotification</span>::<span class="ident">NewMessage</span>(<span class="ident">message</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">NetworkMessage</span>::<span class="ident">DirectSendMsg</span>(<span class="ident">message</span>) <span class="op">=</span> <span class="ident">message</span> {
                     <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">protocol_id</span>;
                     <span class="macro">trace</span><span class="macro">!</span>(
-                        <span class="string">&quot;DirectSend: Received inbound message from peer {} for protocol {:?}&quot;</span>,
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+                        <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">protocol_id</span>,
+                        <span class="string">&quot;{} DirectSend: Received inbound message from peer {} for protocol {:?}&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
                         <span class="ident">protocol_id</span>
                     );
@@ -370,22 +416,39 @@
                     });
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ds_notifs_tx</span>.<span class="ident">send</span>(<span class="ident">notif</span>).<span class="kw">await</span> {
                         <span class="macro">warn</span><span class="macro">!</span>(
-                            <span class="string">&quot;Failed to notify upstream actor about inbound DirectSend message. Error: {:?}&quot;</span>,
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                            <span class="string">&quot;{} Failed to notify upstream actor about inbound DirectSend message. Error: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">err</span>
                         );
                     }
                 } <span class="kw">else</span> {
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Unexpected message from peer actor: {:?}&quot;</span>, <span class="ident">message</span>);
+                    <span class="macro">error</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                        <span class="ident">message</span> <span class="op">=</span> <span class="ident">message</span>,
+                        <span class="string">&quot;{} Unexpected message from peer actor: {:?}&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">message</span>
+                    );
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Unexpected PeerNotification: {:?}&quot;</span>, <span class="ident">notif</span>),
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="string">&quot;{} Unexpected PeerNotification: {:?}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">notif</span>
+            ),
         }
     }
 
     <span class="comment">// Handle DirectSendRequest, which can only be SendMessage request for now.</span>
     <span class="comment">// Tries to synchronously send a message to the peer handle.</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_direct_send_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">req</span>: <span class="ident">DirectSendRequest</span>) {
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;DirectSendRequest::{:?}&quot;</span>, <span class="ident">req</span>);
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} DirectSendRequest::{:?}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
+            <span class="ident">req</span>
+        );
         <span class="kw">match</span> <span class="ident">req</span> {
             <span class="ident">DirectSendRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol_id</span>;
@@ -410,10 +473,13 @@
                             .<span class="ident">inc_by</span>(<span class="ident">msg_len</span> <span class="kw">as</span> <span class="ident">i64</span>);
                     }
                     <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
                         <span class="macro">warn</span><span class="macro">!</span>(
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+                            <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">protocol_id</span>,
                             <span class="string">&quot;Failed to send message for protocol: {} to peer: {}. Error: {:?}&quot;</span>,
                             <span class="ident">protocol_id</span>,
-                            <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>(),
+                            <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
                             <span class="ident">e</span>
                         );
                         <span class="ident">counters</span>::<span class="ident">direct_send_messages</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">FAILED_LABEL</span>).<span class="ident">inc</span>();

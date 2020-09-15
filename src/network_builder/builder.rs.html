@@ -505,6 +505,22 @@
 <span id="505">505</span>
 <span id="506">506</span>
 <span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -531,6 +547,7 @@
 <span class="kw">use</span> <span class="ident">network</span>::{
     <span class="ident">connectivity_manager</span>::{<span class="ident">builder</span>::<span class="ident">ConnectivityManagerBuilder</span>, <span class="ident">ConnectivityRequest</span>},
     <span class="ident">constants</span>,
+    <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer_manager</span>::{
         <span class="ident">builder</span>::{<span class="ident">AuthenticationMode</span>, <span class="ident">PeerManagerBuilder</span>},
         <span class="ident">conn_notifs_channel</span>, <span class="ident">ConnectionRequestSender</span>,
@@ -928,7 +945,10 @@
     <span class="kw">fn</span> <span class="ident">build_gossip_discovery</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">discovery_builder</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">discovery_builder</span>.<span class="ident">as_mut</span>() {
             <span class="ident">discovery_builder</span>.<span class="ident">build</span>(<span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">as_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;Executor must exist&quot;</span>));
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Built Gossip Discovery&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>());
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="string">&quot;{} Built Gossip Discovery&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+            );
         }
         <span class="self">self</span>
     }
@@ -936,7 +956,10 @@
     <span class="kw">fn</span> <span class="ident">start_gossip_discovery</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">discovery_builder</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">discovery_builder</span>.<span class="ident">as_mut</span>() {
             <span class="ident">discovery_builder</span>.<span class="ident">start</span>(<span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">as_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;Executor must exist&quot;</span>));
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Started gossip discovery&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>());
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="string">&quot;{} Started gossip discovery&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+            );
         }
         <span class="self">self</span>
     }
@@ -961,7 +984,10 @@
             <span class="ident">hc_network_tx</span>,
             <span class="ident">hc_network_rx</span>,
         ));
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Created health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+        <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Created health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+        );
         <span class="self">self</span>
     }
 
@@ -969,7 +995,10 @@
     <span class="kw">fn</span> <span class="ident">build_connection_monitoring</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">health_checker</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">health_checker_builder</span>.<span class="ident">as_mut</span>() {
             <span class="ident">health_checker</span>.<span class="ident">build</span>(<span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">as_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;Executor must exist&quot;</span>));
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Built health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="string">&quot;{} Built health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+            );
         };
         <span class="self">self</span>
     }
@@ -978,7 +1007,10 @@
     <span class="kw">fn</span> <span class="ident">start_connection_monitoring</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">health_checker</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">health_checker_builder</span>.<span class="ident">as_mut</span>() {
             <span class="ident">health_checker</span>.<span class="ident">start</span>(<span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">as_mut</span>().<span class="ident">expect</span>(<span class="string">&quot;Executor must exist&quot;</span>));
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Started health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+            <span class="macro">debug</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="string">&quot;{} Started health checker&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+            );
         };
         <span class="self">self</span>
     }

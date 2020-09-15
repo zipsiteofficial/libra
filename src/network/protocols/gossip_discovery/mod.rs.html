@@ -455,6 +455,34 @@
 <span id="455">455</span>
 <span id="456">456</span>
 <span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -496,6 +524,7 @@
     <span class="ident">constants</span>::<span class="ident">NETWORK_CHANNEL_SIZE</span>,
     <span class="ident">counters</span>,
     <span class="ident">error</span>::<span class="ident">NetworkError</span>,
+    <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer_manager</span>::{<span class="ident">ConnectionRequestSender</span>, <span class="ident">PeerManagerRequestSender</span>},
     <span class="ident">protocols</span>::<span class="ident">network</span>::{<span class="ident">Event</span>, <span class="ident">NetworkEvents</span>, <span class="ident">NetworkSender</span>, <span class="ident">NewNetworkSender</span>},
     <span class="ident">ProtocolId</span>,
@@ -655,8 +684,8 @@
         <span class="self">self</span>.<span class="ident">record_num_discovery_notes</span>();
 
         <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;{} Starting Discovery actor event loop&quot;</span>,
-            <span class="self">self</span>.<span class="ident">network_context</span>
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Starting Discovery actor event loop&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
         );
         <span class="kw">loop</span> {
             <span class="ident">futures</span>::<span class="macro">select</span><span class="macro">!</span> {
@@ -667,7 +696,11 @@
                     <span class="self">self</span>.<span class="ident">handle_tick</span>();
                 }
                 <span class="ident">complete</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;{} Discovery actor terminated&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+                    <span class="macro">warn</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                        <span class="string">&quot;{} Discovery actor terminated&quot;</span>,
+                        <span class="self">self</span>.<span class="ident">network_context</span>
+                    );
                     <span class="kw">break</span>;
                 }
             }
@@ -679,7 +712,10 @@
     <span class="comment">// 2. Compose the msg to send.</span>
     <span class="comment">// 3. Spawn off a new task to push the msg to the peer.</span>
     <span class="kw">fn</span> <span class="ident">handle_tick</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Discovery interval tick&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+        <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Discovery interval tick&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+        );
         <span class="comment">// On each tick, we choose a random neighbor and push our state to it.</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">choose_random_neighbor</span>() {
             <span class="comment">// We clone `peer_mgr_reqs_tx` member of Self, since using `self` inside fut below</span>
@@ -689,6 +725,9 @@
             <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">compose_discovery_msg</span>();
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">send_to</span>(<span class="ident">peer</span>, <span class="ident">msg</span>) {
                 <span class="macro">warn</span><span class="macro">!</span>(
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                        .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                        .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
                     <span class="string">&quot;{} Failed to send discovery msg to {}; error: {:?}&quot;</span>,
                     <span class="self">self</span>.<span class="ident">network_context</span>,
                     <span class="ident">peer</span>.<span class="ident">short_str</span>(),
@@ -702,7 +741,12 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">event</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="ident">GossipDiscoveryMsg</span><span class="op">&gt;</span>, <span class="ident">NetworkError</span><span class="op">&gt;</span>,
     ) {
-        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{} Network event::{:?}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">event</span>);
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Network event::{:?}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
+            <span class="ident">event</span>
+        );
         <span class="kw">match</span> <span class="ident">event</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">match</span> <span class="ident">e</span> {
@@ -720,15 +764,20 @@
                     }
                     <span class="ident">Event</span>::<span class="ident">RpcRequest</span>(<span class="ident">req</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">warn</span><span class="macro">!</span>(
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
                             <span class="string">&quot;{} Unexpected notification from network: {:?}&quot;</span>,
-                            <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">req</span>
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
+                            <span class="ident">req</span>
                         );
                         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="bool-val">false</span>);
                     }
                 }
             }
             <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{} Received error: {}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">err</span>);
+                <span class="macro">info</span><span class="macro">!</span>(
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                    <span class="string">&quot;{} Received error: {}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">err</span>
+                );
             }
         }
     }
@@ -762,6 +811,8 @@
                 <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">curr_note</span>) <span class="kw">if</span> <span class="ident">note</span>.<span class="ident">epoch</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">curr_note</span>.<span class="ident">epoch</span>() <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="ident">note</span>.<span class="ident">epoch</span>() <span class="op">&lt;</span> <span class="ident">curr_note</span>.<span class="ident">epoch</span>() {
                         <span class="macro">debug</span><span class="macro">!</span>(
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer</span>),
+                            <span class="ident">note_peer</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">peer_id</span>,
                             <span class="string">&quot;{} Received stale note for peer: {} from peer: {}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">note</span>.<span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -772,6 +823,8 @@
                 }
                 <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer</span>),
+                        <span class="ident">note_peer</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">peer_id</span>,
                         <span class="string">&quot;{} Received updated note for peer: {} from peer: {}&quot;</span>,
                         <span class="self">self</span>.<span class="ident">network_context</span>,
                         <span class="ident">note</span>.<span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -785,6 +838,9 @@
                     <span class="comment">// issued epoch number is u64::MAX).</span>
                     <span class="kw">if</span> <span class="ident">note</span>.<span class="ident">peer_id</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">peer_id</span>() {
                         <span class="macro">info</span><span class="macro">!</span>(
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                            <span class="ident">previous_epoch</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">epoch</span>(),
+                            <span class="ident">current_epoch</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">note</span>.<span class="ident">epoch</span>(),
                             <span class="string">&quot;{} Received an older note for self, but with higher epoch. \
                              Previous epoch: {}, current epoch: {}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>,

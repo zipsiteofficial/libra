@@ -401,6 +401,36 @@
 <span id="401">401</span>
 <span id="402">402</span>
 <span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -425,6 +455,7 @@
     <span class="ident">constants</span>::<span class="ident">NETWORK_CHANNEL_SIZE</span>,
     <span class="ident">counters</span>,
     <span class="ident">error</span>::<span class="ident">NetworkError</span>,
+    <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer_manager</span>::{<span class="ident">ConnectionRequestSender</span>, <span class="ident">PeerManagerRequestSender</span>},
     <span class="ident">protocols</span>::{
         <span class="ident">network</span>::{<span class="ident">Event</span>, <span class="ident">NetworkEvents</span>, <span class="ident">NetworkSender</span>, <span class="ident">NewNetworkSender</span>},
@@ -636,7 +667,14 @@
                     <span class="kw">match</span> <span class="self">self</span>.<span class="ident">sample_random_peer</span>() {
                         <span class="prelude-val">Some</span>(<span class="ident">peer_id</span>) <span class="op">=</span><span class="op">&gt;</span> {
                             <span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sample_nonce</span>();
-                            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} Will ping: {} for round: {} nonce: {}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">peer_id</span>.<span class="ident">short_str</span>(), <span class="self">self</span>.<span class="ident">round</span>, <span class="ident">nonce</span>);
+                            <span class="macro">debug</span><span class="macro">!</span>(
+                                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                                <span class="ident">round</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">round</span>,
+                                <span class="string">&quot;{} Will ping: {} for round: {} nonce: {}&quot;</span>,
+                                <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
+                                <span class="self">self</span>.<span class="ident">round</span>,
+                                <span class="ident">nonce</span>
+                            );
 
                             <span class="ident">tick_handlers</span>.<span class="ident">push</span>(
                                 <span class="self">Self</span>::<span class="ident">ping_peer</span>(
@@ -648,7 +686,13 @@
                                     <span class="self">self</span>.<span class="ident">ping_timeout</span>.<span class="ident">clone</span>()));
                         }
                         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{} No connected peer to ping round: {}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="self">self</span>.<span class="ident">round</span>);
+                            <span class="macro">debug</span><span class="macro">!</span>(
+                                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                                <span class="ident">round</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">round</span>,
+                                <span class="string">&quot;{} No connected peer to ping round: {}&quot;</span>,
+                                <span class="self">self</span>.<span class="ident">network_context</span>,
+                                <span class="self">self</span>.<span class="ident">round</span>
+                            );
                         }
                     }
                 }
@@ -661,7 +705,10 @@
                 }
             }
         }
-        <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;{} Health checker actor terminated&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+        <span class="macro">error</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Health checker actor terminated&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+        );
     }
 
     <span class="kw">fn</span> <span class="ident">handle_ping_request</span>(
@@ -674,13 +721,14 @@
             <span class="prelude-val">Ok</span>(<span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">msg</span>,
             <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">warn</span><span class="macro">!</span>(
-                    <span class="string">&quot;{} Unable to serialize pong response: {}&quot;</span>,
-                    <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">e</span>
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>),
+                    <span class="string">&quot;{} Unable to serialize pong response: {}&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">e</span>
                 );
                 <span class="kw">return</span>;
             }
         };
         <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
             <span class="string">&quot;{} Sending Pong response to peer: {} with nonce: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -700,6 +748,8 @@
             <span class="prelude-val">Ok</span>(<span class="ident">pong</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="ident">pong</span>.<span class="number">0</span> <span class="op">=</span><span class="op">=</span> <span class="ident">req_nonce</span> {
                     <span class="macro">debug</span><span class="macro">!</span>(
+                        <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+                        <span class="ident">rount</span> <span class="op">=</span> <span class="ident">round</span>,
                         <span class="string">&quot;{} Ping successful for peer: {} round: {}&quot;</span>,
                         <span class="self">self</span>.<span class="ident">network_context</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -729,6 +779,10 @@
             }
             <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">warn</span><span class="macro">!</span>(
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                        .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>)
+                        .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
+                    <span class="ident">round</span> <span class="op">=</span> <span class="ident">round</span>,
                     <span class="string">&quot;{} Ping failed for peer: {} round: {} with error: {:?}&quot;</span>,
                     <span class="self">self</span>.<span class="ident">network_context</span>,
                     <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -752,12 +806,16 @@
                         <span class="kw-2">*</span><span class="ident">failures</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
                         <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">failures</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">ping_failures_tolerated</span> {
                             <span class="macro">info</span><span class="macro">!</span>(
+                                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
                                 <span class="string">&quot;{} Disconnecting from peer: {}&quot;</span>,
                                 <span class="self">self</span>.<span class="ident">network_context</span>,
                                 <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
                             );
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">network_tx</span>.<span class="ident">disconnect_peer</span>(<span class="ident">peer_id</span>).<span class="kw">await</span> {
                                 <span class="macro">warn</span><span class="macro">!</span>(
+                                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                        .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>)
+                                        .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
                                     <span class="string">&quot;{} Failed to disconnect from peer: {} with error: {:?}&quot;</span>,
                                     <span class="self">self</span>.<span class="ident">network_context</span>,
                                     <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
@@ -780,6 +838,8 @@
         <span class="ident">ping_timeout</span>: <span class="ident">Duration</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">PeerId</span>, <span class="ident">u64</span>, <span class="ident">u32</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Pong</span>, <span class="ident">RpcError</span><span class="op">&gt;</span>) {
         <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
+            <span class="ident">round</span> <span class="op">=</span> <span class="ident">round</span>,
             <span class="string">&quot;{} Sending Ping request to peer: {} for round: {} nonce: {}&quot;</span>,
             <span class="ident">network_context</span>,
             <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
