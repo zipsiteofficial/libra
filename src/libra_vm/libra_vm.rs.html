@@ -531,13 +531,27 @@
 <span id="531">531</span>
 <span id="532">532</span>
 <span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">access_path_cache</span>::<span class="ident">AccessPathCache</span>,
-    <span class="ident">data_cache</span>::<span class="ident">RemoteStorage</span>,
+    <span class="ident">data_cache</span>::{<span class="ident">RemoteStorage</span>, <span class="ident">StateViewCache</span>},
     <span class="ident">errors</span>::{
         <span class="ident">convert_normal_prologue_error</span>, <span class="ident">convert_normal_success_epilogue_error</span>,
         <span class="ident">convert_write_set_prologue_error</span>, <span class="ident">expect_only_successful_execution</span>,
@@ -549,7 +563,7 @@
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_state_view</span>::<span class="ident">StateView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
-    <span class="ident">account_config</span>,
+    <span class="ident">account_config</span>::{<span class="self">self</span>, <span class="ident">CurrencyInfoResource</span>},
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>,
     <span class="ident">event</span>::<span class="ident">EventKey</span>,
     <span class="ident">on_chain_config</span>::{<span class="ident">ConfigStorage</span>, <span class="ident">LibraVersion</span>, <span class="ident">OnChainConfig</span>, <span class="ident">VMConfig</span>, <span class="ident">VMPublishingOption</span>},
@@ -1049,6 +1063,20 @@
     <span class="ident">effects</span>: <span class="ident">TransactionEffects</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">WriteSet</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="ident">txn_effects_to_writeset_and_events_cached</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> (), <span class="ident">effects</span>)
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_currency_info</span>(
+    <span class="ident">currency_code</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+    <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CurrencyInfoResource</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">currency_info_path</span> <span class="op">=</span> <span class="ident">CurrencyInfoResource</span>::<span class="ident">resource_path_for</span>(<span class="ident">currency_code</span>.<span class="ident">to_owned</span>());
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">blob</span>)) <span class="op">=</span> <span class="ident">remote_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">currency_info_path</span>) {
+        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">CurrencyInfoResource</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">CURRENCY_INFO_DOES_NOT_EXIST</span>))<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="ident">x</span>)
+    } <span class="kw">else</span> {
+        <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">CURRENCY_INFO_DOES_NOT_EXIST</span>))
+    }
 }
 
 <span class="attribute">#[<span class="ident">test</span>]</span>

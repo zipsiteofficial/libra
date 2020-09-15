@@ -744,6 +744,11 @@
 <span id="744">744</span>
 <span id="745">745</span>
 <span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -753,7 +758,7 @@
     <span class="ident">data_cache</span>::<span class="ident">StateViewCache</span>,
     <span class="ident">errors</span>::<span class="ident">expect_only_successful_execution</span>,
     <span class="ident">libra_vm</span>::{
-        <span class="ident">charge_global_write_gas_usage</span>, <span class="ident">get_transaction_output</span>,
+        <span class="ident">charge_global_write_gas_usage</span>, <span class="ident">get_currency_info</span>, <span class="ident">get_transaction_output</span>,
         <span class="ident">txn_effects_to_writeset_and_events_cached</span>, <span class="ident">LibraVMImpl</span>, <span class="ident">LibraVMInternals</span>,
     },
     <span class="ident">system_module_names</span>::<span class="kw-2">*</span>,
@@ -1010,6 +1015,11 @@
             <span class="ident">account_config</span>::<span class="ident">from_currency_code_string</span>(<span class="ident">txn</span>.<span class="ident">gas_currency_code</span>())
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_GAS_SPECIFIER</span>))
         );
+        <span class="comment">// Check that the gas currency is valid. It is not used directly here but the</span>
+        <span class="comment">// results should be consistent with the checks performed for validation.</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">get_currency_info</span>(<span class="kw-2">&amp;</span><span class="ident">account_currency_symbol</span>, <span class="ident">remote_cache</span>) {
+            <span class="kw">return</span> <span class="ident">discard_error_vm_status</span>(<span class="ident">err</span>);
+        }
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn</span>.<span class="ident">payload</span>() {
             <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">execute_script</span>(
                 <span class="ident">remote_cache</span>,
