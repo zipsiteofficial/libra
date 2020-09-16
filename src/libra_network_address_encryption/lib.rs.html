@@ -240,6 +240,49 @@
 <span id="240">240</span>
 <span id="241">241</span>
 <span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -257,7 +300,7 @@
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">StorageError</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>};
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashMap</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">sync</span>::<span class="ident">RwLock</span>};
 <span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
@@ -278,11 +321,15 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Encryptor</span> {
     <span class="ident">storage</span>: <span class="ident">Storage</span>,
+    <span class="ident">cached_keys</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ValidatorKeys</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Encryptor</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">storage</span>: <span class="ident">Storage</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">storage</span> }
+        <span class="self">Self</span> {
+            <span class="ident">storage</span>,
+            <span class="ident">cached_keys</span>: <span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="prelude-val">None</span>),
+        }
     }
 
     <span class="doccomment">/// This generates an Encryptor for use in default / testing scenarios where (proper)</span>
@@ -369,10 +416,25 @@
     }
 
     <span class="kw">fn</span> <span class="ident">read</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ValidatorKeys</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">storage</span>
+        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">storage</span>
             .<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">ValidatorKeys</span><span class="op">&gt;</span>(<span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">value</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into</span>())
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into</span>());
+
+        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">result</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">keys</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">keys</span>.<span class="ident">clone</span>());
+            }
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">libra_logger</span>::<span class="macro">error</span><span class="macro">!</span>(
+                <span class="string">&quot;Unable to read {} from storage: {}&quot;</span>,
+                <span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>,
+                <span class="ident">err</span>
+            ),
+        }
+
+        <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
+        <span class="ident">keys</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="ident">result</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">v</span>.<span class="ident">clone</span>()))
     }
 
     <span class="kw">fn</span> <span class="ident">write</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">keys</span>: <span class="kw-2">&amp;</span><span class="ident">ValidatorKeys</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
@@ -382,7 +444,7 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">struct</span> <span class="ident">StorageKey</span>(
     <span class="attribute">#[<span class="ident">serde</span>(
         <span class="ident">serialize_with</span> <span class="op">=</span> <span class="string">&quot;libra_secure_storage::to_base64&quot;</span>,
@@ -410,7 +472,7 @@
         })
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ValidatorKeys</span> {
     <span class="ident">keys</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">KeyVersion</span>, <span class="ident">StorageKey</span><span class="op">&gt;</span>,
     <span class="ident">current</span>: <span class="ident">KeyVersion</span>,
@@ -461,6 +523,30 @@
 
         <span class="kw">let</span> <span class="ident">another_account</span> <span class="op">=</span> <span class="ident">AccountAddress</span>::<span class="ident">random</span>();
         <span class="ident">encryptor</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addrs</span>, <span class="ident">another_account</span>).<span class="ident">unwrap_err</span>();
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">cache_test</span>() {
+        <span class="comment">// Prepare some initial data and verify e2e</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">encryptor</span> <span class="op">=</span> <span class="ident">Encryptor</span>::<span class="ident">for_testing</span>();
+        <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>::<span class="ident">from_str</span>(<span class="string">&quot;/ip4/10.0.0.16/tcp/80&quot;</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">addrs</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>];
+        <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">AccountAddress</span>::<span class="ident">random</span>();
+
+        <span class="kw">let</span> <span class="ident">enc_addrs</span> <span class="op">=</span> <span class="ident">encryptor</span>.<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">addrs</span>, <span class="ident">account</span>, <span class="number">0</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">dec_addrs</span> <span class="op">=</span> <span class="ident">encryptor</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addrs</span>, <span class="ident">account</span>).<span class="ident">unwrap</span>();
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addrs</span>, <span class="ident">dec_addrs</span>);
+
+        <span class="comment">// Reset storage and we should use cache</span>
+        <span class="ident">encryptor</span>.<span class="ident">storage</span> <span class="op">=</span> <span class="ident">Storage</span>::<span class="ident">from</span>(<span class="ident">InMemoryStorage</span>::<span class="ident">new</span>());
+        <span class="kw">let</span> <span class="ident">enc_addrs</span> <span class="op">=</span> <span class="ident">encryptor</span>.<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">addrs</span>, <span class="ident">account</span>, <span class="number">1</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">dec_addrs</span> <span class="op">=</span> <span class="ident">encryptor</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addrs</span>, <span class="ident">account</span>).<span class="ident">unwrap</span>();
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addrs</span>, <span class="ident">dec_addrs</span>);
+
+        <span class="comment">// Reset cache and we should get an err</span>
+        <span class="kw-2">*</span><span class="ident">encryptor</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="ident">encryptor</span>.<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">addrs</span>, <span class="ident">account</span>, <span class="number">1</span>).<span class="ident">unwrap_err</span>();
+        <span class="ident">encryptor</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addrs</span>, <span class="ident">account</span>).<span class="ident">unwrap_err</span>();
     }
 
     <span class="comment">// The only purpose of this test is to generate a baseline for vault</span>
