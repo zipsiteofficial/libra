@@ -69,15 +69,6 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -130,33 +121,24 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CreateAndInsertWaypoint</span> {
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">required_unless</span>(<span class="string">&quot;config&quot;</span>))]</span>
-    <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InsertWaypoint</span> {
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
-    <span class="ident">shared_backend</span>: <span class="ident">SharedBackend</span>,
+    <span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">ConfigPath</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
+    <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">CreateAndInsertWaypoint</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="ident">CreateWaypoint</span> {
-            <span class="ident">chain_id</span>: <span class="self">self</span>.<span class="ident">chain_id</span>,
-            <span class="ident">config</span>: <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">clone</span>(),
-            <span class="ident">shared_backend</span>: <span class="self">self</span>.<span class="ident">shared_backend</span>,
-        }
-        .<span class="ident">execute</span>()<span class="question-mark">?</span>;
-
+<span class="kw">impl</span> <span class="ident">InsertWaypoint</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">config</span>
             .<span class="ident">load</span>()<span class="question-mark">?</span>
             .<span class="ident">override_validator_backend</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">validator_backend</span>.<span class="ident">validator_backend</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validator_storage</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">validator_backend</span>();
-        <span class="ident">validator_storage</span>.<span class="ident">set</span>(<span class="ident">WAYPOINT</span>, <span class="ident">waypoint</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">waypoint</span>)
+        <span class="ident">validator_storage</span>.<span class="ident">set</span>(<span class="ident">WAYPOINT</span>, <span class="self">self</span>.<span class="ident">waypoint</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 </pre></div>

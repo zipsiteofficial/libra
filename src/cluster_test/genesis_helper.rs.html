@@ -365,7 +365,6 @@
 <span id="365">365</span>
 <span id="366">366</span>
 <span id="367">367</span>
-<span id="368">368</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -657,31 +656,30 @@
         <span class="ident">token_path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">validator_ns</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">waypoint</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_waypoint</span>(<span class="ident">chain_id</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
         <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
             <span class="string">&quot;
                 libra-genesis-tool
-                create-and-insert-waypoint
-                --chain-id {chain_id}
-                --shared-backend backend={backend};\
-                    path={path}
+                insert-waypoint
                 --validator-backend backend={validator_backend};\
                     server={server};\
                     token={token_path};\
-                    namespace={validator_ns}\
+                    namespace={validator_ns}
+                --waypoint {waypoint}
             &quot;</span>,
-            <span class="ident">chain_id</span> <span class="op">=</span> <span class="ident">chain_id</span>,
-            <span class="ident">backend</span> <span class="op">=</span> <span class="ident">DISK</span>,
             <span class="ident">validator_backend</span> <span class="op">=</span> <span class="ident">validator_backend</span>,
             <span class="ident">server</span> <span class="op">=</span> <span class="ident">server</span>,
             <span class="ident">token_path</span> <span class="op">=</span> <span class="ident">token_path</span>,
-            <span class="ident">path</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">path</span>,
             <span class="ident">validator_ns</span> <span class="op">=</span> <span class="ident">validator_ns</span>,
+            <span class="ident">waypoint</span> <span class="op">=</span> <span class="ident">waypoint</span>,
         );
 
         <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">Command</span>::<span class="ident">from_iter</span>(<span class="ident">args</span>.<span class="ident">split_whitespace</span>());
-        <span class="ident">spawn_blocking</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">command</span>.<span class="ident">create_and_insert_waypoint</span>())
+        <span class="ident">spawn_blocking</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">command</span>.<span class="ident">insert_waypoint</span>())
             .<span class="kw">await</span>
             .<span class="ident">expect</span>(<span class="string">&quot;tokio spawn_blocking runtime error&quot;</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">waypoint</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">create_waypoint</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">chain_id</span>: <span class="ident">ChainId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
