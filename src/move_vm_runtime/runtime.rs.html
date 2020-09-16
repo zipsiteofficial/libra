@@ -178,6 +178,11 @@
 <span id="178">178</span>
 <span id="179">179</span>
 <span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -292,25 +297,30 @@
         <span class="comment">// Signers are built up from left-to-right. Either all signer arguments are used, or no</span>
         <span class="comment">// signer arguments can be be used by a script.</span>
         <span class="kw">let</span> <span class="ident">parameters</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">main</span>.<span class="ident">parameters</span>().<span class="number">0</span>;
-        <span class="kw">let</span> <span class="ident">first_param_is_signer_ref</span> <span class="op">=</span> <span class="ident">parameters</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="ident">is_signer_reference</span>);
-        <span class="kw">if</span> <span class="ident">first_param_is_signer_ref</span> {
+        <span class="kw">let</span> <span class="ident">has_signer_parameters</span> <span class="op">=</span> <span class="ident">parameters</span>.<span class="ident">get</span>(<span class="number">0</span>).<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="ident">is_signer_reference</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signers_and_args</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">has_signer_parameters</span> {
             <span class="kw">if</span> <span class="ident">parameters</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">args</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="ident">senders</span>.<span class="ident">len</span>() {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">TYPE_MISMATCH</span>)
                     .<span class="ident">with_message</span>(<span class="string">&quot;Scripts must use all or no signers&quot;</span>.<span class="ident">to_string</span>())
                     .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>));
             }
-            <span class="ident">senders</span>.<span class="ident">into_iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">addr</span><span class="op">|</span> {
-                <span class="ident">args</span>.<span class="ident">insert</span>(<span class="number">0</span>, <span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>(<span class="ident">addr</span>))
-            });
-        }
-
-        <span class="ident">check_args</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>))<span class="question-mark">?</span>;
+            <span class="comment">// add signers to args</span>
+            <span class="ident">senders</span>
+                .<span class="ident">into_iter</span>()
+                .<span class="ident">map</span>(<span class="ident">Value</span>::<span class="ident">transaction_argument_signer_reference</span>)
+                .<span class="ident">collect</span>()
+        } <span class="kw">else</span> {
+            <span class="comment">// no signer parameters, don&#39;t add to args</span>
+            <span class="macro">vec</span><span class="macro">!</span>[]
+        };
+        <span class="ident">signers_and_args</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">args</span>);
+        <span class="ident">check_args</span>(<span class="kw-2">&amp;</span><span class="ident">signers_and_args</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// run the script</span>
         <span class="ident">Interpreter</span>::<span class="ident">entrypoint</span>(
             <span class="ident">main</span>,
             <span class="ident">type_params</span>,
-            <span class="ident">args</span>,
+            <span class="ident">signers_and_args</span>,
             <span class="ident">data_store</span>,
             <span class="ident">cost_strategy</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">loader</span>,
