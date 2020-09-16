@@ -400,6 +400,18 @@
 <span id="400">400</span>
 <span id="401">401</span>
 <span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -608,9 +620,6 @@
 <span class="doccomment">/// A value indicating how to perform well-formed checks.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">WellFormedMode</span> {
-    <span class="doccomment">/// Assume types and invariants in auto mode. If the type is a mutable reference, invariants</span>
-    <span class="doccomment">/// will not be assumed.</span>
-    <span class="ident">Default</span>,
     <span class="doccomment">/// Assume types and invariants.</span>
     <span class="ident">WithInvariant</span>,
     <span class="doccomment">/// Assume types only.</span>
@@ -624,51 +633,69 @@
     <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
     <span class="ident">mode</span>: <span class="ident">WellFormedMode</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-    <span class="ident">boogie_well_formed_expr_impl</span>(<span class="ident">env</span>, <span class="ident">name</span>, <span class="ident">ty</span>, <span class="ident">mode</span>, <span class="number">0</span>)
+    <span class="ident">boogie_well_formed_expr_impl</span>(<span class="ident">env</span>, <span class="ident">name</span>, <span class="ident">ty</span>, <span class="bool-val">true</span>, <span class="ident">mode</span>, <span class="number">0</span>)
+}
+
+<span class="doccomment">/// Create boogie invariant check boolean expression.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">boogie_inv_expr</span>(<span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="ident">boogie_well_formed_expr_impl</span>(<span class="ident">env</span>, <span class="ident">name</span>, <span class="ident">ty</span>, <span class="bool-val">false</span>, <span class="ident">WellFormedMode</span>::<span class="ident">WithInvariant</span>, <span class="number">0</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">boogie_well_formed_expr_impl</span>(
     <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
     <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
+    <span class="ident">with_types</span>: <span class="ident">bool</span>,
     <span class="ident">mode</span>: <span class="ident">WellFormedMode</span>,
     <span class="ident">nest</span>: <span class="ident">usize</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">conds</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">add_type_check</span> <span class="op">=</span> <span class="op">|</span><span class="ident">s</span>: <span class="ident">String</span><span class="op">|</span> {
+        <span class="kw">if</span> <span class="ident">with_types</span> {
+            <span class="ident">conds</span>.<span class="ident">push</span>(<span class="ident">s</span>);
+        }
+    };
     <span class="kw">match</span> <span class="ident">ty</span> {
         <span class="ident">Type</span>::<span class="ident">Primitive</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">p</span> {
-            <span class="ident">PrimitiveType</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU8({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU64({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU128({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">Num</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidNum({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Boolean({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Address({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU8({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU64({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidU128({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">Num</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidNum({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Boolean({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Address({})&quot;</span>, <span class="ident">name</span>)),
             <span class="comment">// TODO fix this for a real boogie check</span>
-            <span class="ident">PrimitiveType</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Address({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">Range</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidRange({})&quot;</span>, <span class="ident">name</span>)),
-            <span class="ident">PrimitiveType</span>::<span class="ident">TypeValue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Type({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Address({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">Range</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$IsValidRange({})&quot;</span>, <span class="ident">name</span>)),
+            <span class="ident">PrimitiveType</span>::<span class="ident">TypeValue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;is#$Type({})&quot;</span>, <span class="ident">name</span>)),
         },
         <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">elem_ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$Vector_is_well_formed({})&quot;</span>, <span class="ident">name</span>));
+            <span class="ident">add_type_check</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$Vector_$is_well_formed({})&quot;</span>, <span class="ident">name</span>));
             <span class="kw">if</span> <span class="op">!</span><span class="macro">matches</span><span class="macro">!</span>(<span class="kw-2">*</span><span class="kw-2">*</span><span class="ident">elem_ty</span>, <span class="ident">Type</span>::<span class="ident">TypeParameter</span>(..)) {
                 <span class="kw">let</span> <span class="ident">nest_value</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$select_vector({},$${})&quot;</span>, <span class="ident">name</span>, <span class="ident">nest</span>);
-                <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(
-                    <span class="string">&quot;(forall $${}: int :: {{{}}} $${} &gt;= 0 &amp;&amp; $${} &lt; $vlen({}) ==&gt; {})&quot;</span>,
-                    <span class="ident">nest</span>,
+                <span class="kw">let</span> <span class="ident">elem_expr</span> <span class="op">=</span> <span class="ident">boogie_well_formed_expr_impl</span>(
+                    <span class="ident">env</span>,
                     <span class="ident">nest_value</span>,
-                    <span class="ident">nest</span>,
-                    <span class="ident">nest</span>,
-                    <span class="ident">name</span>,
-                    <span class="ident">boogie_well_formed_expr_impl</span>(<span class="ident">env</span>, <span class="ident">nest_value</span>, <span class="kw-2">&amp;</span><span class="ident">elem_ty</span>, <span class="ident">mode</span>, <span class="ident">nest</span> <span class="op">+</span> <span class="number">1</span>)
-                ));
+                    <span class="kw-2">&amp;</span><span class="ident">elem_ty</span>,
+                    <span class="ident">with_types</span>,
+                    <span class="ident">mode</span>,
+                    <span class="ident">nest</span> <span class="op">+</span> <span class="number">1</span>,
+                );
+                <span class="kw">if</span> <span class="op">!</span><span class="ident">elem_expr</span>.<span class="ident">is_empty</span>() {
+                    <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(
+                        <span class="string">&quot;(forall $${}: int :: {{{}}} $${} &gt;= 0 &amp;&amp; $${} &lt; $vlen({}) ==&gt; {})&quot;</span>,
+                        <span class="ident">nest</span>, <span class="ident">nest_value</span>, <span class="ident">nest</span>, <span class="ident">nest</span>, <span class="ident">name</span>, <span class="ident">elem_expr</span>,
+                    ));
+                }
             }
         }
         <span class="ident">Type</span>::<span class="ident">Struct</span>(<span class="ident">module_idx</span>, <span class="ident">struct_idx</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">struct_env</span> <span class="op">=</span> <span class="ident">env</span>.<span class="ident">get_module</span>(<span class="kw-2">*</span><span class="ident">module_idx</span>).<span class="ident">into_struct</span>(<span class="kw-2">*</span><span class="ident">struct_idx</span>);
-            <span class="kw">let</span> <span class="ident">well_formed_name</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">mode</span> <span class="op">=</span><span class="op">=</span> <span class="ident">WellFormedMode</span>::<span class="ident">WithoutInvariant</span> {
-                <span class="string">&quot;is_well_formed_types&quot;</span>
+            <span class="kw">let</span> <span class="ident">well_formed_name</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">with_types</span> {
+                <span class="string">&quot;$invariant_holds&quot;</span>
+            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">mode</span> <span class="op">=</span><span class="op">=</span> <span class="ident">WellFormedMode</span>::<span class="ident">WithoutInvariant</span> {
+                <span class="string">&quot;$is_well_typed&quot;</span>
             } <span class="kw">else</span> {
-                <span class="string">&quot;is_well_formed&quot;</span>
+                <span class="string">&quot;$is_well_formed&quot;</span>
             };
             <span class="ident">conds</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(
                 <span class="string">&quot;{}_{}({})&quot;</span>,
@@ -677,16 +704,12 @@
                 <span class="ident">name</span>
             ))
         }
-        <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">is_mut</span>, <span class="ident">rtype</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">mode</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">is_mut</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">mode</span> <span class="op">=</span><span class="op">=</span> <span class="ident">WellFormedMode</span>::<span class="ident">Default</span> {
-                <span class="ident">WellFormedMode</span>::<span class="ident">WithoutInvariant</span>
-            } <span class="kw">else</span> {
-                <span class="ident">mode</span>
-            };
+        <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="kw">_</span>, <span class="ident">rtype</span>) <span class="op">=</span><span class="op">&gt;</span> {
             <span class="ident">conds</span>.<span class="ident">push</span>(<span class="ident">boogie_well_formed_expr_impl</span>(
                 <span class="ident">env</span>,
                 <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$Dereference({})&quot;</span>, <span class="ident">name</span>),
                 <span class="ident">rtype</span>,
+                <span class="ident">with_types</span>,
                 <span class="ident">mode</span>,
                 <span class="ident">nest</span> <span class="op">+</span> <span class="number">1</span>,
             ));
@@ -749,7 +772,8 @@
             <span class="ident">name</span>,
             (<span class="number">0</span>..<span class="ident">param_count</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;$tv{}&quot;</span>, <span class="ident">i</span>)).<span class="ident">join</span>(<span class="string">&quot;, &quot;</span>)
         );
-        <span class="kw">let</span> <span class="ident">type_check</span> <span class="op">=</span> <span class="ident">boogie_well_formed_expr</span>(<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">var_selector</span>, <span class="ident">ty</span>, <span class="ident">WellFormedMode</span>::<span class="ident">Default</span>);
+        <span class="kw">let</span> <span class="ident">type_check</span> <span class="op">=</span>
+            <span class="ident">boogie_well_formed_expr</span>(<span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">var_selector</span>, <span class="ident">ty</span>, <span class="ident">WellFormedMode</span>::<span class="ident">WithInvariant</span>);
         <span class="macro">format</span><span class="macro">!</span>(
             <span class="string">&quot;var {} where (forall {} :: {});&quot;</span>,
             <span class="ident">declarator</span>,
@@ -762,7 +786,7 @@
         <span class="macro">format</span><span class="macro">!</span>(
             <span class="string">&quot;var {} where {};&quot;</span>,
             <span class="ident">declarator</span>,
-            <span class="ident">boogie_well_formed_expr</span>(<span class="ident">env</span>, <span class="ident">name</span>, <span class="ident">ty</span>, <span class="ident">WellFormedMode</span>::<span class="ident">Default</span>)
+            <span class="ident">boogie_well_formed_expr</span>(<span class="ident">env</span>, <span class="ident">name</span>, <span class="ident">ty</span>, <span class="ident">WellFormedMode</span>::<span class="ident">WithInvariant</span>)
         )
     }
 }

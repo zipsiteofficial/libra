@@ -420,6 +420,8 @@
 <span id="420">420</span>
 <span id="421">421</span>
 <span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -447,16 +449,16 @@
 <span class="kw">use</span> <span class="ident">spec_lang</span>::{<span class="ident">code_writer</span>::<span class="ident">CodeWriter</span>, <span class="ident">emit</span>, <span class="ident">emitln</span>, <span class="ident">env</span>::<span class="ident">GlobalEnv</span>, <span class="ident">run_spec_lang_compiler</span>};
 <span class="kw">use</span> <span class="ident">stackless_bytecode_generator</span>::{
     <span class="ident">borrow_analysis</span>::<span class="ident">BorrowAnalysisProcessor</span>,
+    <span class="ident">clean_and_optimize</span>::<span class="ident">CleanAndOptimizeProcessor</span>,
     <span class="ident">eliminate_imm_refs</span>::<span class="ident">EliminateImmRefsProcessor</span>,
     <span class="ident">eliminate_mut_refs</span>::<span class="ident">EliminateMutRefsProcessor</span>,
     <span class="ident">function_target_pipeline</span>::{<span class="ident">FunctionTargetPipeline</span>, <span class="ident">FunctionTargetsHolder</span>},
     <span class="ident">livevar_analysis</span>::<span class="ident">LiveVarAnalysisProcessor</span>,
-    <span class="ident">packref_analysis</span>::<span class="ident">PackrefAnalysisProcessor</span>,
+    <span class="ident">memory_instrumentation</span>::<span class="ident">MemoryInstrumentationProcessor</span>,
     <span class="ident">reaching_def_analysis</span>::<span class="ident">ReachingDefProcessor</span>,
     <span class="ident">stackless_bytecode</span>::{<span class="ident">Bytecode</span>, <span class="ident">Operation</span>},
     <span class="ident">test_instrumenter</span>::<span class="ident">TestInstrumenter</span>,
     <span class="ident">usage_analysis</span>::{<span class="self">self</span>, <span class="ident">UsageProcessor</span>},
-    <span class="ident">writeback_analysis</span>::<span class="ident">WritebackAnalysisProcessor</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">BTreeSet</span>},
@@ -511,11 +513,13 @@
     <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_errmapgen</span> {
         <span class="kw">return</span> <span class="ident">run_errmapgen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="ident">now</span>);
     }
+
     <span class="kw">let</span> <span class="ident">targets</span> <span class="op">=</span> <span class="ident">create_and_process_bytecode</span>(<span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="kw-2">&amp;</span><span class="ident">env</span>);
     <span class="kw">if</span> <span class="ident">env</span>.<span class="ident">has_errors</span>() {
         <span class="ident">env</span>.<span class="ident">report_errors</span>(<span class="ident">error_writer</span>);
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;exiting with transformation errors&quot;</span>));
     }
+
     <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_packed_types_gen</span> {
         <span class="kw">return</span> <span class="ident">run_packed_types_gen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>, <span class="ident">now</span>);
     }
@@ -750,12 +754,12 @@
 
     <span class="comment">// Add processors in order they are executed.</span>
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">EliminateImmRefsProcessor</span>::<span class="ident">new</span>());
+    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">EliminateMutRefsProcessor</span>::<span class="ident">new</span>());
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">ReachingDefProcessor</span>::<span class="ident">new</span>());
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">LiveVarAnalysisProcessor</span>::<span class="ident">new</span>());
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">BorrowAnalysisProcessor</span>::<span class="ident">new</span>());
-    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">WritebackAnalysisProcessor</span>::<span class="ident">new</span>());
-    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">PackrefAnalysisProcessor</span>::<span class="ident">new</span>());
-    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">EliminateMutRefsProcessor</span>::<span class="ident">new</span>());
+    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">MemoryInstrumentationProcessor</span>::<span class="ident">new</span>());
+    <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">CleanAndOptimizeProcessor</span>::<span class="ident">new</span>());
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">TestInstrumenter</span>::<span class="ident">new</span>(<span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">verify_scope</span>));
     <span class="ident">res</span>.<span class="ident">add_processor</span>(<span class="ident">UsageProcessor</span>::<span class="ident">new</span>());
 

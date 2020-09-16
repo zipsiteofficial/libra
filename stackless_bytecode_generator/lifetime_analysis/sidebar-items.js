@@ -1,1 +1,0 @@
-initSidebarItems({"fn":[["format_lifetime_annotation","Format a lifetime annotation."]],"struct":[["LifetimeAnalysisProcessor","Lifetime analysis processor."],["LifetimeAnnotation","Function target annotation computed by the lifetime analysis processor."]]});
