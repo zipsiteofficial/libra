@@ -107,6 +107,7 @@ sourcesIndex["schemadb"] = {"name":"","files":["lib.rs","metrics.rs","schema.rs"
 sourcesIndex["scratchpad"] = {"name":"","dirs":[{"name":"sparse_merkle","files":["mod.rs","node.rs"]}],"files":["lib.rs"]};
 sourcesIndex["seed_peer_generator"] = {"name":"","files":["lib.rs","utils.rs"]};
 sourcesIndex["serializer_tests"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["short_hex_str"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["smoke_test"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["socket_bench_server"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["spec_lang"] = {"name":"","files":["ast.rs","code_writer.rs","env.rs","lib.rs","symbol.rs","translate.rs","ty.rs"]};
