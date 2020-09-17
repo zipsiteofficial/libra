@@ -437,6 +437,10 @@
 <span id="437">437</span>
 <span id="438">438</span>
 <span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -624,6 +628,10 @@
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tick_handlers</span> <span class="op">=</span> <span class="ident">FuturesUnordered</span>::<span class="ident">new</span>();
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+            <span class="string">&quot;{} Health checker actor started&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
+        );
         <span class="kw">loop</span> {
             <span class="ident">futures</span>::<span class="macro">select</span><span class="macro">!</span> {
                 <span class="ident">event</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">network_rx</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
@@ -638,7 +646,7 @@
                             <span class="kw">match</span> <span class="ident">msg</span> {
                             <span class="ident">HealthCheckerMsg</span>::<span class="ident">Ping</span>(<span class="ident">ping</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">handle_ping_request</span>(<span class="ident">peer_id</span>, <span class="ident">ping</span>, <span class="ident">res_tx</span>),
                             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-                                <span class="macro">error</span><span class="macro">!</span>(
+                                <span class="macro">warn</span><span class="macro">!</span>(
                                     <span class="ident">SecurityEvent</span>::<span class="ident">InvalidHealthCheckerMsg</span>,
                                     <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                                         .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
@@ -661,7 +669,7 @@
                             <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="bool-val">false</span>, <span class="string">&quot;Unexpected network event&quot;</span>);
                         },
                         <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                            <span class="macro">error</span><span class="macro">!</span>(
+                            <span class="macro">warn</span><span class="macro">!</span>(
                                 <span class="ident">SecurityEvent</span>::<span class="ident">InvalidNetworkEventHC</span>,
                                 <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                                     .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
@@ -717,7 +725,7 @@
                 }
             }
         }
-        <span class="macro">error</span><span class="macro">!</span>(
+        <span class="macro">warn</span><span class="macro">!</span>(
             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
             <span class="string">&quot;{} Health checker actor terminated&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>
         );
@@ -777,7 +785,7 @@
                             }
                         });
                 } <span class="kw">else</span> {
-                    <span class="macro">error</span><span class="macro">!</span>(
+                    <span class="macro">warn</span><span class="macro">!</span>(
                         <span class="ident">SecurityEvent</span>::<span class="ident">InvalidHealthCheckerMsg</span>,
                         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
                         <span class="string">&quot;{} Pong nonce doesn&#39;t match Ping nonce. Round: {}, Pong: {}, Ping: {}&quot;</span>,
