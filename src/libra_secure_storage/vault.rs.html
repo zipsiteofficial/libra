@@ -382,6 +382,32 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -397,7 +423,13 @@
 <span class="kw">use</span> <span class="ident">libra_secure_time</span>::{<span class="ident">RealTimeService</span>, <span class="ident">TimeService</span>};
 <span class="kw">use</span> <span class="ident">libra_vault_client</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">vault</span>, <span class="ident">Client</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">de</span>::<span class="ident">DeserializeOwned</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::{<span class="ident">AtomicU64</span>, <span class="ident">Ordering</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+    <span class="ident">collections</span>::<span class="ident">HashMap</span>,
+    <span class="ident">sync</span>::{
+        <span class="ident">atomic</span>::{<span class="ident">AtomicU64</span>, <span class="ident">Ordering</span>},
+        <span class="ident">RwLock</span>,
+    },
+};
 
 <span class="kw">const</span> <span class="ident">LIBRA_DEFAULT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;libra_default&quot;</span>;
 
@@ -413,6 +445,8 @@
     <span class="ident">namespace</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">renew_ttl_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     <span class="ident">next_renewal</span>: <span class="ident">AtomicU64</span>,
+    <span class="ident">use_cas</span>: <span class="ident">bool</span>,
+    <span class="ident">secret_versions</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">VaultStorage</span> {
@@ -422,12 +456,15 @@
         <span class="ident">namespace</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">certificate</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">renew_ttl_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">use_cas</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">client</span>: <span class="ident">Client</span>::<span class="ident">new</span>(<span class="ident">host</span>, <span class="ident">token</span>, <span class="ident">certificate</span>),
             <span class="ident">namespace</span>,
             <span class="ident">renew_ttl_secs</span>,
             <span class="ident">next_renewal</span>: <span class="ident">AtomicU64</span>::<span class="ident">new</span>(<span class="number">0</span>),
+            <span class="ident">use_cas</span>,
+            <span class="ident">secret_versions</span>: <span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()),
         }
     }
 
@@ -613,18 +650,33 @@
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_secret</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>, <span class="ident">key</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">last_update</span> <span class="op">=</span> <span class="ident">DateTime</span>::<span class="ident">parse_from_rfc3339</span>(<span class="kw-2">&amp;</span><span class="ident">resp</span>.<span class="ident">creation_time</span>)<span class="question-mark">?</span>.<span class="ident">timestamp</span>() <span class="kw">as</span> <span class="ident">u64</span>;
         <span class="kw">let</span> <span class="ident">value</span>: <span class="ident">T</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">resp</span>.<span class="ident">value</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">secret_versions</span>
+            .<span class="ident">write</span>()
+            .<span class="ident">unwrap</span>()
+            .<span class="ident">insert</span>(<span class="ident">key</span>.<span class="ident">to_string</span>(), <span class="ident">resp</span>.<span class="ident">version</span>);
         <span class="prelude-val">Ok</span>(<span class="ident">GetResponse</span> { <span class="ident">last_update</span>, <span class="ident">value</span> })
     }
 
     <span class="kw">fn</span> <span class="ident">set</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Serialize</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">value</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">secret_name</span>(<span class="ident">key</span>);
-        <span class="self">self</span>.<span class="ident">client</span>()
-            .<span class="ident">write_secret</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>, <span class="ident">key</span>, <span class="kw-2">&amp;</span><span class="ident">serde_json</span>::<span class="ident">to_value</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">use_cas</span> {
+            <span class="self">self</span>.<span class="ident">secret_versions</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">get</span>(<span class="ident">key</span>).<span class="ident">copied</span>()
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        };
+        <span class="kw">let</span> <span class="ident">new_version</span> <span class="op">=</span>
+            <span class="self">self</span>.<span class="ident">client</span>()
+                .<span class="ident">write_secret</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>, <span class="ident">key</span>, <span class="kw-2">&amp;</span><span class="ident">serde_json</span>::<span class="ident">to_value</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>)<span class="question-mark">?</span>, <span class="ident">version</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">secret_versions</span>
+            .<span class="ident">write</span>()
+            .<span class="ident">unwrap</span>()
+            .<span class="ident">insert</span>(<span class="ident">key</span>.<span class="ident">to_string</span>(), <span class="ident">new_version</span>);
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
     <span class="kw">fn</span> <span class="ident">reset_and_clear</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">secret_versions</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>().<span class="ident">clear</span>();
         <span class="self">self</span>.<span class="ident">reset_kv</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">reset_crypto</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">reset_policies</span>()
