@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["FILTER",""],["PRETTY",""]],"fn":[["functional_tests",""]]});
+initSidebarItems({"constant":[["FILTER",""],["PRETTY",""],["UPDATE_BASELINE",""]],"fn":[["functional_tests",""]]});
