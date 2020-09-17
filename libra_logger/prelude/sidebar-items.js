@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["SecurityEvent",""]],"struct":[["StructuredLogEntry",""]]});
+initSidebarItems({"enum":[["SecurityEvent",""]]});
