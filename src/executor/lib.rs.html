@@ -953,15 +953,6 @@
 <span id="953">953</span>
 <span id="954">954</span>
 <span id="955">955</span>
-<span id="956">956</span>
-<span id="957">957</span>
-<span id="958">958</span>
-<span id="959">959</span>
-<span id="960">960</span>
-<span id="961">961</span>
-<span id="962">962</span>
-<span id="963">963</span>
-<span id="964">964</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1020,7 +1011,6 @@
     <span class="ident">write_set</span>::{<span class="ident">WriteOp</span>, <span class="ident">WriteSet</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_vm</span>::<span class="ident">VMExecutor</span>;
-<span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">scratchpad</span>::<span class="ident">SparseMerkleTree</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">hash_map</span>, <span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
@@ -1029,9 +1019,6 @@
     <span class="ident">sync</span>::<span class="ident">Arc</span>,
 };
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">state_view</span>::<span class="ident">VerifiedStateView</span>, <span class="ident">DbReaderWriter</span>, <span class="ident">TreeState</span>};
-
-<span class="kw">static</span> <span class="ident">OP_COUNTERS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">libra_metrics</span>::<span class="ident">OpMetrics</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">libra_metrics</span>::<span class="ident">OpMetrics</span>::<span class="ident">new_and_registered</span>(<span class="string">&quot;executor&quot;</span>));
 
 <span class="doccomment">/// `Executor` implements all functionalities the execution module needs to provide.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Executor</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span> {
@@ -1411,7 +1398,6 @@
             <span class="self">self</span>.<span class="ident">cache</span>.<span class="ident">synced_trees</span>().<span class="ident">state_tree</span>(),
         );
         <span class="kw">let</span> <span class="ident">vm_outputs</span> <span class="op">=</span> {
-            <span class="kw">let</span> <span class="ident">__timer</span> <span class="op">=</span> <span class="ident">OP_COUNTERS</span>.<span class="ident">timer</span>(<span class="string">&quot;vm_execute_chunk_time_s&quot;</span>);
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_EXECUTOR_VM_EXECUTE_CHUNK_SECONDS</span>.<span class="ident">start_timer</span>();
             <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;executor::vm_execute_chunk&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
                 <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in execute_chunk&quot;</span>))
@@ -1644,7 +1630,6 @@
                 <span class="string">&quot;execute_block&quot;</span>
             );
 
-            <span class="kw">let</span> <span class="ident">__timer</span> <span class="op">=</span> <span class="ident">OP_COUNTERS</span>.<span class="ident">timer</span>(<span class="string">&quot;block_execute_time_s&quot;</span>);
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_EXECUTOR_EXECUTE_BLOCK_SECONDS</span>.<span class="ident">start_timer</span>();
 
             <span class="kw">let</span> <span class="ident">parent_block_executed_trees</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_executed_trees</span>(<span class="ident">parent_block_id</span>)<span class="question-mark">?</span>;
@@ -1656,7 +1641,6 @@
 
             <span class="kw">let</span> <span class="ident">vm_outputs</span> <span class="op">=</span> {
                 <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;executor::execute_block&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">block_id</span>});
-                <span class="kw">let</span> <span class="ident">__timer</span> <span class="op">=</span> <span class="ident">OP_COUNTERS</span>.<span class="ident">timer</span>(<span class="string">&quot;vm_execute_block_time_s&quot;</span>);
                 <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_EXECUTOR_VM_EXECUTE_BLOCK_SECONDS</span>.<span class="ident">start_timer</span>();
                 <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;executor::vm_execute_block&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
                     <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">from</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(
@@ -1809,9 +1793,7 @@
 
         <span class="kw">let</span> <span class="ident">num_txns_to_commit</span> <span class="op">=</span> <span class="ident">txns_to_commit</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
         {
-            <span class="kw">let</span> <span class="ident">__timer</span> <span class="op">=</span> <span class="ident">OP_COUNTERS</span>.<span class="ident">timer</span>(<span class="string">&quot;storage_save_transactions_time_s&quot;</span>);
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_EXECUTOR_SAVE_TRANSACTIONS_SECONDS</span>.<span class="ident">start_timer</span>();
-            <span class="ident">OP_COUNTERS</span>.<span class="ident">observe</span>(<span class="string">&quot;storage_save_transactions.count&quot;</span>, <span class="ident">num_txns_to_commit</span> <span class="kw">as</span> <span class="ident">f64</span>);
             <span class="ident">LIBRA_EXECUTOR_TRANSACTIONS_SAVED</span>.<span class="ident">observe</span>(<span class="ident">num_txns_to_commit</span> <span class="kw">as</span> <span class="ident">f64</span>);
 
             <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">first_version_to_commit</span>, <span class="ident">num_txns_in_li</span> <span class="op">-</span> <span class="ident">num_txns_to_commit</span>);
