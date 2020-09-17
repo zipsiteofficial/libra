@@ -517,10 +517,6 @@
 <span id="517">517</span>
 <span id="518">518</span>
 <span id="519">519</span>
-<span id="520">520</span>
-<span id="521">521</span>
-<span id="522">522</span>
-<span id="523">523</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -715,11 +711,11 @@
                 <span class="comment">// HACK: gossip relies on on-chain discovery for the eligible peers update.</span>
                 <span class="comment">// TODO:  it should be safe to enable the configuraction_change_listener always.</span>
                 <span class="kw">if</span> <span class="ident">role</span> <span class="op">=</span><span class="op">=</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> {
-                    <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>, <span class="ident">config</span>.<span class="ident">encryptor</span>());
+                    <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">config</span>.<span class="ident">encryptor</span>());
                 }
             }
             <span class="ident">DiscoveryMethod</span>::<span class="ident">Onchain</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">role</span>, <span class="ident">config</span>.<span class="ident">encryptor</span>());
+                <span class="ident">network_builder</span>.<span class="ident">add_configuration_change_listener</span>(<span class="ident">config</span>.<span class="ident">encryptor</span>());
             }
             <span class="ident">DiscoveryMethod</span>::<span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {}
         }
@@ -854,11 +850,7 @@
         <span class="self">self</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">add_configuration_change_listener</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">role</span>: <span class="ident">RoleType</span>,
-        <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">add_configuration_change_listener</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">conn_mgr_reqs_tx</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">conn_mgr_reqs_tx</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;ConnectivityManager must be installed for validator&quot;</span>);
@@ -869,7 +861,7 @@
 
         <span class="self">self</span>.<span class="ident">configuration_change_listener_builder</span> <span class="op">=</span>
             <span class="prelude-val">Some</span>(<span class="ident">ConfigurationChangeListenerBuilder</span>::<span class="ident">create</span>(
-                <span class="ident">role</span>,
+                <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">clone</span>(),
                 <span class="ident">encryptor</span>,
                 <span class="ident">conn_mgr_reqs_tx</span>,
                 <span class="ident">simple_discovery_reconfig_rx</span>,

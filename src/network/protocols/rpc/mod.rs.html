@@ -654,6 +654,19 @@
 <span id="654">654</span>
 <span id="655">655</span>
 <span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -822,6 +835,7 @@
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">next_id</span>.<span class="ident">overflowing_add</span>(<span class="number">1</span>) {
                 (<span class="ident">next_id</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="macro">info</span><span class="macro">!</span>(
+                        <span class="ident">remote_peer</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_id</span>,
                         <span class="string">&quot;Request ids with peer: {} wrapped around to 0&quot;</span>,
                         <span class="self">self</span>.<span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
                     );
@@ -914,7 +928,9 @@
             }
         }
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Rpc actor terminated for peer: {}&quot;</span>,
+            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>()),
+            <span class="string">&quot;{} Rpc actor terminated for peer: {}&quot;</span>,
+            <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>().<span class="ident">short_str</span>()
         );
     }
@@ -938,7 +954,12 @@
                         <span class="self">self</span>.<span class="ident">handle_inbound_request</span>(<span class="ident">request</span>, <span class="ident">inbound_rpc_tasks</span>);
                     }
                     <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;Received non-RPC message from Peer actor: {:?}&quot;</span>, <span class="ident">message</span>);
+                        <span class="macro">error</span><span class="macro">!</span>(
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                            <span class="string">&quot;{} Received non-RPC message from Peer actor: {:?}&quot;</span>,
+                            <span class="self">self</span>.<span class="ident">network_context</span>,
+                            <span class="ident">message</span>
+                        );
                     }
                 }
             }
@@ -1138,8 +1159,11 @@
                                 .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>)
                                 .<span class="ident">debug_error</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>),
                             <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-                            <span class="string">&quot;Error making outbound rpc request with request_id {} to {}: {:?}&quot;</span>,
-                            <span class="ident">request_id</span>, <span class="ident">peer_id</span>.<span class="ident">short_str</span>(), <span class="ident">err</span>
+                            <span class="string">&quot;{} Error making outbound rpc request with request_id {} to {}: {:?}&quot;</span>,
+                            <span class="ident">network_context</span>,
+                            <span class="ident">request_id</span>,
+                            <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
+                            <span class="ident">err</span>
                         );
                     }
                     <span class="comment">// Propagate the results to the rpc client layer.</span>
@@ -1149,7 +1173,8 @@
                         <span class="macro">info</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
                                 .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
-                            <span class="string">&quot;Rpc client canceled outbound rpc call to {}&quot;</span>,
+                            <span class="string">&quot;{} Rpc client canceled outbound rpc call to {}&quot;</span>,
+                            <span class="ident">network_context</span>,
                             <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
                         );
                     }
@@ -1161,7 +1186,8 @@
                     <span class="macro">info</span><span class="macro">!</span>(
                         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>)
                             .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
-                        <span class="string">&quot;Rpc client canceled outbound rpc call to {}&quot;</span>,
+                        <span class="string">&quot;{} Rpc client canceled outbound rpc call to {}&quot;</span>,
+                        <span class="ident">network_context</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
                     );
                 },

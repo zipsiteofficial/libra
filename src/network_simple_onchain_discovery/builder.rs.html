@@ -85,20 +85,22 @@
 <span id="85">85</span>
 <span id="86">86</span>
 <span id="87">87</span>
+<span id="88">88</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">ConfigurationChangeListener</span>;
 <span class="kw">use</span> <span class="ident">channel</span>::<span class="ident">libra_channel</span>;
-<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">RoleType</span>;
+<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_network_address_encryption</span>::<span class="ident">Encryptor</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>;
 <span class="kw">use</span> <span class="ident">network</span>::<span class="ident">connectivity_manager</span>::<span class="ident">ConnectivityRequest</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">runtime</span>::<span class="ident">Handle</span>;
 
 <span class="kw">struct</span> <span class="ident">ConfigurationChangeListenerConfig</span> {
-    <span class="ident">role</span>: <span class="ident">RoleType</span>,
+    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>,
     <span class="ident">conn_mgr_reqs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ConnectivityRequest</span><span class="op">&gt;</span>,
     <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
@@ -106,13 +108,13 @@
 
 <span class="kw">impl</span> <span class="ident">ConfigurationChangeListenerConfig</span> {
     <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">role</span>: <span class="ident">RoleType</span>,
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>,
         <span class="ident">conn_mgr_reqs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ConnectivityRequest</span><span class="op">&gt;</span>,
         <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">role</span>,
+            <span class="ident">network_context</span>,
             <span class="ident">encryptor</span>,
             <span class="ident">conn_mgr_reqs_tx</span>,
             <span class="ident">reconfig_events</span>,
@@ -135,14 +137,14 @@
 
 <span class="kw">impl</span> <span class="ident">ConfigurationChangeListenerBuilder</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create</span>(
-        <span class="ident">role</span>: <span class="ident">RoleType</span>,
+        <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">encryptor</span>: <span class="ident">Encryptor</span>,
         <span class="ident">conn_mgr_reqs_tx</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ConnectivityRequest</span><span class="op">&gt;</span>,
         <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ConfigurationChangeListenerBuilder</span> {
         <span class="self">Self</span> {
             <span class="ident">config</span>: <span class="prelude-val">Some</span>(<span class="ident">ConfigurationChangeListenerConfig</span>::<span class="ident">new</span>(
-                <span class="ident">role</span>,
+                <span class="ident">network_context</span>,
                 <span class="ident">encryptor</span>,
                 <span class="ident">conn_mgr_reqs_tx</span>,
                 <span class="ident">reconfig_events</span>,
@@ -157,7 +159,7 @@
         <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State</span>::<span class="ident">BUILT</span>;
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">take</span>().<span class="ident">expect</span>(<span class="string">&quot;Listener must be configured&quot;</span>);
         <span class="self">self</span>.<span class="ident">listener</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ConfigurationChangeListener</span>::<span class="ident">new</span>(
-            <span class="ident">config</span>.<span class="ident">role</span>,
+            <span class="ident">config</span>.<span class="ident">network_context</span>,
             <span class="ident">config</span>.<span class="ident">encryptor</span>,
             <span class="ident">config</span>.<span class="ident">conn_mgr_reqs_tx</span>,
             <span class="ident">config</span>.<span class="ident">reconfig_events</span>,
