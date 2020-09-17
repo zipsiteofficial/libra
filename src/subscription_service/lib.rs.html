@@ -74,6 +74,12 @@
 <span id="74">74</span>
 <span id="75">75</span>
 <span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -94,6 +100,7 @@
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashSet</span>, <span class="ident">num</span>::<span class="ident">NonZeroUsize</span>};
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SubscriptionService</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
     <span class="ident">subscribed_items</span>: <span class="ident">T</span>,
     <span class="ident">sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span>(), <span class="ident">U</span><span class="op">&gt;</span>,
 }
@@ -101,11 +108,12 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Clone</span>, <span class="ident">U</span><span class="op">&gt;</span> <span class="ident">SubscriptionService</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">U</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Constructs an subscription object for `items`</span>
     <span class="doccomment">/// Returns the subscription object, and the receiving end of a channel that subscription will be sent to</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subscribe</span>(<span class="ident">items</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">U</span><span class="op">&gt;</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subscribe</span>(<span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">items</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">U</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> (<span class="ident">sender</span>, <span class="ident">receiver</span>) <span class="op">=</span>
             <span class="ident">libra_channel</span>::<span class="ident">new</span>(<span class="ident">QueueStyle</span>::<span class="ident">LIFO</span>, <span class="ident">NonZeroUsize</span>::<span class="ident">new</span>(<span class="number">1</span>).<span class="ident">unwrap</span>(), <span class="prelude-val">None</span>);
         (
             <span class="self">Self</span> {
+                <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">to_string</span>(),
                 <span class="ident">sender</span>,
                 <span class="ident">subscribed_items</span>: <span class="ident">items</span>,
             },
@@ -143,12 +151,16 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ReconfigSubscription</span> {
+    <span class="comment">// Creates a subscription service named `name` that subscribes to changes in configs specified in `configs`</span>
+    <span class="comment">// and emission of events specified in `events`</span>
+    <span class="comment">// Returns (subscription service, endpoint that listens to the service)</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">subscribe_all</span>(
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">configs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ConfigID</span><span class="op">&gt;</span>,
         <span class="ident">events</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventKey</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> <span class="ident">bundle</span> <span class="op">=</span> <span class="ident">SubscriptionBundle</span>::<span class="ident">new</span>(<span class="ident">configs</span>, <span class="ident">events</span>);
-        <span class="self">Self</span>::<span class="ident">subscribe</span>(<span class="ident">bundle</span>)
+        <span class="self">Self</span>::<span class="ident">subscribe</span>(<span class="ident">name</span>, <span class="ident">bundle</span>)
     }
 }
 </pre></div>
