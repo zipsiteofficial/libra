@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["SecurityEvent",""]]});
+initSidebarItems({"enum":[["SecurityEvent",""]],"struct":[["FileWriter","A struct for writing logs to a file"]]});
