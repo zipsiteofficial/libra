@@ -1091,6 +1091,28 @@
 <span id="1091">1091</span>
 <span id="1092">1092</span>
 <span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
+<span id="1099">1099</span>
+<span id="1100">1100</span>
+<span id="1101">1101</span>
+<span id="1102">1102</span>
+<span id="1103">1103</span>
+<span id="1104">1104</span>
+<span id="1105">1105</span>
+<span id="1106">1106</span>
+<span id="1107">1107</span>
+<span id="1108">1108</span>
+<span id="1109">1109</span>
+<span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
+<span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1465,6 +1487,25 @@
             .<span class="ident">set</span>(<span class="ident">outbound</span> <span class="kw">as</span> <span class="ident">i64</span>);
     }
 
+    <span class="kw">fn</span> <span class="ident">sample_connected_peers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="comment">// Sample final state at most once a minute, ensuring consistent ordering</span>
+        <span class="macro">sample</span><span class="macro">!</span>(
+            <span class="ident">SampleRate</span>::<span class="ident">Duration</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">60</span>)),
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                <span class="ident">peers</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">active_peers</span>)
+                    .<span class="ident">iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, (<span class="ident">conn_metadata</span>, <span class="kw">_</span>))<span class="op">|</span> (
+                        <span class="ident">conn_metadata</span>.<span class="ident">remote_peer_id</span>,
+                        <span class="ident">conn_metadata</span>.<span class="ident">origin</span>
+                    ))
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">PeerId</span>, <span class="ident">ConnectionOrigin</span>)<span class="op">&gt;</span><span class="op">&gt;</span>()
+                    .<span class="ident">sort_by</span>(<span class="op">|</span>(<span class="ident">a_addr</span>, <span class="kw">_</span>), (<span class="ident">b_addr</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">a_addr</span>.<span class="ident">cmp</span>(<span class="ident">b_addr</span>)),
+                <span class="string">&quot;Current connected peers&quot;</span>
+            )
+        );
+    }
+
     <span class="doccomment">/// Get the [`NetworkAddress`] we&#39;re listening for incoming connections on</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">listen_addr</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">NetworkAddress</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">listen_addr</span>
@@ -1509,6 +1550,7 @@
             <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">event</span>
         );
+        <span class="self">self</span>.<span class="ident">sample_connected_peers</span>();
         <span class="kw">match</span> <span class="ident">event</span> {
             <span class="ident">TransportNotification</span>::<span class="ident">NewConnection</span>(<span class="ident">conn</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">info</span><span class="macro">!</span>(
@@ -1583,6 +1625,7 @@
             <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">request</span>
         );
+        <span class="self">self</span>.<span class="ident">sample_connected_peers</span>();
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="ident">ConnectionRequest</span>::<span class="ident">DialPeer</span>(<span class="ident">requested_peer_id</span>, <span class="ident">addr</span>, <span class="ident">response_tx</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="comment">// Only dial peers which we aren&#39;t already connected with</span>
@@ -1648,6 +1691,7 @@
             <span class="self">self</span>.<span class="ident">network_context</span>,
             <span class="ident">request</span>
         );
+        <span class="self">self</span>.<span class="ident">sample_connected_peers</span>();
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">sender</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">active_peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
