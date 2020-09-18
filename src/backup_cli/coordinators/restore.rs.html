@@ -135,6 +135,20 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -202,6 +216,15 @@
         };
         <span class="ident">COORDINATOR_TARGET_VERSION</span>.<span class="ident">set</span>(<span class="ident">actual_target_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Planned to restore to version {}.&quot;</span>, <span class="ident">actual_target_version</span>);
+        <span class="kw">let</span> <span class="ident">txn_resume_point</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">restore_handler</span>
+            .<span class="ident">get_next_expected_transaction_version</span>()<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">txn_resume_point</span> <span class="op">&gt;</span> <span class="number">0</span> {
+            <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="string">&quot;DB has existing transactions, will skip transaction backups before version {}&quot;</span>,
+                <span class="ident">txn_resume_point</span>
+            );
+        }
 
         <span class="kw">for</span> <span class="ident">backup</span> <span class="kw">in</span> <span class="ident">epoch_endings</span> {
             <span class="ident">EpochEndingRestoreController</span>::<span class="ident">new</span>(
@@ -231,6 +254,11 @@
         }
 
         <span class="kw">for</span> <span class="ident">backup</span> <span class="kw">in</span> <span class="ident">transactions</span> {
+            <span class="kw">if</span> <span class="ident">backup</span>.<span class="ident">last_version</span> <span class="op">&lt;</span> <span class="ident">txn_resume_point</span> {
+                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Skipping {} due to non-empty DB.&quot;</span>, <span class="ident">backup</span>.<span class="ident">manifest</span>);
+                <span class="kw">continue</span>;
+            }
+
             <span class="ident">TransactionRestoreController</span>::<span class="ident">new</span>(
                 <span class="ident">TransactionRestoreOpt</span> {
                     <span class="ident">manifest_handle</span>: <span class="ident">backup</span>.<span class="ident">manifest</span>,
