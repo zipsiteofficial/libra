@@ -304,6 +304,22 @@
 <span id="304">304</span>
 <span id="305">305</span>
 <span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -343,10 +359,26 @@
     <span class="ident">_rpc</span>: <span class="ident">Runtime</span>,
     <span class="ident">_mempool</span>: <span class="ident">Runtime</span>,
     <span class="ident">_state_synchronizer</span>: <span class="ident">StateSynchronizer</span>,
-    <span class="ident">_network_runtimes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
+    <span class="ident">network_runtimes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">_consensus_runtime</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">_debug</span>: <span class="ident">NodeDebugService</span>,
     <span class="ident">_backup</span>: <span class="ident">Runtime</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">LibraHandle</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">shutdown</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="comment">// Shutdown network runtimes to avoid panic error log after LibraHandle is dropped:</span>
+        <span class="comment">// thread ‘network-’ panicked at ‘SelectNextSome polled after terminated’,...</span>
+        <span class="comment">// stack backtrace:</span>
+        <span class="comment">//    ......</span>
+        <span class="comment">//    8: network_simple_onchain_discovery::ConfigurationChangeListener::start::{{closure}}</span>
+        <span class="comment">//      at network/simple-onchain-discovery/src/lib.rs:175</span>
+        <span class="comment">//    ......</span>
+        <span class="comment">// Other runtimes don&#39;t have same problem.</span>
+        <span class="kw">while</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">network_runtimes</span>.<span class="ident">is_empty</span>() {
+            <span class="self">self</span>.<span class="ident">network_runtimes</span>.<span class="ident">remove</span>(<span class="number">0</span>).<span class="ident">shutdown_background</span>();
+        }
+    }
 }
 
 <span class="comment">// Fetch chain ID from on-chain resource</span>
@@ -602,7 +634,7 @@
     }
 
     <span class="ident">LibraHandle</span> {
-        <span class="ident">_network_runtimes</span>: <span class="ident">network_runtimes</span>,
+        <span class="ident">network_runtimes</span>,
         <span class="ident">_rpc</span>: <span class="ident">rpc_runtime</span>,
         <span class="ident">_mempool</span>: <span class="ident">mempool</span>,
         <span class="ident">_state_synchronizer</span>: <span class="ident">state_synchronizer</span>,
