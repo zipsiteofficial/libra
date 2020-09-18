@@ -204,6 +204,14 @@
 <span id="204">204</span>
 <span id="205">205</span>
 <span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -228,14 +236,18 @@
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct</span> <span class="ident">Command</span> {
     <span class="ident">cmd_str</span>: <span class="ident">String</span>,
-    <span class="ident">env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>,
+    <span class="comment">// API parameters, like $FILE_HANDLE for `open_for_read()`</span>
+    <span class="ident">param_env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>,
+    <span class="comment">// Env vars defined in the config file.</span>
+    <span class="ident">config_env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Command</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">raw_cmd</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">raw_cmd</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">param_env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>, <span class="ident">config_env_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EnvVar</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">cmd_str</span>: <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;set -o nounset -o errexit -o pipefail; {}&quot;</span>, <span class="ident">raw_cmd</span>),
-            <span class="ident">env_vars</span>,
+            <span class="ident">param_env_vars</span>,
+            <span class="ident">config_env_vars</span>,
         }
     }
 
@@ -248,9 +260,9 @@
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(
             <span class="ident">f</span>,
-            <span class="string">r#&quot;&quot;{}&quot; with env vars [{}]&quot;#</span>,
+            <span class="string">r#&quot;&quot;{}&quot; with params [{}]&quot;#</span>,
             <span class="self">self</span>.<span class="ident">cmd_str</span>,
-            <span class="self">self</span>.<span class="ident">env_vars</span>
+            <span class="self">self</span>.<span class="ident">param_env_vars</span>
                 .<span class="ident">iter</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}={}&quot;</span>, <span class="ident">v</span>.<span class="ident">key</span>, <span class="ident">v</span>.<span class="ident">value</span>))
                 .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
@@ -273,7 +285,11 @@
         <span class="ident">cmd</span>.<span class="ident">stdin</span>(<span class="ident">Stdio</span>::<span class="ident">piped</span>())
             .<span class="ident">stdout</span>(<span class="ident">Stdio</span>::<span class="ident">piped</span>())
             .<span class="ident">stderr</span>(<span class="ident">Stdio</span>::<span class="ident">inherit</span>());
-        <span class="kw">for</span> <span class="ident">v</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">env_vars</span> {
+        <span class="kw">for</span> <span class="ident">v</span> <span class="kw">in</span> <span class="ident">command</span>
+            .<span class="ident">config_env_vars</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">chain</span>(<span class="ident">command</span>.<span class="ident">param_env_vars</span>.<span class="ident">iter</span>())
+        {
             <span class="ident">cmd</span>.<span class="ident">env</span>(<span class="kw-2">&amp;</span><span class="ident">v</span>.<span class="ident">key</span>, <span class="kw-2">&amp;</span><span class="ident">v</span>.<span class="ident">value</span>);
         }
         <span class="kw">let</span> <span class="ident">child</span> <span class="op">=</span> <span class="ident">cmd</span>.<span class="ident">spawn</span>()<span class="question-mark">?</span>;
