@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["MintParams",""],["Service",""]]});
+initSidebarItems({"enum":[["Response",""]],"struct":[["MintParams",""],["Service",""]]});
