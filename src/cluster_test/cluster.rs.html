@@ -281,6 +281,16 @@
 <span id="281">281</span>
 <span id="282">282</span>
 <span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -292,6 +302,7 @@
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{
     <span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>},
     <span class="ident">test_utils</span>::<span class="ident">KeyPair</span>,
+    <span class="ident">Uniform</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -310,11 +321,16 @@
     <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
 }
 
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dummy_key_pair</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span> {
+    <span class="ident">Ed25519PrivateKey</span>::<span class="ident">generate_for_testing</span>().<span class="ident">into</span>()
+}
+
 <span class="kw">impl</span> <span class="ident">Cluster</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_host_port</span>(
         <span class="ident">peers</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">u32</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
         <span class="ident">mint_file</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
+        <span class="ident">premainnet</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">http_client</span> <span class="op">=</span> <span class="ident">Client</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="ident">instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">peers</span>
@@ -329,8 +345,12 @@
                 )
             })
             .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">mint_key</span>: <span class="ident">Ed25519PrivateKey</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">mint_file</span>);
-        <span class="kw">let</span> <span class="ident">mint_key_pair</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">mint_key</span>);
+
+        <span class="kw">let</span> <span class="ident">mint_key_pair</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">premainnet</span> {
+            <span class="ident">dummy_key_pair</span>()
+        } <span class="kw">else</span> {
+            <span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">mint_file</span>))
+        };
         <span class="self">Self</span> {
             <span class="ident">validator_instances</span>: <span class="ident">instances</span>,
             <span class="ident">fullnode_instances</span>: <span class="macro">vec</span><span class="macro">!</span>[],

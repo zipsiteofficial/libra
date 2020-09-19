@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Cluster",""]]});
+initSidebarItems({"fn":[["dummy_key_pair",""]],"struct":[["Cluster",""]]});
