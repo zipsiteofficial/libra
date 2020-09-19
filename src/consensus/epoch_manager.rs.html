@@ -557,6 +557,12 @@
 <span id="557">557</span>
 <span id="558">558</span>
 <span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -638,6 +644,7 @@
     <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PersistentLivenessStorage</span><span class="op">&gt;</span>,
     <span class="ident">safety_rules_manager</span>: <span class="ident">SafetyRulesManager</span>,
     <span class="ident">processor</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RoundProcessor</span><span class="op">&gt;</span>,
+    <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">EpochManager</span> {
@@ -650,6 +657,7 @@
         <span class="ident">txn_manager</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">TxnManager</span><span class="op">&gt;</span>,
         <span class="ident">state_computer</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StateComputer</span><span class="op">&gt;</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PersistentLivenessStorage</span><span class="op">&gt;</span>,
+        <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">author</span> <span class="op">=</span> <span class="ident">node_config</span>.<span class="ident">validator_network</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">peer_id</span>();
         <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">node_config</span>.<span class="ident">consensus</span>.<span class="ident">clone</span>();
@@ -667,6 +675,7 @@
             <span class="ident">storage</span>,
             <span class="ident">safety_rules_manager</span>,
             <span class="ident">processor</span>: <span class="prelude-val">None</span>,
+            <span class="ident">reconfig_events</span>,
         }
     }
 
@@ -823,8 +832,10 @@
             .<span class="ident">context</span>(<span class="macro">format</span><span class="macro">!</span>(
                 <span class="string">&quot;[EpochManager] State sync to new epoch {}&quot;</span>,
                 <span class="ident">ledger_info</span>
-            ))
-        <span class="comment">// state_computer notifies reconfiguration in another channel</span>
+            ))<span class="question-mark">?</span>;
+
+        <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;reconfig&quot;</span>, <span class="self">self</span>.<span class="ident">expect_new_epoch</span>().<span class="kw">await</span>);
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_round_manager</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">recovery_data</span>: <span class="ident">RecoveryData</span>, <span class="ident">epoch_state</span>: <span class="ident">EpochState</span>) {
@@ -922,7 +933,7 @@
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;SyncProcessor started&quot;</span>);
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_processor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">payload</span>: <span class="ident">OnChainConfigPayload</span>) {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_processor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">payload</span>: <span class="ident">OnChainConfigPayload</span>) {
         <span class="kw">let</span> <span class="ident">validator_set</span>: <span class="ident">ValidatorSet</span> <span class="op">=</span> <span class="ident">payload</span>
             .<span class="ident">get</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;failed to get ValidatorSet from payload&quot;</span>);
@@ -942,7 +953,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_message</span>(
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_message</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">peer_id</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">consensus_msg</span>: <span class="ident">ConsensusMsg</span>,
@@ -1056,7 +1067,7 @@
             .<span class="ident">expect</span>(<span class="string">&quot;[EpochManager] not started yet&quot;</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_block_retrieval</span>(
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_block_retrieval</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">IncomingBlockRetrievalRequest</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -1066,10 +1077,18 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_local_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">round</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_local_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">round</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">processor_mut</span>() {
             <span class="ident">RoundProcessor</span>::<span class="ident">Normal</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">process_local_timeout</span>(<span class="ident">round</span>).<span class="kw">await</span>,
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;RoundManager not started yet&quot;</span>),
+        }
+    }
+
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">expect_new_epoch</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">payload</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">reconfig_events</span>.<span class="ident">next</span>().<span class="kw">await</span> {
+            <span class="self">self</span>.<span class="ident">start_processor</span>(<span class="ident">payload</span>).<span class="kw">await</span>;
+        } <span class="kw">else</span> {
+            <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Reconfig sender dropped, unable to start new epoch.&quot;</span>);
         }
     }
 
@@ -1077,20 +1096,13 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="kw-2">mut</span> <span class="ident">round_timeout_sender_rx</span>: <span class="ident">channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">Round</span><span class="op">&gt;</span>,
         <span class="kw-2">mut</span> <span class="ident">network_receivers</span>: <span class="ident">NetworkReceivers</span>,
-        <span class="kw-2">mut</span> <span class="ident">reconfig_events</span>: <span class="ident">libra_channel</span>::<span class="ident">Receiver</span><span class="op">&lt;</span>(), <span class="ident">OnChainConfigPayload</span><span class="op">&gt;</span>,
     ) {
         <span class="comment">// initial start of the processor</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">payload</span>) <span class="op">=</span> <span class="ident">reconfig_events</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-            <span class="self">self</span>.<span class="ident">start_processor</span>(<span class="ident">payload</span>).<span class="kw">await</span>;
-        }
+        <span class="self">self</span>.<span class="ident">expect_new_epoch</span>().<span class="kw">await</span>;
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">monitor</span><span class="macro">!</span>(
                 <span class="string">&quot;main_loop&quot;</span>,
                 <span class="macro">select</span><span class="macro">!</span> {
-                    <span class="ident">payload</span> <span class="op">=</span> <span class="ident">reconfig_events</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;reconfig&quot;</span>, <span class="self">self</span>.<span class="ident">start_processor</span>(<span class="ident">payload</span>).<span class="kw">await</span>);
-                        <span class="prelude-val">Ok</span>(())
-                    }
                     <span class="ident">msg</span> <span class="op">=</span> <span class="ident">network_receivers</span>.<span class="ident">consensus_messages</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;process_message&quot;</span>, <span class="self">self</span>.<span class="ident">process_message</span>(<span class="ident">msg</span>.<span class="number">0</span>, <span class="ident">msg</span>.<span class="number">1</span>).<span class="kw">await</span>)
                     }
