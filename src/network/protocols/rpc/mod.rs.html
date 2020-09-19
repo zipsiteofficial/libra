@@ -675,6 +675,14 @@
 <span id="675">675</span>
 <span id="676">676</span>
 <span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1225,7 +1233,6 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Bytes</span>, <span class="ident">RpcError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">req_len</span> <span class="op">=</span> <span class="ident">req_data</span>.<span class="ident">len</span>();
     <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
-    <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_id</span>.<span class="ident">short_str</span>();
 
     <span class="comment">// Create NetworkMessage to be sent over the wire.</span>
     <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">NetworkMessage</span>::<span class="ident">RpcRequest</span>(<span class="ident">RpcRequest</span> {
@@ -1240,13 +1247,14 @@
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-        <span class="string">&quot;{} Sending outbound rpc request with request_id {} to peer: {:?}&quot;</span>,
+        <span class="string">&quot;{} Sending outbound rpc request with request_id {} and protocol_id {} to peer {}&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>,
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
     );
     <span class="comment">// Start timer to collect RPC latency.</span>
-    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">rpc_latency</span>(<span class="ident">network_context</span>).<span class="ident">start_timer</span>();
+    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">outbound_rpc_request_latency</span>(<span class="ident">network_context</span>, <span class="ident">protocol_id</span>).<span class="ident">start_timer</span>();
     <span class="ident">peer_handle</span>.<span class="ident">send_message</span>(<span class="ident">request</span>, <span class="ident">protocol_id</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="comment">// Collect counters for requests sent.</span>
@@ -1257,10 +1265,11 @@
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-        <span class="string">&quot;{} Waiting to receive response for request_id {} from peer: {:?}&quot;</span>,
+        <span class="string">&quot;{} Waiting to receive response for request_id {} and protocol_id {} from peer {}&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>,
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
     );
     <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">response_rx</span>.<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">latency</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">stop_and_record</span>();
@@ -1268,13 +1277,13 @@
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
         <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">protocol_id</span>,
-        <span class="string">&quot;{} Received response for request_id {} from peer: {:?} \
-        with {:.6} seconds of latency. Request protocol_id: {}&quot;</span>,
+        <span class="string">&quot;{} Received response for request_id {} and protocol_id {} from peer {} \
+        with {:.6} seconds of latency&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>,
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
         <span class="ident">latency</span>,
-        <span class="ident">protocol_id</span>.<span class="ident">as_str</span>(),
     );
 
     <span class="comment">// Collect counters for received response.</span>
@@ -1293,26 +1302,29 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">RpcError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">req_data</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">raw_request</span>;
     <span class="kw">let</span> <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">request_id</span>;
+    <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">protocol_id</span>;
     <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer_handle</span>.<span class="ident">peer_id</span>();
-    <span class="kw">let</span> <span class="ident">peer_id_str</span> <span class="op">=</span> <span class="ident">peer_id</span>.<span class="ident">short_str</span>();
 
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-        <span class="string">&quot;{} Received inbound request with request_id {} from peer: {:?}&quot;</span>,
+        <span class="string">&quot;{} Received inbound request with request_id {} and protocol_id {} from peer {}&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
     );
+
     <span class="comment">// Collect counters for received request.</span>
     <span class="ident">counters</span>::<span class="ident">rpc_messages</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>).<span class="ident">inc</span>();
     <span class="ident">counters</span>::<span class="ident">rpc_bytes</span>(<span class="ident">network_context</span>, <span class="ident">REQUEST_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>)
         .<span class="ident">inc_by</span>(<span class="ident">req_data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">inbound_rpc_handler_latency</span>(<span class="ident">network_context</span>, <span class="ident">protocol_id</span>).<span class="ident">start_timer</span>();
 
     <span class="comment">// Forward request to upper layer.</span>
     <span class="kw">let</span> (<span class="ident">res_tx</span>, <span class="ident">res_rx</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
     <span class="kw">let</span> <span class="ident">notification</span> <span class="op">=</span> <span class="ident">RpcNotification</span>::<span class="ident">RecvRpc</span>(<span class="ident">InboundRpcRequest</span> {
-        <span class="ident">protocol_id</span>: <span class="ident">request</span>.<span class="ident">protocol_id</span>,
+        <span class="ident">protocol_id</span>,
         <span class="ident">data</span>: <span class="ident">Bytes</span>::<span class="ident">from</span>(<span class="ident">req_data</span>),
         <span class="ident">res_tx</span>,
     });
@@ -1322,22 +1334,26 @@
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-        <span class="string">&quot;{} Waiting for upstream response for inbound request with request_id {} from peer: {:?}&quot;</span>,
+        <span class="string">&quot;{} Waiting for upstream response for inbound request with request_id {} and protocol_id {} from peer {}&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
     );
     <span class="kw">let</span> <span class="ident">res_data</span> <span class="op">=</span> <span class="ident">res_rx</span>.<span class="kw">await</span><span class="question-mark">?</span><span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">res_len</span> <span class="op">=</span> <span class="ident">res_data</span>.<span class="ident">len</span>();
+    <span class="kw">let</span> <span class="ident">latency</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">stop_and_record</span>();
 
     <span class="comment">// Send response to remote peer.</span>
     <span class="macro">trace</span><span class="macro">!</span>(
         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
         <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">request_id</span>,
-        <span class="string">&quot;{} Sending response for request_id {} to peer: {:?}&quot;</span>,
+        <span class="string">&quot;{} Sending response for request_id {} and protocol_id {} to peer {}. Upstream handler took {:.6} seconds.&quot;</span>,
         <span class="ident">network_context</span>,
         <span class="ident">request_id</span>,
-        <span class="ident">peer_id_str</span>
+        <span class="ident">protocol_id</span>,
+        <span class="ident">peer_id</span>.<span class="ident">short_str</span>(),
+        <span class="ident">latency</span>,
     );
     <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">RpcResponse</span> {
         <span class="ident">raw_response</span>: <span class="ident">Vec</span>::<span class="ident">from</span>(<span class="ident">res_data</span>.<span class="ident">as_ref</span>()),
@@ -1345,7 +1361,7 @@
         <span class="ident">priority</span>: <span class="ident">request</span>.<span class="ident">priority</span>,
     };
     <span class="ident">peer_handle</span>
-        .<span class="ident">send_message</span>(<span class="ident">NetworkMessage</span>::<span class="ident">RpcResponse</span>(<span class="ident">response</span>), <span class="ident">request</span>.<span class="ident">protocol_id</span>)
+        .<span class="ident">send_message</span>(<span class="ident">NetworkMessage</span>::<span class="ident">RpcResponse</span>(<span class="ident">response</span>), <span class="ident">protocol_id</span>)
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="comment">// Collect counters for sent response.</span>
