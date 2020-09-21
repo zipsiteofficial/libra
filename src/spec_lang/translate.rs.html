@@ -5438,6 +5438,53 @@
 <span id="5438">5438</span>
 <span id="5439">5439</span>
 <span id="5440">5440</span>
+<span id="5441">5441</span>
+<span id="5442">5442</span>
+<span id="5443">5443</span>
+<span id="5444">5444</span>
+<span id="5445">5445</span>
+<span id="5446">5446</span>
+<span id="5447">5447</span>
+<span id="5448">5448</span>
+<span id="5449">5449</span>
+<span id="5450">5450</span>
+<span id="5451">5451</span>
+<span id="5452">5452</span>
+<span id="5453">5453</span>
+<span id="5454">5454</span>
+<span id="5455">5455</span>
+<span id="5456">5456</span>
+<span id="5457">5457</span>
+<span id="5458">5458</span>
+<span id="5459">5459</span>
+<span id="5460">5460</span>
+<span id="5461">5461</span>
+<span id="5462">5462</span>
+<span id="5463">5463</span>
+<span id="5464">5464</span>
+<span id="5465">5465</span>
+<span id="5466">5466</span>
+<span id="5467">5467</span>
+<span id="5468">5468</span>
+<span id="5469">5469</span>
+<span id="5470">5470</span>
+<span id="5471">5471</span>
+<span id="5472">5472</span>
+<span id="5473">5473</span>
+<span id="5474">5474</span>
+<span id="5475">5475</span>
+<span id="5476">5476</span>
+<span id="5477">5477</span>
+<span id="5478">5478</span>
+<span id="5479">5479</span>
+<span id="5480">5480</span>
+<span id="5481">5481</span>
+<span id="5482">5482</span>
+<span id="5483">5483</span>
+<span id="5484">5484</span>
+<span id="5485">5485</span>
+<span id="5486">5486</span>
+<span id="5487">5487</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -5485,10 +5532,11 @@
         <span class="ident">SpecVarDecl</span>, <span class="ident">Value</span>,
     },
     <span class="ident">env</span>::{
-        <span class="ident">FieldId</span>, <span class="ident">FunId</span>, <span class="ident">FunctionData</span>, <span class="ident">GlobalEnv</span>, <span class="ident">Loc</span>, <span class="ident">ModuleEnv</span>, <span class="ident">ModuleId</span>, <span class="ident">MoveIrLoc</span>,
-        <span class="ident">NamedConstantData</span>, <span class="ident">NamedConstantId</span>, <span class="ident">NodeId</span>, <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">SpecFunId</span>, <span class="ident">SpecVarId</span>,
-        <span class="ident">StructData</span>, <span class="ident">StructId</span>, <span class="ident">TypeConstraint</span>, <span class="ident">TypeParameter</span>, <span class="ident">CONDITION_DEACTIVATED</span>,
-        <span class="ident">CONDITION_GLOBAL_PROP</span>, <span class="ident">CONDITION_INJECTED_PROP</span>, <span class="ident">SCRIPT_BYTECODE_FUN_NAME</span>,
+        <span class="ident">is_pragma_valid_for_block</span>, <span class="ident">is_property_valid_for_condition</span>, <span class="ident">FieldId</span>, <span class="ident">FunId</span>, <span class="ident">FunctionData</span>,
+        <span class="ident">GlobalEnv</span>, <span class="ident">Loc</span>, <span class="ident">ModuleEnv</span>, <span class="ident">ModuleId</span>, <span class="ident">MoveIrLoc</span>, <span class="ident">NamedConstantData</span>, <span class="ident">NamedConstantId</span>, <span class="ident">NodeId</span>,
+        <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">SpecFunId</span>, <span class="ident">SpecVarId</span>, <span class="ident">StructData</span>, <span class="ident">StructId</span>, <span class="ident">TypeConstraint</span>,
+        <span class="ident">TypeParameter</span>, <span class="ident">CONDITION_DEACTIVATED_PROP</span>, <span class="ident">CONDITION_GLOBAL_PROP</span>, <span class="ident">CONDITION_INJECTED_PROP</span>,
+        <span class="ident">SCRIPT_BYTECODE_FUN_NAME</span>,
     },
     <span class="ident">project_1st</span>, <span class="ident">project_2nd</span>,
     <span class="ident">symbol</span>::{<span class="ident">Symbol</span>, <span class="ident">SymbolPool</span>},
@@ -6376,7 +6424,7 @@
 <span class="doccomment">/// A value which we pass in to spec block analyzers, describing the resolved target of the spec</span>
 <span class="doccomment">/// block.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">enum</span> <span class="ident">SpecBlockContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SpecBlockContext</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="ident">Module</span>,
     <span class="ident">Struct</span>(<span class="ident">QualifiedSymbol</span>),
     <span class="ident">Function</span>(<span class="ident">QualifiedSymbol</span>),
@@ -6868,10 +6916,16 @@
                                 <span class="ident">qsym</span>.<span class="ident">clone</span>(),
                                 <span class="kw-2">&amp;</span><span class="ident">fun_spec_info</span>[<span class="ident">spec_id</span>],
                             );
-                            <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>);
                             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">kind</span>, <span class="ident">exp</span>)) <span class="op">=</span>
                                 <span class="self">self</span>.<span class="ident">extract_condition_kind</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">exp</span>)
                             {
+                                <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">prop</span><span class="op">|</span> {
+                                    <span class="kw">if</span> <span class="op">!</span><span class="ident">is_property_valid_for_condition</span>(<span class="kw-2">&amp;</span><span class="ident">kind</span>, <span class="ident">prop</span>) {
+                                        <span class="prelude-val">Some</span>(<span class="ident">loc</span>.<span class="ident">clone</span>())
+                                    } <span class="kw">else</span> {
+                                        <span class="prelude-val">None</span>
+                                    }
+                                });
                                 <span class="self">self</span>.<span class="ident">def_ana_condition</span>(
                                     <span class="ident">loc</span>,
                                     <span class="kw-2">&amp;</span><span class="ident">context</span>,
@@ -7089,7 +7143,13 @@
                     <span class="ident">additional_exps</span>,
                 } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">kind</span>, <span class="ident">exp</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_condition_kind</span>(<span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">exp</span>) {
-                        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>);
+                        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">prop</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="op">!</span><span class="ident">is_property_valid_for_condition</span>(<span class="kw-2">&amp;</span><span class="ident">kind</span>, <span class="ident">prop</span>) {
+                                <span class="prelude-val">Some</span>(<span class="ident">loc</span>.<span class="ident">clone</span>())
+                            } <span class="kw">else</span> {
+                                <span class="prelude-val">None</span>
+                            }
+                        });
                         <span class="self">self</span>.<span class="ident">def_ana_condition</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">properties</span>, <span class="ident">exp</span>, <span class="ident">additional_exps</span>)
                     }
                 }
@@ -7109,7 +7169,7 @@
                     <span class="ident">patterns</span>,
                     <span class="ident">exclusion_patterns</span>,
                 } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_schema_apply</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="ident">exp</span>, <span class="ident">patterns</span>, <span class="ident">exclusion_patterns</span>),
-                <span class="ident">Pragma</span> { <span class="ident">properties</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_pragma</span>(<span class="ident">context</span>, <span class="ident">properties</span>),
+                <span class="ident">Pragma</span> { <span class="ident">properties</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_pragma</span>(<span class="ident">loc</span>, <span class="ident">context</span>, <span class="ident">properties</span>),
                 <span class="ident">Variable</span> { .. } <span class="op">=</span><span class="op">&gt;</span> { <span class="comment">/* nothing to do right now */</span> }
             }
         }
@@ -7227,18 +7287,46 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span>, <span class="lifetime">&#39;translator</span><span class="op">&gt;</span> <span class="ident">ModuleTranslator</span><span class="op">&lt;</span><span class="lifetime">&#39;env</span>, <span class="lifetime">&#39;translator</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Definition analysis for a pragma.</span>
-    <span class="kw">fn</span> <span class="ident">def_ana_pragma</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">SpecBlockContext</span>, <span class="ident">properties</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">PragmaProperty</span>]) {
-        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>);
+    <span class="kw">fn</span> <span class="ident">def_ana_pragma</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">loc</span>: <span class="kw-2">&amp;</span><span class="ident">Loc</span>,
+        <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">SpecBlockContext</span>,
+        <span class="ident">properties</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">PragmaProperty</span>],
+    ) {
+        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">prop</span><span class="op">|</span> {
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">is_pragma_valid_for_block</span>(<span class="ident">context</span>, <span class="ident">prop</span>) {
+                <span class="prelude-val">Some</span>(<span class="ident">loc</span>.<span class="ident">clone</span>())
+            } <span class="kw">else</span> {
+                <span class="prelude-val">None</span>
+            }
+        });
         <span class="self">self</span>.<span class="ident">update_spec</span>(<span class="ident">context</span>, <span class="kw">move</span> <span class="op">|</span><span class="ident">spec</span><span class="op">|</span> {
             <span class="ident">spec</span>.<span class="ident">properties</span>.<span class="ident">extend</span>(<span class="ident">properties</span>);
         });
     }
 
-    <span class="kw">fn</span> <span class="ident">translate_properties</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">properties</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">PragmaProperty</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PropertyBag</span> {
+    <span class="doccomment">/// Translate properties (of conditions or in pragmas), using the provided function</span>
+    <span class="doccomment">/// to check their validness.</span>
+    <span class="kw">fn</span> <span class="ident">translate_properties</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">properties</span>: <span class="kw-2">&amp;</span>[<span class="ident">EA</span>::<span class="ident">PragmaProperty</span>],
+        <span class="ident">check_prop</span>: <span class="kw-2">&amp;</span><span class="ident">F</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PropertyBag</span>
+    <span class="kw">where</span>
+        <span class="comment">// Returns the location if not valid</span>
+        <span class="ident">F</span>: <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Loc</span><span class="op">&gt;</span>,
+    {
         <span class="comment">// For now we pass properties just on. We may want to check against a set of known</span>
         <span class="comment">// property names and types in the future.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">props</span> <span class="op">=</span> <span class="ident">PropertyBag</span>::<span class="ident">default</span>();
         <span class="kw">for</span> <span class="ident">prop</span> <span class="kw">in</span> <span class="ident">properties</span> {
+            <span class="kw">let</span> <span class="ident">prop_str</span> <span class="op">=</span> <span class="ident">prop</span>.<span class="ident">value</span>.<span class="ident">name</span>.<span class="ident">value</span>.<span class="ident">as_str</span>();
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">loc</span>) <span class="op">=</span> <span class="ident">check_prop</span>(<span class="ident">prop_str</span>) {
+                <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">error</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">loc</span>,
+                    <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;property `{}` is not valid in this context&quot;</span>, <span class="ident">prop_str</span>),
+                );
+            }
             <span class="kw">let</span> <span class="ident">prop_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">symbol_pool</span>().<span class="ident">make</span>(<span class="kw-2">&amp;</span><span class="ident">prop</span>.<span class="ident">value</span>.<span class="ident">name</span>.<span class="ident">value</span>);
             <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pv</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">prop</span>.<span class="ident">value</span>.<span class="ident">value</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">et</span> <span class="op">=</span> <span class="ident">ExpTranslator</span>::<span class="ident">new</span>(<span class="self">self</span>);
@@ -7587,7 +7675,7 @@
                     <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="self">self</span>
                         .<span class="ident">parent</span>
                         .<span class="ident">env</span>
-                        .<span class="ident">is_property_true</span>(<span class="kw-2">&amp;</span><span class="ident">derived_cond</span>.<span class="ident">properties</span>, <span class="ident">CONDITION_DEACTIVATED</span>)
+                        .<span class="ident">is_property_true</span>(<span class="kw-2">&amp;</span><span class="ident">derived_cond</span>.<span class="ident">properties</span>, <span class="ident">CONDITION_DEACTIVATED_PROP</span>)
                         .<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>)
                 {
                     <span class="self">self</span>.<span class="ident">update_spec</span>(<span class="ident">context</span>, <span class="op">|</span><span class="ident">spec</span><span class="op">|</span> <span class="ident">spec</span>.<span class="ident">conditions</span>.<span class="ident">push</span>(<span class="ident">derived_cond</span>));
@@ -7974,7 +8062,13 @@
                 } <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">SpecBlockContext</span>::<span class="ident">Schema</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">kind</span>, <span class="ident">exp</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">extract_condition_kind</span>(<span class="kw-2">&amp;</span><span class="ident">context</span>, <span class="ident">kind</span>, <span class="ident">exp</span>) {
-                        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>);
+                        <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="ident">prop</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="op">!</span><span class="ident">is_property_valid_for_condition</span>(<span class="kw-2">&amp;</span><span class="ident">kind</span>, <span class="ident">prop</span>) {
+                                <span class="prelude-val">Some</span>(<span class="ident">member_loc</span>.<span class="ident">clone</span>())
+                            } <span class="kw">else</span> {
+                                <span class="prelude-val">None</span>
+                            }
+                        });
                         <span class="self">self</span>.<span class="ident">def_ana_condition</span>(
                             <span class="kw-2">&amp;</span><span class="ident">member_loc</span>,
                             <span class="kw-2">&amp;</span><span class="ident">context</span>,

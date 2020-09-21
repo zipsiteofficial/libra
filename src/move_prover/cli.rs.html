@@ -663,6 +663,18 @@
 <span id="663">663</span>
 <span id="664">664</span>
 <span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -693,9 +705,6 @@
     <span class="string">&quot;-doModSetAnalysis&quot;</span>,
     <span class="string">&quot;-printVerifiedProceduresCount:0&quot;</span>,
     <span class="string">&quot;-printModel:4&quot;</span>,
-    <span class="comment">// Right now, we let boogie only produce one error per procedure. The boogie wrapper isn&#39;t</span>
-    <span class="comment">// capable to sort out multiple errors and associate them with models otherwise.</span>
-    <span class="string">&quot;-errorLimit:1&quot;</span>,
 ];
 
 <span class="doccomment">/// Atomic used to prevent re-initialization of logging.</span>
@@ -804,6 +813,8 @@
     <span class="kw">pub</span> <span class="ident">dump_bytecode</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Number of Boogie instances to be run concurrently.</span>
     <span class="kw">pub</span> <span class="ident">num_instances</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// Run negative verification checks.</span>
+    <span class="kw">pub</span> <span class="ident">negative_checks</span>: <span class="ident">bool</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">ProverOptions</span> {
@@ -823,6 +834,7 @@
             <span class="ident">assume_invariant_on_access</span>: <span class="bool-val">false</span>,
             <span class="ident">dump_bytecode</span>: <span class="bool-val">false</span>,
             <span class="ident">num_instances</span>: <span class="number">1</span>,
+            <span class="ident">negative_checks</span>: <span class="bool-val">false</span>,
         }
     }
 }
@@ -998,6 +1010,10 @@
                     .<span class="ident">help</span>(<span class="string">&quot;keep intermediate artifacts of the backend around&quot;</span>)
             )
             .<span class="ident">arg</span>(
+                <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;negative&quot;</span>)
+                    .<span class="ident">long</span>(<span class="string">&quot;negative&quot;</span>)
+                    .<span class="ident">help</span>(<span class="string">&quot;run negative verification checks&quot;</span>)
+            ).<span class="ident">arg</span>(
                 <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;seed&quot;</span>)
                     .<span class="ident">long</span>(<span class="string">&quot;seed&quot;</span>)
                     .<span class="ident">short</span>(<span class="string">&quot;s&quot;</span>)
@@ -1208,6 +1224,9 @@
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;keep&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">keep_artifacts</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
+        <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;negative&quot;</span>) {
+            <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">negative_checks</span> <span class="op">=</span> <span class="bool-val">true</span>;
+        }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;seed&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">random_seed</span> <span class="op">=</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;seed&quot;</span>).<span class="ident">unwrap</span>().<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         }
@@ -1266,6 +1285,11 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">boogie_exe</span>.<span class="ident">clone</span>()];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">add</span> <span class="op">=</span> <span class="op">|</span><span class="ident">sl</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>]<span class="op">|</span> <span class="ident">result</span>.<span class="ident">extend</span>(<span class="ident">sl</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> (<span class="kw-2">*</span><span class="ident">s</span>).<span class="ident">to_string</span>()));
         <span class="ident">add</span>(<span class="ident">DEFAULT_BOOGIE_FLAGS</span>);
+        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">prover</span>.<span class="ident">negative_checks</span> {
+            <span class="comment">// Right now, we let boogie only produce one error per procedure. The boogie wrapper isn&#39;t</span>
+            <span class="comment">// capable to sort out multiple errors and associate them with models otherwise.</span>
+            <span class="ident">add</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;-errorLimit:1&quot;</span>]);
+        }
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">use_cvc4</span> {
             <span class="ident">add</span>(<span class="kw-2">&amp;</span>[
                 <span class="string">&quot;-proverOpt:SOLVER=cvc4&quot;</span>,
