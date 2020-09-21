@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["COIN1_NAME",""],["COIN2_NAME",""],["LBR_NAME",""]],"fn":[["coin1_tag",""],["coin2_tag",""],["lbr_type_tag",""]],"static":[["LBR_MODULE",""],["LBR_STRUCT_NAME",""]]});
+initSidebarItems({"constant":[["COIN1_NAME",""],["COIN2_NAME",""],["LBR_NAME",""]],"fn":[["coin1_tag",""],["coin2_tag",""],["coin_name","Return `Some(struct_name)` if `t` is a `StructTag` representing one of the current Libra coin types (LBR, Coin1, Coin2), `None` otherwise."],["lbr_type_tag",""]],"static":[["LBR_MODULE",""],["LBR_STRUCT_NAME",""]]});
