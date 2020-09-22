@@ -675,6 +675,17 @@
 <span id="675">675</span>
 <span id="676">676</span>
 <span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -813,6 +824,8 @@
     <span class="kw">pub</span> <span class="ident">dump_bytecode</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Number of Boogie instances to be run concurrently.</span>
     <span class="kw">pub</span> <span class="ident">num_instances</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// Whether to run Boogie instances sequentially.</span>
+    <span class="kw">pub</span> <span class="ident">sequential_task</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Run negative verification checks.</span>
     <span class="kw">pub</span> <span class="ident">negative_checks</span>: <span class="ident">bool</span>,
 }
@@ -834,6 +847,7 @@
             <span class="ident">assume_invariant_on_access</span>: <span class="bool-val">false</span>,
             <span class="ident">dump_bytecode</span>: <span class="bool-val">false</span>,
             <span class="ident">num_instances</span>: <span class="number">1</span>,
+            <span class="ident">sequential_task</span>: <span class="bool-val">false</span>,
             <span class="ident">negative_checks</span>: <span class="bool-val">false</span>,
         }
     }
@@ -1131,6 +1145,11 @@
                     .<span class="ident">validator</span>(<span class="ident">is_number</span>)
                     .<span class="ident">help</span>(<span class="string">&quot;sets the number of Boogie instances to run concurrently (default 1)&quot;</span>)
             )
+            .<span class="ident">arg</span>(
+                <span class="ident">Arg</span>::<span class="ident">with_name</span>(<span class="string">&quot;sequential&quot;</span>)
+                    .<span class="ident">long</span>(<span class="string">&quot;sequential&quot;</span>)
+                    .<span class="ident">help</span>(<span class="string">&quot;whether to run the Boogie instances sequentially&quot;</span>)
+            )
             .<span class="ident">after_help</span>(<span class="string">&quot;More options available via `--config file` or `--config-str str`. \
             Use `--print-config` to see format and current values. \
             See `move-prover/src/cli.rs::Option` for documentation.&quot;</span>);
@@ -1220,6 +1239,9 @@
                 .<span class="ident">unwrap</span>()
                 .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
             <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">num_instances</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">num_instances</span>, <span class="number">1</span>); <span class="comment">// at least one instance</span>
+        }
+        <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;sequential&quot;</span>) {
+            <span class="ident">options</span>.<span class="ident">prover</span>.<span class="ident">sequential_task</span> <span class="op">=</span> <span class="bool-val">true</span>;
         }
         <span class="kw">if</span> <span class="ident">matches</span>.<span class="ident">is_present</span>(<span class="string">&quot;keep&quot;</span>) {
             <span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">keep_artifacts</span> <span class="op">=</span> <span class="bool-val">true</span>;
