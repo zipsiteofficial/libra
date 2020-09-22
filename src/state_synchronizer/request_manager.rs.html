@@ -448,7 +448,6 @@
 <span id="448">448</span>
 <span id="449">449</span>
 <span id="450">450</span>
-<span id="451">451</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -690,7 +689,7 @@
             <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No peers to send chunk request to&quot;</span>);
         }
 
-        <span class="kw">let</span> <span class="ident">req_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">add_request</span>(<span class="ident">req</span>.<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">peers</span>.<span class="ident">clone</span>());
+        <span class="kw">let</span> <span class="ident">req_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">add_request</span>(<span class="ident">req</span>.<span class="ident">known_version</span>, <span class="ident">peers</span>.<span class="ident">clone</span>());
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="string">&quot;[state sync] request next chunk - chunk req info: {:?}&quot;</span>,
             <span class="ident">req_info</span>
@@ -814,8 +813,7 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">req_info</span><span class="op">|</span> <span class="ident">req_info</span>.<span class="ident">multicast_start_time</span>)
     }
 
-    <span class="doccomment">/// Removes requests for all versions before `version` (inclusive) if they are older than</span>
-    <span class="doccomment">/// now - `timeout`</span>
+    <span class="doccomment">/// Removes requests whose known_version &lt; `version` if they are older than now - `timeout`</span>
     <span class="doccomment">/// We keep the requests that have not timed out so we don&#39;t penalize</span>
     <span class="doccomment">/// peers who send chunks after the first peer who sends the first successful chunk response for a</span>
     <span class="doccomment">/// multicasted request</span>
@@ -824,7 +822,7 @@
         <span class="comment">// that still came back on time, based on per-peer timeout</span>
         <span class="kw">let</span> <span class="ident">versions_to_remove</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">requests</span>
-            .<span class="ident">range</span>(..<span class="ident">version</span> <span class="op">+</span> <span class="number">1</span>)
+            .<span class="ident">range</span>(..<span class="ident">version</span>)
             .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">version</span>, <span class="ident">req</span>)<span class="op">|</span> {
                 <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_timeout</span>(<span class="ident">req</span>.<span class="ident">last_request_time</span>, <span class="self">self</span>.<span class="ident">request_timeout</span>) {
                     <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">version</span>)
@@ -839,8 +837,8 @@
         }
     }
 
-    <span class="doccomment">/// Checks whether the request sent for this version is timed out</span>
-    <span class="doccomment">/// Returns true if request for this version timed out or there is no request for this, else false</span>
+    <span class="doccomment">/// Checks whether the request sent with known_version = `version` has timed out</span>
+    <span class="doccomment">/// Returns true if such a request timed out or does not exist, else false</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check_timeout</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">last_request_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_last_request_time</span>(<span class="ident">version</span>).<span class="ident">unwrap_or</span>(<span class="ident">UNIX_EPOCH</span>);
 
