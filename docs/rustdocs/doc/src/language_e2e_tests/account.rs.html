@@ -827,6 +827,13 @@
 <span id="827">827</span>
 <span id="828">828</span>
 <span id="829">829</span>
+<span id="830">830</span>
+<span id="831">831</span>
+<span id="832">832</span>
+<span id="833">833</span>
+<span id="834">834</span>
+<span id="835">835</span>
+<span id="836">836</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1031,6 +1038,7 @@
     <span class="kw">pub</span> <span class="ident">max_gas_amount</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">gas_unit_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">gas_currency_code</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">ttl</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
 }
 
@@ -1043,12 +1051,18 @@
             <span class="ident">max_gas_amount</span>: <span class="prelude-val">None</span>,
             <span class="ident">gas_unit_price</span>: <span class="prelude-val">None</span>,
             <span class="ident">gas_currency_code</span>: <span class="prelude-val">None</span>,
+            <span class="ident">chain_id</span>: <span class="prelude-val">None</span>,
             <span class="ident">ttl</span>: <span class="prelude-val">None</span>,
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sequence_number</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">sequence_number</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">sequence_number</span>);
+        <span class="self">self</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">chain_id</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">id</span>: <span class="ident">ChainId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">self</span>.<span class="ident">chain_id</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>);
         <span class="self">self</span>
     }
 
@@ -1113,7 +1127,7 @@
             <span class="self">self</span>.<span class="ident">gas_currency_code</span>
                 .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">LBR_NAME</span>.<span class="ident">to_owned</span>()),
             <span class="self">self</span>.<span class="ident">ttl</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">DEFAULT_EXPIRATION_TIME</span>),
-            <span class="ident">ChainId</span>::<span class="ident">test</span>(),
+            <span class="self">self</span>.<span class="ident">chain_id</span>.<span class="ident">unwrap_or_else</span>(<span class="ident">ChainId</span>::<span class="ident">test</span>),
         )
         .<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">privkey</span>, <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">pubkey</span>)
         .<span class="ident">unwrap</span>()
