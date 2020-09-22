@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["OnDiskStateView",""]]});
+initSidebarItems({"constant":[["MOVE_DATA",""],["MOVE_SRC",""],["MOVE_SRC_ADDRESS","Store modules under move_src without an explicit `address {}` block under 0x2."]],"mod":[["test",""]],"struct":[["OnDiskStateView",""]]});

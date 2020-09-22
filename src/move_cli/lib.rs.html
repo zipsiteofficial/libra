@@ -291,6 +291,15 @@
 <span id="291">291</span>
 <span id="292">292</span>
 <span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -304,6 +313,7 @@
     <span class="ident">value</span>::<span class="ident">MoveTypeLayout</span>,
     <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
 };
+<span class="kw">use</span> <span class="ident">move_lang</span>::<span class="ident">shared</span>::<span class="ident">Address</span>;
 <span class="kw">use</span> <span class="ident">move_vm_runtime</span>::<span class="ident">data_cache</span>::<span class="ident">RemoteCache</span>;
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::<span class="ident">values</span>::<span class="ident">Value</span>;
 <span class="kw">use</span> <span class="ident">resource_viewer</span>::{<span class="ident">AnnotatedMoveStruct</span>, <span class="ident">MoveValueAnnotator</span>};
@@ -320,6 +330,15 @@
     <span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>},
     <span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
 };
+
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">test</span>;
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MOVE_SRC</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;move_src&quot;</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MOVE_DATA</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;move_data&quot;</span>;
+<span class="doccomment">/// Store modules under move_src without an explicit `address {}` block under 0x2.</span>
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MOVE_SRC_ADDRESS</span>: <span class="ident">Address</span> <span class="op">=</span> <span class="ident">Address</span>::<span class="ident">new</span>([
+    <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">0u8</span>, <span class="number">2u8</span>,
+]);
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">OnDiskStateView</span> {
@@ -382,7 +401,10 @@
 
     <span class="doccomment">/// Read the resource bytes stored on-disk at `addr`/`tag`</span>
     <span class="kw">fn</span> <span class="ident">get_module_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">Self</span>::<span class="ident">get_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_module_path</span>(<span class="ident">module_id</span>))
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">modules</span>.<span class="ident">get</span>(<span class="ident">module_id</span>) {
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">get_bytes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_module_path</span>(<span class="ident">module_id</span>)),
+            <span class="ident">m</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">m</span>.<span class="ident">cloned</span>()),
+        }
     }
 
     <span class="doccomment">/// Deserialize and return the module stored on-disk at `addr`/`module_id`</span>
@@ -516,12 +538,8 @@
 
 <span class="kw">impl</span> <span class="ident">RemoteCache</span> <span class="kw">for</span> <span class="ident">OnDiskStateView</span> {
     <span class="kw">fn</span> <span class="ident">get_module</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">modules</span>.<span class="ident">get</span>(<span class="ident">module_id</span>) {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_module_bytes</span>(<span class="ident">module_id</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-                <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">STORAGE_ERROR</span>).<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>)
-            }),
-            <span class="ident">m</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">m</span>.<span class="ident">cloned</span>()),
-        }
+        <span class="self">self</span>.<span class="ident">get_module_bytes</span>(<span class="ident">module_id</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">STORAGE_ERROR</span>).<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>))
     }
 
     <span class="kw">fn</span> <span class="ident">get_resource</span>(
