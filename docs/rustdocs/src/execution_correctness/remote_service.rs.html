@@ -79,6 +79,7 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
+<span id="82">82</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -97,7 +98,8 @@
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">RemoteService</span> {
     <span class="kw">fn</span> <span class="ident">client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SerializerClient</span> {
-        <span class="kw">let</span> <span class="ident">network_client</span> <span class="op">=</span> <span class="ident">NetworkClient</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">server_address</span>(), <span class="self">self</span>.<span class="ident">network_timeout</span>());
+        <span class="kw">let</span> <span class="ident">network_client</span> <span class="op">=</span>
+            <span class="ident">NetworkClient</span>::<span class="ident">new</span>(<span class="string">&quot;execution&quot;</span>, <span class="self">self</span>.<span class="ident">server_address</span>(), <span class="self">self</span>.<span class="ident">network_timeout</span>());
         <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">RemoteClient</span>::<span class="ident">new</span>(<span class="ident">network_client</span>));
         <span class="ident">SerializerClient</span>::<span class="ident">new_client</span>(<span class="ident">service</span>)
     }
@@ -116,7 +118,7 @@
         <span class="ident">StorageClient</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">storage_addr</span>, <span class="ident">network_timeout</span>).<span class="ident">into</span>(),
     ));
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">serializer_service</span> <span class="op">=</span> <span class="ident">SerializerService</span>::<span class="ident">new</span>(<span class="ident">block_executor</span>, <span class="ident">prikey</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_server</span> <span class="op">=</span> <span class="ident">NetworkServer</span>::<span class="ident">new</span>(<span class="ident">listen_addr</span>, <span class="ident">network_timeout</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_server</span> <span class="op">=</span> <span class="ident">NetworkServer</span>::<span class="ident">new</span>(<span class="string">&quot;execution&quot;</span>, <span class="ident">listen_addr</span>, <span class="ident">network_timeout</span>);
 
     <span class="kw">loop</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">process_one_message</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">network_server</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">serializer_service</span>) {
