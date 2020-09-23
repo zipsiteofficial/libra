@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["FullnodeType",""]],"struct":[["FullnodeBuilder",""],["ValidatorBuilder",""]]});
+initSidebarItems({"enum":[["FullnodeType",""]],"fn":[["test_config",""]],"struct":[["FullnodeBuilder",""],["ValidatorBuilder",""]]});

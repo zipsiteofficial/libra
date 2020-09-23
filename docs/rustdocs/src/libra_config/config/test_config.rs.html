@@ -127,6 +127,21 @@
 <span id="127">127</span>
 <span id="128">128</span>
 <span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -190,9 +205,12 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_temp_dir</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">temp_dir</span> <span class="op">=</span> <span class="ident">TempPath</span>::<span class="ident">new</span>();
-        <span class="ident">temp_dir</span>.<span class="ident">create_as_dir</span>().<span class="ident">expect</span>(<span class="string">&quot;error creating tempdir&quot;</span>);
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_with_temp_dir</span>(<span class="ident">temp_dir</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TempPath</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">temp_dir</span> <span class="op">=</span> <span class="ident">temp_dir</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">temp_dir</span> <span class="op">=</span> <span class="ident">TempPath</span>::<span class="ident">new</span>();
+            <span class="ident">temp_dir</span>.<span class="ident">create_as_dir</span>().<span class="ident">expect</span>(<span class="string">&quot;error creating tempdir&quot;</span>);
+            <span class="ident">temp_dir</span>
+        });
         <span class="self">Self</span> {
             <span class="ident">auth_key</span>: <span class="prelude-val">None</span>,
             <span class="ident">operator_key</span>: <span class="prelude-val">None</span>,
@@ -201,6 +219,18 @@
             <span class="ident">temp_dir</span>: <span class="prelude-val">Some</span>(<span class="ident">temp_dir</span>),
             <span class="ident">publishing_option</span>: <span class="prelude-val">None</span>,
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execution_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">Ed25519PrivateKey</span>) {
+        <span class="self">self</span>.<span class="ident">execution_key</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ConfigKey</span>::<span class="ident">new</span>(<span class="ident">key</span>))
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">Ed25519PrivateKey</span>) {
+        <span class="self">self</span>.<span class="ident">operator_key</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ConfigKey</span>::<span class="ident">new</span>(<span class="ident">key</span>))
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">owner_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">Ed25519PrivateKey</span>) {
+        <span class="self">self</span>.<span class="ident">owner_key</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ConfigKey</span>::<span class="ident">new</span>(<span class="ident">key</span>))
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_account_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) {
@@ -230,7 +260,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">verify_test_config_equality_using_keys</span>() {
         <span class="comment">// Create default test config without keys</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">test_config</span> <span class="op">=</span> <span class="ident">TestConfig</span>::<span class="ident">new_with_temp_dir</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">test_config</span> <span class="op">=</span> <span class="ident">TestConfig</span>::<span class="ident">new_with_temp_dir</span>(<span class="prelude-val">None</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">test_config</span>.<span class="ident">operator_key</span>, <span class="prelude-val">None</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">test_config</span>.<span class="ident">owner_key</span>, <span class="prelude-val">None</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">test_config</span>.<span class="ident">execution_key</span>, <span class="prelude-val">None</span>);

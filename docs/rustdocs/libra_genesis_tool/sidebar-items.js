@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["command",""],["config_builder",""],["layout",""]]});
+initSidebarItems({"mod":[["command",""],["config_builder",""],["layout",""],["swarm_config",""]]});

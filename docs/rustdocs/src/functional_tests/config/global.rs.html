@@ -281,20 +281,6 @@
 <span id="281">281</span>
 <span id="282">282</span>
 <span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -307,7 +293,6 @@
     <span class="ident">account</span>::{<span class="ident">Account</span>, <span class="ident">AccountData</span>, <span class="ident">AccountRoleSpecifier</span>},
     <span class="ident">keygen</span>::<span class="ident">KeyGen</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">generator</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">PrivateKey</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_config</span>;
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">identifier</span>::<span class="ident">Identifier</span>;
@@ -475,23 +460,10 @@
 
         <span class="comment">// generate a validator set with |validator_accounts| validators</span>
         <span class="kw">let</span> <span class="ident">validators</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">validator_accounts</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">swarm</span> <span class="op">=</span> <span class="ident">generator</span>::<span class="ident">validator_swarm_for_testing</span>(<span class="ident">validator_accounts</span>);
-            <span class="ident">swarm</span>
-                .<span class="ident">nodes</span>
-                .<span class="ident">iter_mut</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> {
-                    <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">c</span>.<span class="ident">consensus</span>.<span class="ident">safety_rules</span>.<span class="ident">test</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">author</span>;
-                    <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">c</span>
-                        .<span class="ident">test</span>
-                        .<span class="ident">as_ref</span>()
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">owner_key</span>
-                        .<span class="ident">as_ref</span>()
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">private_key</span>();
-                    (<span class="ident">account</span>, <span class="ident">key</span>)
-                })
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+            <span class="ident">vm_genesis</span>::<span class="ident">Validator</span>::<span class="ident">new_set</span>(<span class="prelude-val">Some</span>(<span class="ident">validator_accounts</span>))
+                .<span class="ident">into_iter</span>()
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> (<span class="ident">v</span>.<span class="ident">owner_address</span>, <span class="ident">v</span>.<span class="ident">key</span>))
+                .<span class="ident">collect</span>()
         } <span class="kw">else</span> {
             <span class="macro">vec</span><span class="macro">!</span>[]
         };
