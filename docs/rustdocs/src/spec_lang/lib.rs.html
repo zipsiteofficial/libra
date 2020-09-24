@@ -224,13 +224,6 @@
 <span id="224">224</span>
 <span id="225">225</span>
 <span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -249,7 +242,6 @@
     <span class="ident">errors</span>::<span class="ident">Errors</span>,
     <span class="ident">expansion</span>::<span class="ident">ast</span>::<span class="ident">Program</span>,
     <span class="ident">move_compile_no_report</span>, <span class="ident">move_compile_to_expansion_no_report</span>,
-    <span class="ident">parser</span>::<span class="ident">ast</span>::<span class="ident">FunctionName</span>,
     <span class="ident">shared</span>::<span class="ident">Address</span>,
 };
 
@@ -260,9 +252,8 @@
 <span class="kw">mod</span> <span class="ident">translate</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">ty</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">env</span>::<span class="ident">SCRIPT_MODULE_NAME</span>;
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_imports</span>)]</span>
 <span class="kw">use</span> <span class="ident">log</span>::<span class="ident">warn</span>;
 <span class="kw">use</span> <span class="ident">move_ir_types</span>::<span class="ident">location</span>::<span class="ident">Spanned</span>;
 <span class="kw">use</span> <span class="ident">move_lang</span>::{
@@ -398,23 +389,18 @@
                         <span class="ident">value</span>: <span class="ident">ModuleIdent_</span> {
                             <span class="ident">name</span>: <span class="ident">move_lang</span>::<span class="ident">parser</span>::<span class="ident">ast</span>::<span class="ident">ModuleName</span>(<span class="ident">Name</span> {
                                 <span class="ident">loc</span>,
-                                <span class="ident">value</span>: <span class="ident">SCRIPT_MODULE_NAME</span>.<span class="ident">to_string</span>(),
+                                <span class="ident">value</span>: <span class="ident">function_name</span>.<span class="number">0</span>.<span class="ident">value</span>.<span class="ident">clone</span>(),
                             }),
                             <span class="ident">address</span>: <span class="ident">Address</span>::<span class="ident">default</span>(),
                         },
                     });
                     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">function_infos</span> <span class="op">=</span> <span class="ident">UniqueMap</span>::<span class="ident">new</span>();
                     <span class="ident">function_infos</span>
-                        .<span class="ident">add</span>(<span class="ident">FunctionName</span>(<span class="ident">Name</span> { <span class="ident">loc</span>, <span class="ident">value</span>: <span class="ident">key</span> }), <span class="ident">function_info</span>)
+                        .<span class="ident">add</span>(<span class="ident">function_name</span>.<span class="ident">clone</span>(), <span class="ident">function_info</span>)
                         .<span class="ident">unwrap</span>();
                     <span class="comment">// Construct a pseudo module definition.</span>
                     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">functions</span> <span class="op">=</span> <span class="ident">UniqueMap</span>::<span class="ident">new</span>();
-                    <span class="ident">functions</span>.<span class="ident">add</span>(<span class="ident">function_name</span>.<span class="ident">clone</span>(), <span class="ident">function</span>).<span class="ident">unwrap</span>();
-                    <span class="comment">// As we now know the real function name and address, replace it in the</span>
-                    <span class="comment">// data we got from bytecode.</span>
-                    <span class="kw">let</span> <span class="ident">function_info</span> <span class="op">=</span> <span class="ident">function_infos</span>.<span class="ident">into_iter</span>().<span class="ident">next</span>().<span class="ident">unwrap</span>().<span class="number">1</span>;
-                    <span class="ident">function_infos</span> <span class="op">=</span> <span class="ident">UniqueMap</span>::<span class="ident">new</span>();
-                    <span class="ident">function_infos</span>.<span class="ident">add</span>(<span class="ident">function_name</span>, <span class="ident">function_info</span>).<span class="ident">unwrap</span>();
+                    <span class="ident">functions</span>.<span class="ident">add</span>(<span class="ident">function_name</span>, <span class="ident">function</span>).<span class="ident">unwrap</span>();
                     <span class="kw">let</span> <span class="ident">expanded_module</span> <span class="op">=</span> <span class="ident">ModuleDefinition</span> {
                         <span class="ident">loc</span>,
                         <span class="ident">is_source_module</span>: <span class="bool-val">true</span>,

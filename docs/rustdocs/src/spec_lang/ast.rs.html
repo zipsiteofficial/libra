@@ -654,6 +654,16 @@
 <span id="654">654</span>
 <span id="655">655</span>
 <span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -676,6 +686,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">env</span>::{<span class="ident">FunId</span>, <span class="ident">GlobalEnv</span>, <span class="ident">GlobalId</span>, <span class="ident">QualifiedId</span>, <span class="ident">SchemaId</span>, <span class="ident">TypeParameter</span>};
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
+<span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 
 <span class="comment">// =================================================================================================</span>
 <span class="doccomment">/// # Declarations</span>
@@ -861,7 +872,7 @@
 <span class="doccomment">/// Information about a specification block in the source. This is used for documentation</span>
 <span class="doccomment">/// generation. In the object model, the original locations and documentation of spec blocks</span>
 <span class="doccomment">/// is reduced to conditions on a `Spec`, with expansion of schemas. This data structure</span>
-<span class="doccomment">/// allows us to disover the original spec blocks and their content.</span>
+<span class="doccomment">/// allows us to discover the original spec blocks and their content.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SpecBlockInfo</span> {
     <span class="doccomment">/// The location of the entire spec block.</span>
@@ -1161,6 +1172,15 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Symbol</span> {
         <span class="self">self</span>.<span class="number">1</span>
     }
+
+    <span class="doccomment">/// Determine whether this is a script. The move-lang infrastructure uses MAX_ADDR</span>
+    <span class="doccomment">/// for pseudo modules created from scripts, so use this address to check.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_script</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="kw">static</span> <span class="ident">MAX_ADDR</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">BigUint</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+            <span class="ident">BigUint</span>::<span class="ident">from_str_radix</span>(<span class="string">&quot;ffffffffffffffffffffffffffffffff&quot;</span>, <span class="number">16</span>).<span class="ident">expect</span>(<span class="string">&quot;valid hex&quot;</span>)
+        });
+        <span class="self">self</span>.<span class="number">0</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">MAX_ADDR</span>
+    }
 }
 
 <span class="kw">impl</span> <span class="ident">ModuleName</span> {
@@ -1194,7 +1214,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">ModuleNameDisplay</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">with_address</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">with_address</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">name</span>.<span class="ident">is_script</span>() {
             <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;0x{}::&quot;</span>, <span class="self">self</span>.<span class="ident">name</span>.<span class="number">0</span>.<span class="ident">to_str_radix</span>(<span class="number">16</span>))<span class="question-mark">?</span>;
         }
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>.<span class="ident">name</span>.<span class="number">1</span>.<span class="ident">display</span>(<span class="self">self</span>.<span class="ident">pool</span>))<span class="question-mark">?</span>;
