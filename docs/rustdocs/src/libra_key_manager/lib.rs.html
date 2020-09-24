@@ -528,13 +528,13 @@
                 <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">LivenessError</span>(<span class="ident">last_value</span>, <span class="ident">current_value</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Log the liveness error and continue to execute.</span>
                     <span class="kw">let</span> <span class="ident">error</span> <span class="op">=</span> <span class="ident">Error</span>::<span class="ident">LivenessError</span>(<span class="ident">last_value</span>, <span class="ident">current_value</span>);
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
+                    <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
                         .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">Error</span>)
                         .<span class="ident">liveness_error</span>(<span class="kw-2">&amp;</span><span class="ident">error</span>));
                 }
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Log the unexpected error and continue to execute.</span>
-                    <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
+                    <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
                         .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">Error</span>)
                         .<span class="ident">unexpected_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
                 }
@@ -603,7 +603,7 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">resubmit_consensus_key_transaction</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">consensus_key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">get_public_key</span>(<span class="ident">CONSENSUS_KEY</span>)<span class="question-mark">?</span>.<span class="ident">public_key</span>;
-        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;submit_tx&quot;</span>);
+        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;submitted_rotation_transaction&quot;</span>);
         <span class="self">self</span>.<span class="ident">submit_key_rotation_transaction</span>(<span class="ident">consensus_key</span>)
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())
     }
@@ -613,7 +613,7 @@
         <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">KeyRotatedInStorage</span>)
             .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">Success</span>)
             .<span class="ident">consensus_key</span>(<span class="kw-2">&amp;</span><span class="ident">consensus_key</span>));
-        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;complete&quot;</span>);
+        <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;rotated_in_storage&quot;</span>);
         <span class="self">self</span>.<span class="ident">submit_key_rotation_transaction</span>(<span class="ident">consensus_key</span>)
     }
 
@@ -678,7 +678,7 @@
 
         <span class="comment">// If this is inconsistent, then we are waiting on a reconfiguration...</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ConfigInfoKeyMismatch</span>(..)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">compare_info_to_config</span>() {
-            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForReconfiguration</span>));
+            <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForReconfiguration</span>));
             <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;waiting_on_reconfiguration&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>);
         }
@@ -690,7 +690,7 @@
             <span class="kw">return</span> <span class="kw">if</span> <span class="ident">last_rotation</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">txn_expiration_secs</span> <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">time_service</span>.<span class="ident">now</span>() {
                 <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">SubmitKeyRotationTransaction</span>)
             } <span class="kw">else</span> {
-                <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForTransactionExecution</span>));
+                <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForTransactionExecution</span>));
                 <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;waiting_on_transaction_execution&quot;</span>);
                 <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>)
             };
