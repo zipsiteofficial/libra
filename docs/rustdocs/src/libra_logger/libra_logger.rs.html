@@ -547,14 +547,16 @@
 <span id="547">547</span>
 <span id="548">548</span>
 <span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>::{
-        <span class="ident">PROCESSED_STRUCT_LOG_COUNT</span>, <span class="ident">SENT_STRUCT_LOG_COUNT</span>, <span class="ident">STRUCT_LOG_PARSE_ERROR_COUNT</span>,
-        <span class="ident">STRUCT_LOG_QUEUE_ERROR_COUNT</span>, <span class="ident">STRUCT_LOG_SEND_ERROR_COUNT</span>,
+        <span class="ident">PROCESSED_STRUCT_LOG_COUNT</span>, <span class="ident">SENT_STRUCT_LOG_BYTES</span>, <span class="ident">SENT_STRUCT_LOG_COUNT</span>,
+        <span class="ident">STRUCT_LOG_PARSE_ERROR_COUNT</span>, <span class="ident">STRUCT_LOG_QUEUE_ERROR_COUNT</span>, <span class="ident">STRUCT_LOG_SEND_ERROR_COUNT</span>,
     },
     <span class="ident">logger</span>::<span class="ident">Logger</span>,
     <span class="ident">struct_log</span>::<span class="ident">TcpWriter</span>,
@@ -823,6 +825,7 @@
 
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">message</span> <span class="op">+</span> <span class="string">&quot;\n&quot;</span>;
         <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">message</span>.<span class="ident">as_bytes</span>();
+        <span class="kw">let</span> <span class="ident">message_length</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">len</span>();
 
         <span class="comment">// Attempt to write the log up to NUM_SEND_RETRIES + 1, and then drop it</span>
         <span class="comment">// Each `write_all` call will attempt to open a connection if one isn&#39;t open</span>
@@ -843,7 +846,8 @@
                 <span class="ident">e</span>
             );
         } <span class="kw">else</span> {
-            <span class="ident">SENT_STRUCT_LOG_COUNT</span>.<span class="ident">inc</span>()
+            <span class="ident">SENT_STRUCT_LOG_COUNT</span>.<span class="ident">inc</span>();
+            <span class="ident">SENT_STRUCT_LOG_BYTES</span>.<span class="ident">inc_by</span>(<span class="ident">message_length</span> <span class="kw">as</span> <span class="ident">i64</span>);
         }
     }
 }
