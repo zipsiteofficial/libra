@@ -378,6 +378,8 @@
 <span id="378">378</span>
 <span id="379">379</span>
 <span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -531,12 +533,14 @@
                     <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
                         .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">Error</span>)
                         .<span class="ident">liveness_error</span>(<span class="kw-2">&amp;</span><span class="ident">error</span>));
+                    <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;liveness_error_encountered&quot;</span>);
                 }
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="comment">// Log the unexpected error and continue to execute.</span>
                     <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">CheckKeyStatus</span>)
                         .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">Error</span>)
                         .<span class="ident">unexpected_error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
+                    <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;unexpected_error_encountered&quot;</span>);
                 }
             };
 
@@ -679,7 +683,7 @@
         <span class="comment">// If this is inconsistent, then we are waiting on a reconfiguration...</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ConfigInfoKeyMismatch</span>(..)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">compare_info_to_config</span>() {
             <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForReconfiguration</span>));
-            <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;waiting_on_reconfiguration&quot;</span>);
+            <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;waiting_on_reconfiguration&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>);
         }
 
@@ -691,7 +695,7 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">SubmitKeyRotationTransaction</span>)
             } <span class="kw">else</span> {
                 <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">WaitForTransactionExecution</span>));
-                <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;waiting_on_transaction_execution&quot;</span>);
+                <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;waiting_on_transaction_execution&quot;</span>);
                 <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>)
             };
         }
@@ -700,7 +704,7 @@
             <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">FullKeyRotation</span>)
         } <span class="kw">else</span> {
             <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">KeyStillFresh</span>));
-            <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;key_still_fresh&quot;</span>);
+            <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;keys_still_fresh&quot;</span>);
             <span class="prelude-val">Ok</span>(<span class="ident">Action</span>::<span class="ident">NoAction</span>)
         }
     }
@@ -717,7 +721,7 @@
             }
             <span class="ident">Action</span>::<span class="ident">NoAction</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">NoAction</span>));
-                <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;consensus_key&quot;</span>, <span class="string">&quot;no_action&quot;</span>);
+                <span class="ident">counters</span>::<span class="ident">increment_state</span>(<span class="string">&quot;check_keys&quot;</span>, <span class="string">&quot;no_action&quot;</span>);
                 <span class="prelude-val">Ok</span>(())
             }
         }
