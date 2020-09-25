@@ -431,6 +431,17 @@
 <span id="431">431</span>
 <span id="432">432</span>
 <span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -799,10 +810,21 @@
         .<span class="ident">iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">canonicalize</span>(<span class="ident">s</span>))
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
-    <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">deps</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">deps</span>
         .<span class="ident">into_iter</span>()
         .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="op">!</span><span class="ident">canonical_sources</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">canonicalize</span>(<span class="ident">d</span>)))
         .<span class="ident">collect_vec</span>();
+    <span class="comment">// Sort deps by simple file name. Sorting is important because different orders</span>
+    <span class="comment">// caused by platform dependent ways how `calculate_deps_recursively` may return values, can</span>
+    <span class="comment">// cause different behavior of the SMT solver (butterfly effect). By using the simple file</span>
+    <span class="comment">// name we abstract from places where the sources live in the file system. Since Move has</span>
+    <span class="comment">// no namespaces and file names can be expected to be unique matching module/script names,</span>
+    <span class="comment">// this should work in most cases.</span>
+    <span class="ident">deps</span>.<span class="ident">sort_by</span>(<span class="op">|</span><span class="ident">a</span>, <span class="ident">b</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">fa</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">a</span>);
+        <span class="kw">let</span> <span class="ident">fb</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">b</span>);
+        <span class="ident">Ord</span>::<span class="ident">cmp</span>(<span class="ident">fa</span>.<span class="ident">file_name</span>().<span class="ident">unwrap</span>(), <span class="ident">fb</span>.<span class="ident">file_name</span>().<span class="ident">unwrap</span>())
+    });
     <span class="prelude-val">Ok</span>(<span class="ident">deps</span>)
 }
 
