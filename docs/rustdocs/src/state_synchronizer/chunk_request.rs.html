@@ -114,6 +114,16 @@
 <span id="114">114</span>
 <span id="115">115</span>
 <span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -156,13 +166,24 @@
     <span class="ident">Waypoint</span>(<span class="ident">Version</span>),
 }
 
+<span class="kw">impl</span> <span class="ident">TargetType</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">TargetType</span>::<span class="ident">TargetLedgerInfo</span>(<span class="ident">li</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>()),
+            <span class="ident">TargetType</span>::<span class="ident">HighestAvailable</span> { <span class="ident">target_li</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">target_li</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>())
+            }
+            <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">version</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">version</span>),
+        }
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">TargetType</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="self">self</span>)
     }
 }
 
-<span class="comment">// TODO: This cuts out LedgerInfo, do we need it logging?</span>
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">TargetType</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">match</span> <span class="self">self</span> {
@@ -174,12 +195,11 @@
                 <span class="ident">timeout_ms</span>,
             } <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(
                 <span class="ident">f</span>,
-                <span class="string">&quot;HighestAvailable(timeout:{}, target_li_version:{})&quot;</span>,
+                <span class="string">&quot;HighestAvailable(timeout:{}, target_li:{})&quot;</span>,
                 <span class="ident">timeout_ms</span>,
-                <span class="ident">target_li</span>.<span class="ident">as_ref</span>().<span class="ident">map_or_else</span>(
-                    <span class="op">|</span><span class="op">|</span> <span class="ident">String</span>::<span class="ident">from</span>(<span class="string">&quot;None&quot;</span>),
-                    <span class="op">|</span><span class="ident">li</span><span class="op">|</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>().<span class="ident">to_string</span>()
-                )
+                <span class="ident">target_li</span>
+                    .<span class="ident">as_ref</span>()
+                    .<span class="ident">map_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">String</span>::<span class="ident">from</span>(<span class="string">&quot;None&quot;</span>), <span class="op">|</span><span class="ident">li</span><span class="op">|</span> <span class="ident">li</span>.<span class="ident">to_string</span>())
             ),
             <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">version</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Waypoint({})&quot;</span>, <span class="ident">version</span>),
         }
@@ -223,7 +243,7 @@
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(
             <span class="ident">f</span>,
-            <span class="string">&quot;[ChunkRequest: known version: {}, epoch: {}, limit: {}, target: {:?}]&quot;</span>,
+            <span class="string">&quot;[ChunkRequest: known version: {}, epoch: {}, limit: {}, target: {}]&quot;</span>,
             <span class="self">self</span>.<span class="ident">known_version</span>,
             <span class="self">self</span>.<span class="ident">current_epoch</span>,
             <span class="self">self</span>.<span class="ident">limit</span>,
