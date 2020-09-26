@@ -149,13 +149,15 @@
 <span id="149">149</span>
 <span id="150">150</span>
 <span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::{
-        <span class="ident">epoch_ending</span>::<span class="ident">restore</span>::{<span class="ident">EpochEndingRestoreController</span>, <span class="ident">EpochEndingRestoreOpt</span>},
+        <span class="ident">epoch_ending</span>::<span class="ident">restore</span>::<span class="ident">EpochHistoryRestoreController</span>,
         <span class="ident">state_snapshot</span>::<span class="ident">restore</span>::{<span class="ident">StateSnapshotRestoreController</span>, <span class="ident">StateSnapshotRestoreOpt</span>},
         <span class="ident">transaction</span>::<span class="ident">restore</span>::{<span class="ident">TransactionRestoreController</span>, <span class="ident">TransactionRestoreOpt</span>},
     },
@@ -163,12 +165,11 @@
     <span class="ident">metadata</span>::{<span class="ident">cache</span>::<span class="ident">MetadataCacheOpt</span>, <span class="ident">TransactionBackupMeta</span>},
     <span class="ident">metrics</span>::<span class="ident">restore</span>::<span class="ident">COORDINATOR_TARGET_VERSION</span>,
     <span class="ident">storage</span>::<span class="ident">BackupStorage</span>,
-    <span class="ident">utils</span>::<span class="ident">GlobalRestoreOpt</span>,
+    <span class="ident">utils</span>::{<span class="ident">GlobalRestoreOptions</span>, <span class="ident">RestoreRunMode</span>},
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">transaction</span>::<span class="ident">Version</span>;
-<span class="kw">use</span> <span class="ident">libradb</span>::<span class="ident">backup</span>::<span class="ident">restore_handler</span>::<span class="ident">RestoreHandler</span>;
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
@@ -180,21 +181,18 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RestoreCoordinator</span> {
     <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
-    <span class="ident">restore_handler</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RestoreHandler</span><span class="op">&gt;</span>,
-    <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOpt</span>,
+    <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOptions</span>,
     <span class="ident">metadata_cache_opt</span>: <span class="ident">MetadataCacheOpt</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">RestoreCoordinator</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">opt</span>: <span class="ident">RestoreCoordinatorOpt</span>,
-        <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOpt</span>,
+        <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOptions</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
-        <span class="ident">restore_handler</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RestoreHandler</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">storage</span>,
-            <span class="ident">restore_handler</span>,
             <span class="ident">global_opt</span>,
             <span class="ident">metadata_cache_opt</span>: <span class="ident">opt</span>.<span class="ident">metadata_cache_opt</span>,
         }
@@ -216,9 +214,15 @@
         };
         <span class="ident">COORDINATOR_TARGET_VERSION</span>.<span class="ident">set</span>(<span class="ident">actual_target_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Planned to restore to version {}.&quot;</span>, <span class="ident">actual_target_version</span>);
-        <span class="kw">let</span> <span class="ident">txn_resume_point</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">restore_handler</span>
-            .<span class="ident">get_next_expected_transaction_version</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">txn_resume_point</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">run_mode</span>.<span class="ident">as_ref</span>() {
+            <span class="ident">RestoreRunMode</span>::<span class="ident">Restore</span> { <span class="ident">restore_handler</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">restore_handler</span>.<span class="ident">get_next_expected_transaction_version</span>()<span class="question-mark">?</span>
+            }
+            <span class="ident">RestoreRunMode</span>::<span class="ident">Verify</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;This is a dry run.&quot;</span>);
+                <span class="number">0</span>
+            }
+        };
         <span class="kw">if</span> <span class="ident">txn_resume_point</span> <span class="op">&gt;</span> <span class="number">0</span> {
             <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="string">&quot;DB has existing transactions, will skip transaction backups before version {}&quot;</span>,
@@ -226,18 +230,18 @@
             );
         }
 
-        <span class="kw">for</span> <span class="ident">backup</span> <span class="kw">in</span> <span class="ident">epoch_endings</span> {
-            <span class="ident">EpochEndingRestoreController</span>::<span class="ident">new</span>(
-                <span class="ident">EpochEndingRestoreOpt</span> {
-                    <span class="ident">manifest_handle</span>: <span class="ident">backup</span>.<span class="ident">manifest</span>,
-                },
+        <span class="kw">let</span> <span class="ident">epoch_history</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(
+            <span class="ident">EpochHistoryRestoreController</span>::<span class="ident">new</span>(
+                <span class="ident">epoch_endings</span>
+                    .<span class="ident">into_iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">backup</span><span class="op">|</span> <span class="ident">backup</span>.<span class="ident">manifest</span>)
+                    .<span class="ident">collect</span>(),
                 <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">restore_handler</span>),
+                <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">clone</span>(),
             )
             .<span class="ident">run</span>()
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-        }
+            .<span class="kw">await</span><span class="question-mark">?</span>,
+        );
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">backup</span>) <span class="op">=</span> <span class="ident">state_snapshot</span> {
             <span class="ident">StateSnapshotRestoreController</span>::<span class="ident">new</span>(
@@ -247,7 +251,7 @@
                 },
                 <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
                 <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">restore_handler</span>),
+                <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">epoch_history</span>)),
             )
             .<span class="ident">run</span>()
             .<span class="kw">await</span><span class="question-mark">?</span>;
@@ -266,7 +270,7 @@
                 },
                 <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
                 <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">restore_handler</span>),
+                <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">epoch_history</span>)),
             )
             .<span class="ident">run</span>()
             .<span class="kw">await</span><span class="question-mark">?</span>;
@@ -279,7 +283,7 @@
 
 <span class="kw">impl</span> <span class="ident">RestoreCoordinator</span> {
     <span class="kw">fn</span> <span class="ident">target_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Version</span> {
-        <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">target_version</span>()
+        <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">target_version</span>
     }
 
     <span class="kw">fn</span> <span class="ident">get_actual_target_version</span>(

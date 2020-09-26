@@ -144,6 +144,13 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -156,12 +163,13 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">block_info</span>::<span class="ident">BlockInfo</span>,
     <span class="ident">ledger_info</span>::{<span class="ident">LedgerInfo</span>, <span class="ident">LedgerInfoWithSignatures</span>},
-    <span class="ident">proptest_types</span>::{<span class="ident">AccountInfoUniverse</span>, <span class="ident">LedgerInfoWithSignaturesGen</span>, <span class="ident">TransactionToCommitGen</span>},
+    <span class="ident">proptest_types</span>::{<span class="ident">AccountInfoUniverse</span>, <span class="ident">LedgerInfoGen</span>, <span class="ident">TransactionToCommitGen</span>},
+    <span class="ident">validator_signer</span>::<span class="ident">ValidatorSigner</span>,
 };
 <span class="kw">use</span> <span class="ident">proptest</span>::{<span class="ident">collection</span>::<span class="ident">vec</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>};
 
 <span class="kw">fn</span> <span class="ident">to_blocks_to_commit</span>(
-    <span class="ident">partial_blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionToCommit</span><span class="op">&gt;</span>, <span class="ident">LedgerInfoWithSignatures</span>)<span class="op">&gt;</span>,
+    <span class="ident">partial_blocks</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionToCommit</span><span class="op">&gt;</span>, <span class="ident">LedgerInfo</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorSigner</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionToCommit</span><span class="op">&gt;</span>, <span class="ident">LedgerInfoWithSignatures</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
     <span class="comment">// Use temporary LibraDB and STORE LEVEL APIs to calculate hashes on a per transaction basis.</span>
     <span class="comment">// Result is used to test the batch PUBLIC API for saving everything, i.e. `save_transactions()`</span>
@@ -172,7 +180,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur_txn_accu_hash</span> <span class="op">=</span> <span class="ident">HashValue</span>::<span class="ident">zero</span>();
     <span class="kw">let</span> <span class="ident">blocks_to_commit</span> <span class="op">=</span> <span class="ident">partial_blocks</span>
         .<span class="ident">into_iter</span>()
-        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">txns_to_commit</span>, <span class="ident">partial_ledger_info_with_sigs</span>)<span class="op">|</span> {
+        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">txns_to_commit</span>, <span class="ident">partial_ledger_info</span>, <span class="ident">validator_set</span>)<span class="op">|</span> {
             <span class="kw">for</span> <span class="ident">txn_to_commit</span> <span class="kw">in</span> <span class="ident">txns_to_commit</span>.<span class="ident">iter</span>() {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cs</span> <span class="op">=</span> <span class="ident">ChangeSet</span>::<span class="ident">new</span>();
 
@@ -202,8 +210,6 @@
                 <span class="ident">cur_txn_accu_hash</span> <span class="op">=</span> <span class="ident">txn_accu_hash</span>;
             }
 
-            <span class="kw">let</span> <span class="ident">partial_ledger_info</span> <span class="op">=</span> <span class="ident">partial_ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>();
-            <span class="kw">let</span> <span class="ident">signatures</span> <span class="op">=</span> <span class="ident">partial_ledger_info_with_sigs</span>.<span class="ident">signatures</span>().<span class="ident">clone</span>();
             <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">cur_ver</span>, <span class="ident">partial_ledger_info</span>.<span class="ident">version</span>() <span class="op">+</span> <span class="number">1</span>);
 
             <span class="kw">let</span> <span class="ident">block_info</span> <span class="op">=</span> <span class="ident">BlockInfo</span>::<span class="ident">new</span>(
@@ -217,6 +223,10 @@
             );
             <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span>
                 <span class="ident">LedgerInfo</span>::<span class="ident">new</span>(<span class="ident">block_info</span>, <span class="ident">partial_ledger_info</span>.<span class="ident">consensus_data_hash</span>());
+            <span class="kw">let</span> <span class="ident">signatures</span> <span class="op">=</span> <span class="ident">validator_set</span>
+                .<span class="ident">iter</span>()
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">signer</span><span class="op">|</span> (<span class="ident">signer</span>.<span class="ident">author</span>(), <span class="ident">signer</span>.<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">ledger_info</span>)))
+                .<span class="ident">collect</span>();
             <span class="kw">let</span> <span class="ident">ledger_info_with_sigs</span> <span class="op">=</span> <span class="ident">LedgerInfoWithSignatures</span>::<span class="ident">new</span>(<span class="ident">ledger_info</span>, <span class="ident">signatures</span>);
             <span class="prelude-val">Ok</span>((<span class="ident">txns_to_commit</span>, <span class="ident">ledger_info_with_sigs</span>))
         })
@@ -241,7 +251,7 @@
         <span class="ident">batches</span> <span class="kw">in</span> <span class="ident">vec</span>(
             (
                 <span class="ident">vec</span>(<span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">TransactionToCommitGen</span><span class="op">&gt;</span>(), <span class="number">1</span>..<span class="op">=</span><span class="ident">max_txn_per_block</span>),
-                <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">LedgerInfoWithSignaturesGen</span><span class="op">&gt;</span>(),
+                <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">LedgerInfoGen</span><span class="op">&gt;</span>(),
             ),
             <span class="number">1</span>..<span class="op">=</span><span class="ident">max_blocks</span>,
         ),
@@ -255,12 +265,16 @@
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">txn_gens</span>, <span class="ident">ledger_info_gen</span>)<span class="op">|</span> {
                 <span class="kw">let</span> <span class="ident">block_size</span> <span class="op">=</span> <span class="ident">txn_gens</span>.<span class="ident">len</span>();
-                (
-                    <span class="ident">txn_gens</span>
+                <span class="kw">let</span> <span class="ident">txns_to_commit</span> <span class="op">=</span> <span class="ident">txn_gens</span>
                         .<span class="ident">into_iter</span>()
                         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">gen</span><span class="op">|</span> <span class="ident">gen</span>.<span class="ident">materialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">universe</span>))
-                        .<span class="ident">collect</span>(),
-                    <span class="ident">ledger_info_gen</span>.<span class="ident">materialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">universe</span>, <span class="ident">block_size</span>),
+                        .<span class="ident">collect</span>();
+                <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="ident">ledger_info_gen</span>.<span class="ident">materialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">universe</span>, <span class="ident">block_size</span>);
+                <span class="kw">let</span> <span class="ident">validator_set</span> <span class="op">=</span> <span class="ident">universe</span>.<span class="ident">get_validator_set</span>(<span class="ident">ledger_info</span>.<span class="ident">epoch</span>()).<span class="ident">to_vec</span>();
+                (
+                    <span class="ident">txns_to_commit</span>,
+                    <span class="ident">ledger_info</span>,
+                    <span class="ident">validator_set</span>,
                 )
             })
             .<span class="ident">collect</span>();
