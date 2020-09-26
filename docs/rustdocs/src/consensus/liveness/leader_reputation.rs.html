@@ -172,17 +172,66 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">liveness</span>::<span class="ident">proposer_election</span>::{<span class="ident">next</span>, <span class="ident">ProposerElection</span>};
-<span class="kw">use</span> <span class="ident">consensus_types</span>::<span class="ident">common</span>::{<span class="ident">Author</span>, <span class="ident">Round</span>};
+<span class="kw">use</span> <span class="ident">consensus_types</span>::{
+    <span class="ident">block</span>::<span class="ident">Block</span>,
+    <span class="ident">common</span>::{<span class="ident">Author</span>, <span class="ident">Round</span>},
+};
+<span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">block_metadata</span>::{<span class="ident">new_block_event_key</span>, <span class="ident">NewBlockEvent</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>::<span class="ident">Ordering</span>,
-    <span class="ident">collections</span>::<span class="ident">HashSet</span>,
+    <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
 };
 <span class="kw">use</span> <span class="ident">storage_interface</span>::{<span class="ident">DbReader</span>, <span class="ident">Order</span>};
@@ -305,6 +354,7 @@
     <span class="ident">proposers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Author</span><span class="op">&gt;</span>,
     <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">MetadataBackend</span><span class="op">&gt;</span>,
     <span class="ident">heuristic</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ReputationHeuristic</span><span class="op">&gt;</span>,
+    <span class="ident">already_proposed</span>: <span class="ident">Mutex</span><span class="op">&lt;</span>(<span class="ident">Round</span>, <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Author</span>, <span class="ident">HashValue</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">LeaderReputation</span> {
@@ -317,6 +367,7 @@
             <span class="ident">proposers</span>,
             <span class="ident">backend</span>,
             <span class="ident">heuristic</span>,
+            <span class="ident">already_proposed</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>((<span class="number">0</span>, <span class="ident">HashMap</span>::<span class="ident">new</span>())),
         }
     }
 }
@@ -345,6 +396,45 @@
             })
             .<span class="ident">unwrap_err</span>();
         <span class="self">self</span>.<span class="ident">proposers</span>[<span class="ident">chosen_index</span>]
+    }
+
+    <span class="doccomment">/// This function will return true for at most one proposal per valid proposer for a given round.</span>
+    <span class="kw">fn</span> <span class="ident">is_valid_proposal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">block</span>.<span class="ident">author</span>().<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">author</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">valid</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">is_valid_proposer</span>(<span class="ident">author</span>, <span class="ident">block</span>.<span class="ident">round</span>());
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">already_proposed</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">already_proposed</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">valid</span> {
+                <span class="kw">return</span> <span class="bool-val">false</span>;
+            }
+            <span class="comment">// detect if the leader proposes more than once in this round</span>
+            <span class="kw">match</span> <span class="ident">block</span>.<span class="ident">round</span>().<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">already_proposed</span>.<span class="number">0</span>) {
+                <span class="ident">Ordering</span>::<span class="ident">Greater</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">already_proposed</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">round</span>();
+                    <span class="ident">already_proposed</span>.<span class="number">1</span>.<span class="ident">clear</span>();
+                    <span class="ident">already_proposed</span>.<span class="number">1</span>.<span class="ident">insert</span>(<span class="ident">author</span>, <span class="ident">block</span>.<span class="ident">id</span>());
+                    <span class="bool-val">true</span>
+                }
+                <span class="ident">Ordering</span>::<span class="ident">Equal</span> <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">if</span> <span class="ident">already_proposed</span>
+                        .<span class="number">1</span>
+                        .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">author</span>)
+                        .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">block</span>.<span class="ident">id</span>())
+                    {
+                        <span class="macro">error</span><span class="macro">!</span>(
+                            <span class="ident">SecurityEvent</span>::<span class="ident">InvalidConsensusProposal</span>,
+                            <span class="string">&quot;Multiple proposals from {} for round {}&quot;</span>,
+                            <span class="ident">author</span>,
+                            <span class="ident">block</span>.<span class="ident">round</span>()
+                        );
+                        <span class="bool-val">false</span>
+                    } <span class="kw">else</span> {
+                        <span class="ident">already_proposed</span>.<span class="number">1</span>.<span class="ident">insert</span>(<span class="ident">author</span>, <span class="ident">block</span>.<span class="ident">id</span>());
+                        <span class="bool-val">true</span>
+                    }
+                }
+                <span class="ident">Ordering</span>::<span class="ident">Less</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            }
+        })
     }
 }
 </pre></div>
