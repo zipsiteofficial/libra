@@ -326,6 +326,33 @@
 <span id="326">326</span>
 <span id="327">327</span>
 <span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -388,6 +415,8 @@
         <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Whether benchmark should pick one node to run DB backup.&quot;</span>
     )]</span>
     <span class="kw">pub</span> <span class="ident">backup</span>: <span class="ident">bool</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;0&quot;</span>, <span class="ident">help</span> <span class="op">=</span> <span class="string">&quot;Set gas price in tx&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">gas_price</span>: <span class="ident">u64</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PerformanceBenchmark</span> {
@@ -401,6 +430,7 @@
     <span class="ident">tps</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="ident">use_logs_for_trace</span>: <span class="ident">bool</span>,
     <span class="ident">backup</span>: <span class="ident">bool</span>,
+    <span class="ident">gas_price</span>: <span class="ident">u64</span>,
 }
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DEFAULT_BENCH_DURATION</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">120</span>;
@@ -415,6 +445,7 @@
             <span class="ident">tps</span>: <span class="prelude-val">None</span>,
             <span class="ident">use_logs_for_trace</span>: <span class="bool-val">false</span>,
             <span class="ident">backup</span>: <span class="bool-val">false</span>,
+            <span class="ident">gas_price</span>: <span class="number">0</span>,
         }
     }
 
@@ -427,6 +458,20 @@
             <span class="ident">tps</span>: <span class="prelude-val">Some</span>(<span class="ident">fixed_tps</span>),
             <span class="ident">use_logs_for_trace</span>: <span class="bool-val">false</span>,
             <span class="ident">backup</span>: <span class="bool-val">false</span>,
+            <span class="ident">gas_price</span>: <span class="number">0</span>,
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">non_zero_gas_price</span>(<span class="ident">percent_nodes_down</span>: <span class="ident">usize</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">percent_nodes_down</span>,
+            <span class="ident">duration</span>: <span class="ident">DEFAULT_BENCH_DURATION</span>,
+            <span class="ident">trace</span>: <span class="bool-val">false</span>,
+            <span class="ident">trace_single</span>: <span class="bool-val">false</span>,
+            <span class="ident">tps</span>: <span class="prelude-val">None</span>,
+            <span class="ident">use_logs_for_trace</span>: <span class="bool-val">false</span>,
+            <span class="ident">backup</span>: <span class="bool-val">false</span>,
+            <span class="ident">gas_price</span>,
         }
     }
 
@@ -464,6 +509,7 @@
             <span class="ident">tps</span>: <span class="self">self</span>.<span class="ident">tps</span>,
             <span class="ident">use_logs_for_trace</span>: <span class="self">self</span>.<span class="ident">use_logs_for_trace</span>,
             <span class="ident">backup</span>: <span class="self">self</span>.<span class="ident">backup</span>,
+            <span class="ident">gas_price</span>: <span class="self">self</span>.<span class="ident">gas_price</span>,
         }
     }
 }
@@ -487,8 +533,12 @@
             <span class="self">self</span>.<span class="ident">up_fullnodes</span>.<span class="ident">clone</span>()
         };
         <span class="kw">let</span> <span class="ident">emit_job_request</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">tps</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">tps</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EmitJobRequest</span>::<span class="ident">fixed_tps</span>(<span class="ident">instances</span>, <span class="ident">tps</span>),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EmitJobRequest</span>::<span class="ident">for_instances</span>(<span class="ident">instances</span>, <span class="ident">context</span>.<span class="ident">global_emit_job_request</span>),
+            <span class="prelude-val">Some</span>(<span class="ident">tps</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EmitJobRequest</span>::<span class="ident">fixed_tps</span>(<span class="ident">instances</span>, <span class="ident">tps</span>, <span class="self">self</span>.<span class="ident">gas_price</span>),
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EmitJobRequest</span>::<span class="ident">for_instances</span>(
+                <span class="ident">instances</span>,
+                <span class="ident">context</span>.<span class="ident">global_emit_job_request</span>,
+                <span class="self">self</span>.<span class="ident">gas_price</span>,
+            ),
         };
         <span class="kw">let</span> <span class="ident">emit_txn</span> <span class="op">=</span> <span class="ident">context</span>.<span class="ident">tx_emitter</span>.<span class="ident">emit_txn_for</span>(<span class="ident">window</span>, <span class="ident">emit_job_request</span>);
         <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">chrono</span>::<span class="ident">Utc</span>::<span class="ident">now</span>();
@@ -647,12 +697,16 @@
 <span class="kw">impl</span> <span class="ident">Display</span> <span class="kw">for</span> <span class="ident">PerformanceBenchmark</span> {
     <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tps</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">tps</span> {
-            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;fixed tps {}&quot;</span>, <span class="ident">tps</span>)
+            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;fixed tps {}&quot;</span>, <span class="ident">tps</span>)<span class="question-mark">?</span>;
         } <span class="kw">else</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">percent_nodes_down</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;all up&quot;</span>)
+            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;all up&quot;</span>)<span class="question-mark">?</span>;
         } <span class="kw">else</span> {
-            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}% down&quot;</span>, <span class="self">self</span>.<span class="ident">percent_nodes_down</span>)
+            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}% down, gas price&quot;</span>, <span class="self">self</span>.<span class="ident">percent_nodes_down</span>)<span class="question-mark">?</span>;
         }
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">gas_price</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;, gas price {}&quot;</span>, <span class="self">self</span>.<span class="ident">gas_price</span>)<span class="question-mark">?</span>;
+        }
+        <span class="prelude-val">Ok</span>(())
     }
 }
 </pre></div>
