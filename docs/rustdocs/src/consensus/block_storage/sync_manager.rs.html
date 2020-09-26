@@ -339,12 +339,16 @@
 <span id="339">339</span>
 <span id="340">340</span>
 <span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">block_storage</span>::{<span class="ident">BlockReader</span>, <span class="ident">BlockStore</span>},
+    <span class="ident">logging</span>::{<span class="ident">LogEvent</span>, <span class="ident">LogSchema</span>},
     <span class="ident">network</span>::<span class="ident">NetworkSender</span>,
     <span class="ident">network_interface</span>::<span class="ident">ConsensusMsg</span>,
     <span class="ident">persistent_liveness_storage</span>::{<span class="ident">PersistentLivenessStorage</span>, <span class="ident">RecoveryData</span>},
@@ -363,7 +367,6 @@
 <span class="kw">use</span> <span class="ident">mirai_annotations</span>::<span class="ident">checked_precondition</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">Rng</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">clone</span>::<span class="ident">Clone</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
-<span class="kw">use</span> <span class="ident">termion</span>::<span class="ident">color</span>::<span class="kw-2">*</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="doccomment">/// Whether we need to do block retrieval if we want to insert a Quorum Cert.</span>
@@ -513,7 +516,11 @@
         )
         .<span class="kw">await</span><span class="question-mark">?</span>
         .<span class="ident">take</span>();
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;{}Sync to{} {}&quot;</span>, <span class="ident">Fg</span>(<span class="ident">Blue</span>), <span class="ident">Fg</span>(<span class="ident">Reset</span>), <span class="ident">root</span>.<span class="number">0</span>);
+        <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">CommitViaSync</span>).<span class="ident">round</span>(<span class="self">self</span>.<span class="ident">root</span>().<span class="ident">round</span>()),
+            <span class="ident">committed_round</span> <span class="op">=</span> <span class="ident">root</span>.<span class="number">0</span>.<span class="ident">round</span>(),
+            <span class="ident">block_id</span> <span class="op">=</span> <span class="ident">root</span>.<span class="number">0</span>.<span class="ident">id</span>(),
+        );
         <span class="self">self</span>.<span class="ident">rebuild</span>(<span class="ident">root</span>, <span class="ident">root_metadata</span>, <span class="ident">blocks</span>, <span class="ident">quorum_certs</span>)
             .<span class="kw">await</span>;
 
@@ -536,8 +543,8 @@
         <span class="ident">state_computer</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StateComputer</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RecoveryData</span><span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;Start state sync with peer: {}, to block: {}&quot;</span>,
-            <span class="ident">retriever</span>.<span class="ident">preferred_peer</span>.<span class="ident">short_str</span>(),
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">StateSync</span>).<span class="ident">remote_peer</span>(<span class="ident">retriever</span>.<span class="ident">preferred_peer</span>),
+            <span class="string">&quot;Start state sync with peer to block: {}&quot;</span>,
             <span class="ident">highest_commit_cert</span>.<span class="ident">commit_info</span>(),
         );
 
@@ -618,9 +625,9 @@
             <span class="ident">attempt</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 
             <span class="macro">debug</span><span class="macro">!</span>(
-                <span class="string">&quot;Fetching {} from {}, attempt {}&quot;</span>,
-                <span class="ident">block_id</span>,
-                <span class="ident">peer</span>.<span class="ident">short_str</span>(),
+                <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">RetrieveBlock</span>).<span class="ident">remote_peer</span>(<span class="ident">peer</span>),
+                <span class="ident">block_id</span> <span class="op">=</span> <span class="ident">block_id</span>,
+                <span class="string">&quot;Fetching block, attempt {}&quot;</span>,
                 <span class="ident">attempt</span>
             );
             <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="self">self</span>
@@ -640,10 +647,9 @@
             }) {
                 <span class="ident">result</span> @ <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">result</span>,
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(
-                    <span class="string">&quot;Failed to fetch block {} from {}: {:?}, trying another peer&quot;</span>,
-                    <span class="ident">block_id</span>,
-                    <span class="ident">peer</span>.<span class="ident">short_str</span>(),
-                    <span class="ident">e</span>,
+                    <span class="ident">remote_peer</span> <span class="op">=</span> <span class="ident">peer</span>,
+                    <span class="ident">block_id</span> <span class="op">=</span> <span class="ident">block_id</span>,
+                    <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">e</span>, <span class="string">&quot;Failed to fetch block, trying another peer&quot;</span>,
                 ),
             }
         }

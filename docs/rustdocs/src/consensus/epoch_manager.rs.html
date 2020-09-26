@@ -563,6 +563,17 @@
 <span id="563">563</span>
 <span id="564">564</span>
 <span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -576,8 +587,9 @@
         <span class="ident">proposer_election</span>::<span class="ident">ProposerElection</span>,
         <span class="ident">rotating_proposer_election</span>::{<span class="ident">choose_leader</span>, <span class="ident">RotatingProposer</span>},
         <span class="ident">round_proposer_election</span>::<span class="ident">RoundProposer</span>,
-        <span class="ident">round_state</span>::{<span class="ident">ExponentialTimeInterval</span>, <span class="ident">RoundState</span>},
+        <span class="ident">round_state</span>::{<span class="ident">ExponentialTimeInterval</span>, <span class="ident">RoundState</span>, <span class="ident">RoundStateLogSchema</span>},
     },
+    <span class="ident">logging</span>::{<span class="ident">LogEvent</span>, <span class="ident">LogSchema</span>},
     <span class="ident">metrics_safety_rules</span>::<span class="ident">MetricsSafetyRules</span>,
     <span class="ident">network</span>::{<span class="ident">IncomingBlockRetrievalRequest</span>, <span class="ident">NetworkReceivers</span>, <span class="ident">NetworkSender</span>},
     <span class="ident">network_interface</span>::{<span class="ident">ConsensusMsg</span>, <span class="ident">ConsensusNetworkSender</span>},
@@ -759,9 +771,10 @@
         <span class="ident">peer_id</span>: <span class="ident">AccountAddress</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;[EpochManager] receive {} from {}&quot;</span>,
-            <span class="ident">request</span>,
-            <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">ReceiveEpochRetrieval</span>)
+                .<span class="ident">remote_peer</span>(<span class="ident">peer_id</span>)
+                .<span class="ident">epoch</span>(<span class="self">self</span>.<span class="ident">epoch</span>()),
+            <span class="string">&quot;[EpochManager] receive {}&quot;</span>, <span class="ident">request</span>,
         );
         <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">storage</span>
@@ -781,10 +794,10 @@
         <span class="ident">peer_id</span>: <span class="ident">AccountAddress</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;[EpochManager] receive message from epoch {} from {}, local epoch: {}&quot;</span>,
-            <span class="ident">different_epoch</span>,
-            <span class="ident">peer_id</span>,
-            <span class="self">self</span>.<span class="ident">epoch</span>()
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">ReceiveMessageFromDifferentEpoch</span>)
+                .<span class="ident">remote_peer</span>(<span class="ident">peer_id</span>)
+                .<span class="ident">epoch</span>(<span class="self">self</span>.<span class="ident">epoch</span>()),
+            <span class="ident">remote_epoch</span> <span class="op">=</span> <span class="ident">different_epoch</span>,
         );
         <span class="kw">match</span> <span class="ident">different_epoch</span>.<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">epoch</span>()) {
             <span class="comment">// We try to help nodes that have lower epoch than us</span>
@@ -821,8 +834,8 @@
             .<span class="ident">verify</span>(<span class="self">self</span>.<span class="ident">epoch_state</span>())
             .<span class="ident">context</span>(<span class="string">&quot;[EpochManager] Invalid EpochChangeProof&quot;</span>)<span class="question-mark">?</span>;
         <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;Received epoch change to {}&quot;</span>,
-            <span class="ident">ledger_info</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>() <span class="op">+</span> <span class="number">1</span>
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">NewEpoch</span>).<span class="ident">epoch</span>(<span class="ident">ledger_info</span>.<span class="ident">ledger_info</span>().<span class="ident">next_block_epoch</span>()),
+            <span class="string">&quot;Received verified epoch change&quot;</span>,
         );
 
         <span class="comment">// make sure storage is on this ledger_info too, it should be no-op if it&#39;s already committed</span>
@@ -841,16 +854,18 @@
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_round_manager</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">recovery_data</span>: <span class="ident">RecoveryData</span>, <span class="ident">epoch_state</span>: <span class="ident">EpochState</span>) {
         <span class="comment">// Release the previous RoundManager, especially the SafetyRule client</span>
         <span class="self">self</span>.<span class="ident">processor</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch_state</span>.<span class="ident">epoch</span>;
         <span class="ident">counters</span>::<span class="ident">EPOCH</span>.<span class="ident">set</span>(<span class="ident">epoch_state</span>.<span class="ident">epoch</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="ident">counters</span>::<span class="ident">CURRENT_EPOCH_VALIDATORS</span>.<span class="ident">set</span>(<span class="ident">epoch_state</span>.<span class="ident">verifier</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;Starting {} with root {}&quot;</span>,
-            <span class="ident">epoch_state</span>,
-            <span class="ident">recovery_data</span>.<span class="ident">root_block</span>(),
+            <span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch_state</span>.<span class="ident">epoch</span>,
+            <span class="ident">validators</span> <span class="op">=</span> <span class="ident">epoch_state</span>.<span class="ident">verifier</span>.<span class="ident">to_string</span>(),
+            <span class="ident">root_block</span> <span class="op">=</span> <span class="ident">recovery_data</span>.<span class="ident">root_block</span>(),
+            <span class="string">&quot;Starting new epoch&quot;</span>,
         );
         <span class="kw">let</span> <span class="ident">last_vote</span> <span class="op">=</span> <span class="ident">recovery_data</span>.<span class="ident">last_vote</span>();
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Create BlockStore&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;Create BlockStore&quot;</span>);
         <span class="kw">let</span> <span class="ident">block_store</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">BlockStore</span>::<span class="ident">new</span>(
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>),
             <span class="ident">recovery_data</span>,
@@ -859,7 +874,7 @@
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">time_service</span>),
         ));
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Update SafetyRules&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;Update SafetyRules&quot;</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span>
             <span class="ident">MetricsSafetyRules</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">safety_rules_manager</span>.<span class="ident">client</span>(), <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">clone</span>());
@@ -867,7 +882,7 @@
             .<span class="ident">perform_initialize</span>()
             .<span class="ident">expect</span>(<span class="string">&quot;Unable to initialize SafetyRules&quot;</span>);
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Create ProposalGenerator&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;Create ProposalGenerator&quot;</span>);
         <span class="comment">// txn manager is required both by proposal generator (to pull the proposers)</span>
         <span class="comment">// and by event processor (to update their status).</span>
         <span class="kw">let</span> <span class="ident">proposal_generator</span> <span class="op">=</span> <span class="ident">ProposalGenerator</span>::<span class="ident">new</span>(
@@ -878,11 +893,11 @@
             <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_block_size</span>,
         );
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Create RoundState&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;Create RoundState&quot;</span>);
         <span class="kw">let</span> <span class="ident">round_state</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">create_round_state</span>(<span class="self">self</span>.<span class="ident">time_service</span>.<span class="ident">clone</span>(), <span class="self">self</span>.<span class="ident">timeout_sender</span>.<span class="ident">clone</span>());
 
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Create ProposerElection&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;Create ProposerElection&quot;</span>);
         <span class="kw">let</span> <span class="ident">proposer_election</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_proposer_election</span>(<span class="kw-2">&amp;</span><span class="ident">epoch_state</span>);
         <span class="kw">let</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">NetworkSender</span>::<span class="ident">new</span>(
             <span class="self">self</span>.<span class="ident">author</span>,
@@ -905,7 +920,7 @@
         );
         <span class="ident">processor</span>.<span class="ident">start</span>(<span class="ident">last_vote</span>).<span class="kw">await</span>;
         <span class="self">self</span>.<span class="ident">processor</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">RoundProcessor</span>::<span class="ident">Normal</span>(<span class="ident">processor</span>));
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;RoundManager started&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;RoundManager started&quot;</span>);
     }
 
     <span class="comment">// Depending on what data we can extract from consensusdb, we may or may not have an</span>
@@ -917,6 +932,7 @@
         <span class="ident">ledger_recovery_data</span>: <span class="ident">LedgerRecoveryData</span>,
         <span class="ident">epoch_state</span>: <span class="ident">EpochState</span>,
     ) {
+        <span class="kw">let</span> <span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch_state</span>.<span class="ident">epoch</span>;
         <span class="kw">let</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">NetworkSender</span>::<span class="ident">new</span>(
             <span class="self">self</span>.<span class="ident">author</span>,
             <span class="self">self</span>.<span class="ident">network_sender</span>.<span class="ident">clone</span>(),
@@ -930,7 +946,7 @@
             <span class="self">self</span>.<span class="ident">state_computer</span>.<span class="ident">clone</span>(),
             <span class="ident">ledger_recovery_data</span>.<span class="ident">commit_round</span>(),
         )));
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;SyncProcessor started&quot;</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">epoch</span> <span class="op">=</span> <span class="ident">epoch</span>, <span class="string">&quot;SyncProcessor started&quot;</span>);
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_processor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">payload</span>: <span class="ident">OnChainConfigPayload</span>) {
@@ -971,7 +987,7 @@
                     <span class="macro">error</span><span class="macro">!</span>(
                         <span class="ident">SecurityEvent</span>::<span class="ident">ConsensusInvalidMessage</span>,
                         <span class="ident">remote_peer</span> <span class="op">=</span> <span class="ident">peer_id</span>,
-                        <span class="ident">error</span> <span class="op">=</span> <span class="ident">err</span>.<span class="ident">to_string</span>(),
+                        <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">err</span>,
                         <span class="ident">unverified_event</span> <span class="op">=</span> <span class="ident">unverified_event</span>
                     );
                     <span class="ident">err</span>
@@ -1002,6 +1018,12 @@
             }
             <span class="ident">ConsensusMsg</span>::<span class="ident">EpochChangeProof</span>(<span class="ident">proof</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">msg_epoch</span> <span class="op">=</span> <span class="ident">proof</span>.<span class="ident">epoch</span>()<span class="question-mark">?</span>;
+                <span class="macro">debug</span><span class="macro">!</span>(
+                    <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEvent</span>::<span class="ident">ReceiveEpochChangeProof</span>)
+                        .<span class="ident">remote_peer</span>(<span class="ident">peer_id</span>)
+                        .<span class="ident">epoch</span>(<span class="self">self</span>.<span class="ident">epoch</span>()),
+                    <span class="string">&quot;Proof from epoch {}&quot;</span>, <span class="ident">msg_epoch</span>,
+                );
                 <span class="kw">if</span> <span class="ident">msg_epoch</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">epoch</span>() {
                     <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;process_epoch_proof&quot;</span>, <span class="self">self</span>.<span class="ident">start_new_epoch</span>(<span class="kw-2">*</span><span class="ident">proof</span>).<span class="kw">await</span><span class="question-mark">?</span>);
                 } <span class="kw">else</span> {
@@ -1115,15 +1137,15 @@
                 }
             );
             <span class="kw">let</span> <span class="ident">round_state</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">RoundProcessor</span>::<span class="ident">Normal</span>(<span class="ident">p</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">processor_mut</span>() {
-                <span class="ident">p</span>.<span class="ident">round_state</span>().<span class="ident">to_string</span>()
+                <span class="prelude-val">Some</span>(<span class="ident">p</span>.<span class="ident">round_state</span>())
             } <span class="kw">else</span> {
-                <span class="string">&quot;RoundState: None&quot;</span>.<span class="ident">into</span>()
+                <span class="prelude-val">None</span>
             };
             <span class="kw">match</span> <span class="ident">result</span> {
-                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">round_state</span>),
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">trace</span><span class="macro">!</span>(<span class="ident">RoundStateLogSchema</span>::<span class="ident">new</span>(<span class="ident">round_state</span>)),
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="ident">counters</span>::<span class="ident">ERROR_COUNT</span>.<span class="ident">inc</span>();
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;{:?}, {}&quot;</span>, <span class="ident">e</span>, <span class="ident">round_state</span>);
+                    <span class="macro">error</span><span class="macro">!</span>(<span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">e</span>, <span class="ident">RoundStateLogSchema</span>::<span class="ident">new</span>(<span class="ident">round_state</span>));
                 }
             }
         }
