@@ -151,21 +151,14 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">//! This file contains the starting gas schedule published at genesis.</span>
 
-<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::<span class="ident">GasCost</span>;
-<span class="kw">use</span> <span class="ident">move_vm_types</span>::<span class="ident">gas_schedule</span>::<span class="ident">NativeCostIndex</span> <span class="kw">as</span> <span class="ident">N</span>;
+<span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">gas_schedule</span>::{<span class="ident">CostTable</span>, <span class="ident">GasCost</span>};
+<span class="kw">use</span> <span class="ident">move_vm_types</span>::<span class="ident">gas_schedule</span>::{<span class="self">self</span>, <span class="ident">NativeCostIndex</span> <span class="kw">as</span> <span class="ident">N</span>};
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::{
     <span class="ident">file_format</span>::{
@@ -176,7 +169,7 @@
     <span class="ident">file_format_common</span>::<span class="ident">instruction_key</span>,
 };
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">static</span> <span class="ident">INITIAL_GAS_SCHEDULE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INITIAL_GAS_SCHEDULE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">CostTable</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
     <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">instrs</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
         (<span class="ident">MoveTo</span>(<span class="ident">StructDefinitionIndex</span>::<span class="ident">new</span>(<span class="number">0</span>)), <span class="ident">GasCost</span>::<span class="ident">new</span>(<span class="number">13</span>, <span class="number">1</span>)),
@@ -284,7 +277,6 @@
     ];
     <span class="comment">// Note that the LibraVM is expecting the table sorted by instruction order.</span>
     <span class="ident">instrs</span>.<span class="ident">sort_by_key</span>(<span class="op">|</span><span class="ident">cost</span><span class="op">|</span> <span class="ident">instruction_key</span>(<span class="kw-2">&amp;</span><span class="ident">cost</span>.<span class="number">0</span>));
-    <span class="kw">let</span> <span class="ident">raw_instruction_table</span> <span class="op">=</span> <span class="ident">instrs</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">cost</span>)<span class="op">|</span> <span class="ident">cost</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">native_table</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
         (<span class="ident">N</span>::<span class="ident">SHA2_256</span>, <span class="ident">GasCost</span>::<span class="ident">new</span>(<span class="number">21</span>, <span class="number">1</span>)),
@@ -311,13 +303,7 @@
         .<span class="ident">into_iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">cost</span>)<span class="op">|</span> <span class="ident">cost</span>)
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
-
-    (
-        <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">raw_instruction_table</span>)
-            .<span class="ident">expect</span>(<span class="string">&quot;Unable to serialize genesis gas schedule for instructions&quot;</span>),
-        <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">raw_native_table</span>)
-            .<span class="ident">expect</span>(<span class="string">&quot;Unable to serialize genesis gas schedule for instructions&quot;</span>),
-    )
+    <span class="ident">gas_schedule</span>::<span class="ident">new_from_instructions</span>(<span class="ident">instrs</span>, <span class="ident">raw_native_table</span>)
 });
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "vm_genesis";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
