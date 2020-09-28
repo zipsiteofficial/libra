@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["MOVE_DATA",""],["MOVE_SRC",""],["MOVE_SRC_ADDRESS","Store modules under move_src without an explicit `address {}` block under 0x2."]],"mod":[["test",""]],"struct":[["OnDiskStateView",""]]});
+initSidebarItems({"constant":[["MOVE_DATA","Default directory where saved Move resources live"],["MOVE_SRC","Default directory where Move modules live"],["MOVE_SRC_ADDRESS","Store modules under move_src without an explicit `address {}` block under 0x2."]],"mod":[["test",""]],"struct":[["OnDiskStateView",""]]});
