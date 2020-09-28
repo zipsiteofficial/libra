@@ -549,6 +549,12 @@
 <span id="549">549</span>
 <span id="550">550</span>
 <span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -603,7 +609,13 @@
                 <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">value</span> {
                     <span class="ident">Value</span>::<span class="ident">Debug</span>(<span class="ident">d</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serde_json</span>::<span class="ident">Value</span>::<span class="ident">String</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">d</span>)),
                     <span class="ident">Value</span>::<span class="ident">Display</span>(<span class="ident">d</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serde_json</span>::<span class="ident">Value</span>::<span class="ident">String</span>(<span class="ident">d</span>.<span class="ident">to_string</span>()),
-                    <span class="ident">Value</span>::<span class="ident">Serde</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">serde_json</span>::<span class="ident">to_value</span>(<span class="ident">s</span>).<span class="ident">unwrap</span>(),
+                    <span class="ident">Value</span>::<span class="ident">Serde</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">serde_json</span>::<span class="ident">to_value</span>(<span class="ident">s</span>) {
+                        <span class="prelude-val">Ok</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">value</span>,
+                        <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                            <span class="macro">eprintln</span><span class="macro">!</span>(<span class="string">&quot;error serializing structured log: {}&quot;</span>, <span class="ident">e</span>);
+                            <span class="kw">return</span>;
+                        }
+                    },
                 };
 
                 <span class="self">self</span>.<span class="number">0</span>.<span class="ident">insert</span>(<span class="ident">key</span>.<span class="ident">as_str</span>(), <span class="ident">v</span>);
