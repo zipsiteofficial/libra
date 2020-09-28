@@ -442,6 +442,14 @@
 <span id="442">442</span>
 <span id="443">443</span>
 <span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -484,7 +492,7 @@
     <span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">BTreeSet</span>},
     <span class="ident">fs</span>,
     <span class="ident">fs</span>::<span class="ident">File</span>,
-    <span class="ident">io</span>::<span class="ident">Read</span>,
+    <span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>},
     <span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
     <span class="ident">time</span>::<span class="ident">Instant</span>,
 };
@@ -541,7 +549,7 @@
     }
 
     <span class="kw">if</span> <span class="ident">options</span>.<span class="ident">run_packed_types_gen</span> {
-        <span class="kw">return</span> <span class="ident">run_packed_types_gen</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>, <span class="ident">now</span>);
+        <span class="kw">return</span> <span class="ident">run_packed_types_gen</span>(<span class="kw-2">&amp;</span><span class="ident">options</span>, <span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>, <span class="ident">now</span>);
     }
     <span class="ident">check_modifies</span>(<span class="kw-2">&amp;</span><span class="ident">env</span>, <span class="kw-2">&amp;</span><span class="ident">targets</span>);
     <span class="kw">if</span> <span class="ident">env</span>.<span class="ident">has_errors</span>() {
@@ -668,6 +676,7 @@
 }
 
 <span class="kw">fn</span> <span class="ident">run_packed_types_gen</span>(
+    <span class="ident">options</span>: <span class="kw-2">&amp;</span><span class="ident">Options</span>,
     <span class="ident">env</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalEnv</span>,
     <span class="ident">targets</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTargetsHolder</span>,
     <span class="ident">now</span>: <span class="ident">Instant</span>,
@@ -680,7 +689,14 @@
     <span class="kw">for</span> <span class="ident">ty</span> <span class="kw">in</span> <span class="ident">packed_types</span> {
         <span class="ident">access_path_type_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">access_vector</span>(), <span class="ident">ty</span>);
     }
-    <span class="comment">// TODO: save to disk, resource-viewer and an LCS schema extractor should look at this</span>
+    <span class="kw">let</span> <span class="ident">flattened_map</span> <span class="op">=</span> <span class="ident">access_path_type_map</span>
+        .<span class="ident">into_iter</span>()
+        .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">k</span>, <span class="ident">v</span>)<span class="op">|</span> (<span class="ident">hex</span>::<span class="ident">encode</span>(<span class="kw-2">&amp;</span><span class="ident">k</span>), <span class="ident">v</span>))
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+    <span class="kw">let</span> <span class="ident">types_json</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">to_string_pretty</span>(<span class="kw-2">&amp;</span><span class="ident">flattened_map</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">types_file</span> <span class="op">=</span> <span class="ident">File</span>::<span class="ident">create</span>(<span class="ident">options</span>.<span class="ident">output_path</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
+    <span class="ident">types_file</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">types_json</span>.<span class="ident">as_bytes</span>())<span class="question-mark">?</span>;
+    <span class="ident">types_file</span>.<span class="ident">write_all</span>(<span class="string">b&quot;\n&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">generating_elapsed</span> <span class="op">=</span> <span class="ident">now</span>.<span class="ident">elapsed</span>();
     <span class="macro">info</span><span class="macro">!</span>(
