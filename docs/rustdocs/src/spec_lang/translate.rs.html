@@ -5485,6 +5485,28 @@
 <span id="5485">5485</span>
 <span id="5486">5486</span>
 <span id="5487">5487</span>
+<span id="5488">5488</span>
+<span id="5489">5489</span>
+<span id="5490">5490</span>
+<span id="5491">5491</span>
+<span id="5492">5492</span>
+<span id="5493">5493</span>
+<span id="5494">5494</span>
+<span id="5495">5495</span>
+<span id="5496">5496</span>
+<span id="5497">5497</span>
+<span id="5498">5498</span>
+<span id="5499">5499</span>
+<span id="5500">5500</span>
+<span id="5501">5501</span>
+<span id="5502">5502</span>
+<span id="5503">5503</span>
+<span id="5504">5504</span>
+<span id="5505">5505</span>
+<span id="5506">5506</span>
+<span id="5507">5507</span>
+<span id="5508">5508</span>
+<span id="5509">5509</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -5542,6 +5564,7 @@
     <span class="ident">symbol</span>::{<span class="ident">Symbol</span>, <span class="ident">SymbolPool</span>},
     <span class="ident">ty</span>::{<span class="ident">PrimitiveType</span>, <span class="ident">Substitution</span>, <span class="ident">Type</span>, <span class="ident">TypeDisplayContext</span>, <span class="ident">BOOL_TYPE</span>},
 };
+<span class="kw">use</span> <span class="ident">move_lang</span>::<span class="ident">expansion</span>::<span class="ident">ast</span>::<span class="ident">PragmaProperty</span>;
 
 <span class="comment">// =================================================================================================</span>
 <span class="doccomment">/// # Translator</span>
@@ -7157,13 +7180,12 @@
                     <span class="ident">signature</span>, <span class="ident">body</span>, ..
                 } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_spec_fun</span>(<span class="ident">signature</span>, <span class="ident">body</span>),
                 <span class="ident">Let</span> { <span class="ident">name</span>, <span class="ident">def</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_let</span>(<span class="ident">context</span>, <span class="ident">loc</span>, <span class="ident">name</span>, <span class="ident">def</span>),
-                <span class="ident">Include</span> { <span class="ident">exp</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">def_ana_schema_inclusion_outside_schema</span>(
-                    <span class="ident">loc</span>,
-                    <span class="ident">context</span>,
-                    <span class="prelude-val">None</span>,
-                    <span class="ident">PropertyBag</span>::<span class="ident">default</span>(),
-                    <span class="ident">exp</span>,
-                ),
+                <span class="ident">Include</span> { <span class="ident">properties</span>, <span class="ident">exp</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">properties</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">properties</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">None</span>);
+                    <span class="self">self</span>.<span class="ident">def_ana_schema_inclusion_outside_schema</span>(
+                        <span class="ident">loc</span>, <span class="ident">context</span>, <span class="prelude-val">None</span>, <span class="ident">properties</span>, <span class="ident">exp</span>,
+                    )
+                }
                 <span class="ident">Apply</span> {
                     <span class="ident">exp</span>,
                     <span class="ident">patterns</span>,
@@ -7926,7 +7948,7 @@
         <span class="comment">// First recursively visit all schema includes and ensure they are analyzed.</span>
         <span class="kw">for</span> <span class="ident">included_name</span> <span class="kw">in</span> <span class="self">self</span>
             .<span class="ident">iter_schema_includes</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span>)
-            .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">exp</span>)<span class="op">|</span> {
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">exp</span>)<span class="op">|</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
                 <span class="ident">extract_schema_access</span>(<span class="ident">exp</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">res</span>);
                 <span class="ident">res</span>
@@ -8025,12 +8047,14 @@
 
         <span class="comment">// Process all schema includes. We need to do this before we type check expressions to have</span>
         <span class="comment">// all variables from includes in the environment.</span>
-        <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">included_exp</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter_schema_includes</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span>) {
+        <span class="kw">for</span> (<span class="kw">_</span>, <span class="ident">included_props</span>, <span class="ident">included_exp</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">iter_schema_includes</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">value</span>.<span class="ident">members</span>) {
+            <span class="kw">let</span> <span class="ident">included_props</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">translate_properties</span>(<span class="ident">included_props</span>, <span class="kw-2">&amp;</span><span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="prelude-val">None</span>);
             <span class="self">self</span>.<span class="ident">def_ana_schema_exp</span>(
                 <span class="kw-2">&amp;</span><span class="ident">type_params</span>,
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">all_vars</span>,
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">included_spec</span>,
                 <span class="bool-val">true</span>,
+                <span class="kw-2">&amp;</span><span class="ident">included_props</span>,
                 <span class="ident">included_exp</span>,
             );
         }
@@ -8093,10 +8117,10 @@
     <span class="kw">fn</span> <span class="ident">iter_schema_includes</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">members</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">EA</span>::<span class="ident">SpecBlockMember</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">MoveIrLoc</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EA</span>::<span class="ident">Exp</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">MoveIrLoc</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PragmaProperty</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">EA</span>::<span class="ident">Exp</span>)<span class="op">&gt;</span> {
         <span class="ident">members</span>.<span class="ident">iter</span>().<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Include</span> { <span class="ident">exp</span> } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">value</span> {
-                <span class="prelude-val">Some</span>((<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">loc</span>, <span class="ident">exp</span>))
+            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">EA</span>::<span class="ident">SpecBlockMember_</span>::<span class="ident">Include</span> { <span class="ident">properties</span>, <span class="ident">exp</span> } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">value</span> {
+                <span class="prelude-val">Some</span>((<span class="kw-2">&amp;</span><span class="ident">m</span>.<span class="ident">loc</span>, <span class="ident">properties</span>, <span class="ident">exp</span>))
             } <span class="kw">else</span> {
                 <span class="prelude-val">None</span>
             }
@@ -8127,9 +8151,18 @@
         <span class="ident">vars</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Symbol</span>, <span class="ident">LocalVarEntry</span><span class="op">&gt;</span>,
         <span class="ident">spec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Spec</span>,
         <span class="ident">allow_new_vars</span>: <span class="ident">bool</span>,
+        <span class="ident">properties</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyBag</span>,
         <span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">Exp</span>,
     ) {
-        <span class="self">self</span>.<span class="ident">def_ana_schema_exp_oper</span>(<span class="ident">context_type_params</span>, <span class="ident">vars</span>, <span class="ident">spec</span>, <span class="ident">allow_new_vars</span>, <span class="prelude-val">None</span>, <span class="ident">exp</span>)
+        <span class="self">self</span>.<span class="ident">def_ana_schema_exp_oper</span>(
+            <span class="ident">context_type_params</span>,
+            <span class="ident">vars</span>,
+            <span class="ident">spec</span>,
+            <span class="ident">allow_new_vars</span>,
+            <span class="prelude-val">None</span>,
+            <span class="ident">properties</span>,
+            <span class="ident">exp</span>,
+        )
     }
 
     <span class="doccomment">/// Analyzes operations in schema expressions. This extends the path condition as needed</span>
@@ -8141,6 +8174,7 @@
         <span class="ident">spec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Spec</span>,
         <span class="ident">allow_new_vars</span>: <span class="ident">bool</span>,
         <span class="ident">path_cond</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Exp</span><span class="op">&gt;</span>,
+        <span class="ident">properties</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyBag</span>,
         <span class="ident">exp</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">Exp</span>,
     ) {
         <span class="kw">let</span> <span class="ident">loc</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>.<span class="ident">to_loc</span>(<span class="kw-2">&amp;</span><span class="ident">exp</span>.<span class="ident">loc</span>);
@@ -8163,6 +8197,7 @@
                     <span class="ident">spec</span>,
                     <span class="ident">allow_new_vars</span>,
                     <span class="ident">path_cond</span>,
+                    <span class="ident">properties</span>,
                     <span class="ident">rhs</span>,
                 );
             }
@@ -8179,6 +8214,7 @@
                     <span class="ident">spec</span>,
                     <span class="ident">allow_new_vars</span>,
                     <span class="ident">path_cond</span>.<span class="ident">clone</span>(),
+                    <span class="ident">properties</span>,
                     <span class="ident">lhs</span>,
                 );
                 <span class="self">self</span>.<span class="ident">def_ana_schema_exp_oper</span>(
@@ -8187,6 +8223,7 @@
                     <span class="ident">spec</span>,
                     <span class="ident">allow_new_vars</span>,
                     <span class="ident">path_cond</span>,
+                    <span class="ident">properties</span>,
                     <span class="ident">rhs</span>,
                 );
             }
@@ -8202,6 +8239,7 @@
                     <span class="ident">spec</span>,
                     <span class="ident">allow_new_vars</span>,
                     <span class="ident">t_path_cond</span>,
+                    <span class="ident">properties</span>,
                     <span class="ident">t</span>,
                 );
                 <span class="kw">let</span> <span class="ident">node_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_node_id_with_type_loc</span>(<span class="kw-2">&amp;</span><span class="ident">BOOL_TYPE</span>, <span class="kw-2">&amp;</span><span class="ident">loc</span>);
@@ -8213,6 +8251,7 @@
                     <span class="ident">spec</span>,
                     <span class="ident">allow_new_vars</span>,
                     <span class="ident">e_path_cond</span>,
+                    <span class="ident">properties</span>,
                     <span class="ident">e</span>,
                 );
             }
@@ -8222,6 +8261,7 @@
                 <span class="ident">spec</span>,
                 <span class="ident">allow_new_vars</span>,
                 <span class="ident">path_cond</span>,
+                <span class="ident">properties</span>,
                 <span class="kw-2">&amp;</span><span class="ident">loc</span>,
                 <span class="ident">maccess</span>,
                 <span class="ident">type_args_opt</span>,
@@ -8233,6 +8273,7 @@
                 <span class="ident">spec</span>,
                 <span class="ident">allow_new_vars</span>,
                 <span class="ident">path_cond</span>,
+                <span class="ident">properties</span>,
                 <span class="kw-2">&amp;</span><span class="ident">loc</span>,
                 <span class="ident">maccess</span>,
                 <span class="ident">type_args_opt</span>,
@@ -8252,6 +8293,7 @@
         <span class="ident">spec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Spec</span>,
         <span class="ident">allow_new_vars</span>: <span class="ident">bool</span>,
         <span class="ident">path_cond</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Exp</span><span class="op">&gt;</span>,
+        <span class="ident">schema_properties</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyBag</span>,
         <span class="ident">loc</span>: <span class="kw-2">&amp;</span><span class="ident">Loc</span>,
         <span class="ident">maccess</span>: <span class="kw-2">&amp;</span><span class="ident">EA</span>::<span class="ident">ModuleAccess</span>,
         <span class="ident">type_args_opt</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EA</span>::<span class="ident">Type</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -8412,10 +8454,12 @@
                     );
                 }
             }
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">effective_properties</span> <span class="op">=</span> <span class="ident">schema_properties</span>.<span class="ident">clone</span>();
+            <span class="ident">effective_properties</span>.<span class="ident">extend</span>(<span class="ident">properties</span>.<span class="ident">clone</span>());
             <span class="ident">spec</span>.<span class="ident">conditions</span>.<span class="ident">push</span>(<span class="ident">Condition</span> {
                 <span class="ident">loc</span>: <span class="ident">loc</span>.<span class="ident">clone</span>(),
                 <span class="ident">kind</span>: <span class="ident">kind</span>.<span class="ident">clone</span>(),
-                <span class="ident">properties</span>: <span class="ident">properties</span>.<span class="ident">clone</span>(),
+                <span class="ident">properties</span>: <span class="ident">effective_properties</span>,
                 <span class="ident">exp</span>,
             });
         }
@@ -8539,11 +8583,11 @@
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">vars</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">spec</span>,
             <span class="bool-val">false</span>,
+            <span class="kw-2">&amp;</span><span class="ident">PropertyBag</span>::<span class="ident">default</span>(),
             <span class="ident">exp</span>,
         );
 
         <span class="comment">// Write the conditions to the context item.</span>
-        <span class="comment">// TODO: merge pragma properties as well?</span>
         <span class="self">self</span>.<span class="ident">add_conditions_to_context</span>(
             <span class="ident">context</span>,
             <span class="ident">loc</span>,
