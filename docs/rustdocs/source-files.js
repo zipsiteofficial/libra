@@ -59,6 +59,7 @@ sourcesIndex["libra_logger"] = {"name":"","files":["counters.rs","event.rs","fil
 sourcesIndex["libra_management"] = {"name":"","files":["config.rs","error.rs","lib.rs","secure_backend.rs","storage.rs","transaction.rs","validator_config.rs"]};
 sourcesIndex["libra_mempool"] = {"name":"","dirs":[{"name":"core_mempool","files":["index.rs","mempool.rs","mod.rs","transaction.rs","transaction_store.rs","ttl_cache.rs"]},{"name":"shared_mempool","files":["coordinator.rs","mod.rs","network.rs","peer_manager.rs","runtime.rs","tasks.rs","types.rs"]},{"name":"tests","files":["fuzzing.rs","mocks.rs","mod.rs"]}],"files":["counters.rs","lib.rs","logging.rs"]};
 sourcesIndex["libra_metrics"] = {"name":"","files":["json_encoder.rs","json_metrics.rs","lib.rs","metric_server.rs","op_counters.rs","public_metrics.rs"]};
+sourcesIndex["libra_metrics_core"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_network_address"] = {"name":"","files":["encrypted.rs","lib.rs"]};
 sourcesIndex["libra_network_address_encryption"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_nibble"] = {"name":"","files":["lib.rs"]};
