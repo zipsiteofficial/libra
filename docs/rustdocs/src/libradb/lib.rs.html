@@ -904,7 +904,6 @@
 <span id="904">904</span>
 <span id="905">905</span>
 <span id="906">906</span>
-<span id="907">907</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1391,37 +1390,31 @@
         <span class="ident">start_epoch</span>: <span class="ident">u64</span>,
         <span class="ident">end_epoch</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochChangeProof</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_epoch_ending_ledger_infos&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> (<span class="ident">ledger_info_with_sigs</span>, <span class="ident">more</span>) <span class="op">=</span>
-            <span class="self">Self</span>::<span class="ident">get_epoch_ending_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">start_epoch</span>, <span class="ident">end_epoch</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="ident">ledger_info_with_sigs</span>, <span class="ident">more</span>))
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_epoch_ending_ledger_infos&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> (<span class="ident">ledger_info_with_sigs</span>, <span class="ident">more</span>) <span class="op">=</span>
+                <span class="self">Self</span>::<span class="ident">get_epoch_ending_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">start_epoch</span>, <span class="ident">end_epoch</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(<span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="ident">ledger_info_with_sigs</span>, <span class="ident">more</span>))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_latest_account_state</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountStateBlob</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_latest_account_state&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> <span class="ident">ledger_info_with_sigs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
-        <span class="kw">let</span> (<span class="ident">blob</span>, <span class="ident">_proof</span>) <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">state_store</span>
-            .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">blob</span>)
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_latest_account_state&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">ledger_info_with_sigs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
+            <span class="kw">let</span> (<span class="ident">blob</span>, <span class="ident">_proof</span>) <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">state_store</span>
+                .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(<span class="ident">blob</span>)
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_latest_ledger_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_latest_ledger_info&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_latest_ledger_info&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()
+        })
     }
 
     <span class="doccomment">/// Returns a transaction that is the `seq_num`-th one associated with the given account. If</span>
@@ -1433,14 +1426,14 @@
         <span class="ident">ledger_version</span>: <span class="ident">Version</span>,
         <span class="ident">fetch_events</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionWithProof</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_txn_by_account&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="self">self</span>.<span class="ident">transaction_store</span>
-            .<span class="ident">lookup_transaction_by_account</span>(<span class="ident">address</span>, <span class="ident">seq_num</span>, <span class="ident">ledger_version</span>)<span class="question-mark">?</span>
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">get_transaction_with_proof</span>(<span class="ident">version</span>, <span class="ident">ledger_version</span>, <span class="ident">fetch_events</span>))
-            .<span class="ident">transpose</span>()
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_txn_by_account&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="self">self</span>.<span class="ident">transaction_store</span>
+                .<span class="ident">lookup_transaction_by_account</span>(<span class="ident">address</span>, <span class="ident">seq_num</span>, <span class="ident">ledger_version</span>)<span class="question-mark">?</span>
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> {
+                    <span class="self">self</span>.<span class="ident">get_transaction_with_proof</span>(<span class="ident">version</span>, <span class="ident">ledger_version</span>, <span class="ident">fetch_events</span>)
+                })
+                .<span class="ident">transpose</span>()
+        })
     }
 
     <span class="comment">// ======================= State Synchronizer Internal APIs ===================================</span>
@@ -1454,48 +1447,46 @@
         <span class="ident">ledger_version</span>: <span class="ident">Version</span>,
         <span class="ident">fetch_events</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionListWithProof</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_transactions&quot;</span>])
-            .<span class="ident">start_timer</span>();
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_transactions&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="ident">error_if_too_many_requested</span>(<span class="ident">limit</span>, <span class="ident">MAX_LIMIT</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">error_if_too_many_requested</span>(<span class="ident">limit</span>, <span class="ident">MAX_LIMIT</span>)<span class="question-mark">?</span>;
+            <span class="kw">if</span> <span class="ident">start_version</span> <span class="op">&gt;</span> <span class="ident">ledger_version</span> <span class="op">|</span><span class="op">|</span> <span class="ident">limit</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">TransactionListWithProof</span>::<span class="ident">new_empty</span>());
+            }
 
-        <span class="kw">if</span> <span class="ident">start_version</span> <span class="op">&gt;</span> <span class="ident">ledger_version</span> <span class="op">|</span><span class="op">|</span> <span class="ident">limit</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">TransactionListWithProof</span>::<span class="ident">new_empty</span>());
-        }
+            <span class="kw">let</span> <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">limit</span>, <span class="ident">ledger_version</span> <span class="op">-</span> <span class="ident">start_version</span> <span class="op">+</span> <span class="number">1</span>);
 
-        <span class="kw">let</span> <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">limit</span>, <span class="ident">ledger_version</span> <span class="op">-</span> <span class="ident">start_version</span> <span class="op">+</span> <span class="number">1</span>);
+            <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">transaction_store</span>.<span class="ident">get_transaction</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">txn_infos</span> <span class="op">=</span> (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_transaction_info</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">fetch_events</span> {
+                <span class="prelude-val">Some</span>(
+                    (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">event_store</span>.<span class="ident">get_events_by_version</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
+                        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>,
+                )
+            } <span class="kw">else</span> {
+                <span class="prelude-val">None</span>
+            };
+            <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="ident">TransactionListProof</span>::<span class="ident">new</span>(
+                <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_transaction_range_proof</span>(
+                    <span class="prelude-val">Some</span>(<span class="ident">start_version</span>),
+                    <span class="ident">limit</span>,
+                    <span class="ident">ledger_version</span>,
+                )<span class="question-mark">?</span>,
+                <span class="ident">txn_infos</span>,
+            );
 
-        <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">transaction_store</span>.<span class="ident">get_transaction</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">txn_infos</span> <span class="op">=</span> (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_transaction_info</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">fetch_events</span> {
-            <span class="prelude-val">Some</span>(
-                (<span class="ident">start_version</span>..<span class="ident">start_version</span> <span class="op">+</span> <span class="ident">limit</span>)
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">version</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">event_store</span>.<span class="ident">get_events_by_version</span>(<span class="ident">version</span>)<span class="question-mark">?</span>))
-                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>,
-            )
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        };
-        <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="ident">TransactionListProof</span>::<span class="ident">new</span>(
-            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_transaction_range_proof</span>(
+            <span class="prelude-val">Ok</span>(<span class="ident">TransactionListWithProof</span>::<span class="ident">new</span>(
+                <span class="ident">txns</span>,
+                <span class="ident">events</span>,
                 <span class="prelude-val">Some</span>(<span class="ident">start_version</span>),
-                <span class="ident">limit</span>,
-                <span class="ident">ledger_version</span>,
-            )<span class="question-mark">?</span>,
-            <span class="ident">txn_infos</span>,
-        );
-
-        <span class="prelude-val">Ok</span>(<span class="ident">TransactionListWithProof</span>::<span class="ident">new</span>(
-            <span class="ident">txns</span>,
-            <span class="ident">events</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">start_version</span>),
-            <span class="ident">proof</span>,
-        ))
+                <span class="ident">proof</span>,
+            ))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_events</span>(
@@ -1505,30 +1496,26 @@
         <span class="ident">order</span>: <span class="ident">Order</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">ContractEvent</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_events&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">ledger_store</span>
-            .<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>
-            .<span class="ident">ledger_info</span>()
-            .<span class="ident">version</span>();
-        <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">get_events_by_event_key</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">order</span>, <span class="ident">limit</span>, <span class="ident">version</span>)<span class="question-mark">?</span>
-            .<span class="ident">into_iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> (<span class="ident">e</span>.<span class="ident">transaction_version</span>, <span class="ident">e</span>.<span class="ident">event</span>))
-            .<span class="ident">collect</span>();
-        <span class="prelude-val">Ok</span>(<span class="ident">events</span>)
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_events&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">ledger_store</span>
+                .<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>
+                .<span class="ident">ledger_info</span>()
+                .<span class="ident">version</span>();
+            <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">get_events_by_event_key</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">order</span>, <span class="ident">limit</span>, <span class="ident">version</span>)<span class="question-mark">?</span>
+                .<span class="ident">into_iter</span>()
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> (<span class="ident">e</span>.<span class="ident">transaction_version</span>, <span class="ident">e</span>.<span class="ident">event</span>))
+                .<span class="ident">collect</span>();
+            <span class="prelude-val">Ok</span>(<span class="ident">events</span>)
+        })
     }
 
     <span class="doccomment">/// Gets ledger info at specified version and ensures it&#39;s an epoch ending.</span>
     <span class="kw">fn</span> <span class="ident">get_epoch_ending_ledger_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_epoch_ending_ledger_info&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_epoch_ending_ledger_info</span>(<span class="ident">version</span>)
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_epoch_ending_ledger_info&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_epoch_ending_ledger_info</span>(<span class="ident">version</span>)
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_state_proof_with_ledger_info</span>(
@@ -1536,30 +1523,28 @@
         <span class="ident">known_version</span>: <span class="ident">u64</span>,
         <span class="ident">ledger_info_with_sigs</span>: <span class="ident">LedgerInfoWithSignatures</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">EpochChangeProof</span>, <span class="ident">AccumulatorConsistencyProof</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_state_proof_with_ledger_info&quot;</span>])
-            .<span class="ident">start_timer</span>();
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_state_proof_with_ledger_info&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>();
+            <span class="macro">ensure</span><span class="macro">!</span>(
+                <span class="ident">known_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_info</span>.<span class="ident">version</span>(),
+                <span class="string">&quot;Client known_version {} larger than ledger version {}.&quot;</span>,
+                <span class="ident">known_version</span>,
+                <span class="ident">ledger_info</span>.<span class="ident">version</span>(),
+            );
+            <span class="kw">let</span> <span class="ident">known_epoch</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_epoch</span>(<span class="ident">known_version</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">epoch_change_proof</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">known_epoch</span> <span class="op">&lt;</span> <span class="ident">ledger_info</span>.<span class="ident">next_block_epoch</span>() {
+                <span class="kw">let</span> (<span class="ident">ledger_infos_with_sigs</span>, <span class="ident">more</span>) <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">get_epoch_ending_ledger_infos</span>(<span class="ident">known_epoch</span>, <span class="ident">ledger_info</span>.<span class="ident">next_block_epoch</span>())<span class="question-mark">?</span>;
+                <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="ident">ledger_infos_with_sigs</span>, <span class="ident">more</span>)
+            } <span class="kw">else</span> {
+                <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="macro">vec</span><span class="macro">!</span>[], <span class="comment">/* more = */</span> <span class="bool-val">false</span>)
+            };
 
-        <span class="kw">let</span> <span class="ident">ledger_info</span> <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span>.<span class="ident">ledger_info</span>();
-        <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">known_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_info</span>.<span class="ident">version</span>(),
-            <span class="string">&quot;Client known_version {} larger than ledger version {}.&quot;</span>,
-            <span class="ident">known_version</span>,
-            <span class="ident">ledger_info</span>.<span class="ident">version</span>(),
-        );
-        <span class="kw">let</span> <span class="ident">known_epoch</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_epoch</span>(<span class="ident">known_version</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">epoch_change_proof</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">known_epoch</span> <span class="op">&lt;</span> <span class="ident">ledger_info</span>.<span class="ident">next_block_epoch</span>() {
-            <span class="kw">let</span> (<span class="ident">ledger_infos_with_sigs</span>, <span class="ident">more</span>) <span class="op">=</span>
-                <span class="self">self</span>.<span class="ident">get_epoch_ending_ledger_infos</span>(<span class="ident">known_epoch</span>, <span class="ident">ledger_info</span>.<span class="ident">next_block_epoch</span>())<span class="question-mark">?</span>;
-            <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="ident">ledger_infos_with_sigs</span>, <span class="ident">more</span>)
-        } <span class="kw">else</span> {
-            <span class="ident">EpochChangeProof</span>::<span class="ident">new</span>(<span class="macro">vec</span><span class="macro">!</span>[], <span class="comment">/* more = */</span> <span class="bool-val">false</span>)
-        };
-
-        <span class="kw">let</span> <span class="ident">ledger_consistency_proof</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">ledger_store</span>
-            .<span class="ident">get_consistency_proof</span>(<span class="ident">known_version</span>, <span class="ident">ledger_info</span>.<span class="ident">version</span>())<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((<span class="ident">epoch_change_proof</span>, <span class="ident">ledger_consistency_proof</span>))
+            <span class="kw">let</span> <span class="ident">ledger_consistency_proof</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">ledger_store</span>
+                .<span class="ident">get_consistency_proof</span>(<span class="ident">known_version</span>, <span class="ident">ledger_info</span>.<span class="ident">version</span>())<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>((<span class="ident">epoch_change_proof</span>, <span class="ident">ledger_consistency_proof</span>))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_state_proof</span>(
@@ -1570,18 +1555,16 @@
         <span class="ident">EpochChangeProof</span>,
         <span class="ident">AccumulatorConsistencyProof</span>,
     )<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_state_proof&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> <span class="ident">ledger_info_with_sigs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> (<span class="ident">epoch_change_proof</span>, <span class="ident">ledger_consistency_proof</span>) <span class="op">=</span>
-            <span class="self">self</span>.<span class="ident">get_state_proof_with_ledger_info</span>(<span class="ident">known_version</span>, <span class="ident">ledger_info_with_sigs</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((
-            <span class="ident">ledger_info_with_sigs</span>,
-            <span class="ident">epoch_change_proof</span>,
-            <span class="ident">ledger_consistency_proof</span>,
-        ))
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_state_proof&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">ledger_info_with_sigs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_ledger_info</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> (<span class="ident">epoch_change_proof</span>, <span class="ident">ledger_consistency_proof</span>) <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">get_state_proof_with_ledger_info</span>(<span class="ident">known_version</span>, <span class="ident">ledger_info_with_sigs</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>((
+                <span class="ident">ledger_info_with_sigs</span>,
+                <span class="ident">epoch_change_proof</span>,
+                <span class="ident">ledger_consistency_proof</span>,
+            ))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_account_state_with_proof</span>(
@@ -1590,45 +1573,39 @@
         <span class="ident">version</span>: <span class="ident">Version</span>,
         <span class="ident">ledger_version</span>: <span class="ident">Version</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountStateWithProof</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_account_state_with_proof&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_version</span>,
-            <span class="string">&quot;The queried version {} should be equal to or older than ledger version {}.&quot;</span>,
-            <span class="ident">version</span>,
-            <span class="ident">ledger_version</span>
-        );
-        {
-            <span class="kw">let</span> <span class="ident">latest_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_latest_version</span>()<span class="question-mark">?</span>;
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_account_state_with_proof&quot;</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">ledger_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">latest_version</span>,
-                <span class="string">&quot;ledger_version specified {} is greater than committed version {}.&quot;</span>,
-                <span class="ident">ledger_version</span>,
-                <span class="ident">latest_version</span>
+                <span class="ident">version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ledger_version</span>,
+                <span class="string">&quot;The queried version {} should be equal to or older than ledger version {}.&quot;</span>,
+                <span class="ident">version</span>,
+                <span class="ident">ledger_version</span>
             );
-        }
+            {
+                <span class="kw">let</span> <span class="ident">latest_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_latest_version</span>()<span class="question-mark">?</span>;
+                <span class="macro">ensure</span><span class="macro">!</span>(
+                    <span class="ident">ledger_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">latest_version</span>,
+                    <span class="string">&quot;ledger_version specified {} is greater than committed version {}.&quot;</span>,
+                    <span class="ident">ledger_version</span>,
+                    <span class="ident">latest_version</span>
+                );
+            }
 
-        <span class="kw">let</span> <span class="ident">txn_info_with_proof</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">ledger_store</span>
-            .<span class="ident">get_transaction_info_with_proof</span>(<span class="ident">version</span>, <span class="ident">ledger_version</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> (<span class="ident">account_state_blob</span>, <span class="ident">sparse_merkle_proof</span>) <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">state_store</span>
-            .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">AccountStateWithProof</span>::<span class="ident">new</span>(
-            <span class="ident">version</span>,
-            <span class="ident">account_state_blob</span>,
-            <span class="ident">AccountStateProof</span>::<span class="ident">new</span>(<span class="ident">txn_info_with_proof</span>, <span class="ident">sparse_merkle_proof</span>),
-        ))
+            <span class="kw">let</span> <span class="ident">txn_info_with_proof</span> <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">ledger_store</span>
+                .<span class="ident">get_transaction_info_with_proof</span>(<span class="ident">version</span>, <span class="ident">ledger_version</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> (<span class="ident">account_state_blob</span>, <span class="ident">sparse_merkle_proof</span>) <span class="op">=</span> <span class="self">self</span>
+                .<span class="ident">state_store</span>
+                .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(<span class="ident">AccountStateWithProof</span>::<span class="ident">new</span>(
+                <span class="ident">version</span>,
+                <span class="ident">account_state_blob</span>,
+                <span class="ident">AccountStateProof</span>::<span class="ident">new</span>(<span class="ident">txn_info_with_proof</span>, <span class="ident">sparse_merkle_proof</span>),
+            ))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_startup_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StartupInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_startup_info&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_startup_info</span>()
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_startup_info&quot;</span>, <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_startup_info</span>())
     }
 
     <span class="kw">fn</span> <span class="ident">get_account_state_with_proof_by_version</span>(
@@ -1636,64 +1613,60 @@
         <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">version</span>: <span class="ident">Version</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountStateBlob</span><span class="op">&gt;</span>, <span class="ident">SparseMerkleProof</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_account_state_with_proof_by_version&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="self">self</span>.<span class="ident">state_store</span>
-            .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_account_state_with_proof_by_version&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="self">self</span>.<span class="ident">state_store</span>
+                .<span class="ident">get_account_state_with_proof_by_version</span>(<span class="ident">address</span>, <span class="ident">version</span>)
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_latest_state_root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Version</span>, <span class="ident">HashValue</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_latest_state_root&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> (<span class="ident">version</span>, <span class="ident">txn_info</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info</span>()<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((<span class="ident">version</span>, <span class="ident">txn_info</span>.<span class="ident">state_root_hash</span>()))
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_latest_state_root&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> (<span class="ident">version</span>, <span class="ident">txn_info</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info</span>()<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>((<span class="ident">version</span>, <span class="ident">txn_info</span>.<span class="ident">state_root_hash</span>()))
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_latest_tree_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TreeState</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_latest_tree_state&quot;</span>])
-            .<span class="ident">start_timer</span>();
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_latest_tree_state&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">tree_state</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info_option</span>()<span class="question-mark">?</span> {
+                <span class="prelude-val">Some</span>((<span class="ident">version</span>, <span class="ident">txn_info</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_tree_state</span>(<span class="ident">version</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">txn_info</span>)<span class="question-mark">?</span>
+                }
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TreeState</span>::<span class="ident">new</span>(
+                    <span class="number">0</span>,
+                    <span class="macro">vec</span><span class="macro">!</span>[],
+                    <span class="self">self</span>.<span class="ident">state_store</span>
+                        .<span class="ident">get_root_hash_option</span>(<span class="ident">PRE_GENESIS_VERSION</span>)<span class="question-mark">?</span>
+                        .<span class="ident">unwrap_or</span>(<span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span>),
+                ),
+            };
 
-        <span class="kw">let</span> <span class="ident">tree_state</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info_option</span>()<span class="question-mark">?</span> {
-            <span class="prelude-val">Some</span>((<span class="ident">version</span>, <span class="ident">txn_info</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_tree_state</span>(<span class="ident">version</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">txn_info</span>)<span class="question-mark">?</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TreeState</span>::<span class="ident">new</span>(
-                <span class="number">0</span>,
-                <span class="macro">vec</span><span class="macro">!</span>[],
-                <span class="self">self</span>.<span class="ident">state_store</span>
-                    .<span class="ident">get_root_hash_option</span>(<span class="ident">PRE_GENESIS_VERSION</span>)<span class="question-mark">?</span>
-                    .<span class="ident">unwrap_or</span>(<span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span>),
-            ),
-        };
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">num_transactions</span> <span class="op">=</span> <span class="ident">tree_state</span>.<span class="ident">num_transactions</span>,
+                <span class="ident">state_root_hash</span> <span class="op">=</span> <span class="op">%</span><span class="ident">tree_state</span>.<span class="ident">account_state_root_hash</span>,
+                <span class="ident">description</span> <span class="op">=</span> <span class="ident">tree_state</span>.<span class="ident">describe</span>(),
+                <span class="string">&quot;Got latest TreeState.&quot;</span>
+            );
 
-        <span class="macro">info</span><span class="macro">!</span>(
-            <span class="ident">num_transactions</span> <span class="op">=</span> <span class="ident">tree_state</span>.<span class="ident">num_transactions</span>,
-            <span class="ident">state_root_hash</span> <span class="op">=</span> <span class="op">%</span><span class="ident">tree_state</span>.<span class="ident">account_state_root_hash</span>,
-            <span class="ident">description</span> <span class="op">=</span> <span class="ident">tree_state</span>.<span class="ident">describe</span>(),
-            <span class="string">&quot;Got latest TreeState.&quot;</span>
-        );
-
-        <span class="prelude-val">Ok</span>(<span class="ident">tree_state</span>)
+            <span class="prelude-val">Ok</span>(<span class="ident">tree_state</span>)
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_block_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;get_block_timestamp&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> <span class="ident">ts</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transaction_store</span>.<span class="ident">get_block_metadata</span>(<span class="ident">version</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Some</span>((<span class="ident">_v</span>, <span class="ident">block_meta</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">block_meta</span>.<span class="ident">into_inner</span>()<span class="question-mark">?</span>.<span class="number">1</span>,
-            <span class="comment">// genesis timestamp is 0</span>
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
-        };
-        <span class="prelude-val">Ok</span>(<span class="ident">ts</span>)
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_block_timestamp&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">ts</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transaction_store</span>.<span class="ident">get_block_metadata</span>(<span class="ident">version</span>)<span class="question-mark">?</span> {
+                <span class="prelude-val">Some</span>((<span class="ident">_v</span>, <span class="ident">block_meta</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">block_meta</span>.<span class="ident">into_inner</span>()<span class="question-mark">?</span>.<span class="number">1</span>,
+                <span class="comment">// genesis timestamp is 0</span>
+                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+            };
+            <span class="prelude-val">Ok</span>(<span class="ident">ts</span>)
+        })
     }
 
     <span class="kw">fn</span> <span class="ident">get_latest_transaction_info_option</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">Version</span>, <span class="ident">TransactionInfo</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info_option</span>()
+        <span class="ident">gauged_api</span>(<span class="string">&quot;get_latest_transaction_info_option&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">get_latest_transaction_info_option</span>()
+        })
     }
 }
 
@@ -1709,78 +1682,77 @@
         <span class="ident">first_version</span>: <span class="ident">Version</span>,
         <span class="ident">ledger_info_with_sigs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;save_transactions&quot;</span>])
-            .<span class="ident">start_timer</span>();
-
-        <span class="kw">let</span> <span class="ident">num_txns</span> <span class="op">=</span> <span class="ident">txns_to_commit</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
-        <span class="comment">// ledger_info_with_sigs could be None if we are doing state synchronization. In this case</span>
-        <span class="comment">// txns_to_commit should not be empty. Otherwise it is okay to commit empty blocks.</span>
-        <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">ledger_info_with_sigs</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">num_txns</span> <span class="op">&gt;</span> <span class="number">0</span>,
-            <span class="string">&quot;txns_to_commit is empty while ledger_info_with_sigs is None.&quot;</span>,
-        );
-
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
-            <span class="kw">let</span> <span class="ident">claimed_last_version</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
+        <span class="ident">gauged_api</span>(<span class="string">&quot;save_transactions&quot;</span>, <span class="op">|</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">num_txns</span> <span class="op">=</span> <span class="ident">txns_to_commit</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
+            <span class="comment">// ledger_info_with_sigs could be None if we are doing state synchronization. In this case</span>
+            <span class="comment">// txns_to_commit should not be empty. Otherwise it is okay to commit empty blocks.</span>
             <span class="macro">ensure</span><span class="macro">!</span>(
+                <span class="ident">ledger_info_with_sigs</span>.<span class="ident">is_some</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">num_txns</span> <span class="op">&gt;</span> <span class="number">0</span>,
+                <span class="string">&quot;txns_to_commit is empty while ledger_info_with_sigs is None.&quot;</span>,
+            );
+
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
+                <span class="kw">let</span> <span class="ident">claimed_last_version</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
+                <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="ident">claimed_last_version</span> <span class="op">+</span> <span class="number">1</span> <span class="op">=</span><span class="op">=</span> <span class="ident">first_version</span> <span class="op">+</span> <span class="ident">num_txns</span>,
                 <span class="string">&quot;Transaction batch not applicable: first_version {}, num_txns {}, last_version {}&quot;</span>,
                 <span class="ident">first_version</span>,
                 <span class="ident">num_txns</span>,
                 <span class="ident">claimed_last_version</span>,
             );
-        }
+            }
 
-        <span class="comment">// Gather db mutations to `batch`.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cs</span> <span class="op">=</span> <span class="ident">ChangeSet</span>::<span class="ident">new</span>();
+            <span class="comment">// Gather db mutations to `batch`.</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cs</span> <span class="op">=</span> <span class="ident">ChangeSet</span>::<span class="ident">new</span>();
 
-        <span class="kw">let</span> <span class="ident">new_root_hash</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">save_transactions_impl</span>(<span class="ident">txns_to_commit</span>, <span class="ident">first_version</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cs</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">new_root_hash</span> <span class="op">=</span>
+                <span class="self">self</span>.<span class="ident">save_transactions_impl</span>(<span class="ident">txns_to_commit</span>, <span class="ident">first_version</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cs</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// If expected ledger info is provided, verify result root hash and save the ledger info.</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
-            <span class="kw">let</span> <span class="ident">expected_root_hash</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">transaction_accumulator_hash</span>();
-            <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">new_root_hash</span> <span class="op">=</span><span class="op">=</span> <span class="ident">expected_root_hash</span>,
-                <span class="string">&quot;Root hash calculated doesn&#39;t match expected. {:?} vs {:?}&quot;</span>,
-                <span class="ident">new_root_hash</span>,
-                <span class="ident">expected_root_hash</span>,
-            );
+            <span class="comment">// If expected ledger info is provided, verify result root hash and save the ledger info.</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
+                <span class="kw">let</span> <span class="ident">expected_root_hash</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">transaction_accumulator_hash</span>();
+                <span class="macro">ensure</span><span class="macro">!</span>(
+                    <span class="ident">new_root_hash</span> <span class="op">=</span><span class="op">=</span> <span class="ident">expected_root_hash</span>,
+                    <span class="string">&quot;Root hash calculated doesn&#39;t match expected. {:?} vs {:?}&quot;</span>,
+                    <span class="ident">new_root_hash</span>,
+                    <span class="ident">expected_root_hash</span>,
+                );
 
-            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">put_ledger_info</span>(<span class="ident">x</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cs</span>)<span class="question-mark">?</span>;
-        }
+                <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">put_ledger_info</span>(<span class="ident">x</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cs</span>)<span class="question-mark">?</span>;
+            }
 
-        <span class="comment">// Persist.</span>
-        <span class="kw">let</span> (<span class="ident">sealed_cs</span>, <span class="ident">counters</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">seal_change_set</span>(<span class="ident">first_version</span>, <span class="ident">num_txns</span>, <span class="ident">cs</span>)<span class="question-mark">?</span>;
-        {
-            <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_OTHER_TIMERS_SECONDS</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;save_transactions_commit&quot;</span>])
-                .<span class="ident">start_timer</span>();
-            <span class="self">self</span>.<span class="ident">commit</span>(<span class="ident">sealed_cs</span>)<span class="question-mark">?</span>;
-        }
+            <span class="comment">// Persist.</span>
+            <span class="kw">let</span> (<span class="ident">sealed_cs</span>, <span class="ident">counters</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">seal_change_set</span>(<span class="ident">first_version</span>, <span class="ident">num_txns</span>, <span class="ident">cs</span>)<span class="question-mark">?</span>;
+            {
+                <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">LIBRA_STORAGE_OTHER_TIMERS_SECONDS</span>
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;save_transactions_commit&quot;</span>])
+                    .<span class="ident">start_timer</span>();
+                <span class="self">self</span>.<span class="ident">commit</span>(<span class="ident">sealed_cs</span>)<span class="question-mark">?</span>;
+            }
 
-        <span class="comment">// Once everything is successfully persisted, update the latest in-memory ledger info.</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
-            <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">set_latest_ledger_info</span>(<span class="ident">x</span>.<span class="ident">clone</span>());
+            <span class="comment">// Once everything is successfully persisted, update the latest in-memory ledger info.</span>
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span> <span class="ident">ledger_info_with_sigs</span> {
+                <span class="self">self</span>.<span class="ident">ledger_store</span>.<span class="ident">set_latest_ledger_info</span>(<span class="ident">x</span>.<span class="ident">clone</span>());
 
-            <span class="self">self</span>.<span class="ident">wake_pruner</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>());
+                <span class="self">self</span>.<span class="ident">wake_pruner</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>());
 
-            <span class="ident">LIBRA_STORAGE_LEDGER_VERSION</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-            <span class="ident">LIBRA_STORAGE_NEXT_BLOCK_EPOCH</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">next_block_epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-        }
+                <span class="ident">LIBRA_STORAGE_LEDGER_VERSION</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+                <span class="ident">LIBRA_STORAGE_NEXT_BLOCK_EPOCH</span>.<span class="ident">set</span>(<span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">next_block_epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+            }
 
-        <span class="comment">// Only increment counter if commit succeeds and there are at least one transaction written</span>
-        <span class="comment">// to the storage. That&#39;s also when we&#39;d inform the pruner thread to work.</span>
-        <span class="kw">if</span> <span class="ident">num_txns</span> <span class="op">&gt;</span> <span class="number">0</span> {
-            <span class="kw">let</span> <span class="ident">last_version</span> <span class="op">=</span> <span class="ident">first_version</span> <span class="op">+</span> <span class="ident">num_txns</span> <span class="op">-</span> <span class="number">1</span>;
-            <span class="ident">LIBRA_STORAGE_COMMITTED_TXNS</span>.<span class="ident">inc_by</span>(<span class="ident">num_txns</span> <span class="kw">as</span> <span class="ident">i64</span>);
-            <span class="ident">LIBRA_STORAGE_LATEST_TXN_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
-            <span class="ident">counters</span>
-                .<span class="ident">expect</span>(<span class="string">&quot;Counters should be bumped with transactions being saved.&quot;</span>)
-                .<span class="ident">bump_op_counters</span>();
-        }
+            <span class="comment">// Only increment counter if commit succeeds and there are at least one transaction written</span>
+            <span class="comment">// to the storage. That&#39;s also when we&#39;d inform the pruner thread to work.</span>
+            <span class="kw">if</span> <span class="ident">num_txns</span> <span class="op">&gt;</span> <span class="number">0</span> {
+                <span class="kw">let</span> <span class="ident">last_version</span> <span class="op">=</span> <span class="ident">first_version</span> <span class="op">+</span> <span class="ident">num_txns</span> <span class="op">-</span> <span class="number">1</span>;
+                <span class="ident">LIBRA_STORAGE_COMMITTED_TXNS</span>.<span class="ident">inc_by</span>(<span class="ident">num_txns</span> <span class="kw">as</span> <span class="ident">i64</span>);
+                <span class="ident">LIBRA_STORAGE_LATEST_TXN_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_version</span> <span class="kw">as</span> <span class="ident">i64</span>);
+                <span class="ident">counters</span>
+                    .<span class="ident">expect</span>(<span class="string">&quot;Counters should be bumped with transactions being saved.&quot;</span>)
+                    .<span class="ident">bump_op_counters</span>();
+            }
 
-        <span class="prelude-val">Ok</span>(())
+            <span class="prelude-val">Ok</span>(())
+        })
     }
 }
 
@@ -1812,6 +1784,32 @@
             <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">state_store</span>),
         )
     }
+}
+
+<span class="kw">fn</span> <span class="ident">gauged_api</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">api_name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>, <span class="ident">api_impl</span>: <span class="ident">F</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">F</span>: <span class="ident">FnOnce</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
+{
+    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+
+    <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">api_impl</span>();
+
+    <span class="kw">let</span> <span class="ident">res_type</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">res</span> {
+        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;Ok&quot;</span>,
+        <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="ident">api_name</span> <span class="op">=</span> <span class="ident">api_name</span>,
+                <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">e</span>,
+                <span class="string">&quot;LibraDB API returned error.&quot;</span>
+            );
+            <span class="string">&quot;Err&quot;</span>
+        }
+    };
+    <span class="ident">LIBRA_STORAGE_API_LATENCY_SECONDS</span>
+        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">api_name</span>, <span class="ident">res_type</span>])
+        .<span class="ident">observe</span>(<span class="ident">timer</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>());
+
+    <span class="ident">res</span>
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "libradb";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
