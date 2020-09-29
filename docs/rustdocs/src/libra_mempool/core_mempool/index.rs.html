@@ -352,12 +352,25 @@
 <span id="352">352</span>
 <span id="353">353</span>
 <span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="doccomment">/// This module provides various indexes used by Mempool</span>
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">core_mempool</span>::<span class="ident">transaction</span>::{<span class="ident">MempoolTransaction</span>, <span class="ident">TimelineState</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">counters</span>,
+    <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogSchema</span>},
+};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">transaction</span>::<span class="ident">GovernanceRole</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">seq</span>::<span class="ident">SliceRandom</span>;
@@ -639,7 +652,12 @@
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">_account</span>, <span class="ident">seq_nums</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">data</span>.<span class="ident">get_mut</span>(<span class="kw-2">*</span><span class="ident">index</span>) {
                     <span class="ident">seq_nums</span>.<span class="ident">insert</span>(<span class="ident">sequence_number</span>)
                 } <span class="kw">else</span> {
-                    <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[mempool] parking lot invariant violated: for account {}, account index exists but missing entry in data&quot;</span>, <span class="ident">sender</span>);
+                    <span class="ident">counters</span>::<span class="ident">CORE_MEMPOOL_INVARIANT_VIOLATION_COUNT</span>.<span class="ident">inc</span>();
+                    <span class="macro">error</span><span class="macro">!</span>(
+                        <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">InvariantViolated</span>),
+                        <span class="string">&quot;Parking lot invariant violated: for account {}, account index exists but missing entry in data&quot;</span>,
+                        <span class="ident">sender</span>
+                    );
                     <span class="kw">return</span>;
                 }
             }

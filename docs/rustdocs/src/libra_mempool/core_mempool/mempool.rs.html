@@ -273,6 +273,11 @@
 <span id="273">273</span>
 <span id="274">274</span>
 <span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -286,7 +291,9 @@
         <span class="ident">transaction_store</span>::<span class="ident">TransactionStore</span>,
         <span class="ident">ttl_cache</span>::<span class="ident">TtlCache</span>,
     },
-    <span class="ident">counters</span>, <span class="ident">OP_COUNTERS</span>,
+    <span class="ident">counters</span>,
+    <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogSchema</span>, <span class="ident">TxnsLog</span>},
+    <span class="ident">OP_COUNTERS</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">NodeConfig</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -336,10 +343,8 @@
     ) {
         <span class="macro">trace_event</span><span class="macro">!</span>(<span class="string">&quot;mempool:remove_transaction&quot;</span>, {<span class="string">&quot;txn&quot;</span>, <span class="ident">sender</span>, <span class="ident">sequence_number</span>});
         <span class="macro">trace</span><span class="macro">!</span>(
-            <span class="string">&quot;[Mempool] Removing transaction from mempool: {}:{}:{}&quot;</span>,
-            <span class="ident">sender</span>,
-            <span class="ident">sequence_number</span>,
-            <span class="ident">is_rejected</span>
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">RemoveTxn</span>).<span class="ident">txns</span>(<span class="ident">TxnsLog</span>::<span class="ident">new_txn</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>)),
+            <span class="ident">is_rejected</span> <span class="op">=</span> <span class="ident">is_rejected</span>
         );
         <span class="kw">let</span> <span class="ident">metric_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_rejected</span> {
             <span class="ident">counters</span>::<span class="ident">COMMIT_REJECTED_LABEL</span>
@@ -348,7 +353,6 @@
         };
         <span class="self">self</span>.<span class="ident">log_latency</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>, <span class="ident">metric_label</span>);
         <span class="self">self</span>.<span class="ident">metrics_cache</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>));
-        <span class="ident">OP_COUNTERS</span>.<span class="ident">inc</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;remove_transaction.{}&quot;</span>, <span class="ident">is_rejected</span>));
 
         <span class="kw">let</span> <span class="ident">current_seq_number</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">sequence_number_cache</span>
@@ -356,10 +360,6 @@
             .<span class="ident">unwrap_or_default</span>();
 
         <span class="kw">if</span> <span class="ident">is_rejected</span> {
-            <span class="macro">debug</span><span class="macro">!</span>(
-                <span class="string">&quot;[Mempool] transaction is rejected: {}:{}&quot;</span>,
-                <span class="ident">sender</span>, <span class="ident">sequence_number</span>
-            );
             <span class="kw">if</span> <span class="ident">sequence_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">current_seq_number</span> {
                 <span class="self">self</span>.<span class="ident">transactions</span>
                     .<span class="ident">reject_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="ident">sequence_number</span>);
@@ -396,10 +396,9 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MempoolStatus</span> {
         <span class="macro">trace_event</span><span class="macro">!</span>(<span class="string">&quot;mempool::add_txn&quot;</span>, {<span class="string">&quot;txn&quot;</span>, <span class="ident">txn</span>.<span class="ident">sender</span>(), <span class="ident">txn</span>.<span class="ident">sequence_number</span>()});
         <span class="macro">trace</span><span class="macro">!</span>(
-            <span class="string">&quot;[Mempool] Adding transaction to mempool: {}:{}:{}&quot;</span>,
-            <span class="kw-2">&amp;</span><span class="ident">txn</span>.<span class="ident">sender</span>(),
-            <span class="ident">txn</span>.<span class="ident">sequence_number</span>(),
-            <span class="ident">db_sequence_number</span>,
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">AddTxn</span>)
+                .<span class="ident">txns</span>(<span class="ident">TxnsLog</span>::<span class="ident">new_txn</span>(<span class="ident">txn</span>.<span class="ident">sender</span>(), <span class="ident">txn</span>.<span class="ident">sequence_number</span>())),
+            <span class="ident">committed_seq_number</span> <span class="op">=</span> <span class="ident">db_sequence_number</span>
         );
         <span class="kw">let</span> <span class="ident">cached_value</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sequence_number_cache</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>.<span class="ident">sender</span>());
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span>
@@ -493,12 +492,23 @@
         }
         <span class="kw">let</span> <span class="ident">result_size</span> <span class="op">=</span> <span class="ident">result</span>.<span class="ident">len</span>();
         <span class="comment">// convert transaction pointers to real values</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block_log</span> <span class="op">=</span> <span class="ident">TxnsLog</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="ident">block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">result</span>
             .<span class="ident">into_iter</span>()
-            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">address</span>, <span class="ident">seq</span>)<span class="op">|</span> <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">seq</span>))
+            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">address</span>, <span class="ident">seq</span>)<span class="op">|</span> {
+                <span class="ident">block_log</span>.<span class="ident">add</span>(<span class="ident">address</span>, <span class="ident">seq</span>);
+                <span class="self">self</span>.<span class="ident">transactions</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">seq</span>)
+            })
             .<span class="ident">collect</span>();
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;mempool::get_block: seen_consensus={}, walked={}, seen_after={}, result_size={}, block_size={}&quot;</span>,
-               <span class="ident">seen_size</span>, <span class="ident">txn_walked</span>, <span class="ident">seen</span>.<span class="ident">len</span>(), <span class="ident">result_size</span>, <span class="ident">block</span>.<span class="ident">len</span>());
+
+        <span class="macro">debug</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">GetBlock</span>).<span class="ident">txns</span>(<span class="ident">block_log</span>),
+            <span class="ident">seen_consensus</span> <span class="op">=</span> <span class="ident">seen_size</span>,
+            <span class="ident">walked</span> <span class="op">=</span> <span class="ident">txn_walked</span>,
+            <span class="ident">seen_after</span> <span class="op">=</span> <span class="ident">seen</span>.<span class="ident">len</span>(),
+            <span class="ident">result_size</span> <span class="op">=</span> <span class="ident">result_size</span>,
+            <span class="ident">block_size</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">len</span>()
+        );
         <span class="kw">for</span> <span class="ident">transaction</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">block</span> {
             <span class="self">self</span>.<span class="ident">log_latency</span>(
                 <span class="ident">transaction</span>.<span class="ident">sender</span>(),

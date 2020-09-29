@@ -585,13 +585,6 @@
 <span id="585">585</span>
 <span id="586">586</span>
 <span id="587">587</span>
-<span id="588">588</span>
-<span id="589">589</span>
-<span id="590">590</span>
-<span id="591">591</span>
-<span id="592">592</span>
-<span id="593">593</span>
-<span id="594">594</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -601,14 +594,16 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">core_mempool</span>::{<span class="ident">CoreMempool</span>, <span class="ident">TimelineState</span>, <span class="ident">TxnPointer</span>},
     <span class="ident">counters</span>,
-    <span class="ident">network</span>::{<span class="ident">MempoolNetworkSender</span>, <span class="ident">MempoolSyncMsg</span>},
+    <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogEvent</span>, <span class="ident">LogSchema</span>},
+    <span class="ident">network</span>::<span class="ident">MempoolSyncMsg</span>,
     <span class="ident">shared_mempool</span>::<span class="ident">types</span>::{
         <span class="ident">notify_subscribers</span>, <span class="ident">ScheduledBroadcast</span>, <span class="ident">SharedMempool</span>, <span class="ident">SharedMempoolNotification</span>,
+        <span class="ident">SubmissionStatusBundle</span>,
     },
     <span class="ident">CommitNotification</span>, <span class="ident">CommitResponse</span>, <span class="ident">CommittedTransaction</span>, <span class="ident">ConsensusRequest</span>, <span class="ident">ConsensusResponse</span>,
     <span class="ident">SubmissionStatus</span>,
 };
-<span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">channel</span>::<span class="ident">oneshot</span>, <span class="ident">stream</span>::<span class="ident">FuturesUnordered</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">PeerNetworkId</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -617,7 +612,6 @@
     <span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>,
     <span class="ident">transaction</span>::<span class="ident">SignedTransaction</span>,
     <span class="ident">vm_status</span>::<span class="ident">DiscardedVMStatus</span>,
-    <span class="ident">PeerId</span>,
 };
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>,
@@ -740,24 +734,27 @@
         .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">_id</span>, <span class="ident">txn</span>)<span class="op">|</span> <span class="ident">txn</span>)
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">smp</span>
+    <span class="kw">let</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">smp</span>
         .<span class="ident">network_senders</span>
         .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
         .<span class="ident">expect</span>(<span class="string">&quot;[shared mempool] missing network sender&quot;</span>);
 
     <span class="kw">let</span> <span class="ident">request_id</span> <span class="op">=</span> <span class="ident">create_request_id</span>(<span class="ident">timeline_id</span>, <span class="ident">new_timeline_id</span>);
     <span class="kw">let</span> <span class="ident">txns_ct</span> <span class="op">=</span> <span class="ident">batch_txns</span>.<span class="ident">len</span>();
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">send_mempool_sync_msg</span>(
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">network_sender</span>.<span class="ident">send_to</span>(
+        <span class="ident">peer</span>.<span class="ident">peer_id</span>(),
         <span class="ident">MempoolSyncMsg</span>::<span class="ident">BroadcastTransactionsRequest</span> {
             <span class="ident">request_id</span>: <span class="ident">request_id</span>.<span class="ident">clone</span>(),
             <span class="ident">transactions</span>: <span class="ident">batch_txns</span>,
         },
-        <span class="ident">peer</span>.<span class="ident">peer_id</span>(),
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">network_sender</span>,
     ) {
+        <span class="ident">counters</span>::<span class="ident">NETWORK_SEND_FAIL</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">BROADCAST_TXNS</span>])
+            .<span class="ident">inc</span>();
         <span class="macro">error</span><span class="macro">!</span>(
-            <span class="string">&quot;[shared mempool] error broadcasting transactions to peer {:?}: {}&quot;</span>,
-            <span class="ident">peer</span>, <span class="ident">e</span>
+            <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">BroadcastTransaction</span>, <span class="ident">LogEvent</span>::<span class="ident">NetworkSendFail</span>)
+                .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                .<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">into</span>())
         );
     } <span class="kw">else</span> {
         <span class="kw">let</span> <span class="ident">broadcast_time</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
@@ -786,21 +783,6 @@
     <span class="ident">next_backoff</span>
 }
 
-<span class="kw">fn</span> <span class="ident">send_mempool_sync_msg</span>(
-    <span class="ident">msg</span>: <span class="ident">MempoolSyncMsg</span>,
-    <span class="ident">recipient</span>: <span class="ident">PeerId</span>,
-    <span class="ident">network_sender</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">MempoolNetworkSender</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="comment">// Since this is a direct-send, this will only error if the network</span>
-    <span class="comment">// module has unexpectedly crashed or shutdown.</span>
-    <span class="ident">network_sender</span>.<span class="ident">send_to</span>(<span class="ident">recipient</span>, <span class="ident">msg</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
-        <span class="macro">format_err</span><span class="macro">!</span>(
-            <span class="string">&quot;[shared mempool] failed to direct-send mempool sync message: {}&quot;</span>,
-            <span class="ident">e</span>
-        )
-    })
-}
-
 <span class="comment">// =============================== //</span>
 <span class="comment">// tasks processing txn submission //</span>
 <span class="comment">// =============================== //</span>
@@ -816,22 +798,18 @@
     <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_TXN_SUBMISSION_LATENCY</span>
         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;client&quot;</span>])
         .<span class="ident">start_timer</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">statuses</span> <span class="op">=</span>
+    <span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span>
         <span class="ident">process_incoming_transactions</span>(<span class="kw-2">&amp;</span><span class="ident">smp</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">transaction</span>], <span class="ident">TimelineState</span>::<span class="ident">NotReady</span>).<span class="kw">await</span>;
     <span class="ident">log_txn_process_results</span>(<span class="kw-2">&amp;</span><span class="ident">statuses</span>, <span class="prelude-val">None</span>);
-    <span class="kw">let</span> <span class="ident">status</span>;
-    <span class="kw">if</span> <span class="ident">statuses</span>.<span class="ident">is_empty</span>() {
-        <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[shared mempool] missing status for client transaction submission&quot;</span>);
-        <span class="kw">return</span>;
-    } <span class="kw">else</span> {
-        <span class="ident">status</span> <span class="op">=</span> <span class="ident">statuses</span>.<span class="ident">remove</span>(<span class="number">0</span>);
-    }
 
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">callback</span>
-        .<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">status</span>))
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[shared mempool] timeout on callback send to AC endpoint&quot;</span>))
-    {
-        <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[shared mempool] failed to send back transaction submission result to AC endpoint with error: {:?}&quot;</span>, <span class="ident">e</span>);
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status</span>) <span class="op">=</span> <span class="ident">statuses</span>.<span class="ident">get</span>(<span class="number">0</span>) {
+        <span class="kw">if</span> <span class="ident">callback</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">status</span>.<span class="number">1</span>.<span class="ident">clone</span>())).<span class="ident">is_err</span>() {
+            <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
+                <span class="ident">LogEntry</span>::<span class="ident">JsonRpc</span>,
+                <span class="ident">LogEvent</span>::<span class="ident">CallbackFail</span>
+            ));
+            <span class="ident">counters</span>::<span class="ident">CLIENT_CALLBACK_FAIL</span>.<span class="ident">inc</span>();
+        }
     }
 }
 
@@ -850,53 +828,37 @@
         .<span class="ident">start_timer</span>();
     <span class="comment">// process transactions and log the result</span>
     <span class="kw">let</span> <span class="ident">results</span> <span class="op">=</span> <span class="ident">process_incoming_transactions</span>(<span class="kw-2">&amp;</span><span class="ident">smp</span>, <span class="ident">transactions</span>.<span class="ident">clone</span>(), <span class="ident">timeline_state</span>).<span class="kw">await</span>;
-    <span class="ident">log_txn_process_results</span>(<span class="kw-2">&amp;</span><span class="ident">results</span>, <span class="prelude-val">Some</span>(<span class="ident">peer</span>.<span class="ident">peer_id</span>()));
-
-    <span class="comment">// we assume that the results contains a vec of the same length of transactions</span>
-    <span class="macro">debug_assert_eq</span><span class="macro">!</span>(<span class="ident">results</span>.<span class="ident">len</span>(), <span class="ident">transactions</span>.<span class="ident">len</span>());
-
-    <span class="comment">// security log all the failed transactions</span>
-    <span class="kw">let</span> <span class="ident">failed_transactions</span> <span class="op">=</span> <span class="ident">results</span>
-        .<span class="ident">iter</span>()
-        <span class="comment">// create iterator of tuple (VM status, transaction)</span>
-        .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">maybe_vm_status</span>)<span class="op">|</span> <span class="ident">maybe_vm_status</span>)
-        .<span class="ident">zip</span>(<span class="ident">transactions</span>.<span class="ident">iter</span>())
-        <span class="comment">// VM status will be set if the transaction failed</span>
-        .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">maybe_vm_status</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">maybe_vm_status</span>.<span class="ident">is_some</span>());
-
-    <span class="kw">for</span> (<span class="ident">maybe_vm_status</span>, <span class="ident">failed_transaction</span>) <span class="kw">in</span> <span class="ident">failed_transactions</span> {
-        <span class="macro">error</span><span class="macro">!</span>(
-            <span class="ident">SecurityEvent</span>::<span class="ident">InvalidTransactionMempool</span>,
-            <span class="ident">failed_transaction</span> <span class="op">=</span> <span class="ident">failed_transaction</span>,
-            <span class="ident">vm_status</span> <span class="op">=</span> <span class="ident">maybe_vm_status</span>,
-            <span class="ident">from_peer</span> <span class="op">=</span> <span class="ident">peer</span>,
-        );
-    }
+    <span class="ident">log_txn_process_results</span>(<span class="kw-2">&amp;</span><span class="ident">results</span>, <span class="prelude-val">Some</span>(<span class="ident">peer</span>.<span class="ident">clone</span>()));
 
     <span class="comment">// send back ACK</span>
     <span class="kw">let</span> <span class="ident">ack_response</span> <span class="op">=</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>, <span class="ident">results</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">smp</span>
+    <span class="kw">let</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">smp</span>
         .<span class="ident">network_senders</span>
         .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
         .<span class="ident">expect</span>(<span class="string">&quot;[shared mempool] missing network sender&quot;</span>);
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">send_mempool_sync_msg</span>(<span class="ident">ack_response</span>, <span class="ident">peer</span>.<span class="ident">peer_id</span>(), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">network_sender</span>) {
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">network_sender</span>.<span class="ident">send_to</span>(<span class="ident">peer</span>.<span class="ident">peer_id</span>(), <span class="ident">ack_response</span>) {
+        <span class="ident">counters</span>::<span class="ident">NETWORK_SEND_FAIL</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">ACK_TXNS</span>])
+            .<span class="ident">inc</span>();
         <span class="macro">error</span><span class="macro">!</span>(
-            <span class="string">&quot;[shared mempool] failed to send ACK back to peer {:?}: {}&quot;</span>,
-            <span class="ident">peer</span>, <span class="ident">e</span>
+            <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">BroadcastACK</span>, <span class="ident">LogEvent</span>::<span class="ident">NetworkSendFail</span>)
+                .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                .<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">into</span>())
         );
     }
     <span class="ident">notify_subscribers</span>(<span class="ident">SharedMempoolNotification</span>::<span class="ident">ACK</span>, <span class="kw-2">&amp;</span><span class="ident">smp</span>.<span class="ident">subscribers</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>: <span class="ident">String</span>, <span class="ident">results</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatus</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MempoolSyncMsg</span> {
+<span class="kw">fn</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>: <span class="ident">String</span>, <span class="ident">results</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatusBundle</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MempoolSyncMsg</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backoff</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="kw">let</span> <span class="ident">retry_txns</span> <span class="op">=</span> <span class="ident">results</span>
         .<span class="ident">into_iter</span>()
         .<span class="ident">enumerate</span>()
         .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">idx</span>, <span class="ident">result</span>)<span class="op">|</span> {
-            <span class="ident">backoff</span> <span class="op">=</span> <span class="ident">backoff</span> <span class="op">|</span><span class="op">|</span> <span class="ident">result</span>.<span class="number">0</span>.<span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">MempoolStatusCode</span>::<span class="ident">MempoolIsFull</span>;
+            <span class="kw">let</span> <span class="ident">submission_status</span> <span class="op">=</span> <span class="ident">result</span>.<span class="number">1</span>;
+            <span class="ident">backoff</span> <span class="op">=</span> <span class="ident">backoff</span> <span class="op">|</span><span class="op">|</span> <span class="ident">submission_status</span>.<span class="number">0</span>.<span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">MempoolStatusCode</span>::<span class="ident">MempoolIsFull</span>;
 
-            <span class="kw">if</span> <span class="ident">is_txn_retryable</span>(<span class="ident">result</span>) {
+            <span class="kw">if</span> <span class="ident">is_txn_retryable</span>(<span class="ident">submission_status</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">idx</span> <span class="kw">as</span> <span class="ident">u64</span>)
             } <span class="kw">else</span> {
                 <span class="prelude-val">None</span>
@@ -923,7 +885,7 @@
     <span class="ident">smp</span>: <span class="kw-2">&amp;</span><span class="ident">SharedMempool</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>,
     <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>,
     <span class="ident">timeline_state</span>: <span class="ident">TimelineState</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatus</span><span class="op">&gt;</span>
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatusBundle</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">V</span>: <span class="ident">TransactionValidation</span>,
 {
@@ -950,15 +912,21 @@
                     <span class="kw">return</span> <span class="prelude-val">Some</span>((<span class="ident">t</span>, <span class="ident">sequence_number</span>));
                 } <span class="kw">else</span> {
                     <span class="ident">statuses</span>.<span class="ident">push</span>((
-                        <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                        <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>),
+                        <span class="ident">t</span>,
+                        (
+                            <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
+                            <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span>),
+                        ),
                     ));
                 }
             } <span class="kw">else</span> {
                 <span class="comment">// failed to get transaction</span>
                 <span class="ident">statuses</span>.<span class="ident">push</span>((
-                    <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                    <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">RESOURCE_DOES_NOT_EXIST</span>),
+                    <span class="ident">t</span>,
+                    (
+                        <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
+                        <span class="prelude-val">Some</span>(<span class="ident">DiscardedVMStatus</span>::<span class="ident">RESOURCE_DOES_NOT_EXIST</span>),
+                    ),
                 ));
             }
             <span class="prelude-val">None</span>
@@ -993,19 +961,22 @@
                         <span class="kw">let</span> <span class="ident">ranking_score</span> <span class="op">=</span> <span class="ident">validation_result</span>.<span class="ident">score</span>();
                         <span class="kw">let</span> <span class="ident">governance_role</span> <span class="op">=</span> <span class="ident">validation_result</span>.<span class="ident">governance_role</span>();
                         <span class="kw">let</span> <span class="ident">mempool_status</span> <span class="op">=</span> <span class="ident">mempool</span>.<span class="ident">add_txn</span>(
-                            <span class="ident">transaction</span>,
+                            <span class="ident">transaction</span>.<span class="ident">clone</span>(),
                             <span class="ident">gas_amount</span>,
                             <span class="ident">ranking_score</span>,
                             <span class="ident">sequence_number</span>,
                             <span class="ident">timeline_state</span>,
                             <span class="ident">governance_role</span>,
                         );
-                        <span class="ident">statuses</span>.<span class="ident">push</span>((<span class="ident">mempool_status</span>, <span class="prelude-val">None</span>));
+                        <span class="ident">statuses</span>.<span class="ident">push</span>((<span class="ident">transaction</span>, (<span class="ident">mempool_status</span>, <span class="prelude-val">None</span>)));
                     }
                     <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>) <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="ident">statuses</span>.<span class="ident">push</span>((
-                            <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
-                            <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>),
+                            <span class="ident">transaction</span>.<span class="ident">clone</span>(),
+                            (
+                                <span class="ident">MempoolStatus</span>::<span class="ident">new</span>(<span class="ident">MempoolStatusCode</span>::<span class="ident">VmError</span>),
+                                <span class="prelude-val">Some</span>(<span class="ident">validation_status</span>),
+                            ),
                         ));
                     }
                 }
@@ -1017,14 +988,20 @@
 }
 
 <span class="comment">// TODO update counters to ID peers using PeerNetworkId</span>
-<span class="kw">fn</span> <span class="ident">log_txn_process_results</span>(<span class="ident">results</span>: <span class="kw-2">&amp;</span>[<span class="ident">SubmissionStatus</span>], <span class="ident">sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PeerId</span><span class="op">&gt;</span>) {
+<span class="kw">fn</span> <span class="ident">log_txn_process_results</span>(<span class="ident">results</span>: <span class="kw-2">&amp;</span>[<span class="ident">SubmissionStatusBundle</span>], <span class="ident">sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span>) {
     <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">sender</span> {
         <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">peer</span>.<span class="ident">to_string</span>(),
         <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;client&quot;</span>.<span class="ident">to_string</span>(),
     };
-    <span class="kw">for</span> (<span class="ident">mempool_status</span>, <span class="ident">vm_status</span>) <span class="kw">in</span> <span class="ident">results</span>.<span class="ident">iter</span>() {
-        <span class="kw">if</span> <span class="ident">vm_status</span>.<span class="ident">is_some</span>() {
+    <span class="kw">for</span> (<span class="ident">txn</span>, (<span class="ident">mempool_status</span>, <span class="ident">maybe_vm_status</span>)) <span class="kw">in</span> <span class="ident">results</span>.<span class="ident">iter</span>() {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vm_status</span>) <span class="op">=</span> <span class="ident">maybe_vm_status</span> {
             <span class="comment">// log vm validation failure</span>
+            <span class="macro">error</span><span class="macro">!</span>(
+                <span class="ident">SecurityEvent</span>::<span class="ident">InvalidTransactionMempool</span>,
+                <span class="ident">failed_transaction</span> <span class="op">=</span> <span class="ident">txn</span>,
+                <span class="ident">vm_status</span> <span class="op">=</span> <span class="ident">vm_status</span>,
+                <span class="ident">sender</span> <span class="op">=</span> <span class="ident">sender</span>,
+            );
             <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTIONS_PROCESSED</span>
                 .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;validation_failed&quot;</span>.<span class="ident">to_string</span>().<span class="ident">deref</span>(), <span class="kw-2">&amp;</span><span class="ident">sender</span>])
                 .<span class="ident">inc</span>();
@@ -1053,23 +1030,25 @@
     <span class="ident">req</span>: <span class="ident">CommitNotification</span>,
 ) {
     <span class="kw">let</span> <span class="ident">start_time</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+    <span class="macro">debug</span><span class="macro">!</span>(
+        <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">StateSyncCommit</span>, <span class="ident">LogEvent</span>::<span class="ident">Received</span>).<span class="ident">state_sync_msg</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>)
+    );
     <span class="ident">counters</span>::<span class="ident">MEMPOOL_SERVICE_TXNS</span>
         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">COMMIT_STATE_SYNC_LABEL</span>])
         .<span class="ident">observe</span>(<span class="ident">req</span>.<span class="ident">transactions</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>);
     <span class="ident">commit_txns</span>(<span class="kw-2">&amp;</span><span class="ident">mempool</span>, <span class="ident">req</span>.<span class="ident">transactions</span>, <span class="ident">req</span>.<span class="ident">block_timestamp_usecs</span>, <span class="bool-val">false</span>).<span class="kw">await</span>;
     <span class="comment">// send back to callback</span>
-    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">req</span>
+    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">req</span>
         .<span class="ident">callback</span>
         .<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">CommitResponse</span> {
             <span class="ident">msg</span>: <span class="string">&quot;&quot;</span>.<span class="ident">to_string</span>(),
         }))
-        .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-            <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[shared mempool] timeout on callback sending response to Mempool request&quot;</span>)
-        }) {
-        <span class="macro">error</span><span class="macro">!</span>(
-            <span class="string">&quot;[shared mempool] failed to send back CommitResponse with error: {:?}&quot;</span>,
-            <span class="ident">e</span>
-        );
+        .<span class="ident">is_err</span>()
+    {
+        <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
+            <span class="ident">LogEntry</span>::<span class="ident">StateSyncCommit</span>,
+            <span class="ident">LogEvent</span>::<span class="ident">CallbackFail</span>
+        ));
         <span class="ident">counters</span>::<span class="ident">REQUEST_FAIL_LABEL</span>
     } <span class="kw">else</span> {
         <span class="ident">counters</span>::<span class="ident">REQUEST_SUCCESS_LABEL</span>
@@ -1083,6 +1062,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_consensus_request</span>(<span class="ident">mempool</span>: <span class="kw-2">&amp;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">CoreMempool</span><span class="op">&gt;</span>, <span class="ident">req</span>: <span class="ident">ConsensusRequest</span>) {
     <span class="comment">//start latency timer</span>
     <span class="kw">let</span> <span class="ident">start_time</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
+    <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Consensus</span>, <span class="ident">LogEvent</span>::<span class="ident">Received</span>).<span class="ident">consensus_msg</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>));
 
     <span class="kw">let</span> (<span class="ident">resp</span>, <span class="ident">callback</span>, <span class="ident">counter_label</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">req</span> {
         <span class="ident">ConsensusRequest</span>::<span class="ident">GetBlockRequest</span>(<span class="ident">max_block_size</span>, <span class="ident">transactions</span>, <span class="ident">callback</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -1126,13 +1106,11 @@
         }
     };
     <span class="comment">// send back to callback</span>
-    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">callback</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">resp</span>)).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-        <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[shared mempool] timeout on callback sending response to Mempool request&quot;</span>)
-    }) {
-        <span class="macro">error</span><span class="macro">!</span>(
-            <span class="string">&quot;[shared mempool] failed to send back mempool response with error: {:?}&quot;</span>,
-            <span class="ident">e</span>
-        );
+    <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">callback</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(<span class="ident">resp</span>)).<span class="ident">is_err</span>() {
+        <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
+            <span class="ident">LogEntry</span>::<span class="ident">Consensus</span>,
+            <span class="ident">LogEvent</span>::<span class="ident">CallbackFail</span>
+        ));
         <span class="ident">counters</span>::<span class="ident">REQUEST_FAIL_LABEL</span>
     } <span class="kw">else</span> {
         <span class="ident">counters</span>::<span class="ident">REQUEST_SUCCESS_LABEL</span>
@@ -1173,12 +1151,20 @@
 ) <span class="kw">where</span>
     <span class="ident">V</span>: <span class="ident">TransactionValidation</span>,
 {
+    <span class="macro">info</span><span class="macro">!</span>(
+        <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ReconfigUpdate</span>, <span class="ident">LogEvent</span>::<span class="ident">Process</span>)
+            .<span class="ident">reconfig_update</span>(<span class="ident">config_update</span>.<span class="ident">clone</span>())
+    );
+
     <span class="comment">// restart VM validator</span>
-    <span class="ident">validator</span>
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">validator</span>
         .<span class="ident">write</span>()
-        .<span class="ident">unwrap</span>()
+        .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire VM validator lock&quot;</span>)
         .<span class="ident">restart</span>(<span class="ident">config_update</span>)
-        .<span class="ident">expect</span>(<span class="string">&quot;failed to restart VM validator&quot;</span>);
+    {
+        <span class="ident">counters</span>::<span class="ident">VM_RECONFIG_UPDATE_FAIL_COUNT</span>.<span class="ident">inc</span>();
+        <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ReconfigUpdate</span>, <span class="ident">LogEvent</span>::<span class="ident">VMUpdateFail</span>).<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
+    }
 }
 
 <span class="doccomment">/// creates uniques request id for the batch in the format &quot;{start_id}_{end_id}&quot;</span>
