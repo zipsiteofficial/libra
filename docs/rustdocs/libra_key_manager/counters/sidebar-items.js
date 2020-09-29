@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["increment_state",""]]});
+initSidebarItems({"constant":[["KEYS_STILL_FRESH","Metric counter states."],["LIVENESS_ERROR_ENCOUNTERED",""],["NO_ACTION",""],["ROTATED_IN_STORAGE",""],["SUBMITTED_ROTATION_TRANSACTION",""],["UNEXPECTED_ERROR_ENCOUNTERED",""],["WAITING_ON_RECONFIGURATION",""],["WAITING_ON_TRANSACTION_EXECUTION",""]],"fn":[["increment_metric_counter","Increments a metric counter state."],["initialize_all_metric_counters","Initializes all metric counter states."]]});
