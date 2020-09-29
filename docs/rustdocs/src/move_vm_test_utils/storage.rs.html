@@ -185,6 +185,33 @@
 <span id="185">185</span>
 <span id="186">186</span>
 <span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -203,6 +230,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">effects</span>::{<span class="ident">AccountChangeSet</span>, <span class="ident">ChangeSet</span>};
 
 <span class="doccomment">/// A dummy storage containing no modules or resources.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlankStorage</span>;
 
 <span class="kw">impl</span> <span class="ident">BlankStorage</span> {
@@ -227,6 +255,7 @@
 
 <span class="comment">// A storage adapter created by stacking a change set on top of an existing storage backend.</span>
 <span class="doccomment">/// The new storage can be used for additional computations without modifying the base.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DeltaStorage</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span><span class="op">&gt;</span> {
     <span class="ident">base</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">S</span>,
     <span class="ident">delta</span>: <span class="ident">ChangeSet</span>,
@@ -265,12 +294,14 @@
 }
 
 <span class="doccomment">/// Simple in-memory storage for modules and resources under an account.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">struct</span> <span class="ident">InMemoryAccountStorage</span> {
     <span class="ident">resources</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">StructTag</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">modules</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Identifier</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Simple in-memory storage that can be used as a Move VM storage backend for testing purposes.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InMemoryStorage</span> {
     <span class="ident">accounts</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">InMemoryAccountStorage</span><span class="op">&gt;</span>,
 }
@@ -351,6 +382,29 @@
             }
         }
         <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="self">Self</span> {
+            <span class="ident">accounts</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">publish_or_overwrite_module</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">module_id</span>: <span class="ident">ModuleId</span>, <span class="ident">blob</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">ChangeSet</span>::<span class="ident">new</span>();
+        <span class="ident">delta</span>.<span class="ident">publish_module</span>(<span class="ident">module_id</span>, <span class="ident">blob</span>).<span class="ident">unwrap</span>();
+        <span class="self">self</span>.<span class="ident">apply</span>(<span class="ident">delta</span>).<span class="ident">unwrap</span>();
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">publish_or_overwrite_resource</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">addr</span>: <span class="ident">AccountAddress</span>,
+        <span class="ident">struct_tag</span>: <span class="ident">StructTag</span>,
+        <span class="ident">blob</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    ) {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">ChangeSet</span>::<span class="ident">new</span>();
+        <span class="ident">delta</span>.<span class="ident">publish_resource</span>(<span class="ident">addr</span>, <span class="ident">struct_tag</span>, <span class="ident">blob</span>).<span class="ident">unwrap</span>();
+        <span class="self">self</span>.<span class="ident">apply</span>(<span class="ident">delta</span>).<span class="ident">unwrap</span>();
     }
 }
 
