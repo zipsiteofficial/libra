@@ -563,6 +563,37 @@
 <span id="563">563</span>
 <span id="564">564</span>
 <span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
+<span id="574">574</span>
+<span id="575">575</span>
+<span id="576">576</span>
+<span id="577">577</span>
+<span id="578">578</span>
+<span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -578,7 +609,6 @@
     <span class="ident">system_module_names</span>::<span class="kw-2">*</span>,
     <span class="ident">transaction_metadata</span>::<span class="ident">TransactionMetadata</span>,
 };
-
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_state_view</span>::<span class="ident">StateView</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
@@ -597,6 +627,7 @@
 
 <span class="kw">use</span> <span class="ident">move_vm_runtime</span>::{
     <span class="ident">data_cache</span>::{<span class="ident">RemoteCache</span>, <span class="ident">TransactionEffects</span>},
+    <span class="ident">logging</span>::<span class="ident">LogContext</span>,
     <span class="ident">move_vm</span>::<span class="ident">MoveVM</span>,
     <span class="ident">session</span>::<span class="ident">Session</span>,
 };
@@ -649,10 +680,16 @@
         <span class="ident">LibraVMInternals</span>(<span class="self">self</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">publishing_option</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMPublishingOption</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">publishing_option</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">VMPublishingOption</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">publishing_option</span>.<span class="ident">as_ref</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-            <span class="ident">CRITICAL_ERRORS</span>.<span class="ident">inc</span>();
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. PublishingOption Not Found&quot;</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
+            <span class="macro">error</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;VM Startup Failed. PublishingOption Not Found&quot;</span>
+            );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
         })
     }
@@ -663,13 +700,13 @@
         <span class="self">self</span>.<span class="ident">publishing_option</span> <span class="op">=</span> <span class="ident">VMPublishingOption</span>::<span class="ident">fetch_config</span>(<span class="ident">data_cache</span>);
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_gas_schedule</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">on_chain_config</span>
             .<span class="ident">as_ref</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">gas_schedule</span>)
             .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="ident">CRITICAL_ERRORS</span>.<span class="ident">inc</span>();
-                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;VM Startup Failed. Gas Schedule Not Found&quot;</span>);
+                <span class="ident">log_context</span>.<span class="ident">alert</span>();
+                <span class="macro">error</span><span class="macro">!</span>(<span class="kw-2">*</span><span class="ident">log_context</span>, <span class="string">&quot;VM Startup Failed. Gas Schedule Not Found&quot;</span>);
                 <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">VM_STARTUP_FAILURE</span>)
             })
     }
@@ -682,15 +719,20 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">gas_constants</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>.<span class="ident">gas_constants</span>;
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">check_gas</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">gas_constants</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_gas_schedule</span>(<span class="ident">log_context</span>)<span class="question-mark">?</span>.<span class="ident">gas_constants</span>;
         <span class="kw">let</span> <span class="ident">raw_bytes_len</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">transaction_size</span>;
         <span class="comment">// The transaction is too large.</span>
         <span class="kw">if</span> <span class="ident">txn_data</span>.<span class="ident">transaction_size</span>.<span class="ident">get</span>() <span class="op">&gt;</span> <span class="ident">gas_constants</span>.<span class="ident">max_transaction_size_in_bytes</span> {
             <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[VM] Transaction size too big {} (max {})&quot;</span>,
                 <span class="ident">raw_bytes_len</span>.<span class="ident">get</span>(),
-                <span class="ident">gas_constants</span>.<span class="ident">max_transaction_size_in_bytes</span>
+                <span class="ident">gas_constants</span>.<span class="ident">max_transaction_size_in_bytes</span>,
             );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">EXCEEDED_MAX_TRANSACTION_SIZE</span>));
         }
@@ -704,9 +746,10 @@
         <span class="comment">// transaction.</span>
         <span class="kw">if</span> <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>() <span class="op">&gt;</span> <span class="ident">gas_constants</span>.<span class="ident">maximum_number_of_gas_units</span>.<span class="ident">get</span>() {
             <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[VM] Gas unit error; max {}, submitted {}&quot;</span>,
                 <span class="ident">gas_constants</span>.<span class="ident">maximum_number_of_gas_units</span>.<span class="ident">get</span>(),
-                <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>()
+                <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>(),
             );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_EXCEEDS_MAX_GAS_UNITS_BOUND</span>,
@@ -719,9 +762,10 @@
         <span class="kw">let</span> <span class="ident">min_txn_fee</span> <span class="op">=</span> <span class="ident">calculate_intrinsic_gas</span>(<span class="ident">raw_bytes_len</span>, <span class="ident">gas_constants</span>);
         <span class="kw">if</span> <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>() <span class="op">&lt;</span> <span class="ident">min_txn_fee</span>.<span class="ident">get</span>() {
             <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[VM] Gas unit error; min {}, submitted {}&quot;</span>,
                 <span class="ident">min_txn_fee</span>.<span class="ident">get</span>(),
-                <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>()
+                <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>().<span class="ident">get</span>(),
             );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS</span>,
@@ -736,9 +780,10 @@
             <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>() <span class="op">&lt;</span> <span class="ident">gas_constants</span>.<span class="ident">min_price_per_gas_unit</span>.<span class="ident">get</span>();
         <span class="kw">if</span> <span class="ident">below_min_bound</span> {
             <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[VM] Gas unit error; min {}, submitted {}&quot;</span>,
                 <span class="ident">gas_constants</span>.<span class="ident">min_price_per_gas_unit</span>.<span class="ident">get</span>(),
-                <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>()
+                <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>(),
             );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_BELOW_MIN_BOUND</span>));
         }
@@ -746,9 +791,10 @@
         <span class="comment">// The submitted gas price is greater than the maximum gas unit price set by the VM.</span>
         <span class="kw">if</span> <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>() <span class="op">&gt;</span> <span class="ident">gas_constants</span>.<span class="ident">max_price_per_gas_unit</span>.<span class="ident">get</span>() {
             <span class="macro">warn</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[VM] Gas unit error; min {}, submitted {}&quot;</span>,
                 <span class="ident">gas_constants</span>.<span class="ident">max_price_per_gas_unit</span>.<span class="ident">get</span>(),
-                <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>()
+                <span class="ident">txn_data</span>.<span class="ident">gas_unit_price</span>().<span class="ident">get</span>(),
             );
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">GAS_UNIT_PRICE_ABOVE_MAX_BOUND</span>));
         }
@@ -763,6 +809,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
@@ -789,8 +836,9 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="ident">convert_normal_prologue_error</span>)
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the prologue of a transaction by calling into `MODULE_PROLOGUE_NAME` function stored</span>
@@ -801,6 +849,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
@@ -826,8 +875,9 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="ident">convert_normal_prologue_error</span>)
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `EPILOGUE_NAME` function stored</span>
@@ -838,6 +888,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
@@ -859,8 +910,9 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="ident">convert_normal_success_epilogue_error</span>)
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_success_epilogue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the failure epilogue of a transaction by calling into `USER_EPILOGUE_NAME` function</span>
@@ -871,6 +923,7 @@
         <span class="ident">cost_strategy</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_currency_ty</span> <span class="op">=</span>
             <span class="ident">account_config</span>::<span class="ident">type_tag_for_currency_code</span>(<span class="ident">account_currency_symbol</span>.<span class="ident">to_owned</span>());
@@ -892,8 +945,11 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">USER_EPILOGUE_NAME</span>.<span class="ident">as_str</span>()))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">USER_EPILOGUE_NAME</span>.<span class="ident">as_str</span>(), <span class="ident">log_context</span>)
+            })
     }
 
     <span class="doccomment">/// Run the prologue of a transaction by calling into `PROLOGUE_NAME` function stored</span>
@@ -902,6 +958,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn_sequence_number</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">sequence_number</span>();
         <span class="kw">let</span> <span class="ident">txn_public_key</span> <span class="op">=</span> <span class="ident">txn_data</span>.<span class="ident">authentication_key_preimage</span>().<span class="ident">to_vec</span>();
@@ -924,8 +981,9 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="ident">convert_write_set_prologue_error</span>)
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_write_set_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `WRITESET_EPILOGUE_NAME` function stored</span>
@@ -936,6 +994,7 @@
         <span class="ident">change_set</span>: <span class="kw-2">&amp;</span><span class="ident">ChangeSet</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">should_trigger_reconfiguration</span>: <span class="ident">bool</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">change_set_bytes</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="ident">change_set</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">FAILED_TO_SERIALIZE_WRITE_SET_CHANGES</span>))<span class="question-mark">?</span>;
@@ -954,8 +1013,11 @@
                 ],
                 <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">WRITESET_EPILOGUE_NAME</span>.<span class="ident">as_str</span>()))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">WRITESET_EPILOGUE_NAME</span>.<span class="ident">as_str</span>(), <span class="ident">log_context</span>)
+            })
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_session</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="ident">R</span>: <span class="ident">RemoteCache</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">r</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;r</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="lifetime">&#39;r</span>, <span class="lifetime">&#39;_</span>, <span class="ident">R</span><span class="op">&gt;</span> {
@@ -978,8 +1040,8 @@
     }
 
     <span class="doccomment">/// Returns the internal gas schedule if it has been loaded, or an error if it hasn&#39;t.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gas_schedule</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gas_schedule</span>(<span class="self">self</span>, <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>(<span class="ident">log_context</span>)
     }
 
     <span class="doccomment">/// Returns the version of Move Runtime.</span>

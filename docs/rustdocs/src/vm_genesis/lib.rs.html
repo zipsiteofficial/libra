@@ -636,6 +636,52 @@
 <span id="636">636</span>
 <span id="637">637</span>
 <span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -672,7 +718,12 @@
     <span class="ident">identifier</span>::<span class="ident">Identifier</span>,
     <span class="ident">language_storage</span>::{<span class="ident">ModuleId</span>, <span class="ident">StructTag</span>, <span class="ident">TypeTag</span>},
 };
-<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::{<span class="ident">data_cache</span>::<span class="ident">TransactionEffects</span>, <span class="ident">move_vm</span>::<span class="ident">MoveVM</span>, <span class="ident">session</span>::<span class="ident">Session</span>};
+<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::{
+    <span class="ident">data_cache</span>::<span class="ident">TransactionEffects</span>,
+    <span class="ident">logging</span>::{<span class="ident">LogContext</span>, <span class="ident">NoContextLog</span>},
+    <span class="ident">move_vm</span>::<span class="ident">MoveVM</span>,
+    <span class="ident">session</span>::<span class="ident">Session</span>,
+};
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::{
     <span class="ident">gas_schedule</span>::{<span class="ident">zero_cost_schedule</span>, <span class="ident">CostStrategy</span>},
     <span class="ident">values</span>::<span class="ident">Value</span>,
@@ -754,6 +805,7 @@
 
     <span class="kw">let</span> <span class="ident">move_vm</span> <span class="op">=</span> <span class="ident">MoveVM</span>::<span class="ident">new</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="kw-2">&amp;</span><span class="ident">data_cache</span>);
+    <span class="kw">let</span> <span class="ident">log_context</span> <span class="op">=</span> <span class="ident">NoContextLog</span>::<span class="ident">new</span>();
 
     <span class="kw">let</span> <span class="ident">lbr_ty</span> <span class="op">=</span> <span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">StructTag</span> {
         <span class="ident">address</span>: <span class="kw-2">*</span><span class="ident">account_config</span>::<span class="ident">LBR_MODULE</span>.<span class="ident">address</span>(),
@@ -764,6 +816,7 @@
 
     <span class="ident">create_and_initialize_main_accounts</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
+        <span class="kw-2">&amp;</span><span class="ident">log_context</span>,
         <span class="kw-2">&amp;</span><span class="ident">libra_root_key</span>,
         <span class="kw-2">&amp;</span><span class="ident">treasury_compliance_key</span>,
         <span class="ident">vm_publishing_option</span>,
@@ -773,20 +826,21 @@
     <span class="comment">// generate the genesis WriteSet</span>
     <span class="ident">create_and_initialize_owners_operators</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
+        <span class="kw-2">&amp;</span><span class="ident">log_context</span>,
         <span class="kw-2">&amp;</span><span class="ident">operator_assignments</span>,
         <span class="kw-2">&amp;</span><span class="ident">operator_registrations</span>,
     );
-    <span class="ident">reconfigure</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>);
+    <span class="ident">reconfigure</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>);
 
     <span class="comment">// XXX/TODO: for testnet only</span>
-    <span class="ident">create_and_initialize_testnet_minting</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">treasury_compliance_key</span>);
+    <span class="ident">create_and_initialize_testnet_minting</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>, <span class="kw-2">&amp;</span><span class="ident">treasury_compliance_key</span>);
 
     <span class="kw">let</span> <span class="ident">effects_1</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>().<span class="ident">unwrap</span>();
 
     <span class="kw">let</span> <span class="ident">state_view</span> <span class="op">=</span> <span class="ident">GenesisStateView</span>::<span class="ident">new</span>();
     <span class="kw">let</span> <span class="ident">data_cache</span> <span class="op">=</span> <span class="ident">StateViewCache</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">state_view</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="ident">move_vm</span>.<span class="ident">new_session</span>(<span class="kw-2">&amp;</span><span class="ident">data_cache</span>);
-    <span class="ident">publish_stdlib</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="ident">stdlib_modules</span>);
+    <span class="ident">publish_stdlib</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>, <span class="ident">stdlib_modules</span>);
     <span class="kw">let</span> <span class="ident">effects_2</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>().<span class="ident">unwrap</span>();
 
     <span class="kw">let</span> <span class="ident">effects</span> <span class="op">=</span> <span class="ident">merge_txn_effects</span>(<span class="ident">effects_1</span>, <span class="ident">effects_2</span>);
@@ -814,6 +868,7 @@
 
 <span class="kw">fn</span> <span class="ident">exec_function</span>(
     <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
     <span class="ident">module_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">function_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
@@ -831,6 +886,7 @@
             <span class="ident">args</span>,
             <span class="ident">sender</span>,
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">ZERO_COST_SCHEDULE</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">100_000_000</span>)),
+            <span class="ident">log_context</span>,
         )
         .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
             <span class="macro">panic</span><span class="macro">!</span>(
@@ -842,7 +898,12 @@
         })
 }
 
-<span class="kw">fn</span> <span class="ident">exec_script</span>(<span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>, <span class="ident">sender</span>: <span class="ident">AccountAddress</span>, <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>) {
+<span class="kw">fn</span> <span class="ident">exec_script</span>(
+    <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+    <span class="ident">sender</span>: <span class="ident">AccountAddress</span>,
+    <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>,
+) {
     <span class="ident">session</span>
         .<span class="ident">execute_script</span>(
             <span class="ident">script</span>.<span class="ident">code</span>().<span class="ident">to_vec</span>(),
@@ -850,6 +911,7 @@
             <span class="ident">convert_txn_args</span>(<span class="ident">script</span>.<span class="ident">args</span>()),
             <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">sender</span>],
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">ZERO_COST_SCHEDULE</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">100_000_000</span>)),
+            <span class="ident">log_context</span>,
         )
         .<span class="ident">unwrap</span>()
 }
@@ -857,6 +919,7 @@
 <span class="doccomment">/// Create and initialize Association and Core Code accounts.</span>
 <span class="kw">fn</span> <span class="ident">create_and_initialize_main_accounts</span>(
     <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     <span class="ident">libra_root_key</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>,
     <span class="ident">treasury_compliance_key</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>,
     <span class="ident">publishing_option</span>: <span class="ident">VMPublishingOption</span>,
@@ -886,6 +949,7 @@
 
     <span class="ident">exec_function</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">root_libra_root_address</span>,
         <span class="ident">GENESIS_MODULE_NAME</span>,
         <span class="string">&quot;initialize&quot;</span>,
@@ -909,6 +973,7 @@
     <span class="comment">// number 0</span>
     <span class="ident">exec_function</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">root_libra_root_address</span>,
         <span class="string">&quot;LibraAccount&quot;</span>,
         <span class="string">&quot;epilogue&quot;</span>,
@@ -925,6 +990,7 @@
 
 <span class="kw">fn</span> <span class="ident">create_and_initialize_testnet_minting</span>(
     <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     <span class="ident">public_key</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>,
 ) {
     <span class="kw">let</span> <span class="ident">genesis_auth_key</span> <span class="op">=</span> <span class="ident">AuthenticationKey</span>::<span class="ident">ed25519</span>(<span class="ident">public_key</span>);
@@ -962,11 +1028,13 @@
     <span class="comment">// Create the DD account</span>
     <span class="ident">exec_script</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">account_config</span>::<span class="ident">treasury_compliance_account_address</span>(),
         <span class="kw-2">&amp;</span><span class="ident">create_dd_script</span>,
     );
     <span class="ident">exec_function</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">account_config</span>::<span class="ident">treasury_compliance_account_address</span>(),
         <span class="string">&quot;DesignatedDealer&quot;</span>,
         <span class="string">&quot;update_tier&quot;</span>,
@@ -983,6 +1051,7 @@
 
     <span class="ident">exec_function</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">account_config</span>::<span class="ident">treasury_compliance_account_address</span>(),
         <span class="string">&quot;DesignatedDealer&quot;</span>,
         <span class="string">&quot;update_tier&quot;</span>,
@@ -1003,11 +1072,13 @@
     <span class="kw">let</span> <span class="ident">treasury_compliance_account_address</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">treasury_compliance_account_address</span>();
     <span class="ident">exec_script</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">treasury_compliance_account_address</span>,
         <span class="kw-2">&amp;</span><span class="ident">mint_max_coin1</span>,
     );
     <span class="ident">exec_script</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">treasury_compliance_account_address</span>,
         <span class="kw-2">&amp;</span><span class="ident">mint_max_coin2</span>,
     );
@@ -1015,11 +1086,13 @@
     <span class="kw">let</span> <span class="ident">testnet_dd_account_address</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">testnet_dd_account_address</span>();
     <span class="ident">exec_script</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">testnet_dd_account_address</span>,
         <span class="kw-2">&amp;</span><span class="ident">transaction_builder</span>::<span class="ident">encode_mint_lbr_script</span>(<span class="ident">std</span>::<span class="ident">u64</span>::<span class="ident">MAX</span> <span class="op">/</span> <span class="number">2</span>),
     );
     <span class="ident">exec_script</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">testnet_dd_account_address</span>,
         <span class="kw-2">&amp;</span><span class="ident">transaction_builder</span>::<span class="ident">encode_rotate_authentication_key_script</span>(<span class="ident">genesis_auth_key</span>.<span class="ident">to_vec</span>()),
     );
@@ -1030,6 +1103,7 @@
 <span class="doccomment">/// validator config on-chain.</span>
 <span class="kw">fn</span> <span class="ident">create_and_initialize_owners_operators</span>(
     <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     <span class="ident">operator_assignments</span>: <span class="kw-2">&amp;</span>[<span class="ident">OperatorAssignment</span>],
     <span class="ident">operator_registrations</span>: <span class="kw-2">&amp;</span>[<span class="ident">OperatorRegistration</span>],
 ) {
@@ -1049,7 +1123,12 @@
             <span class="ident">staged_owner_auth_key</span>.<span class="ident">prefix</span>().<span class="ident">to_vec</span>(),
             <span class="ident">owner_name</span>.<span class="ident">clone</span>(),
         );
-        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">libra_root_address</span>, <span class="kw-2">&amp;</span><span class="ident">create_owner_script</span>);
+        <span class="ident">exec_script</span>(
+            <span class="ident">session</span>,
+            <span class="ident">log_context</span>,
+            <span class="ident">libra_root_address</span>,
+            <span class="kw-2">&amp;</span><span class="ident">create_owner_script</span>,
+        );
 
         <span class="comment">// If there is a key, make it the auth key, otherwise use a zero auth key.</span>
         <span class="kw">let</span> <span class="ident">real_owner_auth_key</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">owner_key</span>) <span class="op">=</span> <span class="ident">owner_key</span> {
@@ -1060,6 +1139,7 @@
 
         <span class="ident">exec_script</span>(
             <span class="ident">session</span>,
+            <span class="ident">log_context</span>,
             <span class="ident">owner_address</span>,
             <span class="kw-2">&amp;</span><span class="ident">transaction_builder</span>::<span class="ident">encode_rotate_authentication_key_script</span>(<span class="ident">real_owner_auth_key</span>),
         );
@@ -1076,19 +1156,24 @@
                 <span class="ident">operator_auth_key</span>.<span class="ident">prefix</span>().<span class="ident">to_vec</span>(),
                 <span class="ident">operator_name</span>.<span class="ident">clone</span>(),
             );
-        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">libra_root_address</span>, <span class="kw-2">&amp;</span><span class="ident">create_operator_script</span>);
+        <span class="ident">exec_script</span>(
+            <span class="ident">session</span>,
+            <span class="ident">log_context</span>,
+            <span class="ident">libra_root_address</span>,
+            <span class="kw-2">&amp;</span><span class="ident">create_operator_script</span>,
+        );
     }
 
     <span class="comment">// Set the validator operator for each validator owner</span>
     <span class="kw">for</span> (<span class="ident">_owner_key</span>, <span class="ident">owner_name</span>, <span class="ident">op_assignment</span>) <span class="kw">in</span> <span class="ident">operator_assignments</span> {
         <span class="kw">let</span> <span class="ident">owner_address</span> <span class="op">=</span> <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="ident">owner_name</span>);
-        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">owner_address</span>, <span class="ident">op_assignment</span>);
+        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">log_context</span>, <span class="ident">owner_address</span>, <span class="ident">op_assignment</span>);
     }
 
     <span class="comment">// Set the validator config for each validator</span>
     <span class="kw">for</span> (<span class="ident">operator_key</span>, <span class="kw">_</span>, <span class="ident">registration</span>) <span class="kw">in</span> <span class="ident">operator_registrations</span> {
         <span class="kw">let</span> <span class="ident">operator_account</span> <span class="op">=</span> <span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="ident">operator_key</span>);
-        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">operator_account</span>, <span class="ident">registration</span>);
+        <span class="ident">exec_script</span>(<span class="ident">session</span>, <span class="ident">log_context</span>, <span class="ident">operator_account</span>, <span class="ident">registration</span>);
     }
 
     <span class="comment">// Add each validator to the validator set</span>
@@ -1096,6 +1181,7 @@
         <span class="kw">let</span> <span class="ident">owner_address</span> <span class="op">=</span> <span class="ident">libra_config</span>::<span class="ident">utils</span>::<span class="ident">validator_owner_account_from_name</span>(<span class="ident">owner_name</span>);
         <span class="ident">exec_function</span>(
             <span class="ident">session</span>,
+            <span class="ident">log_context</span>,
             <span class="ident">libra_root_address</span>,
             <span class="string">&quot;LibraSystem&quot;</span>,
             <span class="string">&quot;add_validator&quot;</span>,
@@ -1115,7 +1201,11 @@
 }
 
 <span class="doccomment">/// Publish the standard library.</span>
-<span class="kw">fn</span> <span class="ident">publish_stdlib</span>(<span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>, <span class="ident">stdlib</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>]) {
+<span class="kw">fn</span> <span class="ident">publish_stdlib</span>(
+    <span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+    <span class="ident">stdlib</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
+) {
     <span class="kw">for</span> <span class="ident">module</span> <span class="kw">in</span> <span class="ident">remove_genesis</span>(<span class="ident">stdlib</span>) {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">module</span>.<span class="ident">self_id</span>().<span class="ident">name</span>().<span class="ident">as_str</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">GENESIS_MODULE_NAME</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module_vec</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
@@ -1125,6 +1215,7 @@
                 <span class="ident">module_vec</span>,
                 <span class="kw-2">*</span><span class="ident">module</span>.<span class="ident">self_id</span>().<span class="ident">address</span>(),
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">ZERO_COST_SCHEDULE</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">100_000_000</span>)),
+                <span class="ident">log_context</span>,
             )
             .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
                 <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Failure publishing module {:?}, {:?}&quot;</span>, <span class="ident">module</span>.<span class="ident">self_id</span>(), <span class="ident">e</span>)
@@ -1133,9 +1224,10 @@
 }
 
 <span class="doccomment">/// Trigger a reconfiguration. This emits an event that will be passed along to the storage layer.</span>
-<span class="kw">fn</span> <span class="ident">reconfigure</span>(<span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>) {
+<span class="kw">fn</span> <span class="ident">reconfigure</span>(<span class="ident">session</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Session</span><span class="op">&lt;</span><span class="ident">StateViewCache</span><span class="op">&gt;</span>, <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>) {
     <span class="ident">exec_function</span>(
         <span class="ident">session</span>,
+        <span class="ident">log_context</span>,
         <span class="ident">account_config</span>::<span class="ident">libra_root_address</span>(),
         <span class="string">&quot;LibraConfig&quot;</span>,
         <span class="string">&quot;emit_genesis_reconfiguration_event&quot;</span>,

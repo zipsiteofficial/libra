@@ -195,12 +195,42 @@
 <span id="195">195</span>
 <span id="196">196</span>
 <span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">vm_status</span>::{<span class="ident">known_locations</span>, <span class="ident">StatusCode</span>, <span class="ident">VMStatus</span>};
+<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::<span class="ident">logging</span>::<span class="ident">LogContext</span>;
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="ident">VMError</span>;
 
 <span class="doccomment">/// Error codes that can be emitted by the prologue. These have special significance to the VM when</span>
@@ -233,7 +263,10 @@
 <span class="doccomment">/// Converts particular Move abort codes to specific validation error codes for the prologue</span>
 <span class="doccomment">/// Any non-abort non-execution code is considered an invariant violation, specifically</span>
 <span class="doccomment">/// `UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION`</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_normal_prologue_error</span>(<span class="ident">error</span>: <span class="ident">VMError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_normal_prologue_error</span>(
+    <span class="ident">error</span>: <span class="ident">VMError</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">error</span>.<span class="ident">into_vm_status</span>();
     <span class="prelude-val">Err</span>(<span class="kw">match</span> <span class="ident">status</span> {
         <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Executed</span>,
@@ -241,10 +274,11 @@
             <span class="kw">if</span> <span class="ident">location</span> <span class="op">!</span><span class="op">=</span> <span class="ident">known_locations</span>::<span class="ident">account_module_abort</span>() <span class="op">=</span><span class="op">&gt;</span>
         {
             <span class="kw">let</span> (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span> <span class="ident">error_split</span>(<span class="ident">code</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
             <span class="macro">error</span><span class="macro">!</span>(
-                <span class="string">&quot;[libra_vm] Unexpected prologue Move abort: {:?}::{:?} \
-                (Category: {:?} Reason: {:?})&quot;</span>,
-                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected prologue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
             );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
@@ -270,10 +304,11 @@
                 (<span class="ident">INVALID_STATE</span>, <span class="ident">ESCRIPT_NOT_ALLOWED</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_SCRIPT</span>,
                 (<span class="ident">INVALID_STATE</span>, <span class="ident">EMODULE_NOT_ALLOWED</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_PUBLISHER</span>,
                 (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">log_context</span>.<span class="ident">alert</span>();
                     <span class="macro">error</span><span class="macro">!</span>(
-                        <span class="string">&quot;[libra_vm] Unexpected prologue Move abort: {:?}::{:?} \
-                        (Category: {:?} Reason: {:?})&quot;</span>,
-                        <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                        <span class="kw-2">*</span><span class="ident">log_context</span>,
+                        <span class="string">&quot;[libra_vm] Unexpected prologue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                        <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
                     );
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
                         <span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>,
@@ -283,7 +318,11 @@
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">new_major_status</span>)
         }
         <span class="ident">status</span> @ <span class="ident">VMStatus</span>::<span class="ident">ExecutionFailure</span> { .. } <span class="op">|</span> <span class="ident">status</span> @ <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] Unexpected prologue error: {:?}&quot;</span>, <span class="ident">status</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
+            <span class="macro">error</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected prologue error: {:?}&quot;</span>, <span class="ident">status</span>
+            );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
     })
@@ -292,7 +331,10 @@
 <span class="doccomment">/// Checks for only Move aborts or successful execution.</span>
 <span class="doccomment">/// Any other errors are mapped to the invariant violation</span>
 <span class="doccomment">/// `UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION`</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_normal_success_epilogue_error</span>(<span class="ident">error</span>: <span class="ident">VMError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_normal_success_epilogue_error</span>(
+    <span class="ident">error</span>: <span class="ident">VMError</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">error</span>.<span class="ident">into_vm_status</span>();
     <span class="prelude-val">Err</span>(<span class="kw">match</span> <span class="ident">status</span> {
         <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Executed</span>,
@@ -300,10 +342,11 @@
             <span class="kw">if</span> <span class="ident">location</span> <span class="op">!</span><span class="op">=</span> <span class="ident">known_locations</span>::<span class="ident">account_module_abort</span>() <span class="op">=</span><span class="op">&gt;</span>
         {
             <span class="kw">let</span> (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span> <span class="ident">error_split</span>(<span class="ident">code</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
             <span class="macro">error</span><span class="macro">!</span>(
-                <span class="string">&quot;[libra_vm] Unexpected success epilogue Move abort: {:?}::{:?} \
-                (Category: {:?} Reason: {:?})&quot;</span>,
-                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected success epilogue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
             );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
@@ -311,17 +354,22 @@
         <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">error_split</span>(<span class="ident">code</span>) {
             (<span class="ident">LIMIT_EXCEEDED</span>, <span class="ident">ECANT_PAY_GAS_DEPOSIT</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">MoveAbort</span>(<span class="ident">location</span>, <span class="ident">code</span>),
             (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">log_context</span>.<span class="ident">alert</span>();
                 <span class="macro">error</span><span class="macro">!</span>(
-                    <span class="string">&quot;[libra_vm] Unexpected success epilogue Move abort: {:?}::{:?} \
-                    (Category: {:?} Reason: {:?})&quot;</span>,
-                    <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                    <span class="kw-2">*</span><span class="ident">log_context</span>,
+                    <span class="string">&quot;[libra_vm] Unexpected success epilogue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                    <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
                 );
                 <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
             }
         },
 
         <span class="ident">status</span> <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] Unexpected success epilogue error: {:?}&quot;</span>, <span class="ident">status</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
+            <span class="macro">error</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected success epilogue error: {:?}&quot;</span>, <span class="ident">status</span>,
+            );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
     })
@@ -330,7 +378,10 @@
 <span class="doccomment">/// Converts Move aborts or execution failures to `REJECTED_WRITE_SET`</span>
 <span class="doccomment">/// Any other errors are mapped to the invariant violation</span>
 <span class="doccomment">/// `UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION`</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_write_set_prologue_error</span>(<span class="ident">error</span>: <span class="ident">VMError</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">convert_write_set_prologue_error</span>(
+    <span class="ident">error</span>: <span class="ident">VMError</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">error</span>.<span class="ident">into_vm_status</span>();
     <span class="prelude-val">Err</span>(<span class="kw">match</span> <span class="ident">status</span> {
         <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Executed</span>,
@@ -338,10 +389,11 @@
             <span class="kw">if</span> <span class="ident">location</span> <span class="op">!</span><span class="op">=</span> <span class="ident">known_locations</span>::<span class="ident">account_module_abort</span>() <span class="op">=</span><span class="op">&gt;</span>
         {
             <span class="kw">let</span> (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span> <span class="ident">error_split</span>(<span class="ident">code</span>);
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
             <span class="macro">error</span><span class="macro">!</span>(
-                <span class="string">&quot;[libra_vm] Unexpected write set prologue Move abort: {:?}::{:?} \
-                (Category: {:?} Reason: {:?})&quot;</span>,
-                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected write set prologue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
             );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
@@ -354,19 +406,21 @@
             <span class="op">|</span> (<span class="ident">INVALID_ARGUMENT</span>, <span class="ident">ETRANSACTION_EXPIRED</span>)
             <span class="op">|</span> (<span class="ident">INVALID_ARGUMENT</span>, <span class="ident">EBAD_CHAIN_ID</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">REJECTED_WRITE_SET</span>),
             (<span class="ident">category</span>, <span class="ident">reason</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">log_context</span>.<span class="ident">alert</span>();
                 <span class="macro">error</span><span class="macro">!</span>(
-                    <span class="string">&quot;[libra_vm] Unexpected write set prologue Move abort: {:?}::{:?} \
-                    (Category: {:?} Reason: {:?})&quot;</span>,
-                    <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>
+                    <span class="kw-2">*</span><span class="ident">log_context</span>,
+                    <span class="string">&quot;[libra_vm] Unexpected write set prologue Move abort: {:?}::{:?} (Category: {:?} Reason: {:?})&quot;</span>,
+                    <span class="ident">location</span>, <span class="ident">code</span>, <span class="ident">category</span>, <span class="ident">reason</span>,
                 );
                 <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
             }
         },
 
         <span class="ident">status</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
             <span class="macro">error</span><span class="macro">!</span>(
-                <span class="string">&quot;[libra_vm] Unexpected write set prologue error: {:?}&quot;</span>,
-                <span class="ident">status</span>
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
+                <span class="string">&quot;[libra_vm] Unexpected write set prologue error: {:?}&quot;</span>, <span class="ident">status</span>
             );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }
@@ -379,15 +433,19 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">expect_only_successful_execution</span>(
     <span class="ident">error</span>: <span class="ident">VMError</span>,
     <span class="ident">function_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">error</span>.<span class="ident">into_vm_status</span>();
     <span class="prelude-val">Err</span>(<span class="kw">match</span> <span class="ident">status</span> {
         <span class="ident">VMStatus</span>::<span class="ident">Executed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VMStatus</span>::<span class="ident">Executed</span>,
 
         <span class="ident">status</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">log_context</span>.<span class="ident">alert</span>();
             <span class="macro">error</span><span class="macro">!</span>(
+                <span class="kw-2">*</span><span class="ident">log_context</span>,
                 <span class="string">&quot;[libra_vm] Unexpected error from known Move function, &#39;{}&#39;. Error: {:?}&quot;</span>,
-                <span class="ident">function_name</span>, <span class="ident">status</span>
+                <span class="ident">function_name</span>,
+                <span class="ident">status</span>,
             );
             <span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNEXPECTED_ERROR_FROM_KNOWN_MOVE_FUNCTION</span>)
         }

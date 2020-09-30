@@ -244,6 +244,9 @@
 <span id="244">244</span>
 <span id="245">245</span>
 <span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -268,6 +271,7 @@
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">errors</span>::<span class="ident">VMResult</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">transaction_debugger_interface</span>::{<span class="ident">DebuggerStateView</span>, <span class="ident">StorageDebuggerInterface</span>};
+<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::<span class="ident">logging</span>::<span class="ident">NoContextLog</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">unit_tests</span>;
@@ -412,12 +416,14 @@
         <span class="kw">let</span> <span class="ident">is_version_ok</span> <span class="op">=</span> <span class="op">|</span><span class="ident">version</span><span class="op">|</span> {
             <span class="self">self</span>.<span class="ident">run_session_at_version</span>(<span class="ident">version</span>, <span class="op">|</span><span class="ident">session</span><span class="op">|</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">gas_table</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
+                <span class="kw">let</span> <span class="ident">log_context</span> <span class="op">=</span> <span class="ident">NoContextLog</span>::<span class="ident">new</span>();
                 <span class="ident">session</span>.<span class="ident">execute_script</span>(
                     <span class="ident">predicate</span>.<span class="ident">clone</span>(),
                     <span class="macro">vec</span><span class="macro">!</span>[],
                     <span class="macro">vec</span><span class="macro">!</span>[],
                     <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">libra_root_address</span>(), <span class="ident">sender</span>],
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">log_context</span>,
                 )
             })
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> ())

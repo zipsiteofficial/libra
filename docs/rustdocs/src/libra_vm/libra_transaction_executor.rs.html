@@ -738,6 +738,59 @@
 <span id="738">738</span>
 <span id="739">739</span>
 <span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
+<span id="769">769</span>
+<span id="770">770</span>
+<span id="771">771</span>
+<span id="772">772</span>
+<span id="773">773</span>
+<span id="774">774</span>
+<span id="775">775</span>
+<span id="776">776</span>
+<span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -750,6 +803,7 @@
         <span class="ident">charge_global_write_gas_usage</span>, <span class="ident">get_currency_info</span>, <span class="ident">get_transaction_output</span>,
         <span class="ident">txn_effects_to_writeset_and_events_cached</span>, <span class="ident">LibraVMImpl</span>, <span class="ident">LibraVMInternals</span>,
     },
+    <span class="ident">logging</span>::<span class="ident">AdapterLogSchema</span>,
     <span class="ident">system_module_names</span>::<span class="kw-2">*</span>,
     <span class="ident">transaction_metadata</span>::<span class="ident">TransactionMetadata</span>,
     <span class="ident">txn_effects_to_writeset_and_events</span>, <span class="ident">VMExecutor</span>,
@@ -772,8 +826,7 @@
     <span class="ident">gas_schedule</span>::{<span class="ident">CostTable</span>, <span class="ident">GasAlgebra</span>, <span class="ident">GasCarrier</span>, <span class="ident">GasUnits</span>},
     <span class="ident">identifier</span>::<span class="ident">IdentStr</span>,
 };
-<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::{<span class="ident">data_cache</span>::<span class="ident">RemoteCache</span>, <span class="ident">session</span>::<span class="ident">Session</span>};
-
+<span class="kw">use</span> <span class="ident">move_vm_runtime</span>::{<span class="ident">data_cache</span>::<span class="ident">RemoteCache</span>, <span class="ident">logging</span>::<span class="ident">LogContext</span>, <span class="ident">session</span>::<span class="ident">Session</span>};
 <span class="kw">use</span> <span class="ident">move_vm_types</span>::{
     <span class="ident">gas_schedule</span>::{<span class="ident">zero_cost_schedule</span>, <span class="ident">CostStrategy</span>},
     <span class="ident">values</span>::<span class="ident">Value</span>,
@@ -805,6 +858,7 @@
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionOutput</span> {
         <span class="self">self</span>.<span class="ident">failed_transaction_cleanup_and_keep_vm_status</span>(
             <span class="ident">error_code</span>,
@@ -813,6 +867,7 @@
             <span class="ident">txn_data</span>,
             <span class="ident">remote_cache</span>,
             <span class="ident">account_currency_symbol</span>,
+            <span class="ident">log_context</span>,
         )
         .<span class="number">1</span>
     }
@@ -825,6 +880,7 @@
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="ident">gas_schedule</span>, <span class="ident">gas_left</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
@@ -841,6 +897,7 @@
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
                     <span class="ident">txn_data</span>,
                     <span class="ident">account_currency_symbol</span>,
+                    <span class="ident">log_context</span>,
                 ) {
                     <span class="kw">return</span> <span class="ident">discard_error_vm_status</span>(<span class="ident">e</span>);
                 }
@@ -863,6 +920,7 @@
         <span class="ident">gas_left</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="ident">gas_schedule</span>, <span class="ident">gas_left</span>);
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">run_success_epilogue</span>(
@@ -870,6 +928,7 @@
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
             <span class="ident">txn_data</span>,
             <span class="ident">account_currency_symbol</span>,
+            <span class="ident">log_context</span>,
         )<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>((
@@ -891,19 +950,21 @@
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">Script</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>(<span class="ident">log_context</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
 
         <span class="comment">// Run the validation logic</span>
         {
             <span class="ident">cost_strategy</span>.<span class="ident">disable_metering</span>();
-            <span class="self">self</span>.<span class="number">0</span>.<span class="ident">check_gas</span>(<span class="ident">txn_data</span>)<span class="question-mark">?</span>;
+            <span class="self">self</span>.<span class="number">0</span>.<span class="ident">check_gas</span>(<span class="ident">txn_data</span>, <span class="ident">log_context</span>)<span class="question-mark">?</span>;
             <span class="self">self</span>.<span class="number">0</span>.<span class="ident">run_script_prologue</span>(
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
                 <span class="ident">cost_strategy</span>,
                 <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
                 <span class="ident">account_currency_symbol</span>,
+                <span class="ident">log_context</span>,
             )<span class="question-mark">?</span>;
         }
 
@@ -920,6 +981,7 @@
                     <span class="ident">convert_txn_args</span>(<span class="ident">script</span>.<span class="ident">args</span>()),
                     <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">txn_data</span>.<span class="ident">sender</span>()],
                     <span class="ident">cost_strategy</span>,
+                    <span class="ident">log_context</span>,
                 )
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
@@ -932,6 +994,7 @@
                 <span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>(),
                 <span class="ident">txn_data</span>,
                 <span class="ident">account_currency_symbol</span>,
+                <span class="ident">log_context</span>,
             )
         }
     }
@@ -943,22 +1006,24 @@
         <span class="ident">txn_data</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionMetadata</span>,
         <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">Module</span>,
         <span class="ident">account_currency_symbol</span>: <span class="kw-2">&amp;</span><span class="ident">IdentStr</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>(<span class="ident">log_context</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
 
         <span class="comment">// Run validation logic</span>
         <span class="ident">cost_strategy</span>.<span class="ident">disable_metering</span>();
-        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">check_gas</span>(<span class="ident">txn_data</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="number">0</span>.<span class="ident">check_gas</span>(<span class="ident">txn_data</span>, <span class="ident">log_context</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="number">0</span>.<span class="ident">run_module_prologue</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>,
             <span class="ident">cost_strategy</span>,
             <span class="ident">txn_data</span>,
             <span class="ident">account_currency_symbol</span>,
+            <span class="ident">log_context</span>,
         )<span class="question-mark">?</span>;
 
         <span class="comment">// Publish the module</span>
-        <span class="kw">let</span> <span class="ident">module_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">publishing_option</span>()<span class="question-mark">?</span>.<span class="ident">is_open_module</span>() {
+        <span class="kw">let</span> <span class="ident">module_address</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">publishing_option</span>(<span class="ident">log_context</span>)<span class="question-mark">?</span>.<span class="ident">is_open_module</span>() {
             <span class="ident">txn_data</span>.<span class="ident">sender</span>()
         } <span class="kw">else</span> {
             <span class="ident">account_config</span>::<span class="ident">CORE_CODE_ADDRESS</span>
@@ -969,7 +1034,12 @@
             .<span class="ident">charge_intrinsic_gas</span>(<span class="ident">txn_data</span>.<span class="ident">transaction_size</span>())
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
         <span class="ident">session</span>
-            .<span class="ident">publish_module</span>(<span class="ident">module</span>.<span class="ident">code</span>().<span class="ident">to_vec</span>(), <span class="ident">module_address</span>, <span class="ident">cost_strategy</span>)
+            .<span class="ident">publish_module</span>(
+                <span class="ident">module</span>.<span class="ident">code</span>().<span class="ident">to_vec</span>(),
+                <span class="ident">module_address</span>,
+                <span class="ident">cost_strategy</span>,
+                <span class="ident">log_context</span>,
+            )
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
         <span class="ident">charge_global_write_gas_usage</span>(<span class="ident">cost_strategy</span>, <span class="kw-2">&amp;</span><span class="ident">session</span>)<span class="question-mark">?</span>;
@@ -980,6 +1050,7 @@
             <span class="ident">cost_strategy</span>.<span class="ident">remaining_gas</span>(),
             <span class="ident">txn_data</span>,
             <span class="ident">account_currency_symbol</span>,
+            <span class="ident">log_context</span>,
         )
     }
 
@@ -987,6 +1058,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureCheckedTransaction</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>) {
         <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">unwrap_or_discard</span> {
             (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
@@ -997,7 +1069,7 @@
             };
         }
 
-        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="macro">unwrap_or_discard</span><span class="macro">!</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>());
+        <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="macro">unwrap_or_discard</span><span class="macro">!</span>(<span class="self">self</span>.<span class="number">0</span>.<span class="ident">get_gas_schedule</span>(<span class="ident">log_context</span>));
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="ident">txn</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="ident">gas_schedule</span>, <span class="ident">txn_data</span>.<span class="ident">max_gas_amount</span>());
         <span class="kw">let</span> <span class="ident">account_currency_symbol</span> <span class="op">=</span> <span class="macro">unwrap_or_discard</span><span class="macro">!</span>(
@@ -1016,6 +1088,7 @@
                 <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
                 <span class="ident">s</span>,
                 <span class="ident">account_currency_symbol</span>.<span class="ident">as_ident_str</span>(),
+                <span class="ident">log_context</span>,
             ),
             <span class="ident">TransactionPayload</span>::<span class="ident">Module</span>(<span class="ident">m</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">execute_module</span>(
                 <span class="ident">remote_cache</span>,
@@ -1023,6 +1096,7 @@
                 <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
                 <span class="ident">m</span>,
                 <span class="ident">account_currency_symbol</span>.<span class="ident">as_ident_str</span>(),
+                <span class="ident">log_context</span>,
             ),
             <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">return</span> <span class="ident">discard_error_vm_status</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>))
@@ -1049,6 +1123,7 @@
                         <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
                         <span class="ident">remote_cache</span>,
                         <span class="ident">account_currency_symbol</span>.<span class="ident">as_ident_str</span>(),
+                        <span class="ident">log_context</span>,
                     )
                 }
             }
@@ -1060,6 +1135,7 @@
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">writeset_payload</span>: <span class="kw-2">&amp;</span><span class="ident">WriteSetPayload</span>,
         <span class="ident">txn_sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ChangeSet</span>, <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">gas_schedule</span> <span class="op">=</span> <span class="ident">zero_cost_schedule</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cost_strategy</span> <span class="op">=</span> <span class="ident">CostStrategy</span>::<span class="ident">system</span>(<span class="kw-2">&amp;</span><span class="ident">gas_schedule</span>, <span class="ident">GasUnits</span>::<span class="ident">new</span>(<span class="number">0</span>));
@@ -1080,6 +1156,7 @@
                         <span class="ident">args</span>,
                         <span class="ident">senders</span>,
                         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                        <span class="ident">log_context</span>,
                     )
                     .<span class="ident">and_then</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">tmp_session</span>.<span class="ident">finish</span>())
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into_vm_status</span>());
@@ -1116,11 +1193,13 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">writeset_payload</span>: <span class="ident">WriteSetPayload</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">change_set</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">execute_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">writeset_payload</span>, <span class="prelude-val">None</span>) {
-            <span class="prelude-val">Ok</span>(<span class="ident">cs</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cs</span>,
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">e</span>,
-        };
+        <span class="kw">let</span> <span class="ident">change_set</span> <span class="op">=</span>
+            <span class="kw">match</span> <span class="self">self</span>.<span class="ident">execute_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">writeset_payload</span>, <span class="prelude-val">None</span>, <span class="ident">log_context</span>) {
+                <span class="prelude-val">Ok</span>(<span class="ident">cs</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">cs</span>,
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">e</span>,
+            };
         <span class="kw">let</span> (<span class="ident">write_set</span>, <span class="ident">events</span>) <span class="op">=</span> <span class="ident">change_set</span>.<span class="ident">into_inner</span>();
         <span class="self">self</span>.<span class="ident">read_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">write_set</span>)<span class="question-mark">?</span>;
         <span class="ident">SYSTEM_TRANSACTIONS_EXECUTED</span>.<span class="ident">inc</span>();
@@ -1134,6 +1213,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">block_metadata</span>: <span class="ident">BlockMetadata</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">default</span>();
         <span class="ident">txn_data</span>.<span class="ident">sender</span> <span class="op">=</span> <span class="ident">account_config</span>::<span class="ident">reserved_vm_address</span>();
@@ -1158,8 +1238,11 @@
                     <span class="ident">args</span>,
                     <span class="ident">txn_data</span>.<span class="ident">sender</span>,
                     <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
+                    <span class="ident">log_context</span>,
                 )
-                .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">BLOCK_PROLOGUE</span>.<span class="ident">as_str</span>()))<span class="question-mark">?</span>
+                .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                    <span class="ident">expect_only_successful_execution</span>(<span class="ident">e</span>, <span class="ident">BLOCK_PROLOGUE</span>.<span class="ident">as_str</span>(), <span class="ident">log_context</span>)
+                })<span class="question-mark">?</span>
         } <span class="kw">else</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">MALFORMED</span>));
         };
@@ -1179,12 +1262,16 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">remote_cache</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StateViewCache</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="ident">txn</span>: <span class="ident">SignatureCheckedTransaction</span>,
+        <span class="ident">log_context</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">LogContext</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">VMStatus</span>, <span class="ident">TransactionOutput</span>), <span class="ident">VMStatus</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn_data</span> <span class="op">=</span> <span class="ident">TransactionMetadata</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">new_session</span>(<span class="ident">remote_cache</span>);
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">run_writeset_prologue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>
+            .<span class="number">0</span>
+            .<span class="ident">run_writeset_prologue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">txn_data</span>, <span class="ident">log_context</span>)
+        {
             <span class="comment">// Switch any error from the prologue to a reject</span>
             <span class="macro">debug_assert_eq</span><span class="macro">!</span>(<span class="ident">e</span>.<span class="ident">status_code</span>(), <span class="ident">StatusCode</span>::<span class="ident">REJECTED_WRITE_SET</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>((<span class="ident">e</span>, <span class="ident">discard_error_output</span>(<span class="ident">StatusCode</span>::<span class="ident">REJECTED_WRITE_SET</span>)));
@@ -1192,14 +1279,19 @@
 
         <span class="kw">let</span> <span class="ident">change_set</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn</span>.<span class="ident">payload</span>() {
             <span class="ident">TransactionPayload</span>::<span class="ident">WriteSet</span>(<span class="ident">writeset_payload</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">execute_writeset</span>(<span class="ident">remote_cache</span>, <span class="ident">writeset_payload</span>, <span class="prelude-val">Some</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>()))
-                {
+                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">execute_writeset</span>(
+                    <span class="ident">remote_cache</span>,
+                    <span class="ident">writeset_payload</span>,
+                    <span class="prelude-val">Some</span>(<span class="ident">txn_data</span>.<span class="ident">sender</span>()),
+                    <span class="ident">log_context</span>,
+                ) {
                     <span class="prelude-val">Ok</span>(<span class="ident">change_set</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">change_set</span>,
                     <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="ident">e</span>,
                 }
             }
             <span class="ident">TransactionPayload</span>::<span class="ident">Module</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="macro">error</span><span class="macro">!</span>(<span class="string">&quot;[libra_vm] UNREACHABLE&quot;</span>);
+                <span class="ident">log_context</span>.<span class="ident">alert</span>();
+                <span class="macro">error</span><span class="macro">!</span>(<span class="kw-2">*</span><span class="ident">log_context</span>, <span class="string">&quot;[libra_vm] UNREACHABLE&quot;</span>);
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">discard_error_vm_status</span>(<span class="ident">VMStatus</span>::<span class="ident">Error</span>(
                     <span class="ident">StatusCode</span>::<span class="ident">UNREACHABLE</span>,
                 )));
@@ -1212,6 +1304,7 @@
             <span class="kw-2">&amp;</span><span class="ident">change_set</span>,
             <span class="kw-2">&amp;</span><span class="ident">txn_data</span>,
             <span class="ident">txn</span>.<span class="ident">payload</span>().<span class="ident">should_trigger_reconfiguration_by_default</span>(),
+            <span class="ident">log_context</span>,
         )<span class="question-mark">?</span>;
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_writeset</span>(<span class="ident">remote_cache</span>, <span class="kw-2">&amp;</span><span class="ident">change_set</span>.<span class="ident">write_set</span>()) {
@@ -1294,6 +1387,12 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">execute_block_trace_guard</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">should_restart</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="ident">AdapterLogSchema</span>::<span class="ident">new</span>(<span class="ident">data_cache</span>.<span class="ident">id</span>(), <span class="number">0</span>),
+            <span class="string">&quot;Executing block, transaction count: {}&quot;</span>,
+            <span class="ident">transactions</span>.<span class="ident">len</span>()
+        );
+
         <span class="kw">let</span> <span class="ident">signature_verified_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreprocessedTransaction</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
         {
             <span class="ident">signature_verified_block</span> <span class="op">=</span> <span class="ident">transactions</span>
@@ -1302,7 +1401,8 @@
                 .<span class="ident">collect</span>();
         }
 
-        <span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">signature_verified_block</span> {
+        <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">txn</span>) <span class="kw">in</span> <span class="ident">signature_verified_block</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
+            <span class="kw">let</span> <span class="ident">log_context</span> <span class="op">=</span> <span class="ident">AdapterLogSchema</span>::<span class="ident">new</span>(<span class="ident">data_cache</span>.<span class="ident">id</span>(), <span class="ident">idx</span>);
             <span class="kw">if</span> <span class="ident">should_restart</span> {
                 <span class="kw">let</span> <span class="ident">txn_output</span> <span class="op">=</span> <span class="ident">TransactionOutput</span>::<span class="ident">new</span>(
                     <span class="ident">WriteSet</span>::<span class="ident">default</span>(),
@@ -1311,6 +1411,7 @@
                     <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span>,
                 );
                 <span class="ident">result</span>.<span class="ident">push</span>((<span class="ident">VMStatus</span>::<span class="ident">Error</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_STATUS</span>), <span class="ident">txn_output</span>));
+                <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">log_context</span>, <span class="string">&quot;Retry after reconfiguration&quot;</span>);
                 <span class="kw">continue</span>;
             };
             <span class="kw">let</span> (<span class="ident">vm_status</span>, <span class="ident">output</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">txn</span> {
@@ -1318,14 +1419,15 @@
                     <span class="ident">execute_block_trace_guard</span>.<span class="ident">clear</span>();
                     <span class="ident">current_block_id</span> <span class="op">=</span> <span class="ident">block_metadata</span>.<span class="ident">id</span>();
                     <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;libra_vm::execute_block_impl&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">current_block_id</span>}, <span class="ident">execute_block_trace_guard</span>);
-                    <span class="self">self</span>.<span class="ident">process_block_prologue</span>(<span class="ident">data_cache</span>, <span class="ident">block_metadata</span>)<span class="question-mark">?</span>
+                    <span class="self">self</span>.<span class="ident">process_block_prologue</span>(<span class="ident">data_cache</span>, <span class="ident">block_metadata</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>)<span class="question-mark">?</span>
                 }
                 <span class="prelude-val">Ok</span>(<span class="ident">PreprocessedTransaction</span>::<span class="ident">WaypointWriteSet</span>(<span class="ident">write_set_payload</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="self">self</span>.<span class="ident">process_waypoint_change_set</span>(<span class="ident">data_cache</span>, <span class="ident">write_set_payload</span>)<span class="question-mark">?</span>
+                    <span class="self">self</span>.<span class="ident">process_waypoint_change_set</span>(<span class="ident">data_cache</span>, <span class="ident">write_set_payload</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>)<span class="question-mark">?</span>
                 }
                 <span class="prelude-val">Ok</span>(<span class="ident">PreprocessedTransaction</span>::<span class="ident">UserTransaction</span>(<span class="ident">txn</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">TXN_TOTAL_SECONDS</span>.<span class="ident">start_timer</span>();
-                    <span class="kw">let</span> (<span class="ident">vm_status</span>, <span class="ident">output</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">execute_user_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">&amp;</span><span class="ident">txn</span>);
+                    <span class="kw">let</span> (<span class="ident">vm_status</span>, <span class="ident">output</span>) <span class="op">=</span>
+                        <span class="self">self</span>.<span class="ident">execute_user_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>);
 
                     <span class="comment">// Increment the counter for user transactions executed.</span>
                     <span class="kw">let</span> <span class="ident">counter_label</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">output</span>.<span class="ident">status</span>() {
@@ -1339,7 +1441,7 @@
                     (<span class="ident">vm_status</span>, <span class="ident">output</span>)
                 }
                 <span class="prelude-val">Ok</span>(<span class="ident">PreprocessedTransaction</span>::<span class="ident">WriteSet</span>(<span class="ident">txn</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="self">self</span>.<span class="ident">process_writeset_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">*</span><span class="ident">txn</span>)<span class="question-mark">?</span>
+                    <span class="self">self</span>.<span class="ident">process_writeset_transaction</span>(<span class="ident">data_cache</span>, <span class="kw-2">*</span><span class="ident">txn</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>)<span class="question-mark">?</span>
                 }
                 <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">discard_error_vm_status</span>(<span class="ident">e</span>),
             };
@@ -1348,6 +1450,10 @@
             }
 
             <span class="kw">if</span> <span class="ident">is_reconfiguration</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>) {
+                <span class="macro">info</span><span class="macro">!</span>(
+                    <span class="ident">AdapterLogSchema</span>::<span class="ident">new</span>(<span class="ident">data_cache</span>.<span class="ident">id</span>(), <span class="number">0</span>),
+                    <span class="string">&quot;Reconfiguration occurred: restart required&quot;</span>,
+                );
                 <span class="ident">should_restart</span> <span class="op">=</span> <span class="bool-val">true</span>;
             }
 
