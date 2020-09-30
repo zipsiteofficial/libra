@@ -555,6 +555,18 @@
 <span id="555">555</span>
 <span id="556">556</span>
 <span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -569,6 +581,7 @@
     <span class="ident">Event</span>, <span class="ident">Filter</span>, <span class="ident">Level</span>, <span class="ident">Metadata</span>,
 };
 <span class="kw">use</span> <span class="ident">chrono</span>::{<span class="ident">SecondsFormat</span>, <span class="ident">Utc</span>};
+<span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::<span class="ident">BTreeMap</span>,
@@ -591,6 +604,8 @@
     <span class="ident">metadata</span>: <span class="ident">Metadata</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
     <span class="ident">thread_name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;Option::is_none&quot;</span>)]</span>
+    <span class="ident">hostname</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span>,
     <span class="ident">timestamp</span>: <span class="ident">String</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">skip_serializing_if</span> <span class="op">=</span> <span class="string">&quot;BTreeMap::is_empty&quot;</span>)]</span>
     <span class="ident">data</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>, <span class="ident">serde_json</span>::<span class="ident">Value</span><span class="op">&gt;</span>,
@@ -626,6 +641,14 @@
         <span class="kw">let</span> <span class="ident">thread_name</span> <span class="op">=</span> <span class="ident">thread_name</span>.<span class="ident">map</span>(<span class="ident">ToOwned</span>::<span class="ident">to_owned</span>);
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">message</span>().<span class="ident">map</span>(<span class="ident">fmt</span>::<span class="ident">format</span>);
 
+        <span class="kw">static</span> <span class="ident">HOSTNAME</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+            <span class="ident">hostname</span>::<span class="ident">get</span>()
+                .<span class="ident">ok</span>()
+                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">name</span><span class="op">|</span> <span class="ident">name</span>.<span class="ident">into_string</span>().<span class="ident">ok</span>())
+        });
+
+        <span class="kw">let</span> <span class="ident">hostname</span> <span class="op">=</span> <span class="ident">HOSTNAME</span>.<span class="ident">as_deref</span>();
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">schema</span> <span class="kw">in</span> <span class="ident">event</span>.<span class="ident">keys_and_values</span>() {
             <span class="ident">schema</span>.<span class="ident">visit</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">JsonVisitor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">data</span>));
@@ -634,6 +657,7 @@
         <span class="self">Self</span> {
             <span class="ident">metadata</span>,
             <span class="ident">thread_name</span>,
+            <span class="ident">hostname</span>,
             <span class="ident">timestamp</span>: <span class="ident">Utc</span>::<span class="ident">now</span>().<span class="ident">to_rfc3339_opts</span>(<span class="ident">SecondsFormat</span>::<span class="ident">Micros</span>, <span class="bool-val">true</span>),
             <span class="ident">data</span>,
             <span class="ident">message</span>,
