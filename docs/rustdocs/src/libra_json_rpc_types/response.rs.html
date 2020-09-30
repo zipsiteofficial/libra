@@ -54,23 +54,12 @@
 <span id="54">54</span>
 <span id="55">55</span>
 <span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">errors</span>::<span class="ident">JsonRpcError</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">JsonRpcErrorResponse</span> {
-    <span class="kw">pub</span> <span class="ident">jsonrpc</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span> <span class="ident">error</span>: <span class="ident">JsonRpcError</span>,
-}
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">JsonRpcResponse</span> {
@@ -103,22 +92,23 @@
             <span class="ident">error</span>: <span class="prelude-val">None</span>,
         }
     }
+}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_error</span>(
-        <span class="ident">chain_id</span>: <span class="ident">libra_types</span>::<span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
-        <span class="ident">libra_ledger_version</span>: <span class="ident">u64</span>,
-        <span class="ident">libra_ledger_timestampusec</span>: <span class="ident">u64</span>,
-        <span class="ident">error</span>: <span class="ident">JsonRpcError</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">JsonRpcResponse</span> {
-            <span class="ident">libra_chain_id</span>: <span class="ident">chain_id</span>.<span class="ident">id</span>(),
-            <span class="ident">libra_ledger_version</span>,
-            <span class="ident">libra_ledger_timestampusec</span>,
-            <span class="ident">jsonrpc</span>: <span class="string">&quot;2.0&quot;</span>.<span class="ident">to_string</span>(),
-            <span class="ident">id</span>: <span class="prelude-val">None</span>,
-            <span class="ident">result</span>: <span class="prelude-val">None</span>,
-            <span class="ident">error</span>: <span class="prelude-val">Some</span>(<span class="ident">error</span>),
-        }
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">response</span>::<span class="ident">JsonRpcResponse</span>;
+    <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">chain_id</span>::<span class="ident">ChainId</span>;
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_new</span>() {
+        <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">JsonRpcResponse</span>::<span class="ident">new</span>(<span class="ident">ChainId</span>::<span class="ident">test</span>(), <span class="number">1</span>, <span class="number">2</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">jsonrpc</span>, <span class="string">&quot;2.0&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">libra_chain_id</span>, <span class="number">4</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">libra_ledger_version</span>, <span class="number">1</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">libra_ledger_timestampusec</span>, <span class="number">2</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">id</span>.<span class="ident">is_none</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">result</span>.<span class="ident">is_none</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">resp</span>.<span class="ident">error</span>.<span class="ident">is_none</span>());
     }
 }
 </pre></div>
