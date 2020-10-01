@@ -788,9 +788,6 @@
 <span id="788">788</span>
 <span id="789">789</span>
 <span id="790">790</span>
-<span id="791">791</span>
-<span id="792">792</span>
-<span id="793">793</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -834,7 +831,7 @@
 <span class="kw">use</span> <span class="ident">rayon</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::<span class="ident">HashSet</span>,
-    <span class="ident">convert</span>::{<span class="ident">AsMut</span>, <span class="ident">AsRef</span>, <span class="ident">TryFrom</span>},
+    <span class="ident">convert</span>::{<span class="ident">AsMut</span>, <span class="ident">AsRef</span>},
 };
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LibraVM</span>(<span class="ident">LibraVMImpl</span>);
@@ -1464,10 +1461,7 @@
         }
 
         <span class="comment">// Record the histogram count for transactions per block.</span>
-        <span class="kw">match</span> <span class="ident">i64</span>::<span class="ident">try_from</span>(<span class="ident">count</span>) {
-            <span class="prelude-val">Ok</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BLOCK_TRANSACTION_COUNT</span>.<span class="ident">set</span>(<span class="ident">val</span>),
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BLOCK_TRANSACTION_COUNT</span>.<span class="ident">set</span>(<span class="ident">std</span>::<span class="ident">i64</span>::<span class="ident">MAX</span>),
-        }
+        <span class="ident">BLOCK_TRANSACTION_COUNT</span>.<span class="ident">observe</span>(<span class="ident">count</span> <span class="kw">as</span> <span class="ident">f64</span>);
 
         <span class="prelude-val">Ok</span>(<span class="ident">result</span>)
     }
