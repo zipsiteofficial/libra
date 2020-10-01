@@ -61,15 +61,50 @@
 <span id="61">61</span>
 <span id="62">62</span>
 <span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::{
-    <span class="ident">register_histogram_vec</span>, <span class="ident">register_int_counter</span>, <span class="ident">register_int_counter_vec</span>, <span class="ident">HistogramVec</span>,
-    <span class="ident">IntCounter</span>, <span class="ident">IntCounterVec</span>,
+    <span class="ident">register_histogram_vec</span>, <span class="ident">register_int_counter_vec</span>, <span class="ident">HistogramVec</span>, <span class="ident">IntCounterVec</span>,
 };
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
+
+<span class="doccomment">/// Cumulative number of rpc requests that the JSON RPC service receives</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">RPC_REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounterVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_counter_vec</span><span class="macro">!</span>(
+        <span class="string">&quot;libra_client_service_rpc_requests_count&quot;</span>,
+        <span class="string">&quot;Cumulative number of rpc requests that JSON RPC client service receives&quot;</span>,
+        <span class="kw-2">&amp;</span>[<span class="string">&quot;type&quot;</span>] <span class="comment">// batch / single</span>
+    )
+    .<span class="ident">unwrap</span>()
+});
+
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">RPC_REQUEST_LATENCY</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">HistogramVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_histogram_vec</span><span class="macro">!</span>(
+        <span class="string">&quot;libra_client_service_rpc_request_latency_seconds&quot;</span>,
+        <span class="string">&quot;Libra client service rpc request latency histogram&quot;</span>,
+        <span class="kw-2">&amp;</span>[<span class="string">&quot;type&quot;</span>] <span class="comment">// batch / single</span>
+    )
+    .<span class="ident">unwrap</span>()
+});
 
 <span class="doccomment">/// Cumulative number of valid requests that the JSON RPC client service receives</span>
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REQUESTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounterVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
@@ -77,7 +112,8 @@
         <span class="string">&quot;libra_client_service_requests_count&quot;</span>,
         <span class="string">&quot;Cumulative number of requests that JSON RPC client service receives&quot;</span>,
         <span class="kw-2">&amp;</span>[
-            <span class="string">&quot;type&quot;</span>,   <span class="comment">// type of request, matches JSON RPC method name (e.g. &quot;submit&quot;, &quot;get_account&quot;)</span>
+            <span class="string">&quot;type&quot;</span>,   <span class="comment">// batch / single</span>
+            <span class="string">&quot;method&quot;</span>, <span class="comment">// method of request, matches JSON RPC method name (e.g. &quot;submit&quot;, &quot;get_account&quot;)</span>
             <span class="string">&quot;result&quot;</span>, <span class="comment">// result of request: &quot;success&quot;, &quot;fail&quot;</span>
         ]
     )
@@ -90,17 +126,24 @@
         <span class="string">&quot;libra_client_service_invalid_requests_count&quot;</span>,
         <span class="string">&quot;Cumulative number of invalid requests that JSON RPC client service receives&quot;</span>,
         <span class="kw-2">&amp;</span>[
-            <span class="string">&quot;type&quot;</span>, <span class="comment">// categories of invalid requests: &quot;invalid_format&quot;, &quot;invalid_params&quot;, &quot;invalid_method&quot;, &quot;method_not_found&quot;</span>
+            <span class="string">&quot;type&quot;</span>,      <span class="comment">// batch / single</span>
+            <span class="string">&quot;method&quot;</span>, <span class="comment">// method of request, matches JSON RPC method name (e.g. &quot;submit&quot;, &quot;get_account&quot;)</span>
+            <span class="string">&quot;errortype&quot;</span>, <span class="comment">// categories of invalid requests: &quot;invalid_format&quot;, &quot;invalid_params&quot;, &quot;invalid_method&quot;, &quot;method_not_found&quot;</span>
         ]
     )
     .<span class="ident">unwrap</span>()
 });
 
 <span class="doccomment">/// Cumulative number of server internal errors.</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INTERNAL_ERRORS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounter</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
-    <span class="macro">register_int_counter</span><span class="macro">!</span>(
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">INTERNAL_ERRORS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">IntCounterVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+    <span class="macro">register_int_counter_vec</span><span class="macro">!</span>(
         <span class="string">&quot;libra_client_service_internal_error_count&quot;</span>,
-        <span class="string">&quot;Cumulative number of internal error&quot;</span>
+        <span class="string">&quot;Cumulative number of internal error&quot;</span>,
+        <span class="kw-2">&amp;</span>[
+            <span class="string">&quot;type&quot;</span>,      <span class="comment">// batch / single</span>
+            <span class="string">&quot;method&quot;</span>, <span class="comment">// method of request, matches JSON RPC method name (e.g. &quot;submit&quot;, &quot;get_account&quot;)</span>
+            <span class="string">&quot;errorcode&quot;</span>, <span class="comment">// error code</span>
+        ]
     )
     .<span class="ident">unwrap</span>()
 });
@@ -113,15 +156,6 @@
             <span class="string">&quot;type&quot;</span>,   <span class="comment">// batch / single</span>
             <span class="string">&quot;method&quot;</span>  <span class="comment">// JSON-RPC methods: submit, get_account ...</span>
         ]
-    )
-    .<span class="ident">unwrap</span>()
-});
-
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REQUEST_LATENCY</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">HistogramVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
-    <span class="macro">register_histogram_vec</span><span class="macro">!</span>(
-        <span class="string">&quot;libra_client_service_request_latency_seconds&quot;</span>,
-        <span class="string">&quot;Libra client service request latency histogram&quot;</span>,
-        <span class="kw-2">&amp;</span>[<span class="string">&quot;type&quot;</span>] <span class="comment">// batch / single</span>
     )
     .<span class="ident">unwrap</span>()
 });
