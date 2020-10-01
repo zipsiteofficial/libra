@@ -385,6 +385,8 @@
 <span id="385">385</span>
 <span id="386">386</span>
 <span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -428,6 +430,9 @@
 
 <span class="doccomment">/// Default directory for build output</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">move_lang</span>::<span class="ident">command_line</span>::<span class="ident">DEFAULT_OUTPUT_DIR</span> <span class="kw">as</span> <span class="ident">DEFAULT_BUILD_OUTPUT_DIR</span>;
+
+<span class="doccomment">/// Extension for resource and event files, which are in LCS format</span>
+<span class="kw">const</span> <span class="ident">LCS_EXTENSION</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;lcs&quot;</span>;
 
 <span class="doccomment">/// subdirectory of `MOVE_DATA`/&lt;addr&gt; where resources are stored</span>
 <span class="kw">const</span> <span class="ident">RESOURCES_DIR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;resources&quot;</span>;
@@ -502,7 +507,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_addr_path</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>);
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">RESOURCES_DIR</span>);
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">StructID</span>(<span class="ident">tag</span>).<span class="ident">to_string</span>());
-        <span class="ident">path</span>
+        <span class="ident">path</span>.<span class="ident">with_extension</span>(<span class="ident">LCS_EXTENSION</span>)
     }
 
     <span class="comment">// Events are stored under address/handle creation number</span>
@@ -510,15 +515,14 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_addr_path</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>.<span class="ident">get_creator_address</span>());
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">EVENTS_DIR</span>);
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">key</span>.<span class="ident">get_creation_number</span>().<span class="ident">to_string</span>());
-        <span class="ident">path</span>
+        <span class="ident">path</span>.<span class="ident">with_extension</span>(<span class="ident">LCS_EXTENSION</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">get_module_path</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">module_id</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PathBuf</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_addr_path</span>(<span class="ident">module_id</span>.<span class="ident">address</span>());
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">MODULES_DIR</span>);
         <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">module_id</span>.<span class="ident">name</span>().<span class="ident">to_string</span>());
-        <span class="ident">path</span>.<span class="ident">set_extension</span>(<span class="ident">MOVE_COMPILED_EXTENSION</span>);
-        <span class="ident">path</span>
+        <span class="ident">path</span>.<span class="ident">with_extension</span>(<span class="ident">MOVE_COMPILED_EXTENSION</span>)
     }
 
     <span class="doccomment">/// Read the resource bytes stored on-disk at `addr`/`tag`</span>
@@ -570,7 +574,7 @@
         <span class="kw">if</span> <span class="ident">resource_path</span>.<span class="ident">is_dir</span>() {
             <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Bad resource path {:?}. Needed file, found directory&quot;</span>)
         }
-        <span class="kw">match</span> <span class="ident">resource_path</span>.<span class="ident">file_name</span>() {
+        <span class="kw">match</span> <span class="ident">resource_path</span>.<span class="ident">file_stem</span>() {
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(
                 <span class="string">&quot;Bad resource path {:?}; last component must be a file&quot;</span>,
                 <span class="ident">resource_path</span>
