@@ -720,6 +720,33 @@
 <span id="720">720</span>
 <span id="721">721</span>
 <span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -753,6 +780,7 @@
 <span class="kw">use</span> <span class="ident">shared</span>::<span class="ident">Address</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">BTreeMap</span>, <span class="ident">HashMap</span>},
+    <span class="ident">fs</span>,
     <span class="ident">fs</span>::<span class="ident">File</span>,
     <span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>},
     <span class="ident">iter</span>::<span class="ident">Peekable</span>,
@@ -868,6 +896,23 @@
 <span class="comment">// Utils</span>
 <span class="comment">//**************************************************************************************************</span>
 
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">dir_path</span> {
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dir</span>:<span class="ident">expr</span>),<span class="op">+</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">new</span>();
+        $(<span class="ident">p</span>.<span class="ident">push</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dir</span>);)<span class="op">+</span>
+        <span class="ident">p</span>
+    }};
+}
+
+<span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">file_path</span> {
+    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dir</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ext</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dir</span>);
+        <span class="ident">p</span>.<span class="ident">push</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>);
+        <span class="ident">p</span>.<span class="ident">set_extension</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ext</span>);
+        <span class="ident">p</span>
+    }};
+}
+
 <span class="doccomment">/// Runs the bytecode verifier on the compiled units</span>
 <span class="doccomment">/// Fails if the bytecode verifier errors</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sanity_check_compiled_units</span>(<span class="ident">files</span>: <span class="ident">FilesSourceText</span>, <span class="ident">compiled_units</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledUnit</span><span class="op">&gt;</span>) {
@@ -886,16 +931,22 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">const</span> <span class="ident">SCRIPT_SUB_DIR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;scripts&quot;</span>;
     <span class="kw">const</span> <span class="ident">MODULE_SUB_DIR</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;modules&quot;</span>;
+    <span class="kw">fn</span> <span class="ident">num_digits</span>(<span class="ident">n</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+        <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">n</span>).<span class="ident">len</span>()
+    }
+    <span class="kw">fn</span> <span class="ident">format_idx</span>(<span class="ident">idx</span>: <span class="ident">usize</span>, <span class="ident">width</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+        <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:0width$}&quot;</span>, <span class="ident">idx</span>, <span class="ident">width</span> <span class="op">=</span> <span class="ident">width</span>)
+    }
 
     <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">emit_unit</span> {
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>:<span class="ident">ident</span>) <span class="op">=</span><span class="op">&gt;</span> {{
             <span class="kw">if</span> <span class="ident">emit_source_maps</span> {
                 <span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">set_extension</span>(<span class="ident">SOURCE_MAP_EXTENSION</span>);
-                <span class="ident">File</span>::<span class="ident">create</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">as_path</span>())<span class="question-mark">?</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>.<span class="ident">serialize_source_map</span>())<span class="question-mark">?</span>;
+                <span class="ident">fs</span>::<span class="ident">write</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">as_path</span>(), <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>.<span class="ident">serialize_source_map</span>())<span class="question-mark">?</span>;
             }
 
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">set_extension</span>(<span class="ident">MOVE_COMPILED_EXTENSION</span>);
-            <span class="ident">File</span>::<span class="ident">create</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">as_path</span>())<span class="question-mark">?</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>.<span class="ident">serialize</span>())<span class="question-mark">?</span>
+            <span class="ident">fs</span>::<span class="ident">write</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">path</span>.<span class="ident">as_path</span>(), <span class="kw-2">&amp;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">unit</span>.<span class="ident">serialize</span>())<span class="question-mark">?</span>
         }};
     }
 
@@ -906,25 +957,24 @@
 
     <span class="comment">// modules</span>
     <span class="kw">if</span> <span class="op">!</span><span class="ident">modules</span>.<span class="ident">is_empty</span>() {
-        <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">create_dir_all</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}&quot;</span>, <span class="ident">out_dir</span>, <span class="ident">MODULE_SUB_DIR</span>))<span class="question-mark">?</span>;
+        <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">create_dir_all</span>(<span class="macro">dir_path</span><span class="macro">!</span>(<span class="ident">out_dir</span>, <span class="ident">MODULE_SUB_DIR</span>))<span class="question-mark">?</span>;
     }
+    <span class="kw">let</span> <span class="ident">digit_width</span> <span class="op">=</span> <span class="ident">num_digits</span>(<span class="ident">modules</span>.<span class="ident">len</span>());
     <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">unit</span>) <span class="kw">in</span> <span class="ident">modules</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;{}/{}/{}_{}&quot;</span>,
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="macro">dir_path</span><span class="macro">!</span>(
             <span class="ident">out_dir</span>,
             <span class="ident">MODULE_SUB_DIR</span>,
-            <span class="ident">idx</span>,
-            <span class="ident">unit</span>.<span class="ident">name</span>(),
-        ));
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}_{}&quot;</span>, <span class="ident">format_idx</span>(<span class="ident">idx</span>, <span class="ident">digit_width</span>), <span class="ident">unit</span>.<span class="ident">name</span>())
+        );
         <span class="macro">emit_unit</span><span class="macro">!</span>(<span class="ident">path</span>, <span class="ident">unit</span>);
     }
 
     <span class="comment">// scripts</span>
     <span class="kw">if</span> <span class="op">!</span><span class="ident">scripts</span>.<span class="ident">is_empty</span>() {
-        <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">create_dir_all</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}&quot;</span>, <span class="ident">out_dir</span>, <span class="ident">SCRIPT_SUB_DIR</span>))<span class="question-mark">?</span>;
+        <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">create_dir_all</span>(<span class="macro">dir_path</span><span class="macro">!</span>(<span class="ident">out_dir</span>, <span class="ident">SCRIPT_SUB_DIR</span>))<span class="question-mark">?</span>;
     }
     <span class="kw">for</span> <span class="ident">unit</span> <span class="kw">in</span> <span class="ident">scripts</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}/{}&quot;</span>, <span class="ident">out_dir</span>, <span class="ident">SCRIPT_SUB_DIR</span>, <span class="ident">unit</span>.<span class="ident">name</span>()));
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="macro">dir_path</span><span class="macro">!</span>(<span class="ident">out_dir</span>, <span class="ident">SCRIPT_SUB_DIR</span>, <span class="ident">unit</span>.<span class="ident">name</span>());
         <span class="macro">emit_unit</span><span class="macro">!</span>(<span class="ident">path</span>, <span class="ident">unit</span>);
     }
 
@@ -968,20 +1018,24 @@
 
     <span class="kw">let</span> <span class="ident">interface_files_dir</span> <span class="op">=</span>
         <span class="ident">interface_files_dir_opt</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">command_line</span>::<span class="ident">DEFAULT_OUTPUT_DIR</span>.<span class="ident">to_string</span>());
-    <span class="kw">let</span> <span class="ident">interface_sub_dir</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}/&quot;</span>, <span class="ident">interface_files_dir</span>, <span class="ident">MOVE_COMPILED_INTERFACES_DIR</span>);
+    <span class="kw">let</span> <span class="ident">interface_sub_dir</span> <span class="op">=</span> <span class="macro">dir_path</span><span class="macro">!</span>(<span class="ident">interface_files_dir</span>, <span class="ident">MOVE_COMPILED_INTERFACES_DIR</span>);
     <span class="kw">let</span> <span class="ident">all_addr_dir</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">separate_by_hash</span> {
         <span class="kw">use</span> <span class="ident">std</span>::{
             <span class="ident">collections</span>::<span class="ident">hash_map</span>::<span class="ident">DefaultHasher</span>,
             <span class="ident">hash</span>::{<span class="ident">Hash</span>, <span class="ident">Hasher</span>},
         };
+        <span class="kw">const</span> <span class="ident">HASH_DELIM</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;%|%&quot;</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">DefaultHasher</span>::<span class="ident">new</span>();
+        <span class="ident">mv_files</span>.<span class="ident">len</span>().<span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hasher</span>);
+        <span class="ident">HASH_DELIM</span>.<span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hasher</span>);
         <span class="kw">for</span> <span class="ident">mv_file</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">mv_files</span> {
-            <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">read</span>(<span class="ident">mv_file</span>)<span class="question-mark">?</span>.<span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hasher</span>)
+            <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">read</span>(<span class="ident">mv_file</span>)<span class="question-mark">?</span>.<span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hasher</span>);
+            <span class="ident">HASH_DELIM</span>.<span class="ident">hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hasher</span>);
         }
-        <span class="comment">// TODO might want a better temp file setup here</span>
-        <span class="kw">let</span> <span class="ident">dir</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{:020}&quot;</span>, <span class="ident">interface_sub_dir</span>, <span class="ident">hasher</span>.<span class="ident">finish</span>());
 
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dir</span> <span class="op">=</span> <span class="ident">interface_sub_dir</span>;
+        <span class="ident">dir</span>.<span class="ident">push</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:020}&quot;</span>, <span class="ident">hasher</span>.<span class="ident">finish</span>()));
         <span class="ident">dir</span>
     } <span class="kw">else</span> {
         <span class="ident">interface_sub_dir</span>
@@ -989,8 +1043,8 @@
 
     <span class="kw">for</span> <span class="ident">mv_file</span> <span class="kw">in</span> <span class="ident">mv_files</span> {
         <span class="kw">let</span> (<span class="ident">id</span>, <span class="ident">interface_contents</span>) <span class="op">=</span> <span class="ident">interface_generator</span>::<span class="ident">write_to_string</span>(<span class="kw-2">&amp;</span><span class="ident">mv_file</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">addr_dir</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{:#x}&quot;</span>, <span class="ident">all_addr_dir</span>, <span class="ident">id</span>.<span class="ident">address</span>());
-        <span class="kw">let</span> <span class="ident">file_path</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}.{}&quot;</span>, <span class="ident">addr_dir</span>, <span class="ident">id</span>.<span class="ident">name</span>(), <span class="ident">MOVE_EXTENSION</span>);
+        <span class="kw">let</span> <span class="ident">addr_dir</span> <span class="op">=</span> <span class="macro">dir_path</span><span class="macro">!</span>(<span class="ident">all_addr_dir</span>.<span class="ident">clone</span>(), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">id</span>.<span class="ident">address</span>()));
+        <span class="kw">let</span> <span class="ident">file_path</span> <span class="op">=</span> <span class="macro">file_path</span><span class="macro">!</span>(<span class="ident">addr_dir</span>.<span class="ident">clone</span>(), <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">id</span>.<span class="ident">name</span>()), <span class="ident">MOVE_EXTENSION</span>);
         <span class="comment">// it&#39;s possible some files exist but not others due to multithreaded environments</span>
         <span class="kw">if</span> <span class="ident">separate_by_hash</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">Path</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">file_path</span>).<span class="ident">is_file</span>() {
             <span class="kw">continue</span>;
@@ -1009,7 +1063,7 @@
         <span class="ident">std</span>::<span class="ident">fs</span>::<span class="ident">rename</span>(<span class="ident">tmp</span>.<span class="ident">path</span>(), <span class="ident">file_path</span>)<span class="question-mark">?</span>;
     }
 
-    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">all_addr_dir</span>))
+    <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">all_addr_dir</span>.<span class="ident">into_os_string</span>().<span class="ident">into_string</span>().<span class="ident">unwrap</span>()))
 }
 
 <span class="kw">fn</span> <span class="ident">has_compiled_module_magic_number</span>(<span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
