@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DebuggerStateView",""],["LibraDebugger",""]],"trait":[["StorageDebuggerInterface",""]]});
+initSidebarItems({"struct":[["LibraDebugger",""]]});
