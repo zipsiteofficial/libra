@@ -682,6 +682,10 @@
 <span id="682">682</span>
 <span id="683">683</span>
 <span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -703,7 +707,7 @@
         <span class="self">self</span>,
         <span class="ident">events</span>::{<span class="ident">CreateAccountEvent</span>, <span class="ident">NewEpochEvent</span>},
     },
-    <span class="ident">chain_id</span>::<span class="ident">ChainId</span>,
+    <span class="ident">chain_id</span>::{<span class="ident">ChainId</span>, <span class="ident">NamedChain</span>},
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>,
     <span class="ident">on_chain_config</span>::<span class="ident">VMPublishingOption</span>,
     <span class="ident">transaction</span>::{
@@ -832,8 +836,12 @@
     );
     <span class="ident">reconfigure</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>);
 
-    <span class="comment">// XXX/TODO: for testnet only</span>
-    <span class="ident">create_and_initialize_testnet_minting</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>, <span class="kw-2">&amp;</span><span class="ident">treasury_compliance_key</span>);
+    <span class="kw">if</span> [<span class="ident">NamedChain</span>::<span class="ident">TESTNET</span>, <span class="ident">NamedChain</span>::<span class="ident">DEVNET</span>, <span class="ident">NamedChain</span>::<span class="ident">TESTING</span>]
+        .<span class="ident">iter</span>()
+        .<span class="ident">any</span>(<span class="op">|</span><span class="ident">test_chain_id</span><span class="op">|</span> <span class="ident">test_chain_id</span>.<span class="ident">id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">chain_id</span>.<span class="ident">id</span>())
+    {
+        <span class="ident">create_and_initialize_testnet_minting</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">session</span>, <span class="kw-2">&amp;</span><span class="ident">log_context</span>, <span class="kw-2">&amp;</span><span class="ident">treasury_compliance_key</span>);
+    }
 
     <span class="kw">let</span> <span class="ident">effects_1</span> <span class="op">=</span> <span class="ident">session</span>.<span class="ident">finish</span>().<span class="ident">unwrap</span>();
 
