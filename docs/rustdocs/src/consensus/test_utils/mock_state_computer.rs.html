@@ -139,11 +139,15 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">state_replication</span>::<span class="ident">StateComputer</span>, <span class="ident">test_utils</span>::<span class="ident">mock_storage</span>::<span class="ident">MockStorage</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">error</span>::<span class="ident">StateSyncError</span>, <span class="ident">state_replication</span>::<span class="ident">StateComputer</span>, <span class="ident">test_utils</span>::<span class="ident">mock_storage</span>::<span class="ident">MockStorage</span>,
+};
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">format_err</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{<span class="ident">block</span>::<span class="ident">Block</span>, <span class="ident">common</span>::<span class="ident">Payload</span>};
 <span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span>, <span class="ident">StateComputeResult</span>};
@@ -207,7 +211,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">block_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>,
         <span class="ident">commit</span>: <span class="ident">LedgerInfoWithSignatures</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">consensus_db</span>
             .<span class="ident">commit_to_storage</span>(<span class="ident">commit</span>.<span class="ident">ledger_info</span>().<span class="ident">clone</span>());
 
@@ -232,7 +236,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">commit</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">commit</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">StateSyncError</span><span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="string">&quot;{}Fake sync{} to block id {}&quot;</span>,
             <span class="ident">Fg</span>(<span class="ident">Blue</span>),
@@ -273,11 +277,11 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">_block_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>,
         <span class="ident">_commit</span>: <span class="ident">LedgerInfoWithSignatures</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_commit</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_commit</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">StateSyncError</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(())
     }
 }

@@ -107,15 +107,16 @@
 <span id="107">107</span>
 <span id="108">108</span>
 <span id="109">109</span>
+<span id="110">110</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">state_replication</span>::<span class="ident">StateComputer</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">error</span>::<span class="ident">StateSyncError</span>, <span class="ident">state_replication</span>::<span class="ident">StateComputer</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">consensus_types</span>::<span class="ident">block</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">execution_correctness</span>::<span class="ident">ExecutionCorrectness</span>;
-<span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span>, <span class="ident">StateComputeResult</span>};
+<span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ExecutionError</span>, <span class="ident">StateComputeResult</span>};
 <span class="kw">use</span> <span class="ident">fail</span>::<span class="ident">fail_point</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -154,9 +155,9 @@
         <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>,
         <span class="comment">// The parent block id.</span>
         <span class="ident">parent_block_id</span>: <span class="ident">HashValue</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">StateComputeResult</span>, <span class="ident">ExecutionError</span><span class="op">&gt;</span> {
         <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;consensus::compute&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InternalError</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">ExecutionError</span>::<span class="ident">InternalError</span> {
                 <span class="ident">error</span>: <span class="string">&quot;Injected error in compute&quot;</span>.<span class="ident">into</span>(),
             })
         });
@@ -181,7 +182,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">block_ids</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>,
         <span class="ident">finality_proof</span>: <span class="ident">LedgerInfoWithSignatures</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ExecutionError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">committed_txns</span>, <span class="ident">reconfig_events</span>) <span class="op">=</span> <span class="macro">monitor</span><span class="macro">!</span>(
             <span class="string">&quot;commit_block&quot;</span>,
             <span class="self">self</span>.<span class="ident">execution_correctness_client</span>
@@ -201,9 +202,9 @@
     }
 
     <span class="doccomment">/// Synchronize to a commit that not present locally.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">sync_to</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">StateSyncError</span><span class="op">&gt;</span> {
         <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;consensus::sync_to&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in sync_to&quot;</span>))
+            <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in sync_to&quot;</span>).<span class="ident">into</span>())
         });
         <span class="comment">// Here to start to do state synchronization where ChunkExecutor inside will</span>
         <span class="comment">// process chunks and commit to Storage. However, after block execution and</span>
@@ -214,7 +215,8 @@
         <span class="comment">// Similarily, after the state synchronization, we have to reset the cache</span>
         <span class="comment">// of BlockExecutor to guarantee the latest committed state is up to date.</span>
         <span class="self">self</span>.<span class="ident">execution_correctness_client</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">reset</span>()<span class="question-mark">?</span>;
-        <span class="ident">res</span>
+        <span class="ident">res</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 }
 </pre></div>

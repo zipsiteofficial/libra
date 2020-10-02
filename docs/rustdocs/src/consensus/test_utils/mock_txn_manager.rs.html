@@ -78,11 +78,19 @@
 <span id="78">78</span>
 <span id="79">79</span>
 <span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">state_replication</span>::<span class="ident">TxnManager</span>, <span class="ident">txn_manager</span>::<span class="ident">MempoolProxy</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">error</span>::<span class="ident">MempoolError</span>, <span class="ident">state_replication</span>::<span class="ident">TxnManager</span>, <span class="ident">txn_manager</span>::<span class="ident">MempoolProxy</span>};
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">consensus_types</span>::{
     <span class="ident">block</span>::{<span class="ident">block_test_utils</span>::<span class="ident">random_payload</span>, <span class="ident">Block</span>},
@@ -132,11 +140,19 @@
 <span class="attribute">#[<span class="ident">async_trait</span>::<span class="ident">async_trait</span>]</span>
 <span class="kw">impl</span> <span class="ident">TxnManager</span> <span class="kw">for</span> <span class="ident">MockTransactionManager</span> {
     <span class="doccomment">/// The returned future is fulfilled with the vector of SignedTransactions</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">pull_txns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">max_size</span>: <span class="ident">u64</span>, <span class="ident">_exclude_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Payload</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Payload</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">pull_txns</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">max_size</span>: <span class="ident">u64</span>,
+        <span class="ident">_exclude_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Payload</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Payload</span>, <span class="ident">MempoolError</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="ident">random_payload</span>(<span class="ident">max_size</span> <span class="kw">as</span> <span class="ident">usize</span>))
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">notify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>, <span class="ident">compute_results</span>: <span class="kw-2">&amp;</span><span class="ident">StateComputeResult</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">notify</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>,
+        <span class="ident">compute_results</span>: <span class="kw-2">&amp;</span><span class="ident">StateComputeResult</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">MempoolError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">mempool_proxy</span>.<span class="ident">is_some</span>() {
             <span class="kw">let</span> <span class="ident">mock_compute_result</span> <span class="op">=</span> <span class="ident">StateComputeResult</span>::<span class="ident">new</span>(
                 <span class="ident">compute_results</span>.<span class="ident">root_hash</span>(),
