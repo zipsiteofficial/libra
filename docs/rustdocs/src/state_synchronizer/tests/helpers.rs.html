@@ -153,6 +153,16 @@
 <span id="153">153</span>
 <span id="154">154</span>
 <span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -161,10 +171,11 @@
     <span class="ident">executor_proxy</span>::<span class="ident">ExecutorProxyTrait</span>, <span class="ident">tests</span>::<span class="ident">mock_storage</span>::<span class="ident">MockStorage</span>, <span class="ident">SynchronizerState</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
+<span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">ACCUMULATOR_PLACEHOLDER_HASH</span>, <span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span>};
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
     <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
-    <span class="ident">NetworkAddress</span>,
+    <span class="ident">NetworkAddress</span>, <span class="ident">Protocol</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
@@ -173,11 +184,9 @@
     <span class="ident">validator_info</span>::<span class="ident">ValidatorInfo</span>, <span class="ident">validator_signer</span>::<span class="ident">ValidatorSigner</span>,
     <span class="ident">validator_verifier</span>::<span class="ident">random_validator_verifier</span>,
 };
+<span class="kw">use</span> <span class="ident">memsocket</span>::<span class="ident">MemoryListener</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">rngs</span>::<span class="ident">StdRng</span>, <span class="ident">SeedableRng</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">str</span>::<span class="ident">FromStr</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
-};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">SynchronizerEnvHelper</span>;
 
@@ -193,6 +202,7 @@
         <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorSigner</span><span class="op">&gt;</span>,
         <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ValidatorInfo</span><span class="op">&gt;</span>,
         <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PrivateKey</span><span class="op">&gt;</span>,
+        <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NetworkAddress</span><span class="op">&gt;</span>,
     ) {
         <span class="kw">let</span> (<span class="ident">signers</span>, <span class="ident">_verifier</span>) <span class="op">=</span> <span class="ident">random_validator_verifier</span>(<span class="ident">count</span>, <span class="prelude-val">None</span>, <span class="bool-val">true</span>);
 
@@ -202,29 +212,39 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>))
             .<span class="ident">collect</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validators_keys</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-        <span class="comment">// The voting power of peer 0 is enough to generate an LI that passes validation.</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">validator_infos</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_addrs</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">signer</span>) <span class="kw">in</span> <span class="ident">signers</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">let</span> <span class="ident">voting_power</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">idx</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> { <span class="number">1000</span> } <span class="kw">else</span> { <span class="number">1</span> };
-            <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">from_str</span>(<span class="string">&quot;/memory/0&quot;</span>).<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">signer</span>.<span class="ident">author</span>();
+
+            <span class="comment">// Reserve an unused `/memory/&lt;port&gt;` address by binding port 0; we</span>
+            <span class="comment">// can immediately discard the listener here and safely rebind to this</span>
+            <span class="comment">// address later.</span>
+            <span class="kw">let</span> <span class="ident">port</span> <span class="op">=</span> <span class="ident">MemoryListener</span>::<span class="ident">bind</span>(<span class="number">0</span>).<span class="ident">unwrap</span>().<span class="ident">local_addr</span>();
+            <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">NetworkAddress</span>::<span class="ident">from</span>(<span class="ident">Protocol</span>::<span class="ident">Memory</span>(<span class="ident">port</span>));
+            <span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">append_prod_protos</span>(<span class="ident">network_keys</span>[<span class="ident">idx</span>].<span class="ident">public_key</span>(), <span class="ident">HANDSHAKE_VERSION</span>);
+
             <span class="kw">let</span> <span class="ident">enc_addr</span> <span class="op">=</span> <span class="ident">addr</span>.<span class="ident">clone</span>().<span class="ident">encrypt</span>(
                 <span class="kw-2">&amp;</span><span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
                 <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>,
-                <span class="kw-2">&amp;</span><span class="ident">signer</span>.<span class="ident">author</span>(),
-                <span class="number">0</span>,
-                <span class="number">0</span>,
+                <span class="kw-2">&amp;</span><span class="ident">peer_id</span>,
+                <span class="number">0</span>, <span class="comment">/* seq_num */</span>
+                <span class="number">0</span>, <span class="comment">/* addr_idx */</span>
             );
 
+            <span class="comment">// The voting power of peer 0 is enough to generate an LI that passes validation.</span>
+            <span class="kw">let</span> <span class="ident">voting_power</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">idx</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> { <span class="number">1000</span> } <span class="kw">else</span> { <span class="number">1</span> };
             <span class="kw">let</span> <span class="ident">validator_config</span> <span class="op">=</span> <span class="ident">ValidatorConfig</span>::<span class="ident">new</span>(
                 <span class="ident">signer</span>.<span class="ident">public_key</span>(),
                 <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">enc_addr</span>.<span class="ident">unwrap</span>()]).<span class="ident">unwrap</span>(),
-                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>]).<span class="ident">unwrap</span>(),
+                <span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">vec</span><span class="macro">!</span>[<span class="ident">addr</span>.<span class="ident">clone</span>()]).<span class="ident">unwrap</span>(),
             );
-            <span class="kw">let</span> <span class="ident">validator_info</span> <span class="op">=</span>
-                <span class="ident">ValidatorInfo</span>::<span class="ident">new</span>(<span class="ident">signer</span>.<span class="ident">author</span>(), <span class="ident">voting_power</span>, <span class="ident">validator_config</span>);
-            <span class="ident">validators_keys</span>.<span class="ident">push</span>(<span class="ident">validator_info</span>);
+            <span class="kw">let</span> <span class="ident">validator_info</span> <span class="op">=</span> <span class="ident">ValidatorInfo</span>::<span class="ident">new</span>(<span class="ident">peer_id</span>, <span class="ident">voting_power</span>, <span class="ident">validator_config</span>);
+            <span class="ident">validator_infos</span>.<span class="ident">push</span>(<span class="ident">validator_info</span>);
+            <span class="ident">network_addrs</span>.<span class="ident">push</span>(<span class="ident">addr</span>);
         }
-        (<span class="ident">signers</span>, <span class="ident">validators_keys</span>, <span class="ident">network_keys</span>)
+        (<span class="ident">signers</span>, <span class="ident">validator_infos</span>, <span class="ident">network_keys</span>, <span class="ident">network_addrs</span>)
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">genesis_li</span>(<span class="ident">validators</span>: <span class="kw-2">&amp;</span>[<span class="ident">ValidatorInfo</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LedgerInfoWithSignatures</span> {

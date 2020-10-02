@@ -259,31 +259,6 @@
 <span id="259">259</span>
 <span id="260">260</span>
 <span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -325,7 +300,9 @@
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">deny_unknown_fields</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NetworkConfig</span> {
     <span class="kw">pub</span> <span class="ident">connectivity_check_interval_ms</span>: <span class="ident">u64</span>,
-    <span class="comment">// Enable this network to use either gossip discovery or onchain discovery.</span>
+    <span class="comment">// Choose a protocol to discover and dial out to other peers on this network.</span>
+    <span class="comment">// `DiscoveryMethod::None` disables discovery and dialing out (unless you have</span>
+    <span class="comment">// seed peers configured).</span>
     <span class="kw">pub</span> <span class="ident">discovery_method</span>: <span class="ident">DiscoveryMethod</span>,
     <span class="kw">pub</span> <span class="ident">identity</span>: <span class="ident">Identity</span>,
     <span class="comment">// TODO: Add support for multiple listen/advertised addresses in config.</span>
@@ -500,35 +477,8 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">DiscoveryMethod</span> {
-    <span class="comment">// default until we can deprecate</span>
-    <span class="ident">Gossip</span>(<span class="ident">GossipConfig</span>),
     <span class="ident">Onchain</span>,
     <span class="prelude-val">None</span>,
-}
-
-<span class="kw">impl</span> <span class="ident">DiscoveryMethod</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">gossip</span>(<span class="ident">advertised_address</span>: <span class="ident">NetworkAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">DiscoveryMethod</span>::<span class="ident">Gossip</span>(<span class="ident">GossipConfig</span> {
-            <span class="ident">advertised_address</span>,
-            <span class="ident">discovery_interval_ms</span>: <span class="number">1000</span>,
-        })
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">advertised_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NetworkAddress</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">DiscoveryMethod</span>::<span class="ident">Gossip</span>(<span class="ident">config</span>) <span class="op">=</span> <span class="self">self</span> {
-            <span class="ident">config</span>.<span class="ident">advertised_address</span>.<span class="ident">clone</span>()
-        } <span class="kw">else</span> {
-            <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Invalid discovery method&quot;</span>);
-        }
-    }
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GossipConfig</span> {
-    <span class="comment">// The address that this node advertises to other nodes for the discovery protocol.</span>
-    <span class="kw">pub</span> <span class="ident">advertised_address</span>: <span class="ident">NetworkAddress</span>,
-    <span class="kw">pub</span> <span class="ident">discovery_interval_ms</span>: <span class="ident">u64</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
