@@ -2042,6 +2042,38 @@
 <span id="2042">2042</span>
 <span id="2043">2043</span>
 <span id="2044">2044</span>
+<span id="2045">2045</span>
+<span id="2046">2046</span>
+<span id="2047">2047</span>
+<span id="2048">2048</span>
+<span id="2049">2049</span>
+<span id="2050">2050</span>
+<span id="2051">2051</span>
+<span id="2052">2052</span>
+<span id="2053">2053</span>
+<span id="2054">2054</span>
+<span id="2055">2055</span>
+<span id="2056">2056</span>
+<span id="2057">2057</span>
+<span id="2058">2058</span>
+<span id="2059">2059</span>
+<span id="2060">2060</span>
+<span id="2061">2061</span>
+<span id="2062">2062</span>
+<span id="2063">2063</span>
+<span id="2064">2064</span>
+<span id="2065">2065</span>
+<span id="2066">2066</span>
+<span id="2067">2067</span>
+<span id="2068">2068</span>
+<span id="2069">2069</span>
+<span id="2070">2070</span>
+<span id="2071">2071</span>
+<span id="2072">2072</span>
+<span id="2073">2073</span>
+<span id="2074">2074</span>
+<span id="2075">2075</span>
+<span id="2076">2076</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2078,8 +2110,10 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">boogie_helpers</span>::{
-        <span class="ident">boogie_byte_blob</span>, <span class="ident">boogie_caller_resource_memory_domain_name</span>, <span class="ident">boogie_field_name</span>,
-        <span class="ident">boogie_function_name</span>, <span class="ident">boogie_local_type</span>, <span class="ident">boogie_requires_well_formed</span>,
+        <span class="ident">boogie_byte_blob</span>, <span class="ident">boogie_caller_resource_memory_domain_name</span>,
+        <span class="ident">boogie_debug_track_abort_via_attrib</span>, <span class="ident">boogie_debug_track_abort_via_function</span>,
+        <span class="ident">boogie_debug_track_local_via_attrib</span>, <span class="ident">boogie_debug_track_local_via_function</span>,
+        <span class="ident">boogie_field_name</span>, <span class="ident">boogie_function_name</span>, <span class="ident">boogie_local_type</span>, <span class="ident">boogie_requires_well_formed</span>,
         <span class="ident">boogie_resource_memory_name</span>, <span class="ident">boogie_saved_resource_memory_name</span>,
         <span class="ident">boogie_self_resource_memory_domain_name</span>, <span class="ident">boogie_struct_name</span>, <span class="ident">boogie_type_value</span>,
         <span class="ident">boogie_type_value_array</span>, <span class="ident">boogie_type_values</span>, <span class="ident">boogie_well_formed_check</span>, <span class="ident">WellFormedMode</span>,
@@ -2470,12 +2504,31 @@
             );
         }
 
-        <span class="comment">// Generate $DebugTrackLocal so we can see the constructed value before invariant</span>
-        <span class="comment">// evaluation may abort.</span>
+        <span class="comment">// Debug track so we can see the constructed value before invariant</span>
+        <span class="comment">// evaluation may abort. $byte_index &gt; 0 indicates whether we have a valid position to</span>
+        <span class="comment">// report on.</span>
+        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;if ($byte_index &gt; 0) {&quot;</span>);
+        <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">indent</span>();
         <span class="macro">emitln</span><span class="macro">!</span>(
             <span class="self">self</span>.<span class="ident">writer</span>,
-            <span class="string">&quot;if ($byte_index &gt; 0) { assume $DebugTrackLocal($file_id, $byte_index, $var_idx, $struct); }&quot;</span>
+            <span class="kw-2">&amp;</span><span class="kw">if</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">use_boogie_debug_attrib</span> {
+                <span class="ident">boogie_debug_track_local_via_attrib</span>(
+                    <span class="string">&quot;$file_id&quot;</span>,
+                    <span class="string">&quot;$byte_index&quot;</span>,
+                    <span class="string">&quot;$var_idx&quot;</span>,
+                    <span class="string">&quot;$struct&quot;</span>,
+                )
+            } <span class="kw">else</span> {
+                <span class="ident">boogie_debug_track_local_via_function</span>(
+                    <span class="string">&quot;$file_id&quot;</span>,
+                    <span class="string">&quot;$byte_index&quot;</span>,
+                    <span class="string">&quot;$var_idx&quot;</span>,
+                    <span class="string">&quot;$struct&quot;</span>,
+                )
+            }
         );
+        <span class="self">self</span>.<span class="ident">writer</span>.<span class="ident">unindent</span>();
+        <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;}&quot;</span>);
 
         <span class="comment">// Insert invariant code.</span>
         <span class="kw">let</span> <span class="ident">spec_translator</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">new_spec_translator</span>(<span class="ident">struct_env</span>.<span class="ident">clone</span>(), <span class="bool-val">false</span>);
@@ -2893,6 +2946,11 @@
                 <span class="string">&quot;[$TypeValueArray, int]bool;&quot;</span>
             );
         });
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">use_boogie_debug_attrib</span> {
+            <span class="comment">// Declare temporaries for debug tracing.</span>
+            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;var $trace_temp: $Value;&quot;</span>);
+            <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;var $trace_abort_temp: int;&quot;</span>);
+        }
 
         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;\n// initialize function execution&quot;</span>);
         <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;assume !$abort_flag;&quot;</span>);
@@ -2995,15 +3053,19 @@
         };
 
         <span class="kw">let</span> <span class="ident">propagate_abort</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> {
-            <span class="macro">format</span><span class="macro">!</span>(
-                <span class="string">&quot;if ($abort_flag) {{\n  assume $DebugTrackAbort({}, {}, $abort_code);\n  goto Abort;\n}}&quot;</span>,
-                <span class="ident">func_target</span>
-                    .<span class="ident">func_env</span>
-                    .<span class="ident">module_env</span>
-                    .<span class="ident">env</span>
-                    .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>()),
-                <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>(),
-            )
+            <span class="kw">let</span> <span class="ident">file_idx</span> <span class="op">=</span> <span class="ident">func_target</span>
+                .<span class="ident">func_env</span>
+                .<span class="ident">module_env</span>
+                .<span class="ident">env</span>
+                .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>())
+                .<span class="ident">to_string</span>();
+            <span class="kw">let</span> <span class="ident">pos</span> <span class="op">=</span> <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>().<span class="ident">to_string</span>();
+            <span class="kw">let</span> <span class="ident">track</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">use_boogie_debug_attrib</span> {
+                <span class="ident">boogie_debug_track_abort_via_attrib</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="string">&quot;$abort_code&quot;</span>)
+            } <span class="kw">else</span> {
+                <span class="ident">boogie_debug_track_abort_via_function</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="string">&quot;$abort_code&quot;</span>)
+            };
+            <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;if ($abort_flag) {{\n  {}\n  goto Abort;\n}}&quot;</span>, <span class="ident">track</span>)
         };
         <span class="kw">let</span> <span class="ident">propagate_abort_from_call</span> <span class="op">=</span> <span class="op">|</span><span class="ident">callee_target</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTarget</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">|</span> {
             <span class="kw">if</span> <span class="ident">callee_target</span>.<span class="ident">is_native</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">callee_target</span>.<span class="ident">is_opaque</span>() {
@@ -3926,24 +3988,24 @@
                 }
             }
             <span class="ident">Abort</span>(<span class="kw">_</span>, <span class="ident">src</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="comment">// Below we introduce a dummy `if` for $DebugTrackAbort to ensure boogie creates</span>
-                <span class="comment">// a execution trace entry for this statement.</span>
-                <span class="macro">emitln</span><span class="macro">!</span>(
-                    <span class="self">self</span>.<span class="ident">writer</span>,
-                    <span class="string">&quot;if (true) {{ assume $DebugTrackAbort({}, {}, i#$Integer({})); }}&quot;</span>,
-                    <span class="ident">func_target</span>
-                        .<span class="ident">func_env</span>
-                        .<span class="ident">module_env</span>
-                        .<span class="ident">env</span>
-                        .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>()),
-                    <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>(),
-                    <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">src</span>)
-                );
                 <span class="macro">emitln</span><span class="macro">!</span>(
                     <span class="self">self</span>.<span class="ident">writer</span>,
                     <span class="string">&quot;$abort_code := i#$Integer({});&quot;</span>,
                     <span class="ident">str_local</span>(<span class="kw-2">*</span><span class="ident">src</span>)
                 );
+                <span class="kw">let</span> <span class="ident">file_idx</span> <span class="op">=</span> <span class="ident">func_target</span>
+                    .<span class="ident">func_env</span>
+                    .<span class="ident">module_env</span>
+                    .<span class="ident">env</span>
+                    .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>())
+                    .<span class="ident">to_string</span>();
+                <span class="kw">let</span> <span class="ident">pos</span> <span class="op">=</span> <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>().<span class="ident">to_string</span>();
+                <span class="kw">let</span> <span class="ident">track</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">use_boogie_debug_attrib</span> {
+                    <span class="ident">boogie_debug_track_abort_via_attrib</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="string">&quot;$abort_code&quot;</span>)
+                } <span class="kw">else</span> {
+                    <span class="ident">boogie_debug_track_abort_via_function</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="string">&quot;$abort_code&quot;</span>)
+                };
+                <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">track</span>);
                 <span class="macro">emitln</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">writer</span>, <span class="string">&quot;goto Abort;&quot;</span>)
             }
             <span class="ident">Nop</span>(..) <span class="op">=</span><span class="op">&gt;</span> {}
@@ -4069,17 +4131,19 @@
         } <span class="kw">else</span> {
             <span class="ident">value</span>.<span class="ident">to_string</span>()
         };
-        <span class="macro">format</span><span class="macro">!</span>(
-            <span class="string">&quot;if (true) {{ assume $DebugTrackLocal({}, {}, {}, {}); }}&quot;</span>,
-            <span class="ident">func_target</span>
-                .<span class="ident">func_env</span>
-                .<span class="ident">module_env</span>
-                .<span class="ident">env</span>
-                .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>()),
-            <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>(),
-            <span class="ident">idx</span>,
-            <span class="ident">value</span>
-        )
+        <span class="kw">let</span> <span class="ident">file_idx</span> <span class="op">=</span> <span class="ident">func_target</span>
+            .<span class="ident">func_env</span>
+            .<span class="ident">module_env</span>
+            .<span class="ident">env</span>
+            .<span class="ident">file_id_to_idx</span>(<span class="ident">loc</span>.<span class="ident">file_id</span>())
+            .<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">pos</span> <span class="op">=</span> <span class="ident">loc</span>.<span class="ident">span</span>().<span class="ident">start</span>().<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">local_idx</span> <span class="op">=</span> <span class="ident">idx</span>.<span class="ident">to_string</span>();
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">backend</span>.<span class="ident">use_boogie_debug_attrib</span> {
+            <span class="ident">boogie_debug_track_local_via_attrib</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="kw-2">&amp;</span><span class="ident">local_idx</span>, <span class="kw-2">&amp;</span><span class="ident">value</span>)
+        } <span class="kw">else</span> {
+            <span class="ident">boogie_debug_track_local_via_function</span>(<span class="kw-2">&amp;</span><span class="ident">file_idx</span>, <span class="kw-2">&amp;</span><span class="ident">pos</span>, <span class="kw-2">&amp;</span><span class="ident">local_idx</span>, <span class="kw-2">&amp;</span><span class="ident">value</span>)
+        }
     }
 }
 
