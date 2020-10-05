@@ -600,6 +600,18 @@
 <span id="600">600</span>
 <span id="601">601</span>
 <span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -614,6 +626,7 @@
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">ensure</span>, <span class="ident">format_err</span>, <span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">future</span>::<span class="ident">Future</span>;
+<span class="kw">use</span> <span class="ident">fail</span>::<span class="ident">fail_point</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">channel</span>::<span class="ident">oneshot</span>, <span class="ident">SinkExt</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">RoleType</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">CryptoHash</span>;
@@ -671,6 +684,12 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_latest_ledger_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
+        <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;jsonrpc::get_latest_ledger_info&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(
+                <span class="string">&quot;Injected error for get latest ledger info error&quot;</span>
+            ))
+        });
+
         <span class="self">self</span>.<span class="ident">db</span>.<span class="ident">get_latest_ledger_info</span>()
     }
 
@@ -811,6 +830,11 @@
     <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;json-rpc::submit&quot;</span>, {<span class="string">&quot;txn&quot;</span>, <span class="ident">transaction</span>.<span class="ident">sender</span>(), <span class="ident">transaction</span>.<span class="ident">sequence_number</span>()});
 
     <span class="kw">let</span> (<span class="ident">req_sender</span>, <span class="ident">callback</span>) <span class="op">=</span> <span class="ident">oneshot</span>::<span class="ident">channel</span>();
+
+    <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;jsonrpc::method::submit::mempool_sender&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
+        <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error for mempool_sender call error&quot;</span>).<span class="ident">into</span>())
+    });
+
     <span class="ident">service</span>
         .<span class="ident">mempool_sender</span>
         .<span class="ident">send</span>((<span class="ident">transaction</span>, <span class="ident">req_sender</span>))
