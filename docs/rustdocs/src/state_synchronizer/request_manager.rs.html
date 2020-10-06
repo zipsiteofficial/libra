@@ -472,6 +472,24 @@
 <span id="472">472</span>
 <span id="473">473</span>
 <span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -576,6 +594,7 @@
         <span class="ident">multicast_timeout</span>: <span class="ident">Duration</span>,
         <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NodeNetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="ident">MIN_UPSTREAM_NETWORK_CT</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="self">Self</span> {
             <span class="ident">eligible_peers</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">peers</span>: <span class="ident">HashMap</span>::<span class="ident">new</span>(),
@@ -598,14 +617,15 @@
             <span class="kw">return</span>;
         }
 
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] state before: {:?}&quot;</span>, <span class="self">self</span>.<span class="ident">peers</span>);
+        <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>()])
+            .<span class="ident">inc</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">peer_info</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
             <span class="ident">peer_info</span>.<span class="ident">is_alive</span> <span class="op">=</span> <span class="bool-val">true</span>;
         } <span class="kw">else</span> {
             <span class="self">self</span>.<span class="ident">peers</span>.<span class="ident">insert</span>(<span class="ident">peer</span>, <span class="ident">PeerInfo</span>::<span class="ident">new</span>(<span class="bool-val">true</span>, <span class="ident">MAX_SCORE</span>));
         }
         <span class="self">self</span>.<span class="ident">update_peer_selection_data</span>();
-        <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] state after: {:?}&quot;</span>, <span class="self">self</span>.<span class="ident">peers</span>);
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">disable_peer</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) {
@@ -614,6 +634,9 @@
             .<span class="ident">is_upstream_peer</span>(<span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">origin</span>)));
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">peer_info</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">peers</span>.<span class="ident">get_mut</span>(<span class="ident">peer</span>) {
+            <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">dec</span>();
             <span class="ident">peer_info</span>.<span class="ident">is_alive</span> <span class="op">=</span> <span class="bool-val">false</span>;
         }
         <span class="self">self</span>.<span class="ident">update_peer_selection_data</span>();
@@ -651,14 +674,12 @@
     <span class="comment">// * eligible_peers</span>
     <span class="comment">// * weighted_index: the chance that a peer is selected from `eligible_peers` is weighted by its score</span>
     <span class="kw">fn</span> <span class="ident">update_peer_selection_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">active_peers_count</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="comment">// group active peers by network</span>
         <span class="kw">let</span> <span class="ident">active_peers</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">peers</span>
             .<span class="ident">iter</span>()
             .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">_peer</span>, <span class="ident">peer_info</span>)<span class="op">|</span> <span class="ident">peer_info</span>.<span class="ident">is_alive</span>)
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">peer</span>, <span class="ident">peer_info</span>)<span class="op">|</span> {
-                <span class="ident">active_peers_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
                 <span class="kw">let</span> <span class="ident">network_pref</span> <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">upstream_config</span>
                     .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
@@ -666,8 +687,6 @@
                 (<span class="ident">network_pref</span>, (<span class="ident">peer</span>, <span class="ident">peer_info</span>))
             })
             .<span class="ident">into_group_map</span>();
-
-        <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS</span>.<span class="ident">set</span>(<span class="ident">active_peers_count</span>);
 
         <span class="comment">// for each network, compute peer selection data</span>
         <span class="self">self</span>.<span class="ident">eligible_peers</span> <span class="op">=</span> <span class="ident">active_peers</span>
@@ -727,10 +746,10 @@
         }
 
         <span class="kw">let</span> <span class="ident">req_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">add_request</span>(<span class="ident">req</span>.<span class="ident">known_version</span>, <span class="ident">peers</span>.<span class="ident">clone</span>());
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="string">&quot;[state sync] request next chunk - chunk req info: {:?}&quot;</span>,
-            <span class="ident">req_info</span>
-        );
+        <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">log</span>
+            .<span class="ident">clone</span>()
+            .<span class="ident">event</span>(<span class="ident">LogEvent</span>::<span class="ident">ChunkRequestInfo</span>)
+            .<span class="ident">chunk_req_info</span>(<span class="kw-2">&amp;</span><span class="ident">req_info</span>));
 
         <span class="comment">// actually execute network send</span>
         <span class="kw">let</span> <span class="ident">target_version</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">target</span>().<span class="ident">version</span>();
@@ -753,7 +772,11 @@
                 <span class="ident">counters</span>::<span class="ident">SEND_SUCCESS_LABEL</span>
             };
             <span class="ident">counters</span>::<span class="ident">REQUESTS_SENT</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id</span>.<span class="ident">to_string</span>(), <span class="ident">result_label</span>])
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                    <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>(),
+                    <span class="kw-2">&amp;</span><span class="ident">peer_id</span>.<span class="ident">to_string</span>(),
+                    <span class="ident">result_label</span>,
+                ])
                 .<span class="ident">inc</span>();
         }
 
@@ -799,10 +822,13 @@
             .<span class="ident">upstream_config</span>
             .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
             <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">0</span>);
-        <span class="kw">if</span> <span class="ident">is_primary_upstream_peer</span> {
+        <span class="kw">if</span> <span class="ident">is_primary_upstream_peer</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">!</span><span class="op">=</span> <span class="ident">MIN_UPSTREAM_NETWORK_CT</span> {
             <span class="comment">// if chunk from a primary upstream is successful, stop multicasting the request to failover networks</span>
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] exit multicast mode&quot;</span>);
+            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Multicast</span>, <span class="ident">LogEvent</span>::<span class="ident">Recover</span>)
+                .<span class="ident">old_multicast_level</span>(<span class="self">self</span>.<span class="ident">multicast_level</span>)
+                .<span class="ident">new_multicast_level</span>(<span class="ident">MIN_UPSTREAM_NETWORK_CT</span>));
             <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">=</span> <span class="ident">MIN_UPSTREAM_NETWORK_CT</span>;
+            <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">multicast_level</span> <span class="kw">as</span> <span class="ident">i64</span>);
         }
 
         <span class="comment">// update score</span>
@@ -914,7 +940,13 @@
                 <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">+</span> <span class="number">1</span>,
                 <span class="self">self</span>.<span class="ident">upstream_config</span>.<span class="ident">upstream_count</span>(),
             );
-            <span class="macro">debug</span><span class="macro">!</span>(<span class="string">&quot;[state sync] multicast timeout occurred for version {}, update multicast level from {} to {}&quot;</span>, <span class="ident">version</span>, <span class="ident">prev_multicast_level</span>, <span class="self">self</span>.<span class="ident">multicast_level</span>);
+            <span class="macro">info</span><span class="macro">!</span>(
+                <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Multicast</span>, <span class="ident">LogEvent</span>::<span class="ident">Failover</span>)
+                    .<span class="ident">old_multicast_level</span>(<span class="ident">prev_multicast_level</span>)
+                    .<span class="ident">new_multicast_level</span>(<span class="self">self</span>.<span class="ident">multicast_level</span>),
+                <span class="ident">request_version</span> <span class="op">=</span> <span class="ident">version</span>,
+            );
+            <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">multicast_level</span> <span class="kw">as</span> <span class="ident">i64</span>);
         }
         <span class="ident">is_timeout</span>
     }
@@ -930,6 +962,10 @@
         } <span class="kw">else</span> {
             <span class="ident">is_network_upstream</span>
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_known_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">peers</span>.<span class="ident">contains_key</span>(<span class="ident">peer</span>)
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>

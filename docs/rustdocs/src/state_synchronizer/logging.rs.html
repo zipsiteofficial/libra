@@ -130,11 +130,32 @@
 <span id="130">130</span>
 <span id="131">131</span>
 <span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">chunk_request</span>::<span class="ident">GetChunkRequest</span>, <span class="ident">chunk_response</span>::<span class="ident">GetChunkResponse</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">chunk_request</span>::<span class="ident">GetChunkRequest</span>, <span class="ident">chunk_response</span>::<span class="ident">GetChunkResponse</span>,
+    <span class="ident">request_manager</span>::<span class="ident">ChunkRequestInfo</span>,
+};
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="ident">Error</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">PeerNetworkId</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">Schema</span>;
@@ -142,6 +163,7 @@
     <span class="ident">contract_event</span>::<span class="ident">ContractEvent</span>, <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>,
 };
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
+
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Schema</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LogSchema</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="ident">name</span>: <span class="ident">LogEntry</span>,
@@ -169,6 +191,10 @@
     <span class="ident">old_epoch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="ident">new_epoch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="ident">target_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+    <span class="ident">old_multicast_level</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
+    <span class="ident">new_multicast_level</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
+    <span class="attribute">#[<span class="ident">schema</span>(<span class="ident">debug</span>)]</span>
+    <span class="ident">chunk_req_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ChunkRequestInfo</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">LogSchema</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
@@ -201,6 +227,9 @@
             <span class="ident">new_epoch</span>: <span class="prelude-val">None</span>,
             <span class="ident">old_epoch</span>: <span class="prelude-val">None</span>,
             <span class="ident">target_version</span>: <span class="prelude-val">None</span>,
+            <span class="ident">old_multicast_level</span>: <span class="prelude-val">None</span>,
+            <span class="ident">new_multicast_level</span>: <span class="prelude-val">None</span>,
+            <span class="ident">chunk_req_info</span>: <span class="prelude-val">None</span>,
         }
     }
 
@@ -233,6 +262,8 @@
     <span class="ident">NetworkError</span>,
     <span class="ident">EpochChange</span>,
     <span class="ident">CommitFlow</span>,
+    <span class="ident">Multicast</span>,
+    <span class="ident">SubscriptionDeliveryFail</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Serialize</span>)]</span>
@@ -250,6 +281,7 @@
     <span class="ident">OldSyncRequest</span>,
     <span class="ident">NetworkSendError</span>,
     <span class="ident">Success</span>,
+    <span class="ident">ChunkRequestInfo</span>,
 
     <span class="comment">// ProcessChunkResponse events</span>
     <span class="ident">Received</span>,
@@ -262,6 +294,10 @@
     <span class="comment">// ProcessChunkRequest events</span>
     <span class="ident">PastEpochRequested</span>,
     <span class="ident">DeliverChunk</span>,
+
+    <span class="comment">// Multicast network events</span>
+    <span class="ident">Failover</span>,
+    <span class="ident">Recover</span>,
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "state_synchronizer";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
