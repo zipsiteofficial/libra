@@ -314,6 +314,7 @@
 <span id="314">314</span>
 <span id="315">315</span>
 <span id="316">316</span>
+<span id="317">317</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -564,9 +565,9 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochHistory</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">name</span>();
         <span class="macro">info</span><span class="macro">!</span>(
-            <span class="string">&quot;{} started. Trying epoch endings for epoch 0 till {} (inclusive)&quot;</span>,
+            <span class="string">&quot;{} started. Trying epoch endings starting from epoch 0, {} in total.&quot;</span>,
             <span class="ident">name</span>,
-            <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>,
+            <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">len</span>(),
         );
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">run_impl</span>()
@@ -583,6 +584,12 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_impl</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochHistory</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">is_empty</span>() {
+            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">EpochHistory</span> {
+                <span class="ident">epoch_endings</span>: <span class="ident">Vec</span>::<span class="ident">new</span>(),
+            });
+        }
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_epoch</span> <span class="op">=</span> <span class="number">0u64</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_li</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">epoch_endings</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
@@ -622,11 +629,6 @@
             <span class="ident">previous_li</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">lis</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>).<span class="ident">clone</span>());
             <span class="ident">epoch_endings</span>.<span class="ident">extend</span>(<span class="ident">lis</span>);
         }
-        <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="op">!</span><span class="ident">epoch_endings</span>.<span class="ident">is_empty</span>(),
-            <span class="string">&quot;No epochs restored from {} manifests&quot;</span>,
-            <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">len</span>(),
-        );
 
         <span class="prelude-val">Ok</span>(<span class="ident">EpochHistory</span> { <span class="ident">epoch_endings</span> })
     }
