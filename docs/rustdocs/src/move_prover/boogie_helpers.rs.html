@@ -461,6 +461,28 @@
 <span id="461">461</span>
 <span id="462">462</span>
 <span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -885,10 +907,10 @@
     <span class="ident">var_idx</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-    <span class="macro">format</span><span class="macro">!</span>(
-        <span class="string">&quot;if (true) {{ assume $DebugTrackLocal({}, {}, {}, {}); }}&quot;</span>,
+    <span class="ident">ensure_trace_info</span>(<span class="macro">format</span><span class="macro">!</span>(
+        <span class="string">&quot;assume $DebugTrackLocal({}, {}, {}, {});&quot;</span>,
         <span class="ident">file_idx</span>, <span class="ident">pos</span>, <span class="ident">var_idx</span>, <span class="ident">value</span>
-    )
+    ))
 }
 
 <span class="doccomment">/// Construct a statement to debug track a local based on the Boogie attribute approach.</span>
@@ -898,11 +920,25 @@
     <span class="ident">var_idx</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-    <span class="macro">format</span><span class="macro">!</span>(
+    <span class="ident">ensure_trace_info</span>(<span class="macro">format</span><span class="macro">!</span>(
         <span class="string">&quot;$trace_temp := {};\n\
         assume {{:print \&quot;$track_local({},{},{}):\&quot;, $trace_temp}} true;&quot;</span>,
         <span class="ident">value</span>, <span class="ident">file_idx</span>, <span class="ident">pos</span>, <span class="ident">var_idx</span>,
-    )
+    ))
+}
+
+<span class="doccomment">/// Construct a statement to debug track a local based on the Boogie attribute approach, with</span>
+<span class="doccomment">/// dynamically (via variables) provided parameters.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">boogie_debug_track_local_via_attrib_dynamic</span>(
+    <span class="ident">file_idx</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">pos</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">var_idx</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">value</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="ident">ensure_trace_info</span>(<span class="macro">format</span><span class="macro">!</span>(
+        <span class="string">&quot;assume {{:print \&quot;$track_local(\&quot;,{},\&quot;,\&quot;,{},\&quot;,\&quot;,{},\&quot;):\&quot;, {}}} true;&quot;</span>,
+        <span class="ident">file_idx</span>, <span class="ident">pos</span>, <span class="ident">var_idx</span>, <span class="ident">value</span>,
+    ))
 }
 
 <span class="doccomment">/// Construct a statement to debug track an abort. This works without specific Boogie support.</span>
@@ -911,19 +947,27 @@
     <span class="ident">pos</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">abort_code</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-    <span class="macro">format</span><span class="macro">!</span>(
-        <span class="string">&quot;if (true) {{ assume $DebugTrackAbort({}, {}, {}); }}&quot;</span>,
+    <span class="ident">ensure_trace_info</span>(<span class="macro">format</span><span class="macro">!</span>(
+        <span class="string">&quot;assume $DebugTrackAbort({}, {}, {});&quot;</span>,
         <span class="ident">file_idx</span>, <span class="ident">pos</span>, <span class="ident">abort_code</span>
-    )
+    ))
 }
 
 <span class="doccomment">/// Construct a statement to debug track an abort using the Boogie attribute approach.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">boogie_debug_track_abort_via_attrib</span>(<span class="ident">file_idx</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">pos</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">abort_code</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
-    <span class="macro">format</span><span class="macro">!</span>(
+    <span class="ident">ensure_trace_info</span>(<span class="macro">format</span><span class="macro">!</span>(
         <span class="string">&quot;$trace_abort_temp := {};\n\
-        assume {{:print \&quot;$track_abort({}, {}):\&quot;, $trace_abort_temp}} true;&quot;</span>,
+        assume {{:print \&quot;$track_abort({},{}):\&quot;, $trace_abort_temp}} true;&quot;</span>,
         <span class="ident">abort_code</span>, <span class="ident">file_idx</span>, <span class="ident">pos</span>,
-    )
+    ))
+}
+
+<span class="doccomment">/// Wraps a statement such that Boogie does not elimiate it in execution traces. Boogie</span>
+<span class="doccomment">/// does not seem to account for `assume` statements in execution traces, so in order to</span>
+<span class="doccomment">/// let our tracking statements above not be forgotten, this trick ensures that they always</span>
+<span class="doccomment">/// appear in the trace.</span>
+<span class="kw">fn</span> <span class="ident">ensure_trace_info</span>(<span class="ident">s</span>: <span class="ident">String</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;if (true) {{\n {}\n}}&quot;</span>, <span class="ident">s</span>.<span class="ident">replace</span>(<span class="string">&quot;\n&quot;</span>, <span class="string">&quot;\n  &quot;</span>))
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "move_prover";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
