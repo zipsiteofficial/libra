@@ -255,6 +255,30 @@
 <span id="255">255</span>
 <span id="256">256</span>
 <span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -438,8 +462,8 @@
             };
             <span class="kw">let</span> <span class="ident">ty_layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_type_layout</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let</span> <span class="ident">gv</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_resource</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="kw-2">&amp;</span><span class="ident">ty_tag</span>)<span class="question-mark">?</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">blob</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="kw">let</span> <span class="ident">gv</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_resource</span>(<span class="kw-2">&amp;</span><span class="ident">addr</span>, <span class="kw-2">&amp;</span><span class="ident">ty_tag</span>) {
+                <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">blob</span>)) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">let</span> <span class="ident">ty_kind_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">loader</span>.<span class="ident">type_to_kind_info</span>(<span class="ident">ty</span>)<span class="question-mark">?</span>;
                     <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">Value</span>::<span class="ident">simple_deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>, <span class="kw-2">&amp;</span><span class="ident">ty_kind_info</span>, <span class="kw-2">&amp;</span><span class="ident">ty_layout</span>) {
                         <span class="prelude-val">Some</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">val</span>,
@@ -455,7 +479,19 @@
 
                     <span class="ident">GlobalValue</span>::<span class="ident">cached</span>(<span class="ident">val</span>)<span class="question-mark">?</span>
                 }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">GlobalValue</span>::<span class="ident">none</span>(),
+                <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">GlobalValue</span>::<span class="ident">none</span>(),
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Unexpected storage error: {:?}&quot;</span>, <span class="ident">err</span>);
+                    <span class="comment">// REVIEW: better way to get info out of a PartialVMError?</span>
+                    <span class="kw">let</span> (<span class="ident">_old_status</span>, <span class="ident">_old_sub_status</span>, <span class="ident">_old_message</span>, <span class="ident">indices</span>, <span class="ident">offsets</span>) <span class="op">=</span>
+                        <span class="ident">err</span>.<span class="ident">all_data</span>();
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(
+                        <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>)
+                            .<span class="ident">with_message</span>(<span class="ident">msg</span>)
+                            .<span class="ident">at_indices</span>(<span class="ident">indices</span>)
+                            .<span class="ident">at_code_offsets</span>(<span class="ident">offsets</span>),
+                    );
+                }
             };
 
             <span class="ident">account_cache</span>.<span class="ident">data_map</span>.<span class="ident">insert</span>(<span class="ident">ty</span>.<span class="ident">clone</span>(), (<span class="ident">ty_layout</span>, <span class="ident">gv</span>));
@@ -474,11 +510,23 @@
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">blob</span>.<span class="ident">clone</span>());
             }
         }
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_module</span>(<span class="ident">module_id</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">bytes</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">bytes</span>),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">remote</span>.<span class="ident">get_module</span>(<span class="ident">module_id</span>) {
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">bytes</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">bytes</span>),
+            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">LINKER_ERROR</span>)
                 .<span class="ident">with_message</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Cannot find {:?} in data cache&quot;</span>, <span class="ident">module_id</span>))
                 .<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>)),
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Unexpected storage error: {:?}&quot;</span>, <span class="ident">err</span>);
+                <span class="kw">let</span> (<span class="ident">_old_status</span>, <span class="ident">_old_sub_status</span>, <span class="ident">_old_message</span>, <span class="ident">location</span>, <span class="ident">indices</span>, <span class="ident">offsets</span>) <span class="op">=</span>
+                    <span class="ident">err</span>.<span class="ident">all_data</span>();
+                <span class="prelude-val">Err</span>(
+                    <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">UNKNOWN_INVARIANT_VIOLATION_ERROR</span>)
+                        .<span class="ident">with_message</span>(<span class="ident">msg</span>)
+                        .<span class="ident">at_indices</span>(<span class="ident">indices</span>)
+                        .<span class="ident">at_code_offsets</span>(<span class="ident">offsets</span>)
+                        .<span class="ident">finish</span>(<span class="ident">location</span>),
+                )
+            }
         }
     }
 
