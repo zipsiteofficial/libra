@@ -80,6 +80,10 @@
 <span id="80">80</span>
 <span id="81">81</span>
 <span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -87,7 +91,7 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">persistent_safety_storage</span>::<span class="ident">PersistentSafetyStorage</span>,
     <span class="ident">serializer</span>::{<span class="ident">SafetyRulesInput</span>, <span class="ident">SerializerClient</span>, <span class="ident">SerializerService</span>, <span class="ident">TSerializerClient</span>},
-    <span class="ident">Error</span>, <span class="ident">SafetyRules</span>,
+    <span class="ident">Error</span>, <span class="ident">SafetyRules</span>, <span class="ident">TSafetyRules</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">warn</span>;
 <span class="kw">use</span> <span class="ident">libra_secure_net</span>::{<span class="ident">NetworkClient</span>, <span class="ident">NetworkServer</span>};
@@ -116,13 +120,17 @@
     <span class="ident">verify_vote_proposal_signature</span>: <span class="ident">bool</span>,
     <span class="ident">network_timeout_ms</span>: <span class="ident">u64</span>,
 ) {
-    <span class="kw">let</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">SafetyRules</span>::<span class="ident">new</span>(<span class="ident">storage</span>, <span class="ident">verify_vote_proposal_signature</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">safety_rules</span> <span class="op">=</span> <span class="ident">SafetyRules</span>::<span class="ident">new</span>(<span class="ident">storage</span>, <span class="ident">verify_vote_proposal_signature</span>);
+    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">safety_rules</span>.<span class="ident">consensus_state</span>() {
+        <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Unable to print consensus state: {}&quot;</span>, <span class="ident">e</span>);
+    }
+
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">serializer_service</span> <span class="op">=</span> <span class="ident">SerializerService</span>::<span class="ident">new</span>(<span class="ident">safety_rules</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_server</span> <span class="op">=</span> <span class="ident">NetworkServer</span>::<span class="ident">new</span>(<span class="string">&quot;safety-rules&quot;</span>, <span class="ident">listen_addr</span>, <span class="ident">network_timeout_ms</span>);
 
     <span class="kw">loop</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">process_one_message</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">network_server</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">serializer_service</span>) {
-            <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Warning: Failed to process message: {}&quot;</span>, <span class="ident">e</span>);
+            <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Failed to process message: {}&quot;</span>, <span class="ident">e</span>);
         }
     }
 }
