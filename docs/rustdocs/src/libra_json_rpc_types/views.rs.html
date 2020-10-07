@@ -790,10 +790,6 @@
 <span id="790">790</span>
 <span id="791">791</span>
 <span id="792">792</span>
-<span id="793">793</span>
-<span id="794">794</span>
-<span id="795">795</span>
-<span id="796">796</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1317,13 +1313,11 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionDataView</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">tx</span>: <span class="ident">Transaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">tx</span> {
-            <span class="ident">Transaction</span>::<span class="ident">BlockMetadata</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">t</span>.<span class="ident">into_inner</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">TransactionDataView</span>::<span class="ident">BlockMetadata</span> {
-                    <span class="ident">timestamp_usecs</span>: <span class="ident">x</span>.<span class="number">1</span>,
-                })
-            }
-            <span class="ident">Transaction</span>::<span class="ident">GenesisTransaction</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">TransactionDataView</span>::<span class="ident">WriteSet</span> {}),
+        <span class="kw">match</span> <span class="ident">tx</span> {
+            <span class="ident">Transaction</span>::<span class="ident">BlockMetadata</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TransactionDataView</span>::<span class="ident">BlockMetadata</span> {
+                <span class="ident">timestamp_usecs</span>: <span class="ident">t</span>.<span class="ident">timestamp_usec</span>(),
+            },
+            <span class="ident">Transaction</span>::<span class="ident">GenesisTransaction</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TransactionDataView</span>::<span class="ident">WriteSet</span> {},
             <span class="ident">Transaction</span>::<span class="ident">UserTransaction</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">script_hash</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">t</span>.<span class="ident">payload</span>() {
                     <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">HashValue</span>::<span class="ident">sha3_256_of</span>(<span class="ident">s</span>.<span class="ident">code</span>()),
@@ -1337,7 +1331,7 @@
                 }
                 .<span class="ident">into</span>();
 
-                <span class="prelude-val">Ok</span>(<span class="ident">TransactionDataView</span>::<span class="ident">UserTransaction</span> {
+                <span class="ident">TransactionDataView</span>::<span class="ident">UserTransaction</span> {
                     <span class="ident">sender</span>: <span class="ident">t</span>.<span class="ident">sender</span>().<span class="ident">to_string</span>(),
                     <span class="ident">signature_scheme</span>: <span class="ident">t</span>.<span class="ident">authenticator</span>().<span class="ident">scheme</span>().<span class="ident">to_string</span>(),
                     <span class="ident">signature</span>: <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">t</span>.<span class="ident">authenticator</span>().<span class="ident">signature_bytes</span>()),
@@ -1351,11 +1345,9 @@
                     <span class="ident">script_hash</span>,
                     <span class="ident">script_bytes</span>,
                     <span class="ident">script</span>: <span class="ident">t</span>.<span class="ident">into_raw_transaction</span>().<span class="ident">into_payload</span>().<span class="ident">into</span>(),
-                })
+                }
             }
-        };
-
-        <span class="ident">x</span>.<span class="ident">unwrap_or</span>(<span class="ident">TransactionDataView</span>::<span class="ident">UnknownTransaction</span> {})
+        }
     }
 }
 
