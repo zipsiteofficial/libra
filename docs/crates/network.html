@@ -57,6 +57,7 @@
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><a class="edit-page-link button" href="https://github.com/libra/libra/edit/master/network/README.md" target="_blank" rel="noreferrer noopener">Edit</a><h1 id="__docusaurus" class="postHeaderTitle">Network</h1></header><article><div><span><p>The network component provides peer-to-peer communication primitives to other
 components of a validator.</p>
 <h2><a class="anchor" aria-hidden="true" id="overview"></a><a href="#overview" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Overview</h2>
+<p>For more detailed info, see the <a href="../specifications/network/README.md">Network Specification</a>.</p>
 <p>The network component is specifically designed to facilitate the consensus and
 shared mempool protocols. Currently, it provides these consumers with two
 primary interfaces:</p>
@@ -69,10 +70,7 @@ primary interfaces:</p>
 <li>TCP for reliable transport.</li>
 <li><a href="https://noiseprotocol.org/noise.html">Noise</a> for authentication and full
 end-to-end encryption.</li>
-<li><a href="https://github.com/hashicorp/yamux/blob/master/spec.md">Yamux</a> for
-multiplexing substreams over a single connection.</li>
-<li>Push-style <a href="https://en.wikipedia.org/wiki/Gossip_protocol">gossip</a> for peer
-discovery.</li>
+<li>On-chain addresses for discovery, with a seed peers file for initial discovery.</li>
 </ul>
 <p>Each new substream is assigned a <em>protocol</em> supported by both the sender and
 the receiver. Each RPC and DirectSend type corresponds to one such protocol.</p>
@@ -113,58 +111,56 @@ running as independent &quot;tasks.&quot; The <a href="https://tokio.rs/">tokio<
 used as the task runtime. The different subcomponents in the network component
 are:</p>
 <ul>
-<li><strong>NetworkProvider</strong> — Exposes network API to clients. It forwards
-requests from upstream clients to appropriate downstream components and sends
-incoming RPC and DirectSend requests to appropriate upstream handlers.</li>
-<li><strong>Peer Manager</strong> — Listens for incoming connections and dials other
-peers on the network. It also notifies other components about new/lost
-connection events and demultiplexes incoming substreams to appropriate protocol
-handlers.</li>
-<li><strong>Connectivity Manager</strong> — Ensures that we remain connected to a node
-if and only if it is an eligible member of the network. Connectivity Manager
-receives addresses of peers from the Discovery component and issues
-dial/disconnect requests to the Peer Manager.</li>
-<li><strong>Discovery</strong> — Uses push-style gossip for discovering new peers and
-updates to addresses of existing peers. On every <em>tick</em>, it opens a new
-substream with a randomly selected peer and sends its view of the network to
-this peer. It informs the connectivity manager of any changes to the network
-detected from inbound discovery messages.</li>
-<li><strong>Health Checker</strong> — Performs periodic liveness probes to ensure the
+<li><p><strong>NetworkProvider</strong> — An application level client interface to the network API.
+It forwards requests from upstream clients to appropriate downstream components and sends
+incoming RPC and DirectSend requests to appropriate upstream handlers.</p></li>
+<li><p><strong>Peer Manager</strong> — Listens for incoming connections, and dials outbound
+connections to other peers.  Demultiplexes and forwards messages to appropriate
+protocol handlers.  Additionally, notifies upstream components of new or closed
+connections.  Optionally can be connected to ConnectivityManager for a network with
+Discovery.</p></li>
+<li><p><strong>Connectivity Manager</strong> — Establishes connections to known peers found via
+Discovery.  Notifies Peer Manager to make outbound dials, or disconnects based
+on updates to known peers via Discovery updates.  This is only needed on a network
+that uses Discovery e.g. the Validator network.</p></li>
+<li><p><strong>OnChain Discovery</strong> — Discovers via OnChain configuration the set of peers
+to connect to.  In the case of the Validator network, this is the ValidatorSet.
+Notifies ConnectivityManager of updates to the known peer set.</p></li>
+<li><p><strong>Health Checker</strong> — Performs periodic liveness probes to ensure the
 health of a peer/connection. It resets the connection with the peer if a
 configurable number of probes fail in succession. Probes currently fail on a
-configurable static timeout.</li>
-<li><strong>Direct Send</strong> — Allows sending/receiving messages to/from remote
-peers. It notifies upstream handlers of inbound messages.</li>
-<li><strong>RPC</strong> — Allows sending/receiving RPCs to/from other peers. It notifies
+configurable static timeout.</p></li>
+<li><p><strong>Direct Send</strong> — Allows sending/receiving messages to/from remote
+peers. It notifies upstream handlers of inbound messages.</p></li>
+<li><p><strong>RPC</strong> — Allows sending/receiving RPCs to/from other peers. It notifies
 upstream handlers about inbound RPCs. The upstream handler is passed a channel
-through which can send a serialized response to the caller.</li>
+through which can send a serialized response to the caller.</p></li>
 </ul>
 <p>In addition to the subcomponents described above, the network component
 consists of utilities to perform encryption, transport multiplexing, protocol
 negotiation, etc.</p>
 <h2><a class="anchor" aria-hidden="true" id="how-is-this-module-organized"></a><a href="#how-is-this-module-organized" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>How is this module organized?</h2>
 <pre><code class="hljs">network
-├── benches                       # network benchmarks
-├── memsocket                     # In-memory transport for tests
+├── benches                        # network benchmarks
+├── builder                        # Builds a network from a NetworkConfig
+├── memsocket                      # In-memory transport for tests
 ├── netcore
 │   └── src
-│       ├── multiplexing          # substream multiplexing over a transport
-│       ├── negotiate             # protocol negotiation
-│       └── transport             # composable transport API
-├── noise                         # noise framework for authentication and encryption
+│       └── transport              # composable transport API
+├── network-address                # network addresses and encryption
+|── simple-onchain-discovery       # protocol for peer discovery
 └── src
-    ├── channel                    # mpsc channel wrapped in IntGauge
     ├── connectivity_manager       # component to ensure connectivity to peers
     ├── interface                  # generic network API
+    ├── noise                      # noise integration
     ├── peer_manager               # component to dial/listen for connections
-    ├── proto                      # protobuf definitions for network messages
     ├── protocols                  # message protocols
     │   ├── direct_send            # protocol for fire-and-forget style message delivery
-    │   ├── discovery              # protocol for peer discovery and gossip
     │   ├── health_checker         # protocol for health probing
-    │   └── rpc                    # protocol for remote procedure calls
-    ├── sink                       # utilities over message sinks
-    └── validator_network          # network API for consensus and mempool
+    │   ├── network                # components for interaction with applications
+    │   ├── rpc                    # protocol for remote procedure calls
+    │   └── wire                   # protocol for LibraNet handshakes and messaging
+    └── testutils                  # utilities for testing
 </code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/docs/crates/move-language"><span class="arrow-prev">← </span><span>Move Language</span></a><a class="docs-next button" href="/docs/crates/storage"><span>Storage</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#overview">Overview</a></li><li><a href="#implementation-details">Implementation Details</a><ul class="toc-headings"><li><a href="#system-architecture">System Architecture</a></li></ul></li><li><a href="#how-is-this-module-organized">How is this module organized?</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/" class="nav-home"><img src="/img/libra-logomark-white.png" alt="Libra"/></a><div class="footerSection"><h5>Learn About Libra</h5><a href="/docs/welcome-to-libra">Welcome to Libra</a><a href="/docs/libra-protocol">Libra Protocol</a><a href="/docs/the-libra-blockchain-paper">Libra Blockchain</a><a href="/docs/life-of-a-transaction">Life of a Transaction</a><p></p><h5>Try Libra Core </h5><a href="/docs/my-first-transaction">My First Transaction</a><a href="/docs/move-overview">Getting Started With Move</a></div><div class="footerSection"><h5>Policies</h5><a href="/docs/policies/privacy-policy">Privacy Policy</a><a href="/docs/policies/terms-of-use">Terms of Use</a><a href="/docs/policies/cookies-policy">Cookies Policy</a><a href="/docs/policies/code-of-conduct">Code of Conduct</a><p></p><h5>Community</h5><a href="https://community.libra.org/">Developer Forum</a><a href="https://developers.libra.org/newsletter_form">Newsletter</a></div><div class="footerSection"><h5>Social</h5><div class="social"><a class="github-button" href="https://github.com/libra/libra" data-count-href="https://github.com/libra/libra/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star Libra on GitHub">libra</a></div><div class="social"><a href="https://twitter.com/libradev?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow @libradev</a><script async="" src="/js/twitter-widgets.js" charSet="utf-8"></script></div></div></section><section class="copyright"> © Libra Association</section><aside id="cookie-banner"><div class="close" id="cookie-banner-close"><svg version="1.1" xmlns="http://www.w3.org/2000/svg"><line x1="1" y1="17" x2="17" y2="1" stroke="#fff" stroke-width="2"></line><line x1="1" y1="1" x2="17" y2="17" stroke="#fff" stroke-width="2"></line></svg></div><div class="wrapper"><p>To help us provide relevant content, analyze our traffic, and provide a variety of features, we use cookies. By clicking on or navigating the site, you agree to allow us to collect information on and off the Libra Website through cookies. To learn more, view our Cookie Policy:</p><div class="buttonWrapper"><a class="button" href="/docs/policies/cookies-policy" target="_blank">Cookies Policy</a></div></div></aside></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
                 document.addEventListener('keyup', function(e) {
