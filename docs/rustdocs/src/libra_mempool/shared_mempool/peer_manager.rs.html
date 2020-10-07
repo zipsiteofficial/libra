@@ -480,6 +480,86 @@
 <span id="480">480</span>
 <span id="481">481</span>
 <span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -488,7 +568,10 @@
     <span class="ident">counters</span>,
     <span class="ident">logging</span>::{<span class="ident">LogEntry</span>, <span class="ident">LogEvent</span>, <span class="ident">LogSchema</span>},
     <span class="ident">network</span>::<span class="ident">MempoolSyncMsg</span>,
-    <span class="ident">shared_mempool</span>::<span class="ident">types</span>::{<span class="ident">notify_subscribers</span>, <span class="ident">SharedMempool</span>, <span class="ident">SharedMempoolNotification</span>},
+    <span class="ident">shared_mempool</span>::{
+        <span class="ident">tasks</span>,
+        <span class="ident">types</span>::{<span class="ident">notify_subscribers</span>, <span class="ident">SharedMempool</span>, <span class="ident">SharedMempoolNotification</span>},
+    },
 };
 <span class="kw">use</span> <span class="ident">itertools</span>::<span class="ident">Itertools</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::{
@@ -507,6 +590,8 @@
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>, <span class="ident">SystemTime</span>},
 };
 <span class="kw">use</span> <span class="ident">vm_validator</span>::<span class="ident">vm_validator</span>::<span class="ident">TransactionValidation</span>;
+
+<span class="kw">const</span> <span class="ident">PRIMARY_NETWORK_PREFERENCE</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="doccomment">/// stores only peers that receive txns from this node</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">type</span> <span class="ident">PeerInfo</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span>, <span class="ident">PeerSyncState</span><span class="op">&gt;</span>;
@@ -564,6 +649,10 @@
 
 <span class="kw">impl</span> <span class="ident">PeerManager</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">mempool_config</span>: <span class="ident">MempoolConfig</span>, <span class="ident">upstream_config</span>: <span class="ident">UpstreamConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        <span class="comment">// primary network is always chosen at initialization</span>
+        <span class="ident">counters</span>::<span class="ident">UPSTREAM_NETWORK</span>.<span class="ident">set</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span>);
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">UpstreamNetwork</span>)
+            .<span class="ident">network_level</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span> <span class="kw">as</span> <span class="ident">u64</span>));
         <span class="self">Self</span> {
             <span class="ident">mempool_config</span>,
             <span class="ident">upstream_config</span>,
@@ -580,6 +669,9 @@
             .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire peer_info lock&quot;</span>);
         <span class="kw">let</span> <span class="ident">is_new_peer</span> <span class="op">=</span> <span class="op">!</span><span class="ident">peer_info</span>.<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>);
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="prelude-val">Some</span>(<span class="ident">origin</span>)) {
+            <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS_COUNT</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">inc</span>();
             <span class="kw">if</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Validator</span> {
                 <span class="comment">// For a validator network, resume broadcasting from previous state</span>
                 <span class="comment">// we can afford to not re-broadcast here since the transaction is already in a validator</span>
@@ -617,6 +709,9 @@
             .<span class="ident">expect</span>(<span class="string">&quot;failed to get peer info lock&quot;</span>)
             .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
         {
+            <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS_COUNT</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">dec</span>();
             <span class="ident">state</span>.<span class="ident">is_alive</span> <span class="op">=</span> <span class="bool-val">false</span>;
         }
         <span class="self">self</span>.<span class="ident">update_failover</span>();
@@ -665,6 +760,7 @@
 
         <span class="kw">let</span> <span class="ident">batch_id</span>: <span class="ident">BatchId</span>;
         <span class="kw">let</span> <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">metric_label</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mempool</span> <span class="op">=</span> <span class="ident">smp</span>
                 .<span class="ident">mempool</span>
@@ -713,6 +809,12 @@
 
             <span class="kw">let</span> (<span class="ident">new_batch_id</span>, <span class="ident">new_transactions</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">expired</span>, <span class="ident">retry</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">metric_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">expired</span> {
+                        <span class="prelude-val">Some</span>(<span class="ident">counters</span>::<span class="ident">EXPIRED_BROADCAST_LABEL</span>)
+                    } <span class="kw">else</span> {
+                        <span class="prelude-val">Some</span>(<span class="ident">counters</span>::<span class="ident">RETRY_BROADCAST_LABEL</span>)
+                    };
+
                     <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> <span class="ident">mempool</span>.<span class="ident">timeline_range</span>(<span class="ident">id</span>.<span class="number">0</span>, <span class="ident">id</span>.<span class="number">1</span>);
                     (<span class="kw-2">*</span><span class="ident">id</span>, <span class="ident">txns</span>)
                 }
@@ -771,15 +873,36 @@
         <span class="ident">state</span>.<span class="ident">broadcast_info</span>.<span class="ident">retry_batches</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">batch_id</span>);
         <span class="ident">notify_subscribers</span>(<span class="ident">SharedMempoolNotification</span>::<span class="ident">Broadcast</span>, <span class="kw-2">&amp;</span><span class="ident">smp</span>.<span class="ident">subscribers</span>);
 
-        <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTION_BROADCAST</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">BroadcastTransaction</span>, <span class="ident">LogEvent</span>::<span class="ident">Success</span>)
+                .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                .<span class="ident">batch_id</span>(<span class="kw-2">&amp;</span><span class="ident">batch_id</span>)
+                .<span class="ident">backpressure</span>(<span class="ident">scheduled_backoff</span>)
+        );
+        <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>();
+        <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTION_BROADCAST_SIZE</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
             .<span class="ident">observe</span>(<span class="ident">num_txns</span> <span class="kw">as</span> <span class="ident">f64</span>);
         <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_PENDING_BROADCASTS_COUNT</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
             .<span class="ident">inc</span>();
         <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_BROADCAST_LATENCY</span>
-            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>])
             .<span class="ident">observe</span>(<span class="ident">start_time</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>());
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">label</span>) <span class="op">=</span> <span class="ident">metric_label</span> {
+            <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_BROADCAST_TYPE_COUNT</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>, <span class="ident">label</span>])
+                .<span class="ident">inc</span>();
+        }
+        <span class="kw">if</span> <span class="ident">scheduled_backoff</span> {
+            <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_BROADCAST_TYPE_COUNT</span>
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                    <span class="ident">network_id</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">peer_id_str</span>,
+                    <span class="ident">counters</span>::<span class="ident">BACKPRESSURE_BROADCAST_LABEL</span>,
+                ])
+                .<span class="ident">inc</span>();
+        }
     }
 
     <span class="comment">// updates the peer chosen to failover to if all peers in the primary upstream network are down</span>
@@ -840,12 +963,33 @@
                     }
                 }
             }
-
             <span class="kw-2">*</span><span class="ident">current_failover</span> <span class="op">=</span> <span class="ident">failover_candidate</span>.<span class="ident">cloned</span>().<span class="ident">cloned</span>();
         } <span class="kw">else</span> {
             <span class="comment">// there is at least one peer alive in the primary upstream network, so don&#39;t pick</span>
             <span class="comment">// a failover peer</span>
             <span class="kw-2">*</span><span class="ident">current_failover</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        }
+
+        <span class="comment">// log/update metric for the updated failover network</span>
+        <span class="kw">match</span> <span class="ident">failover</span>.<span class="ident">as_ref</span>() {
+            <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">failover_network</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>();
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">network_preference</span>) <span class="op">=</span> <span class="self">self</span>
+                    .<span class="ident">upstream_config</span>
+                    .<span class="ident">get_upstream_preference</span>(<span class="ident">failover_network</span>.<span class="ident">clone</span>())
+                {
+                    <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">UpstreamNetwork</span>)
+                        .<span class="ident">upstream_network</span>(<span class="kw-2">&amp;</span><span class="ident">failover_network</span>)
+                        .<span class="ident">network_level</span>(<span class="ident">network_preference</span> <span class="kw">as</span> <span class="ident">u64</span>));
+                    <span class="ident">counters</span>::<span class="ident">UPSTREAM_NETWORK</span>.<span class="ident">set</span>(<span class="ident">network_preference</span> <span class="kw">as</span> <span class="ident">i64</span>);
+                }
+            }
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">UpstreamNetwork</span>)
+                    .<span class="ident">upstream_network</span>(<span class="ident">primary_upstream</span>)
+                    .<span class="ident">network_level</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span> <span class="kw">as</span> <span class="ident">u64</span>));
+                <span class="ident">counters</span>::<span class="ident">UPSTREAM_NETWORK</span>.<span class="ident">set</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span>);
+            }
         }
     }
 
@@ -858,11 +1002,13 @@
         <span class="comment">// timestamp of ACK received</span>
         <span class="ident">timestamp</span>: <span class="ident">SystemTime</span>,
     ) {
+        <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>();
+        <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>();
         <span class="kw">let</span> <span class="ident">batch_id</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">id</span>) <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">BatchId</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">request_id_bytes</span>) {
             <span class="ident">id</span>
         } <span class="kw">else</span> {
             <span class="ident">counters</span>::<span class="ident">INVALID_ACK_RECEIVED_COUNT</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="ident">peer_id</span>])
                 .<span class="ident">inc</span>();
             <span class="kw">return</span>;
         };
@@ -880,18 +1026,32 @@
                 .<span class="ident">duration_since</span>(<span class="ident">sent_timestamp</span>)
                 .<span class="ident">expect</span>(<span class="string">&quot;failed to calculate mempool broadcast RTT&quot;</span>);
             <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_BROADCAST_RTT</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="ident">peer_id</span>])
                 .<span class="ident">observe</span>(<span class="ident">rtt</span>.<span class="ident">as_secs_f64</span>());
 
             <span class="comment">// update ACK counter</span>
             <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_PENDING_BROADCASTS_COUNT</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">network_id</span>, <span class="ident">peer_id</span>])
                 .<span class="ident">dec</span>();
         } <span class="kw">else</span> {
             <span class="comment">// log and return</span>
-            <span class="comment">// sample log</span>
+            <span class="macro">trace</span><span class="macro">!</span>(
+                <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ReceiveACK</span>)
+                    .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                    .<span class="ident">batch_id</span>(<span class="kw-2">&amp;</span><span class="ident">batch_id</span>),
+                <span class="string">&quot;batch ID does not exist or expired&quot;</span>
+            );
             <span class="kw">return</span>;
         }
+
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ReceiveACK</span>)
+                .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
+                .<span class="ident">batch_id</span>(<span class="kw-2">&amp;</span><span class="ident">batch_id</span>)
+                .<span class="ident">backpressure</span>(<span class="ident">backoff</span>),
+            <span class="ident">retry</span> <span class="op">=</span> <span class="ident">retry</span>,
+        );
+        <span class="ident">tasks</span>::<span class="ident">update_ack_counter</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">counters</span>::<span class="ident">RECEIVED_LABEL</span>, <span class="ident">retry</span>, <span class="ident">backoff</span>);
 
         <span class="kw">if</span> <span class="ident">retry</span> {
             <span class="ident">sync_state</span>.<span class="ident">broadcast_info</span>.<span class="ident">retry_batches</span>.<span class="ident">insert</span>(<span class="ident">batch_id</span>);

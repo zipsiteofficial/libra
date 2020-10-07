@@ -448,6 +448,60 @@
 <span id="448">448</span>
 <span id="449">449</span>
 <span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
+<span id="468">468</span>
+<span id="469">469</span>
+<span id="470">470</span>
+<span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
+<span id="475">475</span>
+<span id="476">476</span>
+<span id="477">477</span>
+<span id="478">478</span>
+<span id="479">479</span>
+<span id="480">480</span>
+<span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -470,6 +524,7 @@
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">channel</span>::<span class="ident">oneshot</span>, <span class="ident">stream</span>::<span class="ident">FuturesUnordered</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">PeerNetworkId</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">libra_metrics</span>::<span class="ident">HistogramTimer</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">mempool_status</span>::{<span class="ident">MempoolStatus</span>, <span class="ident">MempoolStatusCode</span>},
     <span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>,
@@ -479,7 +534,6 @@
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">cmp</span>,
     <span class="ident">collections</span>::<span class="ident">HashSet</span>,
-    <span class="ident">ops</span>::<span class="ident">Deref</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>, <span class="ident">RwLock</span>},
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">Instant</span>},
 };
@@ -527,11 +581,13 @@
     <span class="ident">smp</span>: <span class="ident">SharedMempool</span><span class="op">&lt;</span><span class="ident">V</span><span class="op">&gt;</span>,
     <span class="ident">transaction</span>: <span class="ident">SignedTransaction</span>,
     <span class="ident">callback</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SubmissionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">timer</span>: <span class="ident">HistogramTimer</span>,
 ) <span class="kw">where</span>
     <span class="ident">V</span>: <span class="ident">TransactionValidation</span>,
 {
+    <span class="ident">timer</span>.<span class="ident">stop_and_record</span>();
     <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_TXN_SUBMISSION_LATENCY</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;client&quot;</span>])
+        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">CLIENT_LABEL</span>, <span class="ident">counters</span>::<span class="ident">CLIENT_LABEL</span>])
         .<span class="ident">start_timer</span>();
     <span class="kw">let</span> <span class="ident">statuses</span> <span class="op">=</span>
         <span class="ident">process_incoming_transactions</span>(<span class="kw-2">&amp;</span><span class="ident">smp</span>, <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">transaction</span>], <span class="ident">TimelineState</span>::<span class="ident">NotReady</span>).<span class="kw">await</span>;
@@ -555,18 +611,23 @@
     <span class="ident">request_id</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
     <span class="ident">timeline_state</span>: <span class="ident">TimelineState</span>,
     <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
+    <span class="ident">timer</span>: <span class="ident">HistogramTimer</span>,
 ) <span class="kw">where</span>
     <span class="ident">V</span>: <span class="ident">TransactionValidation</span>,
 {
+    <span class="ident">timer</span>.<span class="ident">stop_and_record</span>();
     <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_TXN_SUBMISSION_LATENCY</span>
-        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>()])
+        .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+            <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>(),
+            <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>(),
+        ])
         .<span class="ident">start_timer</span>();
     <span class="comment">// process transactions and log the result</span>
     <span class="kw">let</span> <span class="ident">results</span> <span class="op">=</span> <span class="ident">process_incoming_transactions</span>(<span class="kw-2">&amp;</span><span class="ident">smp</span>, <span class="ident">transactions</span>.<span class="ident">clone</span>(), <span class="ident">timeline_state</span>).<span class="kw">await</span>;
     <span class="ident">log_txn_process_results</span>(<span class="kw-2">&amp;</span><span class="ident">results</span>, <span class="prelude-val">Some</span>(<span class="ident">peer</span>.<span class="ident">clone</span>()));
 
     <span class="comment">// send back ACK</span>
-    <span class="kw">let</span> <span class="ident">ack_response</span> <span class="op">=</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>, <span class="ident">results</span>);
+    <span class="kw">let</span> <span class="ident">ack_response</span> <span class="op">=</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>, <span class="ident">results</span>, <span class="kw-2">&amp;</span><span class="ident">peer</span>);
     <span class="kw">let</span> <span class="ident">network_sender</span> <span class="op">=</span> <span class="ident">smp</span>
         .<span class="ident">network_senders</span>
         .<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">network_id</span>())
@@ -580,11 +641,16 @@
                 .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
                 .<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">into</span>())
         );
+        <span class="kw">return</span>;
     }
     <span class="ident">notify_subscribers</span>(<span class="ident">SharedMempoolNotification</span>::<span class="ident">ACK</span>, <span class="kw-2">&amp;</span><span class="ident">smp</span>.<span class="ident">subscribers</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">gen_ack_response</span>(<span class="ident">request_id</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">results</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatusBundle</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MempoolSyncMsg</span> {
+<span class="kw">fn</span> <span class="ident">gen_ack_response</span>(
+    <span class="ident">request_id</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="ident">results</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SubmissionStatusBundle</span><span class="op">&gt;</span>,
+    <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MempoolSyncMsg</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backoff</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retry</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="kw">for</span> <span class="ident">r</span> <span class="kw">in</span> <span class="ident">results</span>.<span class="ident">into_iter</span>() {
@@ -601,10 +667,41 @@
         }
     }
 
+    <span class="ident">update_ack_counter</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">counters</span>::<span class="ident">SENT_LABEL</span>, <span class="ident">retry</span>, <span class="ident">backoff</span>);
     <span class="ident">MempoolSyncMsg</span>::<span class="ident">BroadcastTransactionsResponse</span> {
         <span class="ident">request_id</span>,
         <span class="ident">retry</span>,
         <span class="ident">backoff</span>,
+    }
+}
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_ack_counter</span>(
+    <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>,
+    <span class="ident">direction_label</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">retry</span>: <span class="ident">bool</span>,
+    <span class="ident">backoff</span>: <span class="ident">bool</span>,
+) {
+    <span class="kw">let</span> <span class="ident">network_id</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>();
+    <span class="kw">let</span> <span class="ident">peer_id</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>();
+    <span class="kw">if</span> <span class="ident">retry</span> {
+        <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_ACK_TYPE_COUNT</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                <span class="kw-2">&amp;</span><span class="ident">network_id</span>,
+                <span class="kw-2">&amp;</span><span class="ident">peer_id</span>,
+                <span class="ident">direction_label</span>,
+                <span class="ident">counters</span>::<span class="ident">RETRY_BROADCAST_LABEL</span>,
+            ])
+            .<span class="ident">inc</span>();
+    }
+    <span class="kw">if</span> <span class="ident">backoff</span> {
+        <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_ACK_TYPE_COUNT</span>
+            .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
+                <span class="kw-2">&amp;</span><span class="ident">network_id</span>,
+                <span class="kw-2">&amp;</span><span class="ident">peer_id</span>,
+                <span class="ident">direction_label</span>,
+                <span class="ident">counters</span>::<span class="ident">BACKPRESSURE_BROADCAST_LABEL</span>,
+            ])
+            .<span class="ident">inc</span>();
     }
 }
 
@@ -628,7 +725,13 @@
     <span class="comment">// track latency: fetching seq number</span>
     <span class="kw">let</span> <span class="ident">seq_numbers</span> <span class="op">=</span> <span class="ident">transactions</span>
         .<span class="ident">iter</span>()
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">get_account_sequence_number</span>(<span class="ident">smp</span>.<span class="ident">db</span>.<span class="ident">as_ref</span>(), <span class="ident">t</span>.<span class="ident">sender</span>()))
+        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> {
+            <span class="ident">get_account_sequence_number</span>(<span class="ident">smp</span>.<span class="ident">db</span>.<span class="ident">as_ref</span>(), <span class="ident">t</span>.<span class="ident">sender</span>()).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">DBError</span>).<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
+                <span class="ident">counters</span>::<span class="ident">DB_ERROR</span>.<span class="ident">inc</span>();
+                <span class="ident">e</span>
+            })
+        })
         .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
     <span class="comment">// track latency for storage read fetching sequence number</span>
     <span class="kw">let</span> <span class="ident">storage_read_latency</span> <span class="op">=</span> <span class="ident">start_storage_read</span>.<span class="ident">elapsed</span>();
@@ -720,35 +823,40 @@
     <span class="ident">statuses</span>
 }
 
-<span class="comment">// TODO update counters to ID peers using PeerNetworkId</span>
 <span class="kw">fn</span> <span class="ident">log_txn_process_results</span>(<span class="ident">results</span>: <span class="kw-2">&amp;</span>[<span class="ident">SubmissionStatusBundle</span>], <span class="ident">sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span>) {
-    <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">sender</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">peer</span>.<span class="ident">to_string</span>(),
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;client&quot;</span>.<span class="ident">to_string</span>(),
+    <span class="kw">let</span> (<span class="ident">network</span>, <span class="ident">sender</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">sender</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>(),
+            <span class="ident">peer</span>.<span class="ident">peer_id</span>().<span class="ident">to_string</span>(),
+        ),
+        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> (
+            <span class="ident">counters</span>::<span class="ident">CLIENT_LABEL</span>.<span class="ident">to_string</span>(),
+            <span class="ident">counters</span>::<span class="ident">CLIENT_LABEL</span>.<span class="ident">to_string</span>(),
+        ),
     };
     <span class="kw">for</span> (<span class="ident">txn</span>, (<span class="ident">mempool_status</span>, <span class="ident">maybe_vm_status</span>)) <span class="kw">in</span> <span class="ident">results</span>.<span class="ident">iter</span>() {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vm_status</span>) <span class="op">=</span> <span class="ident">maybe_vm_status</span> {
             <span class="comment">// log vm validation failure</span>
-            <span class="macro">error</span><span class="macro">!</span>(
+            <span class="macro">trace</span><span class="macro">!</span>(
                 <span class="ident">SecurityEvent</span>::<span class="ident">InvalidTransactionMempool</span>,
                 <span class="ident">failed_transaction</span> <span class="op">=</span> <span class="ident">txn</span>,
                 <span class="ident">vm_status</span> <span class="op">=</span> <span class="ident">vm_status</span>,
                 <span class="ident">sender</span> <span class="op">=</span> <span class="ident">sender</span>,
             );
             <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTIONS_PROCESSED</span>
-                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;validation_failed&quot;</span>.<span class="ident">to_string</span>().<span class="ident">deref</span>(), <span class="kw-2">&amp;</span><span class="ident">sender</span>])
+                .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">VM_VALIDATION_LABEL</span>, <span class="kw-2">&amp;</span><span class="ident">network</span>, <span class="kw-2">&amp;</span><span class="ident">sender</span>])
                 .<span class="ident">inc</span>();
             <span class="kw">continue</span>;
         }
         <span class="kw">match</span> <span class="ident">mempool_status</span>.<span class="ident">code</span> {
             <span class="ident">MempoolStatusCode</span>::<span class="ident">Accepted</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTIONS_PROCESSED</span>
-                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;success&quot;</span>.<span class="ident">to_string</span>().<span class="ident">deref</span>(), <span class="kw-2">&amp;</span><span class="ident">sender</span>])
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">SUCCESS_LABEL</span>, <span class="kw-2">&amp;</span><span class="ident">network</span>, <span class="kw-2">&amp;</span><span class="ident">sender</span>])
                     .<span class="ident">inc</span>();
             }
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">counters</span>::<span class="ident">SHARED_MEMPOOL_TRANSACTIONS_PROCESSED</span>
-                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">mempool_status</span>.<span class="ident">code</span>).<span class="ident">deref</span>(), <span class="kw-2">&amp;</span><span class="ident">sender</span>])
+                    .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">mempool_status</span>.<span class="ident">code</span>.<span class="ident">to_string</span>(), <span class="kw-2">&amp;</span><span class="ident">network</span>, <span class="kw-2">&amp;</span><span class="ident">sender</span>])
                     .<span class="ident">inc</span>();
             }
         }
