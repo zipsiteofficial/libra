@@ -683,6 +683,23 @@
 <span id="683">683</span>
 <span id="684">684</span>
 <span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -730,8 +747,8 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>::{
-        <span class="self">self</span>, <span class="ident">CANCELED_LABEL</span>, <span class="ident">DECLINED_LABEL</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>, <span class="ident">REQUEST_LABEL</span>,
-        <span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>,
+        <span class="self">self</span>, <span class="ident">inc_by_with_context</span>, <span class="ident">CANCELED_LABEL</span>, <span class="ident">DECLINED_LABEL</span>, <span class="ident">FAILED_LABEL</span>, <span class="ident">RECEIVED_LABEL</span>,
+        <span class="ident">REQUEST_LABEL</span>, <span class="ident">RESPONSE_LABEL</span>, <span class="ident">SENT_LABEL</span>,
     },
     <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer</span>::{<span class="ident">PeerHandle</span>, <span class="ident">PeerNotification</span>},
@@ -978,8 +995,15 @@
                         <span class="self">self</span>.<span class="ident">handle_inbound_request</span>(<span class="ident">request</span>, <span class="ident">inbound_rpc_tasks</span>);
                     }
                     <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">inc_by_with_context</span>(
+                            <span class="kw-2">&amp;</span><span class="ident">counters</span>::<span class="ident">INVALID_NETWORK_MESSAGES</span>,
+                            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>,
+                            <span class="string">&quot;rpc&quot;</span>,
+                            <span class="number">1</span>,
+                        );
                         <span class="macro">error</span><span class="macro">!</span>(
-                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
+                            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                                .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>()),
                             <span class="string">&quot;{} Received non-RPC message from Peer actor: {:?}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">message</span>
@@ -987,11 +1011,21 @@
                     }
                 }
             }
-            <span class="ident">notif</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">debug_assert</span><span class="macro">!</span>(
-                <span class="bool-val">false</span>,
-                <span class="string">&quot;Received unexpected event from Peer: {:?}, expected NewMessage&quot;</span>,
-                <span class="ident">notif</span>
-            ),
+            <span class="ident">notif</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">inc_by_with_context</span>(
+                    <span class="kw-2">&amp;</span><span class="ident">counters</span>::<span class="ident">INVALID_NETWORK_MESSAGES</span>,
+                    <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>,
+                    <span class="string">&quot;rpc&quot;</span>,
+                    <span class="number">1</span>,
+                );
+                <span class="macro">error</span><span class="macro">!</span>(
+                    <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
+                        .<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">peer_handle</span>.<span class="ident">peer_id</span>()),
+                    <span class="string">&quot;{} Received unexpected event from Peer: {:?}, expected NewMessage&quot;</span>,
+                    <span class="self">self</span>.<span class="ident">network_context</span>,
+                    <span class="ident">notif</span>
+                )
+            }
         }
     }
 

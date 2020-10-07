@@ -564,6 +564,13 @@
 <span id="564">564</span>
 <span id="565">565</span>
 <span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
+<span id="569">569</span>
+<span id="570">570</span>
+<span id="571">571</span>
+<span id="572">572</span>
+<span id="573">573</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -572,6 +579,7 @@
 <span class="doccomment">//! and opening substreams as well as negotiating particular protocols on those substreams.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">counters</span>,
+    <span class="ident">counters</span>::<span class="ident">inc_by_with_context</span>,
     <span class="ident">logging</span>::<span class="ident">NetworkSchema</span>,
     <span class="ident">peer_manager</span>::<span class="ident">PeerManagerError</span>,
     <span class="ident">protocols</span>::<span class="ident">wire</span>::<span class="ident">messaging</span>::<span class="ident">v1</span>::{<span class="ident">ErrorCode</span>, <span class="ident">NetworkMessage</span>},
@@ -1041,6 +1049,12 @@
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="ident">PeerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">message</span>, <span class="ident">protocol</span>, <span class="ident">channel</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">write_reqs_tx</span>.<span class="ident">send</span>((<span class="ident">message</span>, <span class="ident">channel</span>)).<span class="kw">await</span> {
+                    <span class="ident">inc_by_with_context</span>(
+                        <span class="kw-2">&amp;</span><span class="ident">counters</span>::<span class="ident">PEER_SEND_FAILURES</span>,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>,
+                        <span class="ident">protocol</span>.<span class="ident">as_str</span>(),
+                        <span class="number">1</span>,
+                    );
                     <span class="macro">error</span><span class="macro">!</span>(
                         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                             .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
