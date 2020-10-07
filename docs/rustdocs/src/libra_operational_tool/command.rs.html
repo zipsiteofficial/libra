@@ -284,6 +284,12 @@
 <span id="284">284</span>
 <span id="285">285</span>
 <span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -306,6 +312,8 @@
     <span class="ident">AccountResource</span>(<span class="kw">crate</span>::<span class="ident">account_resource</span>::<span class="ident">AccountResource</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Remove a validator from ValidatorSet&quot;</span>)]</span>
     <span class="ident">AddValidator</span>(<span class="kw">crate</span>::<span class="ident">governance</span>::<span class="ident">AddValidator</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Check an endpoint for a listening socket&quot;</span>)]</span>
+    <span class="ident">CheckEndpoint</span>(<span class="kw">crate</span>::<span class="ident">network_checker</span>::<span class="ident">CheckEndpoint</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Create a new validator account&quot;</span>)]</span>
     <span class="ident">CreateValidator</span>(<span class="kw">crate</span>::<span class="ident">governance</span>::<span class="ident">CreateValidator</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Create a new validator operator account&quot;</span>)]</span>
@@ -344,6 +352,7 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">CommandName</span> {
     <span class="ident">AccountResource</span>,
     <span class="ident">AddValidator</span>,
+    <span class="ident">CheckEndpoint</span>,
     <span class="ident">CreateValidator</span>,
     <span class="ident">CreateValidatorOperator</span>,
     <span class="ident">ExtractPrivateKey</span>,
@@ -367,6 +376,7 @@
         <span class="kw">match</span> <span class="ident">command</span> {
             <span class="ident">Command</span>::<span class="ident">AccountResource</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">AccountResource</span>,
             <span class="ident">Command</span>::<span class="ident">AddValidator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">AddValidator</span>,
+            <span class="ident">Command</span>::<span class="ident">CheckEndpoint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">CheckEndpoint</span>,
             <span class="ident">Command</span>::<span class="ident">CreateValidator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">CreateValidator</span>,
             <span class="ident">Command</span>::<span class="ident">CreateValidatorOperator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">CreateValidatorOperator</span>,
             <span class="ident">Command</span>::<span class="ident">ExtractPrivateKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ExtractPrivateKey</span>,
@@ -392,6 +402,7 @@
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">CommandName</span>::<span class="ident">AccountResource</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;account-resource&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">AddValidator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;add-validator&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">CheckEndpoint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;check-endpoint&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">CreateValidator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;create-validator&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">CreateValidatorOperator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;create-validator-operator&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">ExtractPrivateKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;extract-private-key&quot;</span>,
@@ -418,6 +429,7 @@
         <span class="kw">match</span> <span class="self">self</span> {
             <span class="ident">Command</span>::<span class="ident">AccountResource</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">AddValidator</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
+            <span class="ident">Command</span>::<span class="ident">CheckEndpoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">CreateValidator</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">CreateValidatorOperator</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_success</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
