@@ -311,17 +311,16 @@
 <span id="311">311</span>
 <span id="312">312</span>
 <span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">backup_types</span>::<span class="ident">epoch_ending</span>::<span class="ident">manifest</span>::<span class="ident">EpochEndingBackup</span>,
-    <span class="ident">metrics</span>::<span class="ident">restore</span>::{<span class="ident">EPOCH_ENDING_EPOCH</span>, <span class="ident">EPOCH_ENDING_VERSION</span>},
+    <span class="ident">metrics</span>::{
+        <span class="ident">restore</span>::{<span class="ident">EPOCH_ENDING_EPOCH</span>, <span class="ident">EPOCH_ENDING_VERSION</span>},
+        <span class="ident">verify</span>::{<span class="ident">VERIFY_EPOCH_ENDING_EPOCH</span>, <span class="ident">VERIFY_EPOCH_ENDING_VERSION</span>},
+    },
     <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
     <span class="ident">utils</span>::{
         <span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">GlobalRestoreOptions</span>,
@@ -468,24 +467,17 @@
 
             <span class="comment">// write to db</span>
             <span class="kw">if</span> <span class="op">!</span><span class="ident">lis</span>.<span class="ident">is_empty</span>() {
+                <span class="kw">let</span> <span class="ident">last_li</span> <span class="op">=</span> <span class="ident">lis</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>).<span class="ident">ledger_info</span>();
                 <span class="kw">match</span> <span class="self">self</span>.<span class="ident">run_mode</span>.<span class="ident">as_ref</span>() {
                     <span class="ident">RestoreRunMode</span>::<span class="ident">Restore</span> { <span class="ident">restore_handler</span> } <span class="op">=</span><span class="op">&gt;</span> {
                         <span class="ident">restore_handler</span>.<span class="ident">save_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="ident">lis</span>)<span class="question-mark">?</span>;
-                        <span class="ident">EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(
-                            <span class="ident">lis</span>.<span class="ident">last</span>()
-                                .<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>)
-                                .<span class="ident">ledger_info</span>()
-                                .<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>,
-                        );
-                        <span class="ident">EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(
-                            <span class="ident">lis</span>.<span class="ident">last</span>()
-                                .<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>)
-                                .<span class="ident">ledger_info</span>()
-                                .<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>,
-                        );
+
+                        <span class="ident">EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+                        <span class="ident">EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
                     }
                     <span class="ident">RestoreRunMode</span>::<span class="ident">Verify</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="comment">// add counters</span>
+                        <span class="ident">VERIFY_EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+                        <span class="ident">VERIFY_EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
                     }
                 };
                 <span class="ident">output_lis</span>.<span class="ident">extend</span>(<span class="ident">lis</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">clone</span>()));
