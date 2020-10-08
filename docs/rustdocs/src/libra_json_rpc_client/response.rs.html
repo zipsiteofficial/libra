@@ -202,7 +202,7 @@
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">views</span>::{
-    <span class="ident">AccountStateWithProofView</span>, <span class="ident">AccountView</span>, <span class="ident">BlockMetadata</span>, <span class="ident">CurrencyInfoView</span>, <span class="ident">EventView</span>,
+    <span class="ident">AccountStateWithProofView</span>, <span class="ident">AccountView</span>, <span class="ident">CurrencyInfoView</span>, <span class="ident">EventView</span>, <span class="ident">MetadataView</span>,
     <span class="ident">StateProofView</span>, <span class="ident">TransactionView</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">ensure</span>, <span class="ident">format_err</span>, <span class="ident">Error</span>, <span class="prelude-ty">Result</span>};
@@ -219,7 +219,7 @@
     <span class="ident">AccountTransactionResponse</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span>),
     <span class="ident">TransactionsResponse</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span>),
     <span class="ident">EventsResponse</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventView</span><span class="op">&gt;</span>),
-    <span class="ident">BlockMetadataResponse</span>(<span class="ident">BlockMetadata</span>),
+    <span class="ident">MetadataViewResponse</span>(<span class="ident">MetadataView</span>),
     <span class="ident">CurrenciesResponse</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CurrencyInfoView</span><span class="op">&gt;</span>),
     <span class="ident">AccountStateWithProofResponse</span>(<span class="ident">AccountStateWithProofView</span>),
     <span class="ident">NetworkStatusResponse</span>(<span class="ident">Number</span>),
@@ -254,8 +254,8 @@
                 <span class="prelude-val">Ok</span>(<span class="ident">JsonRpcResponse</span>::<span class="ident">EventsResponse</span>(<span class="ident">events</span>))
             }
             <span class="string">&quot;get_metadata&quot;</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">metadata</span>: <span class="ident">BlockMetadata</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">value</span>)<span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="ident">JsonRpcResponse</span>::<span class="ident">BlockMetadataResponse</span>(<span class="ident">metadata</span>))
+                <span class="kw">let</span> <span class="ident">metadata</span>: <span class="ident">MetadataView</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">value</span>)<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(<span class="ident">JsonRpcResponse</span>::<span class="ident">MetadataViewResponse</span>(<span class="ident">metadata</span>))
             }
             <span class="string">&quot;get_currencies&quot;</span> <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">info</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CurrencyInfoView</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">value</span>)<span class="question-mark">?</span>;
@@ -340,9 +340,9 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">ResponseAsView</span> <span class="kw">for</span> <span class="ident">BlockMetadata</span> {
+<span class="kw">impl</span> <span class="ident">ResponseAsView</span> <span class="kw">for</span> <span class="ident">MetadataView</span> {
     <span class="kw">fn</span> <span class="ident">from_response</span>(<span class="ident">response</span>: <span class="ident">JsonRpcResponse</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">JsonRpcResponse</span>::<span class="ident">BlockMetadataResponse</span>(<span class="ident">metadata</span>) <span class="op">=</span> <span class="ident">response</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">JsonRpcResponse</span>::<span class="ident">MetadataViewResponse</span>(<span class="ident">metadata</span>) <span class="op">=</span> <span class="ident">response</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">metadata</span>)
         } <span class="kw">else</span> {
             <span class="self">Self</span>::<span class="ident">unexpected_response_error</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">response</span>)
