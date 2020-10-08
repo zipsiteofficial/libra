@@ -237,6 +237,14 @@
 <span id="237">237</span>
 <span id="238">238</span>
 <span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -382,10 +390,12 @@
 <span class="doccomment">/// An enum to list the possible errors during the libra handshake negotiation</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">HandshakeError</span> {
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: the received message has an invalid chain id: {0}&quot;</span>)]</span>
-    <span class="ident">InvalidChainId</span>(<span class="ident">ChainId</span>),
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: the received message has an invalid network id: {0}&quot;</span>)]</span>
-    <span class="ident">InvalidNetworkId</span>(<span class="ident">NetworkId</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: the received message has a different chain id: {0}, expected: {1}&quot;</span>)]</span>
+    <span class="ident">InvalidChainId</span>(<span class="ident">ChainId</span>, <span class="ident">ChainId</span>),
+    <span class="attribute">#[<span class="ident">error</span>(
+        <span class="string">&quot;libra-handshake: the received message has an different network id: {0}, expected: {1}&quot;</span>
+    )]</span>
+    <span class="ident">InvalidNetworkId</span>(<span class="ident">NetworkId</span>, <span class="ident">NetworkId</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;libra-handshake: could not find an intersection of supported protocol with the peer&quot;</span>)]</span>
     <span class="ident">NoCommonProtocols</span>,
 }
@@ -424,12 +434,18 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MessagingProtocolVersion</span>, <span class="ident">SupportedProtocols</span>), <span class="ident">HandshakeError</span><span class="op">&gt;</span> {
         <span class="comment">// verify that both peers are on the same chain</span>
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">chain_id</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidChainId</span>(<span class="ident">other</span>.<span class="ident">chain_id</span>));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidChainId</span>(
+                <span class="ident">other</span>.<span class="ident">chain_id</span>,
+                <span class="self">self</span>.<span class="ident">chain_id</span>,
+            ));
         }
 
         <span class="comment">// verify that both peers are on the same type of network</span>
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">network_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">network_id</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidNetworkId</span>(<span class="ident">other</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>()));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">HandshakeError</span>::<span class="ident">InvalidNetworkId</span>(
+                <span class="ident">other</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>(),
+                <span class="self">self</span>.<span class="ident">network_id</span>.<span class="ident">clone</span>(),
+            ));
         }
 
         <span class="comment">// first, find the highest MessagingProtocolVersion supported by both nodes.</span>

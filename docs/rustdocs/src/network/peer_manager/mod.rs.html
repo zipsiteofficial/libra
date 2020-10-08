@@ -1180,6 +1180,13 @@
 <span id="1180">1180</span>
 <span id="1181">1181</span>
 <span id="1182">1182</span>
+<span id="1183">1183</span>
+<span id="1184">1184</span>
+<span id="1185">1185</span>
+<span id="1186">1186</span>
+<span id="1187">1187</span>
+<span id="1188">1188</span>
+<span id="1189">1189</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1770,11 +1777,13 @@
         <span class="self">self</span>.<span class="ident">sample_connected_peers</span>();
         <span class="kw">match</span> <span class="ident">request</span> {
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">peer_id</span>, <span class="ident">msg</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">protocol_id</span>;
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">conn_metadata</span>, <span class="ident">sender</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">active_peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">msg</span>.<span class="ident">protocol_id</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendMessage</span>(<span class="ident">msg</span>))
                     {
                         <span class="macro">info</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">connection_metadata</span>(<span class="ident">conn_metadata</span>),
+                            <span class="ident">protocol_id</span> <span class="op">=</span> <span class="op">%</span><span class="ident">protocol_id</span>,
                             <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">err</span>,
                             <span class="string">&quot;{} Failed to forward outbound message to downstream actor. Error: {:?}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>, <span class="ident">err</span>
@@ -1783,18 +1792,22 @@
                 } <span class="kw">else</span> {
                     <span class="macro">warn</span><span class="macro">!</span>(
                         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
-                        <span class="string">&quot;{} Peer {} is not connected&quot;</span>,
+                        <span class="ident">protocol_id</span> <span class="op">=</span> <span class="op">%</span><span class="ident">protocol_id</span>,
+                        <span class="string">&quot;{} Can&#39;t send message to peer.  Peer {} is currently not connected&quot;</span>,
                         <span class="self">self</span>.<span class="ident">network_context</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
                     );
                 }
             }
             <span class="ident">PeerManagerRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">peer_id</span>, <span class="ident">req</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">let</span> <span class="ident">protocol_id</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">protocol_id</span>;
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">conn_metadata</span>, <span class="ident">sender</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">active_peers</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>) {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">push</span>(<span class="ident">req</span>.<span class="ident">protocol_id</span>, <span class="ident">NetworkRequest</span>::<span class="ident">SendRpc</span>(<span class="ident">req</span>)) {
                         <span class="macro">info</span><span class="macro">!</span>(
                             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                                 .<span class="ident">connection_metadata</span>(<span class="ident">conn_metadata</span>),
+                            <span class="ident">protocol_id</span> <span class="op">=</span> <span class="op">%</span><span class="ident">protocol_id</span>,
+                            <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">err</span>,
                             <span class="string">&quot;{} Failed to forward outbound rpc to downstream actor. Error: {:?}&quot;</span>,
                             <span class="self">self</span>.<span class="ident">network_context</span>,
                             <span class="ident">err</span>
@@ -1803,7 +1816,8 @@
                 } <span class="kw">else</span> {
                     <span class="macro">warn</span><span class="macro">!</span>(
                         <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer_id</span>),
-                        <span class="string">&quot;{} Peer {} is not connected&quot;</span>,
+                        <span class="ident">protocol_id</span> <span class="op">=</span> <span class="op">%</span><span class="ident">protocol_id</span>,
+                        <span class="string">&quot;{} Can&#39;t send RPC message to peer.  Peer {} is currently not connected&quot;</span>,
                         <span class="self">self</span>.<span class="ident">network_context</span>,
                         <span class="ident">peer_id</span>.<span class="ident">short_str</span>()
                     );
