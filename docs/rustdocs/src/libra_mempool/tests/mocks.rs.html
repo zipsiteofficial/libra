@@ -145,11 +145,6 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -167,6 +162,7 @@
     <span class="ident">config</span>::{<span class="ident">NetworkConfig</span>, <span class="ident">NodeConfig</span>},
     <span class="ident">network_id</span>::{<span class="ident">NetworkId</span>, <span class="ident">NodeNetworkId</span>},
 };
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">mempool_status</span>::<span class="ident">MempoolStatusCode</span>,
     <span class="ident">transaction</span>::{<span class="ident">GovernanceRole</span>, <span class="ident">SignedTransaction</span>},
@@ -177,7 +173,7 @@
 };
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">num</span>::<span class="ident">NonZeroUsize</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>, <span class="ident">RwLock</span>},
+    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
 };
 <span class="kw">use</span> <span class="ident">storage_interface</span>::<span class="ident">mock</span>::<span class="ident">MockDbReader</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">runtime</span>::{<span class="ident">Builder</span>, <span class="ident">Runtime</span>};
@@ -267,10 +263,7 @@
     <span class="doccomment">/// add txns to mempool</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_txns</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>
-                .<span class="ident">mempool</span>
-                .<span class="ident">lock</span>()
-                .<span class="ident">expect</span>(<span class="string">&quot;[mock shared mempool] failed to acquire mempool lock&quot;</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mempool</span>.<span class="ident">lock</span>();
             <span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="ident">txns</span> {
                 <span class="kw">if</span> <span class="ident">pool</span>
                     .<span class="ident">add_txn</span>(
@@ -293,10 +286,7 @@
 
     <span class="doccomment">/// true if all given txns are in mempool, else false</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">read_timeline</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">timeline_id</span>: <span class="ident">u64</span>, <span class="ident">count</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">mempool</span>
-            .<span class="ident">lock</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;[mock shared mempool] failed to acquire mempool lock&quot;</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pool</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mempool</span>.<span class="ident">lock</span>();
         <span class="ident">pool</span>.<span class="ident">read_timeline</span>(<span class="ident">timeline_id</span>, <span class="ident">count</span>)
             .<span class="number">0</span>
             .<span class="ident">into_iter</span>()

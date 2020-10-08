@@ -232,11 +232,6 @@
 <span id="232">232</span>
 <span id="233">233</span>
 <span id="234">234</span>
-<span id="235">235</span>
-<span id="236">236</span>
-<span id="237">237</span>
-<span id="238">238</span>
-<span id="239">239</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -264,12 +259,13 @@
     <span class="ident">StreamExt</span>,
 };
 <span class="kw">use</span> <span class="ident">libra_config</span>::{<span class="ident">config</span>::<span class="ident">PeerNetworkId</span>, <span class="ident">network_id</span>::<span class="ident">NodeNetworkId</span>};
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_trace</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">on_chain_config</span>::<span class="ident">OnChainConfigPayload</span>, <span class="ident">transaction</span>::<span class="ident">SignedTransaction</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">ops</span>::<span class="ident">Deref</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
+    <span class="ident">sync</span>::<span class="ident">Arc</span>,
     <span class="ident">time</span>::{<span class="ident">Duration</span>, <span class="ident">SystemTime</span>},
 };
 <span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">runtime</span>::<span class="ident">Handle</span>, <span class="ident">time</span>::<span class="ident">interval</span>};
@@ -452,10 +448,7 @@
             <span class="ident">SampleRate</span>::<span class="ident">Duration</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">60</span>)),
             <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">GCRuntime</span>, <span class="ident">LogEvent</span>::<span class="ident">Live</span>))
         );
-        <span class="ident">mempool</span>
-            .<span class="ident">lock</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;[shared mempool] failed to acquire mempool lock&quot;</span>)
-            .<span class="ident">gc</span>();
+        <span class="ident">mempool</span>.<span class="ident">lock</span>().<span class="ident">gc</span>();
     }
 
     <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
@@ -470,10 +463,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">snapshot_job</span>(<span class="ident">mempool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">CoreMempool</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">snapshot_interval_secs</span>: <span class="ident">u64</span>) {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">interval</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="ident">snapshot_interval_secs</span>));
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_interval</span>) <span class="op">=</span> <span class="ident">interval</span>.<span class="ident">next</span>().<span class="kw">await</span> {
-        <span class="kw">let</span> <span class="ident">snapshot</span> <span class="op">=</span> <span class="ident">mempool</span>
-            .<span class="ident">lock</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;failed to acquire mempool lock&quot;</span>)
-            .<span class="ident">gen_snapshot</span>();
+        <span class="kw">let</span> <span class="ident">snapshot</span> <span class="op">=</span> <span class="ident">mempool</span>.<span class="ident">lock</span>().<span class="ident">gen_snapshot</span>();
         <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">MempoolSnapshot</span>).<span class="ident">txns</span>(<span class="ident">snapshot</span>));
     }
 }

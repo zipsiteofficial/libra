@@ -104,10 +104,6 @@
 <span id="104">104</span>
 <span id="105">105</span>
 <span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -119,14 +115,12 @@
 <span class="kw">use</span> <span class="ident">executor_types</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ExecutionError</span>, <span class="ident">StateComputeResult</span>};
 <span class="kw">use</span> <span class="ident">fail</span>::<span class="ident">fail_point</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::<span class="ident">monitor</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>;
 <span class="kw">use</span> <span class="ident">state_synchronizer</span>::<span class="ident">StateSyncClient</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">boxed</span>::<span class="ident">Box</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
-};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">boxed</span>::<span class="ident">Box</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 
 <span class="doccomment">/// Basic communication with the Execution module;</span>
 <span class="doccomment">/// implements StateComputer traits.</span>
@@ -172,7 +166,6 @@
             <span class="string">&quot;execute_block&quot;</span>,
             <span class="self">self</span>.<span class="ident">execution_correctness_client</span>
                 .<span class="ident">lock</span>()
-                .<span class="ident">unwrap</span>()
                 .<span class="ident">execute_block</span>(<span class="ident">block</span>.<span class="ident">clone</span>(), <span class="ident">parent_block_id</span>)
         )
     }
@@ -187,7 +180,6 @@
             <span class="string">&quot;commit_block&quot;</span>,
             <span class="self">self</span>.<span class="ident">execution_correctness_client</span>
                 .<span class="ident">lock</span>()
-                .<span class="ident">unwrap</span>()
                 .<span class="ident">commit_blocks</span>(<span class="ident">block_ids</span>, <span class="ident">finality_proof</span>)<span class="question-mark">?</span>
         );
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="macro">monitor</span><span class="macro">!</span>(
@@ -214,7 +206,7 @@
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="macro">monitor</span><span class="macro">!</span>(<span class="string">&quot;sync_to&quot;</span>, <span class="self">self</span>.<span class="ident">synchronizer</span>.<span class="ident">sync_to</span>(<span class="ident">target</span>).<span class="kw">await</span>);
         <span class="comment">// Similarily, after the state synchronization, we have to reset the cache</span>
         <span class="comment">// of BlockExecutor to guarantee the latest committed state is up to date.</span>
-        <span class="self">self</span>.<span class="ident">execution_correctness_client</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">reset</span>()<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">execution_correctness_client</span>.<span class="ident">lock</span>().<span class="ident">reset</span>()<span class="question-mark">?</span>;
         <span class="ident">res</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }

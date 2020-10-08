@@ -124,18 +124,14 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
-<span id="127">127</span>
-<span id="128">128</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">util</span>::<span class="ident">time_service</span>::{<span class="ident">ScheduledTask</span>, <span class="ident">TimeService</span>};
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
-    <span class="ident">time</span>::<span class="ident">Duration</span>,
-};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
 
 <span class="doccomment">/// SimulatedTimeService implements TimeService, however it does not depend on actual time</span>
 <span class="doccomment">/// There are multiple ways to use it:</span>
@@ -159,7 +155,7 @@
 
 <span class="kw">impl</span> <span class="ident">TimeService</span> <span class="kw">for</span> <span class="ident">SimulatedTimeService</span> {
     <span class="kw">fn</span> <span class="ident">run_after</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">timeout</span>: <span class="ident">Duration</span>, <span class="kw-2">mut</span> <span class="ident">t</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ScheduledTask</span><span class="op">&gt;</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>();
         <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">now</span>;
         <span class="kw">let</span> <span class="ident">deadline</span> <span class="op">=</span> <span class="ident">now</span> <span class="op">+</span> <span class="ident">timeout</span>;
         <span class="kw">if</span> <span class="ident">deadline</span> <span class="op">&gt;</span> <span class="ident">inner</span>.<span class="ident">time_limit</span> {
@@ -186,12 +182,12 @@
     }
 
     <span class="kw">fn</span> <span class="ident">get_current_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
-        <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">now</span>
+        <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>().<span class="ident">now</span>
     }
 
     <span class="kw">fn</span> <span class="ident">sleep</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">t</span>: <span class="ident">Duration</span>) {
         <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">lock</span>();
         <span class="ident">inner</span>.<span class="ident">now</span> <span class="op">+</span><span class="op">=</span> <span class="ident">t</span>;
         <span class="kw">if</span> <span class="ident">inner</span>.<span class="ident">now</span> <span class="op">&gt;</span> <span class="ident">inner</span>.<span class="ident">max</span> {
             <span class="ident">inner</span>.<span class="ident">now</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">max</span>;
@@ -228,7 +224,7 @@
     <span class="doccomment">/// deadline lower then new time_limit</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_auto_advance_limit</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">time</span>: <span class="ident">Duration</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inner</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">lock</span>();
         <span class="ident">inner</span>.<span class="ident">time_limit</span> <span class="op">+</span><span class="op">=</span> <span class="ident">time</span>;
         <span class="kw">let</span> <span class="ident">time_limit</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">time_limit</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;

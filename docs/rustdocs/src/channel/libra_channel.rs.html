@@ -211,6 +211,7 @@
 <span id="211">211</span>
 <span id="212">212</span>
 <span id="213">213</span>
+<span id="214">214</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -227,13 +228,14 @@
     <span class="ident">channel</span>::<span class="ident">oneshot</span>,
     <span class="ident">stream</span>::{<span class="ident">FusedStream</span>, <span class="ident">Stream</span>},
 };
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>;
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::<span class="ident">IntCounterVec</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">fmt</span>::{<span class="ident">Debug</span>, <span class="ident">Formatter</span>},
     <span class="ident">hash</span>::<span class="ident">Hash</span>,
     <span class="ident">num</span>::<span class="ident">NonZeroUsize</span>,
     <span class="ident">pin</span>::<span class="ident">Pin</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">Mutex</span>},
+    <span class="ident">sync</span>::<span class="ident">Arc</span>,
     <span class="ident">task</span>::{<span class="ident">Context</span>, <span class="ident">Poll</span>, <span class="ident">Waker</span>},
 };
 
@@ -308,7 +310,7 @@
         <span class="ident">message</span>: <span class="ident">M</span>,
         <span class="ident">status_ch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="macro">ensure</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">shared_state</span>.<span class="ident">receiver_dropped</span>, <span class="string">&quot;Channel is closed&quot;</span>);
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
 
@@ -330,7 +332,7 @@
     <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">clone</span>();
         {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state_lock</span> <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state_lock</span> <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">lock</span>();
             <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state_lock</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
             <span class="ident">shared_state_lock</span>.<span class="ident">num_senders</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
@@ -340,7 +342,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
 
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
         <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
@@ -362,14 +364,14 @@
     <span class="doccomment">/// Removes all the previously sent transactions that have not been consumed yet and cleans up</span>
     <span class="doccomment">/// the internal queue structure (GC of the previous keys).</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="ident">shared_state</span>.<span class="ident">internal_queue</span>.<span class="ident">clear</span>();
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">shared_state</span>.<span class="ident">receiver_dropped</span>);
         <span class="ident">shared_state</span>.<span class="ident">receiver_dropped</span> <span class="op">=</span> <span class="bool-val">true</span>;
     }
@@ -381,7 +383,7 @@
     <span class="doccomment">/// queue. If there is, then it returns immediately. If the internal_queue is empty,</span>
     <span class="doccomment">/// it sets the waker passed to it by the scheduler/executor and returns Pending</span>
     <span class="kw">fn</span> <span class="ident">poll_next</span>(<span class="self">self</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">cx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">val</span>, <span class="ident">status_ch</span>)) <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">internal_queue</span>.<span class="ident">pop</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status_ch</span>) <span class="op">=</span> <span class="ident">status_ch</span> {
                 <span class="kw">let</span> <span class="ident">_err</span> <span class="op">=</span> <span class="ident">status_ch</span>.<span class="ident">send</span>(<span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span>);
@@ -400,7 +402,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">FusedStream</span> <span class="kw">for</span> <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">is_terminated</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">stream_terminated</span>
+        <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">stream_terminated</span>
     }
 }
 
