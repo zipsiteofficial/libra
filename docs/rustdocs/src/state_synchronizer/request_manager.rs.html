@@ -490,6 +490,44 @@
 <span id="490">490</span>
 <span id="491">491</span>
 <span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
+<span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -519,7 +557,7 @@
 
 <span class="kw">const</span> <span class="ident">MAX_SCORE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">100.0</span>;
 <span class="kw">const</span> <span class="ident">MIN_SCORE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">1.0</span>;
-<span class="kw">const</span> <span class="ident">MIN_UPSTREAM_NETWORK_CT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1</span>;
+<span class="kw">const</span> <span class="ident">PRIMARY_NETWORK_PREFERENCE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PeerInfo</span> {
@@ -580,9 +618,8 @@
     <span class="ident">request_timeout</span>: <span class="ident">Duration</span>,
     <span class="comment">// duration with the same version before multicasting, i.e. sending the next chunk request to more networks</span>
     <span class="ident">multicast_timeout</span>: <span class="ident">Duration</span>,
-    <span class="comment">// number of networks to try to multicast the same chunk request to</span>
-    <span class="comment">// the node will try send chunk requests to one peer per the first `multicast_level` networks</span>
-    <span class="comment">// available, in order of preference specified by the upstream config</span>
+    <span class="comment">// the maximum preference level of all the networks to try to multicast the same chunk request to,</span>
+    <span class="comment">// where network preference is specified by the upstream config</span>
     <span class="ident">multicast_level</span>: <span class="ident">usize</span>,
     <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NodeNetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
 }
@@ -594,7 +631,7 @@
         <span class="ident">multicast_timeout</span>: <span class="ident">Duration</span>,
         <span class="ident">network_senders</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">NodeNetworkId</span>, <span class="ident">StateSynchronizerSender</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="ident">MIN_UPSTREAM_NETWORK_CT</span> <span class="kw">as</span> <span class="ident">i64</span>);
+        <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="self">Self</span> {
             <span class="ident">eligible_peers</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">peers</span>: <span class="ident">HashMap</span>::<span class="ident">new</span>(),
@@ -602,7 +639,7 @@
             <span class="ident">upstream_config</span>,
             <span class="ident">request_timeout</span>,
             <span class="ident">multicast_timeout</span>,
-            <span class="ident">multicast_level</span>: <span class="ident">MIN_UPSTREAM_NETWORK_CT</span>,
+            <span class="ident">multicast_level</span>: <span class="ident">PRIMARY_NETWORK_PREFERENCE</span>,
             <span class="ident">network_senders</span>,
         }
     }
@@ -727,12 +764,41 @@
         <span class="prelude-val">None</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pick_peers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">eligible_peers</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">take</span>(<span class="self">self</span>.<span class="ident">multicast_level</span>)
-            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="kw">_</span>, (<span class="ident">peers</span>, <span class="ident">weighted_index</span>))<span class="op">|</span> <span class="self">Self</span>::<span class="ident">pick_peer</span>(<span class="ident">peers</span>, <span class="ident">weighted_index</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+    <span class="doccomment">/// Picks a set of peers to send chunk requests to</span>
+    <span class="doccomment">/// Tries to pick one peer per network, in order of network preference (where the higher the preference,</span>
+    <span class="doccomment">/// the lower the value)</span>
+    <span class="doccomment">/// The set of networks selected is determined by the multicast level. The preference level of the</span>
+    <span class="doccomment">/// network is as defined in `UpstreamConfig` - 0 is the numeric value for the highest preference,</span>
+    <span class="doccomment">/// and the larger this level, the less preferred this network is.</span>
+    <span class="doccomment">/// All networks with preference level &lt;= multicast level are first sampled. If there are no live peers in</span>
+    <span class="doccomment">/// these networks, we find the next available network with preference level greater than the current multicast</span>
+    <span class="doccomment">/// level with any live peers. If such a network is found, the multicast level is also updated to</span>
+    <span class="doccomment">/// the preference level of the chosen network.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pick_peers</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span> {
+        <span class="comment">// Strategy: pick peers using multicast level</span>
+        <span class="comment">// if no live peers exist for this multicast level, keep failing over to next level</span>
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">chosen_peers</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_multicast_level</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">for</span> (<span class="ident">level</span>, (<span class="ident">peers</span>, <span class="ident">weighted_index</span>)) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">eligible_peers</span>.<span class="ident">iter</span>() {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">pick_peer</span>(<span class="ident">peers</span>, <span class="ident">weighted_index</span>) {
+                <span class="ident">chosen_peers</span>.<span class="ident">push</span>(<span class="ident">peer</span>)
+            }
+            <span class="comment">// at the minimum go through networks with preference level &lt;= multicast_level</span>
+            <span class="comment">// if no peers are found for the current multicast_level, continue doing</span>
+            <span class="comment">// best effort search of the first network with live peers to failover to</span>
+            <span class="kw">if</span> <span class="op">!</span><span class="ident">chosen_peers</span>.<span class="ident">is_empty</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="kw-2">*</span><span class="ident">level</span> <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">multicast_level</span> {
+                <span class="ident">new_multicast_level</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">level</span>);
+                <span class="kw">break</span>;
+            }
+        }
+
+        <span class="comment">// we call `update_multicast` here instead of before the break to avoid mutable borrow conflict</span>
+        <span class="comment">// with the outer loop</span>
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">level</span>) <span class="op">=</span> <span class="ident">new_multicast_level</span> {
+            <span class="self">self</span>.<span class="ident">update_multicast</span>(<span class="ident">level</span>, <span class="prelude-val">None</span>);
+        }
+        <span class="ident">chosen_peers</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_chunk_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">req</span>: <span class="ident">GetChunkRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
@@ -818,17 +884,14 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">process_success_response</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) {
         <span class="comment">// update multicast</span>
-        <span class="kw">let</span> <span class="ident">is_primary_upstream_peer</span> <span class="op">=</span> <span class="self">self</span>
+        <span class="kw">let</span> <span class="ident">peer_level</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">upstream_config</span>
             .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
-            <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">0</span>);
-        <span class="kw">if</span> <span class="ident">is_primary_upstream_peer</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">!</span><span class="op">=</span> <span class="ident">MIN_UPSTREAM_NETWORK_CT</span> {
-            <span class="comment">// if chunk from a primary upstream is successful, stop multicasting the request to failover networks</span>
-            <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Multicast</span>, <span class="ident">LogEvent</span>::<span class="ident">Recover</span>)
-                .<span class="ident">old_multicast_level</span>(<span class="self">self</span>.<span class="ident">multicast_level</span>)
-                .<span class="ident">new_multicast_level</span>(<span class="ident">MIN_UPSTREAM_NETWORK_CT</span>));
-            <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">=</span> <span class="ident">MIN_UPSTREAM_NETWORK_CT</span>;
-            <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">multicast_level</span> <span class="kw">as</span> <span class="ident">i64</span>);
+            .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">upstream_config</span>.<span class="ident">upstream_count</span>());
+        <span class="kw">if</span> <span class="ident">peer_level</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">multicast_level</span> {
+            <span class="comment">// reduce multicast_level if we received peer from lower multicast level (= more highly</span>
+            <span class="comment">// prioritized network)</span>
+            <span class="self">self</span>.<span class="ident">update_multicast</span>(<span class="ident">peer_level</span>, <span class="prelude-val">None</span>)
         }
 
         <span class="comment">// update score</span>
@@ -935,18 +998,11 @@
         <span class="comment">// increment multicast level if this request is also multicast-timed-out</span>
         <span class="kw">let</span> <span class="ident">multicast_start_time</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_multicast_start_time</span>(<span class="ident">version</span>).<span class="ident">unwrap_or</span>(<span class="ident">UNIX_EPOCH</span>);
         <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_timeout</span>(<span class="ident">multicast_start_time</span>, <span class="self">self</span>.<span class="ident">multicast_timeout</span>) {
-            <span class="kw">let</span> <span class="ident">prev_multicast_level</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">multicast_level</span>;
-            <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(
+            <span class="kw">let</span> <span class="ident">new_multicast_level</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(
                 <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">+</span> <span class="number">1</span>,
-                <span class="self">self</span>.<span class="ident">upstream_config</span>.<span class="ident">upstream_count</span>(),
+                <span class="self">self</span>.<span class="ident">upstream_config</span>.<span class="ident">upstream_count</span>() <span class="op">-</span> <span class="number">1</span>, <span class="comment">// multicast_level (=network preference) is 0-indexed</span>
             );
-            <span class="macro">info</span><span class="macro">!</span>(
-                <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Multicast</span>, <span class="ident">LogEvent</span>::<span class="ident">Failover</span>)
-                    .<span class="ident">old_multicast_level</span>(<span class="ident">prev_multicast_level</span>)
-                    .<span class="ident">new_multicast_level</span>(<span class="self">self</span>.<span class="ident">multicast_level</span>),
-                <span class="ident">request_version</span> <span class="op">=</span> <span class="ident">version</span>,
-            );
-            <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">multicast_level</span> <span class="kw">as</span> <span class="ident">i64</span>);
+            <span class="self">self</span>.<span class="ident">update_multicast</span>(<span class="ident">new_multicast_level</span>, <span class="prelude-val">Some</span>(<span class="ident">version</span>));
         }
         <span class="ident">is_timeout</span>
     }
@@ -981,6 +1037,26 @@
             .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">deadline</span><span class="op">|</span> {
                 <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">duration_since</span>(<span class="ident">deadline</span>).<span class="ident">is_ok</span>()
             })
+    }
+
+    <span class="kw">fn</span> <span class="ident">update_multicast</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">new_level</span>: <span class="ident">usize</span>, <span class="ident">request_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>) {
+        <span class="kw">let</span> <span class="ident">old_level</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">multicast_level</span>;
+        <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">new_level</span> {
+            <span class="ident">l</span> <span class="kw">if</span> <span class="ident">l</span> <span class="op">&gt;</span> <span class="ident">old_level</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogEvent</span>::<span class="ident">Failover</span>,
+            <span class="ident">l</span> <span class="kw">if</span> <span class="ident">l</span> <span class="op">&lt;</span> <span class="ident">old_level</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogEvent</span>::<span class="ident">Recover</span>,
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span>,
+        };
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Multicast</span>, <span class="ident">event</span>)
+            .<span class="ident">old_multicast_level</span>(<span class="ident">old_level</span>)
+            .<span class="ident">new_multicast_level</span>(<span class="ident">new_level</span>);
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">version</span>) <span class="op">=</span> <span class="ident">request_version</span> {
+            <span class="ident">log</span> <span class="op">=</span> <span class="ident">log</span>.<span class="ident">request_version</span>(<span class="ident">version</span>);
+        }
+
+        <span class="macro">info</span><span class="macro">!</span>(<span class="ident">log</span>);
+        <span class="self">self</span>.<span class="ident">multicast_level</span> <span class="op">=</span> <span class="ident">new_level</span>;
+        <span class="ident">counters</span>::<span class="ident">MULTICAST_LEVEL</span>.<span class="ident">set</span>(<span class="self">self</span>.<span class="ident">multicast_level</span> <span class="kw">as</span> <span class="ident">i64</span>);
     }
 }
 </pre></div>
