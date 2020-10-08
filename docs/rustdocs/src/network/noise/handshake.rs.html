@@ -691,17 +691,6 @@
 <span id="691">691</span>
 <span id="692">692</span>
 <span id="693">693</span>
-<span id="694">694</span>
-<span id="695">695</span>
-<span id="696">696</span>
-<span id="697">697</span>
-<span id="698">698</span>
-<span id="699">699</span>
-<span id="700">700</span>
-<span id="701">701</span>
-<span id="702">702</span>
-<span id="703">703</span>
-<span id="704">704</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -715,19 +704,18 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [stream]: network::noise::stream</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">logging</span>::<span class="ident">NetworkSchema</span>, <span class="ident">noise</span>::<span class="ident">stream</span>::<span class="ident">NoiseStream</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">noise</span>::{<span class="ident">error</span>::<span class="ident">NoiseHandshakeError</span>, <span class="ident">stream</span>::<span class="ident">NoiseStream</span>};
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">io</span>::{<span class="ident">AsyncRead</span>, <span class="ident">AsyncReadExt</span>, <span class="ident">AsyncWrite</span>, <span class="ident">AsyncWriteExt</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">noise</span>, <span class="ident">x25519</span>};
 <span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">duration_since_epoch</span>;
-<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">debug</span>;
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">trace</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">convert</span>::<span class="ident">TryFrom</span> <span class="kw">as</span> <span class="kw">_</span>,
     <span class="ident">fmt</span>::<span class="ident">Debug</span>,
-    <span class="ident">io</span>,
     <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
 };
 
@@ -841,7 +829,7 @@
 <span class="doccomment">/// The Noise configuration to be used to perform a protocol upgrade on an underlying socket.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NoiseUpgrader</span> {
     <span class="doccomment">/// The validator&#39;s network context</span>
-    <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Config for executing Noise handshakes. Includes our static private key.</span>
     <span class="ident">noise_config</span>: <span class="ident">noise</span>::<span class="ident">NoiseConfig</span>,
     <span class="doccomment">/// Handshake authentication can be either mutual or server-only authentication.</span>
@@ -872,7 +860,7 @@
         <span class="ident">socket</span>: <span class="ident">TSocket</span>,
         <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>,
         <span class="ident">remote_public_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>)<span class="op">&gt;</span>
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
     {
@@ -882,12 +870,7 @@
                 <span class="kw">let</span> <span class="ident">remote_public_key</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">remote_public_key</span> {
                     <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">key</span>,
                     <span class="prelude-val">None</span> <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">std</span>::<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                            <span class="ident">std</span>::<span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>,
-                            <span class="string">&quot;noise: SHOULD NOT HAPPEN: missing server&#39;s key when dialing&quot;</span>,
-                        ));
-                    }
+                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">MissingServerPublicKey</span>),
                 };
                 <span class="self">self</span>.<span class="ident">upgrade_outbound</span>(<span class="ident">socket</span>, <span class="ident">remote_public_key</span>, <span class="ident">AntiReplayTimestamps</span>::<span class="ident">now</span>)
                     .<span class="kw">await</span><span class="question-mark">?</span>
@@ -925,7 +908,7 @@
         <span class="kw-2">mut</span> <span class="ident">socket</span>: <span class="ident">TSocket</span>,
         <span class="ident">remote_public_key</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>,
         <span class="ident">time_provider</span>: <span class="ident">F</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span><span class="op">&gt;</span>
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
         <span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>],
@@ -954,49 +937,45 @@
                 <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">payload</span>),
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client_noise_msg</span>,
             )
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">BuildClientHandshakeMessageFailed</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// send the first handshake message</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;client&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;writing_data&quot;</span>,
-            <span class="ident">remote_public_key</span> <span class="op">=</span> <span class="ident">remote_public_key</span>,
-            <span class="string">&quot;{} noise client writing_data: {}&quot;</span>,
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;{} noise client: handshake write: remote_public_key: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">remote_public_key</span>
+            <span class="ident">remote_public_key</span>,
         );
-        <span class="ident">socket</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">client_message</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">socket</span>.<span class="ident">flush</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">socket</span>
+            .<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">client_message</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientWriteFailed</span>)<span class="question-mark">?</span>;
+        <span class="ident">socket</span>
+            .<span class="ident">flush</span>()
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientFlushFailed</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// receive the server&#39;s response (&lt;- e, ee, se)</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;client&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;reading_data&quot;</span>,
-            <span class="ident">remote_public_key</span> <span class="op">=</span> <span class="ident">remote_public_key</span>,
-            <span class="string">&quot;{} noise client reading_data: {}&quot;</span>,
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;{} noise client: handshake read: remote_public_key: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">remote_public_key</span>
+            <span class="ident">remote_public_key</span>,
         );
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">server_response</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="self">Self</span>::<span class="ident">SERVER_MESSAGE_SIZE</span>];
-        <span class="ident">socket</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">server_response</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">socket</span>
+            .<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">server_response</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientReadFailed</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// parse the server&#39;s response</span>
-        <span class="comment">// TODO: security logging here? (mimoo)</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;client&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;finalizing&quot;</span>,
-            <span class="ident">remote_public_key</span> <span class="op">=</span> <span class="ident">remote_public_key</span>,
-            <span class="string">&quot;{} noise client finalize: {}&quot;</span>,
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;{} noise client: handshake finalize: remote_public_key: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">remote_public_key</span>
+            <span class="ident">remote_public_key</span>,
         );
         <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">session</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">noise_config</span>
             .<span class="ident">finalize_connection</span>(<span class="ident">initiator_state</span>, <span class="kw-2">&amp;</span><span class="ident">server_response</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientFinalizeFailed</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// finalize the connection</span>
         <span class="prelude-val">Ok</span>(<span class="ident">NoiseStream</span>::<span class="ident">new</span>(<span class="ident">socket</span>, <span class="ident">session</span>))
@@ -1013,7 +992,7 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">upgrade_inbound</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="kw-2">mut</span> <span class="ident">socket</span>: <span class="ident">TSocket</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>)<span class="op">&gt;</span>
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
     {
@@ -1021,15 +1000,11 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client_message</span> <span class="op">=</span> [<span class="number">0</span>; <span class="self">Self</span>::<span class="ident">CLIENT_MESSAGE_SIZE</span>];
 
         <span class="comment">// receive the prologue + first noise handshake message</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;server&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;reading_data&quot;</span>,
-            <span class="string">&quot;{} noise client finalize: {:?}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">socket</span>
-        );
-        <span class="ident">socket</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client_message</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;{} noise server: handshake read&quot;</span>, <span class="self">self</span>.<span class="ident">network_context</span>);
+        <span class="ident">socket</span>
+            .<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client_message</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ServerReadFailed</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// extract prologue (remote_peer_id | self_public_key)</span>
         <span class="kw">let</span> (<span class="ident">remote_peer_id</span>, <span class="ident">self_expected_public_key</span>) <span class="op">=</span>
@@ -1038,38 +1013,23 @@
         <span class="comment">// parse the client&#39;s peer id</span>
         <span class="comment">// note: in mutual authenticated network, we could verify that their peer_id is in the trust peer set now.</span>
         <span class="comment">// We do this later in this function instead (to batch a number of checks) as there is no known attack here.</span>
-        <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">try_from</span>(<span class="ident">remote_peer_id</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-            <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                <span class="macro">format</span><span class="macro">!</span>(
-                    <span class="string">&quot;noise: client sent invalid peer id: {}&quot;</span>,
-                    <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">remote_peer_id</span>)
-                ),
-            )
-        })<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">try_from</span>(<span class="ident">remote_peer_id</span>)
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">NoiseHandshakeError</span>::<span class="ident">InvalidClientPeerId</span>(<span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">remote_peer_id</span>)))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">remote_peer_short</span> <span class="op">=</span> <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>();
 
-        <span class="comment">// prevent accidental self-dials</span>
+        <span class="comment">// reject accidental self-dials</span>
         <span class="comment">// this situation could occur either as a result of our own discovery</span>
         <span class="comment">// mis-configuration or a potentially malicious discovery peer advertising</span>
         <span class="comment">// a (loopback ip or mirror proxy) and our public key.</span>
         <span class="kw">if</span> <span class="ident">remote_peer_id</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">peer_id</span>() {
-            <span class="comment">// TODO(philiphayes): security logging. someone should investigate</span>
-            <span class="comment">// on-chain reconfiguration history to see if someone is misbehaving.</span>
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                <span class="string">&quot;noise: detected accidental self-dial: we have the same peer id as the client&quot;</span>,
-            ));
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">SelfDialDetected</span>);
         }
 
         <span class="comment">// verify that this is indeed our public key</span>
         <span class="kw">if</span> <span class="ident">self_expected_public_key</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">noise_config</span>.<span class="ident">public_key</span>().<span class="ident">as_slice</span>() {
-            <span class="comment">// TODO: security logging (mimoo)</span>
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                <span class="macro">format</span><span class="macro">!</span>(
-                    <span class="string">&quot;noise: client expecting us to have incorrect public key: {}&quot;</span>,
-                    <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">self_expected_public_key</span>)
-                ),
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientExpectingDifferentPubkey</span>(
+                <span class="ident">remote_peer_short</span>,
+                <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">self_expected_public_key</span>),
             ));
         }
 
@@ -1078,53 +1038,34 @@
         <span class="kw">let</span> (<span class="ident">remote_public_key</span>, <span class="ident">handshake_state</span>, <span class="ident">payload</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">noise_config</span>
             .<span class="ident">parse_client_init_message</span>(<span class="kw-2">&amp;</span><span class="ident">prologue</span>, <span class="kw-2">&amp;</span><span class="ident">client_init_message</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">NoiseHandshakeError</span>::<span class="ident">ServerParseClient</span>(<span class="ident">remote_peer_short</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// if mutual auth mode, verify the remote pubkey is in our set of trusted peers</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">trusted_peers</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">auth_mode</span>.<span class="ident">trusted_peers</span>() {
-            <span class="kw">match</span> <span class="ident">trusted_peers</span>
-                .<span class="ident">read</span>()
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-                    <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                        <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>,
-                        <span class="string">&quot;noise: unable to read trusted_peers lock&quot;</span>,
-                    )
-                })<span class="question-mark">?</span>
-                .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>)
-            {
+            <span class="kw">match</span> <span class="ident">trusted_peers</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">remote_pubkey_set</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">remote_pubkey_set</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">remote_public_key</span>) {
-                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                            <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                            <span class="macro">format</span><span class="macro">!</span>(
-                                <span class="string">&quot;noise: peer id {} connecting to us with an unknown public key: {}, expected one of: {:?}&quot;</span>,
-                                <span class="ident">remote_peer_id</span>, <span class="ident">remote_public_key</span>, <span class="ident">remote_pubkey_set</span>,
-                            ),
+                        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">UnauthenticatedClientPubkey</span>(
+                            <span class="ident">remote_peer_short</span>,
+                            <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">remote_public_key</span>.<span class="ident">as_slice</span>()),
                         ));
                     }
                 }
                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="comment">// TODO: security logging (mimoo)</span>
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                        <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                        <span class="macro">format</span><span class="macro">!</span>(
-                            <span class="string">&quot;noise: client connecting to us with an unknown peer id: {}&quot;</span>,
-                            <span class="ident">remote_peer_id</span>
-                        ),
-                    ));
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">UnauthenticatedClient</span>(
+                        <span class="ident">remote_peer_short</span>,
+                        <span class="ident">remote_peer_id</span>,
+                    ))
                 }
             };
         } <span class="kw">else</span> {
             <span class="comment">// if not, verify that their peerid is constructed correctly from their public key</span>
-            <span class="kw">let</span> <span class="ident">expected_remote_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">from_identity_public_key</span>(<span class="ident">remote_public_key</span>);
-            <span class="kw">if</span> <span class="ident">expected_remote_peer_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">remote_peer_id</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                    <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                    <span class="macro">format</span><span class="macro">!</span>(
-                        <span class="string">&quot;noise: peer id expected: {}, received: {}&quot;</span>,
-                        <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">expected_remote_peer_id</span>),
-                        <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">remote_peer_id</span>),
-                    ),
+            <span class="kw">let</span> <span class="ident">derived_remote_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">from_identity_public_key</span>(<span class="ident">remote_public_key</span>);
+            <span class="kw">if</span> <span class="ident">derived_remote_peer_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">remote_peer_id</span> {
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientPeerIdMismatch</span>(
+                    <span class="ident">remote_peer_short</span>,
+                    <span class="ident">remote_peer_id</span>,
+                    <span class="ident">derived_remote_peer_id</span>,
                 ));
             }
         }
@@ -1134,31 +1075,21 @@
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">anti_replay_timestamps</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">auth_mode</span>.<span class="ident">anti_replay_timestamps</span>() {
             <span class="comment">// check that the payload received as the client timestamp (in seconds)</span>
             <span class="kw">if</span> <span class="ident">payload</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span> {
-                <span class="comment">// TODO: security logging (mimoo)</span>
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                    <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                    <span class="string">&quot;noise: client initiated connection without an 8-byte timestamp&quot;</span>,
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">MissingAntiReplayTimestamp</span>(
+                    <span class="ident">remote_peer_short</span>,
                 ));
             }
+
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client_timestamp</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>];
             <span class="ident">client_timestamp</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">payload</span>);
             <span class="kw">let</span> <span class="ident">client_timestamp</span> <span class="op">=</span> <span class="ident">u64</span>::<span class="ident">from_le_bytes</span>(<span class="ident">client_timestamp</span>);
 
             <span class="comment">// check the timestamp is not a replay</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">anti_replay_timestamps</span> <span class="op">=</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">write</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-                <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                    <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>,
-                    <span class="string">&quot;noise: unable to read anti_replay_timestamps lock&quot;</span>,
-                )
-            })<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">anti_replay_timestamps</span> <span class="op">=</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
             <span class="kw">if</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">is_replay</span>(<span class="ident">remote_public_key</span>, <span class="ident">client_timestamp</span>) {
-                <span class="comment">// TODO: security logging</span>
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(
-                    <span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">InvalidData</span>,
-                    <span class="macro">format</span><span class="macro">!</span>(
-                        <span class="string">&quot;noise: client initiated connection with a timestamp already seen before: {}&quot;</span>,
-                        <span class="ident">client_timestamp</span>
-                    ),
+                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ServerReplayDetected</span>(
+                    <span class="ident">remote_peer_short</span>,
+                    <span class="ident">client_timestamp</span>,
                 ));
             }
 
@@ -1172,27 +1103,26 @@
         <span class="kw">let</span> <span class="ident">session</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">noise_config</span>
             .<span class="ident">respond_to_client</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>, <span class="ident">handshake_state</span>, <span class="prelude-val">None</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">server_response</span>)
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">io</span>::<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">io</span>::<span class="ident">ErrorKind</span>::<span class="ident">Other</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
+                <span class="ident">NoiseHandshakeError</span>::<span class="ident">BuildServerHandshakeMessageFailed</span>(<span class="ident">remote_peer_short</span>, <span class="ident">err</span>)
+            })<span class="question-mark">?</span>;
 
         <span class="comment">// send the response</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;server&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;writing_data&quot;</span>,
-            <span class="string">&quot;{} noise server writing_data: {}&quot;</span>,
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;{} noise server: handshake write: remote_peer_id: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
+            <span class="ident">remote_peer_short</span>,
         );
-        <span class="ident">socket</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">server_response</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="ident">socket</span>
+            .<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">server_response</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">NoiseHandshakeError</span>::<span class="ident">ServerWriteFailed</span>(<span class="ident">remote_peer_short</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// finalize the connection</span>
-        <span class="macro">debug</span><span class="macro">!</span>(
-            <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>).<span class="ident">remote_peer</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>),
-            <span class="ident">noise_role</span> <span class="op">=</span> <span class="string">&quot;server&quot;</span>,
-            <span class="ident">step</span> <span class="op">=</span> <span class="string">&quot;finalize&quot;</span>,
-            <span class="string">&quot;{} noise server finalize: {}&quot;</span>,
+        <span class="macro">trace</span><span class="macro">!</span>(
+            <span class="string">&quot;{} noise server: handshake finalize: remote_peer_id: {}&quot;</span>,
             <span class="self">self</span>.<span class="ident">network_context</span>,
-            <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
+            <span class="ident">remote_peer_short</span>,
         );
         <span class="prelude-val">Ok</span>((<span class="ident">NoiseStream</span>::<span class="ident">new</span>(<span class="ident">socket</span>, <span class="ident">session</span>), <span class="ident">remote_peer_id</span>))
     }
@@ -1211,10 +1141,9 @@
     <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">traits</span>::<span class="ident">Uniform</span> <span class="kw">as</span> <span class="kw">_</span>};
     <span class="kw">use</span> <span class="ident">memsocket</span>::<span class="ident">MemorySocket</span>;
     <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span> <span class="kw">as</span> <span class="kw">_</span>;
-    <span class="kw">use</span> <span class="ident">std</span>::{
-        <span class="ident">io</span>,
-        <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
-    };
+    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
+
+    <span class="kw">const</span> <span class="ident">TEST_SEED_2</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">42</span>; <span class="number">32</span>];
 
     <span class="doccomment">/// helper to setup two testing peers</span>
     <span class="kw">fn</span> <span class="ident">build_peers</span>(
@@ -1278,8 +1207,8 @@
         <span class="ident">server</span>: <span class="kw-2">&amp;</span><span class="ident">NoiseUpgrader</span>,
         <span class="ident">server_public_key</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (
-        <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>)<span class="op">&gt;</span>,
+        <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span>, <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>,
+        <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>,
     ) {
         <span class="comment">// create an in-memory socket for testing</span>
         <span class="kw">let</span> (<span class="ident">dialer_socket</span>, <span class="ident">listener_socket</span>) <span class="op">=</span> <span class="ident">MemorySocket</span>::<span class="ident">new_pair</span>();
@@ -1368,9 +1297,8 @@
 
     <span class="kw">fn</span> <span class="ident">test_handshake_self_fails</span>(<span class="ident">is_mutual_auth</span>: <span class="ident">bool</span>) {
         <span class="kw">let</span> (<span class="kw">_</span>, (<span class="ident">server</span>, <span class="ident">server_public_key</span>)) <span class="op">=</span> <span class="ident">build_peers</span>(<span class="ident">is_mutual_auth</span>);
-
         <span class="kw">let</span> (<span class="ident">client_res</span>, <span class="ident">server_res</span>) <span class="op">=</span> <span class="ident">perform_handshake</span>(<span class="kw-2">&amp;</span><span class="ident">server</span>, <span class="kw-2">&amp;</span><span class="ident">server</span>, <span class="ident">server_public_key</span>);
-        <span class="comment">// Both sides should error</span>
+
         <span class="ident">client_res</span>.<span class="ident">unwrap_err</span>();
         <span class="ident">server_res</span>.<span class="ident">unwrap_err</span>();
     }
@@ -1383,6 +1311,56 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_handshake_self_fails_mutual_auth</span>() {
         <span class="ident">test_handshake_self_fails</span>(<span class="bool-val">true</span> <span class="comment">/* is_mutual_auth */</span>);
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_handshake_unauthed_keypair_fails_mutual_auth</span>() {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> ::<span class="ident">rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="ident">TEST_SEED_2</span>);
+        <span class="kw">let</span> <span class="ident">client_private_key</span> <span class="op">=</span> <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+
+        <span class="kw">let</span> ((<span class="kw-2">mut</span> <span class="ident">client</span>, <span class="kw">_</span>), (<span class="ident">server</span>, <span class="ident">server_public_key</span>)) <span class="op">=</span>
+            <span class="ident">build_peers</span>(<span class="bool-val">true</span> <span class="comment">/* is_mutual_auth */</span>);
+
+        <span class="comment">// swap in a different keypair, so the connection will be unauthenticated</span>
+        <span class="ident">client</span>.<span class="ident">noise_config</span> <span class="op">=</span> <span class="ident">noise</span>::<span class="ident">NoiseConfig</span>::<span class="ident">new</span>(<span class="ident">client_private_key</span>);
+        <span class="kw">let</span> (<span class="ident">client_res</span>, <span class="ident">server_res</span>) <span class="op">=</span> <span class="ident">perform_handshake</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span><span class="ident">server</span>, <span class="ident">server_public_key</span>);
+
+        <span class="ident">client_res</span>.<span class="ident">unwrap_err</span>();
+        <span class="ident">server_res</span>.<span class="ident">unwrap_err</span>();
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_handshake_unauthed_peerid_fails_mutual_auth</span>() {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> ::<span class="ident">rand</span>::<span class="ident">rngs</span>::<span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="ident">TEST_SEED_2</span>);
+        <span class="kw">let</span> <span class="ident">client_private_key</span> <span class="op">=</span> <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>::<span class="ident">generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+
+        <span class="comment">// build a client with an unrecognized peer id, so the connection will be</span>
+        <span class="comment">// unauthenticated</span>
+        <span class="kw">let</span> <span class="ident">client_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">random</span>();
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">NoiseUpgrader</span>::<span class="ident">new</span>(
+            <span class="ident">NetworkContext</span>::<span class="ident">mock_with_peer_id</span>(<span class="ident">client_peer_id</span>),
+            <span class="ident">client_private_key</span>,
+            <span class="ident">HandshakeAuthMode</span>::<span class="ident">mutual</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()))),
+        );
+
+        <span class="kw">let</span> (<span class="kw">_</span>, (<span class="ident">server</span>, <span class="ident">server_public_key</span>)) <span class="op">=</span> <span class="ident">build_peers</span>(<span class="bool-val">true</span> <span class="comment">/* is_mutual_auth */</span>);
+        <span class="kw">let</span> (<span class="ident">client_res</span>, <span class="ident">server_res</span>) <span class="op">=</span> <span class="ident">perform_handshake</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span><span class="ident">server</span>, <span class="ident">server_public_key</span>);
+
+        <span class="ident">client_res</span>.<span class="ident">unwrap_err</span>();
+        <span class="ident">server_res</span>.<span class="ident">unwrap_err</span>();
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_handshake_client_peerid_mismatch_fails_server_only_auth</span>() {
+        ::<span class="ident">libra_logger</span>::<span class="ident">Logger</span>::<span class="ident">init_for_testing</span>();
+
+        <span class="kw">let</span> ((<span class="kw-2">mut</span> <span class="ident">client</span>, <span class="kw">_</span>), (<span class="ident">server</span>, <span class="ident">server_public_key</span>)) <span class="op">=</span>
+            <span class="ident">build_peers</span>(<span class="bool-val">false</span> <span class="comment">/* is_mutual_auth */</span>);
+        <span class="ident">client</span>.<span class="ident">network_context</span> <span class="op">=</span> <span class="ident">NetworkContext</span>::<span class="ident">mock_with_peer_id</span>(<span class="ident">PeerId</span>::<span class="ident">random</span>());
+        <span class="kw">let</span> (<span class="ident">client_res</span>, <span class="ident">server_res</span>) <span class="op">=</span> <span class="ident">perform_handshake</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span><span class="ident">server</span>, <span class="ident">server_public_key</span>);
+
+        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;client_res: {}&quot;</span>, <span class="ident">client_res</span>.<span class="ident">unwrap_err</span>());
+        <span class="macro">trace</span><span class="macro">!</span>(<span class="string">&quot;server_res: {}&quot;</span>, <span class="ident">server_res</span>.<span class="ident">unwrap_err</span>());
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>

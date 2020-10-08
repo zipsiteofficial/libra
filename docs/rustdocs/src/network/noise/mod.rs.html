@@ -101,6 +101,10 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -122,9 +126,9 @@
 <span class="doccomment">//! use libra_crypto::{x25519, ed25519, Uniform, PrivateKey, test_utils::TEST_SEED};</span>
 <span class="doccomment">//! use rand::{rngs::StdRng, SeedableRng};</span>
 <span class="doccomment">//! use libra_types::PeerId;</span>
-<span class="doccomment">//! use std::{collections::{HashSet, HashMap}, sync::{Arc, RwLock}};</span>
+<span class="doccomment">//! use std::{collections::{HashSet, HashMap}, io, sync::{Arc, RwLock}};</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! fn example() -&gt; std::io::Result&lt;()&gt; {</span>
+<span class="doccomment">//! fn example() -&gt; io::Result&lt;()&gt; {</span>
 <span class="doccomment">//! // create client and server NoiseUpgrader</span>
 <span class="doccomment">//! let mut rng = StdRng::from_seed(TEST_SEED);</span>
 <span class="doccomment">//! let client_private = x25519::PrivateKey::generate(&amp;mut rng);</span>
@@ -169,8 +173,10 @@
 <span class="doccomment">//!    server.upgrade_inbound(listener_socket),</span>
 <span class="doccomment">//! ));</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! let mut client_session = client_session?;</span>
-<span class="doccomment">//! let (mut server_session, _client_peer_id) = server_session?;</span>
+<span class="doccomment">//! let mut client_session = client_session</span>
+<span class="doccomment">//!     .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;</span>
+<span class="doccomment">//! let (mut server_session, _client_peer_id) = server_session</span>
+<span class="doccomment">//!     .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! // client -&gt; server</span>
 <span class="doccomment">//! executor::block_on(client_session.write_all(b&quot;client hello&quot;))?;</span>
@@ -198,12 +204,14 @@
 <span class="doccomment">//! [ik]: https://noiseexplorer.com/patterns/IK</span>
 <span class="doccomment">//! [crypto]: ../libra_crypto/noise/index.html</span>
 
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">error</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">handshake</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">stream</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fuzzing</span>;
 
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">error</span>::<span class="ident">NoiseHandshakeError</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">handshake</span>::{<span class="ident">AntiReplayTimestamps</span>, <span class="ident">HandshakeAuthMode</span>, <span class="ident">NoiseUpgrader</span>};
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../../";window.currentCrate = "network";</script><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script><script defer src="../../../search-index.js"></script></body></html>
