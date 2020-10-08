@@ -212,23 +212,6 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -239,7 +222,7 @@
 <span class="kw">use</span> <span class="ident">channel</span>::<span class="ident">message_queues</span>::<span class="ident">QueueStyle</span>;
 <span class="kw">use</span> <span class="ident">futures</span>::{<span class="ident">executor</span>::<span class="ident">block_on</span>, <span class="ident">StreamExt</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::{
-    <span class="ident">config</span>::<span class="ident">RoleType</span>,
+    <span class="ident">config</span>::{<span class="ident">RoleType</span>, <span class="ident">NETWORK_CHANNEL_SIZE</span>},
     <span class="ident">network_id</span>::{<span class="ident">NetworkContext</span>, <span class="ident">NetworkId</span>},
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span>};
@@ -248,7 +231,6 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">chain_id</span>::<span class="ident">ChainId</span>, <span class="ident">PeerId</span>};
 <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
 <span class="kw">use</span> <span class="ident">network</span>::{
-    <span class="ident">constants</span>,
     <span class="ident">error</span>::<span class="ident">NetworkError</span>,
     <span class="ident">peer_manager</span>::{
         <span class="ident">builder</span>::<span class="ident">AuthenticationMode</span>, <span class="ident">ConnectionRequestSender</span>, <span class="ident">PeerManagerRequestSender</span>,
@@ -285,7 +267,7 @@
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">TEST_RPC_PROTOCOL</span>],
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">TEST_DIRECT_SEND_PROTOCOL</span>],
         <span class="ident">QueueStyle</span>::<span class="ident">LIFO</span>,
-        <span class="ident">constants</span>::<span class="ident">NETWORK_CHANNEL_SIZE</span>,
+        <span class="ident">NETWORK_CHANNEL_SIZE</span>,
         <span class="prelude-val">None</span>,
     )
 }
@@ -379,24 +361,16 @@
         <span class="ident">RoleType</span>::<span class="ident">Validator</span>,
         <span class="ident">listener_peer_id</span>,
     ));
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span> <span class="ident">NetworkBuilder</span>::<span class="ident">new</span>(
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span> <span class="ident">NetworkBuilder</span>::<span class="ident">new_for_test</span>(
         <span class="ident">chain_id</span>,
-        <span class="ident">trusted_peers</span>.<span class="ident">clone</span>(),
-        <span class="ident">network_context</span>,
-        <span class="ident">listener_addr</span>,
-        <span class="ident">authentication_mode</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_FRAME_SIZE</span>,
-        <span class="bool-val">false</span>, <span class="comment">/* Disable proxy protocol */</span>
-    );
-    <span class="ident">network_builder</span>.<span class="ident">add_connectivity_manager</span>(
         <span class="ident">HashMap</span>::<span class="ident">new</span>(),
         <span class="ident">seed_pubkeys</span>.<span class="ident">clone</span>(),
         <span class="ident">trusted_peers</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_FULLNODE_CONNECTIONS</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_CONNECTION_DELAY_MS</span>,
-        <span class="ident">constants</span>::<span class="ident">CONNECTIVITY_CHECK_INTERNAL_MS</span>,
-        <span class="ident">constants</span>::<span class="ident">NETWORK_CHANNEL_SIZE</span>,
+        <span class="ident">network_context</span>,
+        <span class="ident">listener_addr</span>,
+        <span class="ident">authentication_mode</span>,
     );
+
     <span class="kw">let</span> (<span class="ident">listener_sender</span>, <span class="kw-2">mut</span> <span class="ident">listener_events</span>) <span class="op">=</span> <span class="ident">network_builder</span>
         .<span class="ident">add_protocol_handler</span>::<span class="op">&lt;</span><span class="ident">DummyNetworkSender</span>, <span class="ident">DummyNetworkEvents</span><span class="op">&gt;</span>(<span class="ident">network_endpoint_config</span>());
     <span class="ident">network_builder</span>.<span class="ident">build</span>(<span class="ident">runtime</span>.<span class="ident">handle</span>().<span class="ident">clone</span>()).<span class="ident">start</span>();
@@ -417,24 +391,16 @@
 
     <span class="kw">let</span> <span class="ident">trusted_peers</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()));
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span> <span class="ident">NetworkBuilder</span>::<span class="ident">new</span>(
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">network_builder</span> <span class="op">=</span> <span class="ident">NetworkBuilder</span>::<span class="ident">new_for_test</span>(
         <span class="ident">chain_id</span>,
-        <span class="ident">trusted_peers</span>.<span class="ident">clone</span>(),
-        <span class="ident">network_context</span>,
-        <span class="ident">dialer_addr</span>,
-        <span class="ident">authentication_mode</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_FRAME_SIZE</span>,
-        <span class="bool-val">false</span>, <span class="comment">/* Disable proxy protocol */</span>
-    );
-    <span class="ident">network_builder</span>.<span class="ident">add_connectivity_manager</span>(
         <span class="ident">seed_addrs</span>,
         <span class="ident">seed_pubkeys</span>,
         <span class="ident">trusted_peers</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_FULLNODE_CONNECTIONS</span>,
-        <span class="ident">constants</span>::<span class="ident">MAX_CONNECTION_DELAY_MS</span>,
-        <span class="ident">constants</span>::<span class="ident">CONNECTIVITY_CHECK_INTERNAL_MS</span>,
-        <span class="ident">constants</span>::<span class="ident">NETWORK_CHANNEL_SIZE</span>,
+        <span class="ident">network_context</span>,
+        <span class="ident">dialer_addr</span>,
+        <span class="ident">authentication_mode</span>,
     );
+
     <span class="kw">let</span> (<span class="ident">dialer_sender</span>, <span class="kw-2">mut</span> <span class="ident">dialer_events</span>) <span class="op">=</span> <span class="ident">network_builder</span>
         .<span class="ident">add_protocol_handler</span>::<span class="op">&lt;</span><span class="ident">DummyNetworkSender</span>, <span class="ident">DummyNetworkEvents</span><span class="op">&gt;</span>(<span class="ident">network_endpoint_config</span>());
     <span class="ident">network_builder</span>.<span class="ident">build</span>(<span class="ident">runtime</span>.<span class="ident">handle</span>().<span class="ident">clone</span>()).<span class="ident">start</span>();
