@@ -1581,6 +1581,10 @@
 <span id="1581">1581</span>
 <span id="1582">1582</span>
 <span id="1583">1583</span>
+<span id="1584">1584</span>
+<span id="1585">1585</span>
+<span id="1586">1586</span>
+<span id="1587">1587</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1696,10 +1700,10 @@
     <span class="kw">pub</span> <span class="ident">output_directory</span>: <span class="ident">String</span>,
     <span class="doccomment">/// In which directories to look for references.</span>
     <span class="kw">pub</span> <span class="ident">doc_path</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// An optional path to a file containing a template for a root document for the generated</span>
+    <span class="doccomment">/// A list of paths to files containing templates for root documents for the generated</span>
     <span class="doccomment">/// documentation.</span>
     <span class="doccomment">///</span>
-    <span class="doccomment">/// The root document is a markdown file which contains placeholders for generated</span>
+    <span class="doccomment">/// A root document is a markdown file which contains placeholders for generated</span>
     <span class="doccomment">/// documentation content. It is also processed following the same rules than</span>
     <span class="doccomment">/// documentation comments in Move, including creation of cross-references and</span>
     <span class="doccomment">/// Move code highlighting.</span>
@@ -1719,7 +1723,7 @@
     <span class="doccomment">/// For a module or script which is included in the root document, no</span>
     <span class="doccomment">/// separate file is generated. References between the included and the standalone</span>
     <span class="doccomment">/// module/script content work transparently.</span>
-    <span class="kw">pub</span> <span class="ident">root_doc_template</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">root_doc_templates</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="doccomment">/// An optional file containing reference definitions. The content of this file will</span>
     <span class="doccomment">/// be added to each generated markdown doc.</span>
     <span class="kw">pub</span> <span class="ident">references_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
@@ -1737,7 +1741,7 @@
             <span class="ident">collapsed_sections</span>: <span class="bool-val">true</span>,
             <span class="ident">output_directory</span>: <span class="string">&quot;doc&quot;</span>.<span class="ident">to_string</span>(),
             <span class="ident">doc_path</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="string">&quot;doc&quot;</span>.<span class="ident">to_string</span>()],
-            <span class="ident">root_doc_template</span>: <span class="prelude-val">None</span>,
+            <span class="ident">root_doc_templates</span>: <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="ident">references_file</span>: <span class="prelude-val">None</span>,
         }
     }
@@ -1826,37 +1830,40 @@
         <span class="comment">// Compute missing information about schemas.</span>
         <span class="self">self</span>.<span class="ident">compute_declared_schemas</span>();
 
-        <span class="comment">// If there is a root template, parse it.</span>
-        <span class="kw">let</span> <span class="ident">root_template</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">file_name</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">options</span>.<span class="ident">root_doc_template</span> {
-            <span class="kw">let</span> <span class="ident">root_out_name</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">file_name</span>)
-                .<span class="ident">file_name</span>()
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">to_str</span>()
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">replace</span>(<span class="string">&quot;_template&quot;</span>, <span class="string">&quot;&quot;</span>);
-            <span class="kw">match</span> <span class="self">self</span>.<span class="ident">parse_root_template</span>(<span class="ident">file_name</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">elements</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">root_out_name</span>, <span class="ident">elements</span>)),
-                <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">error</span>(
-                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">env</span>.<span class="ident">unknown_loc</span>(),
-                        <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;cannot read root template `{}`&quot;</span>, <span class="ident">file_name</span>),
-                    );
-                    <span class="prelude-val">None</span>
+        <span class="comment">// If there is a root templates, parse them.</span>
+        <span class="kw">let</span> <span class="ident">root_templates</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">options</span>
+            .<span class="ident">root_doc_templates</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">file_name</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">root_out_name</span> <span class="op">=</span> <span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">file_name</span>)
+                    .<span class="ident">file_name</span>()
+                    .<span class="ident">unwrap</span>()
+                    .<span class="ident">to_str</span>()
+                    .<span class="ident">unwrap</span>()
+                    .<span class="ident">replace</span>(<span class="string">&quot;_template&quot;</span>, <span class="string">&quot;&quot;</span>);
+                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">parse_root_template</span>(<span class="ident">file_name</span>) {
+                    <span class="prelude-val">Ok</span>(<span class="ident">elements</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>((<span class="ident">root_out_name</span>, <span class="ident">elements</span>)),
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">error</span>(
+                            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">env</span>.<span class="ident">unknown_loc</span>(),
+                            <span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;cannot read root template `{}`&quot;</span>, <span class="ident">file_name</span>),
+                        );
+                        <span class="prelude-val">None</span>
+                    }
                 }
-            }
-        } <span class="kw">else</span> {
-            <span class="prelude-val">None</span>
-        };
+            })
+            .<span class="ident">collect_vec</span>();
 
         <span class="comment">// Compute module infos.</span>
-        <span class="self">self</span>.<span class="ident">compute_module_infos</span>(<span class="kw-2">&amp;</span><span class="ident">root_template</span>);
+        <span class="self">self</span>.<span class="ident">compute_module_infos</span>(<span class="kw-2">&amp;</span><span class="ident">root_templates</span>);
 
-        <span class="comment">// If there is a root template, expand it.</span>
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">out_file</span>, <span class="ident">elements</span>)) <span class="op">=</span> <span class="ident">root_template</span> {
+        <span class="comment">// Expand all root templates.</span>
+        <span class="kw">for</span> (<span class="ident">out_file</span>, <span class="ident">elements</span>) <span class="kw">in</span> <span class="ident">root_templates</span> {
             <span class="self">self</span>.<span class="ident">expand_root_template</span>(<span class="kw-2">&amp;</span><span class="ident">out_file</span>, <span class="ident">elements</span>);
         }
 
-        <span class="comment">// Generate documentation for standalone modules which are not included in the template.</span>
+        <span class="comment">// Generate documentation for standalone modules which are not included in the templates.</span>
         <span class="kw">for</span> (<span class="ident">id</span>, <span class="ident">info</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">infos</span>.<span class="ident">clone</span>() {
             <span class="kw">let</span> <span class="ident">m</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">env</span>.<span class="ident">get_module</span>(<span class="ident">id</span>);
             <span class="kw">if</span> <span class="op">!</span><span class="ident">info</span>.<span class="ident">is_included</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">m</span>.<span class="ident">is_dependency</span>() {
@@ -1954,6 +1961,7 @@
     <span class="doccomment">/// Expand the root template.</span>
     <span class="kw">fn</span> <span class="ident">expand_root_template</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">output_file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">elements</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TemplateElement</span><span class="op">&gt;</span>) {
         <span class="self">self</span>.<span class="ident">writer</span> <span class="op">=</span> <span class="ident">CodeWriter</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">env</span>.<span class="ident">unknown_loc</span>());
+        <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">label_counter</span>.<span class="ident">borrow_mut</span>() <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">toc_label</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="kw">for</span> <span class="ident">elem</span> <span class="kw">in</span> <span class="ident">elements</span> {
             <span class="kw">match</span> <span class="ident">elem</span> {
@@ -2006,7 +2014,7 @@
     }
 
     <span class="doccomment">/// Compute ModuleInfo for all modules, considering root template content.</span>
-    <span class="kw">fn</span> <span class="ident">compute_module_infos</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">template</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TemplateElement</span><span class="op">&gt;</span>)<span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">compute_module_infos</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">templates</span>: <span class="kw-2">&amp;</span>[(<span class="ident">String</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TemplateElement</span><span class="op">&gt;</span>)]) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">out_dir</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">options</span>.<span class="ident">output_directory</span>.<span class="ident">to_string</span>();
         <span class="kw">if</span> <span class="ident">out_dir</span>.<span class="ident">is_empty</span>() {
             <span class="ident">out_dir</span> <span class="op">=</span> <span class="string">&quot;.&quot;</span>.<span class="ident">to_string</span>();
@@ -2027,7 +2035,7 @@
         };
         <span class="comment">// First process infos for modules included via template.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">included</span> <span class="op">=</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">template_out_file</span>, <span class="ident">elements</span>)) <span class="op">=</span> <span class="ident">template</span> {
+        <span class="kw">for</span> (<span class="ident">template_out_file</span>, <span class="ident">elements</span>) <span class="kw">in</span> <span class="ident">templates</span> {
             <span class="kw">for</span> <span class="ident">element</span> <span class="kw">in</span> <span class="ident">elements</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">TemplateElement</span>::<span class="ident">IncludeModule</span>(<span class="ident">name</span>) <span class="op">=</span> <span class="ident">element</span> {
                     <span class="comment">// TODO: currently we only support simple names, we may want to add support for</span>
