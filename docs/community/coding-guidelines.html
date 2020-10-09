@@ -186,11 +186,16 @@ separators in both binary names and command line arguments.</p>
 </ul>
 <h3><a class="anchor" aria-hidden="true" id="error-handling"></a><a href="#error-handling" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Error handling</h3>
 <p>Error handling suggestions follow the <a href="https://doc.rust-lang.org/book/ch09-00-error-handling.html">Rust book guidance</a>.  Rust groups errors into two major categories: recoverable and unrecoverable errors.  Recoverable errors should be handled with <a href="https://doc.rust-lang.org/std/result/">Result</a>.  Our suggestions on unrecoverable errors are listed below:</p>
+<p><em>Fallible functions</em></p>
+<ul>
+<li><code>duration_since_epoch()</code> - to obtain the unix time, call the function provided by <code>libra-infallible</code>.</li>
+<li><code>RwLock</code> and <code>Mutex</code> - Instead of calling <code>unwrap()</code> on the standard library implementations of these functions, use the infallible equivalent types that we provide in <code>libra-infallible</code>.</li>
+</ul>
 <p><em>Panic</em></p>
 <ul>
-<li><code>unwrap()</code> - Unwrap should only be used for mutexes (e.g. <code>lock().unwrap()</code>) and test code.  For all other use cases, prefer <code>expect()</code>. The only exception is if the error message is custom-generated, in which case use <code>.unwrap_or_else(|| panic!(&quot;error: {}&quot;, foo))</code></li>
+<li><code>unwrap()</code> - Unwrap should only be used for test code.  For all other use cases, prefer <code>expect()</code>. The only exception is if the error message is custom-generated, in which case use <code>.unwrap_or_else(|| panic!(&quot;error: {}&quot;, foo))</code>.</li>
 <li><code>expect()</code> - Expect should be invoked when a system invariant is expected to be preserved.  <code>expect()</code> is preferred over <code>unwrap()</code> and should contain a detailed error message on failure in most cases.</li>
-<li><code>assert!()</code> - This macro is kept in both debug/release and should be used to protect invariants of the system as necessary</li>
+<li><code>assert!()</code> - This macro is kept in both debug/release and should be used to protect invariants of the system as necessary.</li>
 <li><code>unreachable!()</code> - This macro will panic on code that should not be reached (violating an invariant) and can be used where appropriate.</li>
 </ul>
 <p>In production (non-test) code, outside of lock management,  all unrecoverable errors should be cleanly documented describing why said event is unrecoverable. For example, if the system is now in a bad state, state what that state is and the motivation for why a crash / restart is more effective than resolving it within a running system, and what if any steps an operator would need to take to resolve the issue.</p>

@@ -690,7 +690,6 @@
 <span id="690">690</span>
 <span id="691">691</span>
 <span id="692">692</span>
-<span id="693">693</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -708,7 +707,7 @@
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">io</span>::{<span class="ident">AsyncRead</span>, <span class="ident">AsyncReadExt</span>, <span class="ident">AsyncWrite</span>, <span class="ident">AsyncWriteExt</span>};
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">noise</span>, <span class="ident">x25519</span>};
-<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">duration_since_epoch</span>;
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::{<span class="ident">duration_since_epoch</span>, <span class="ident">RwLock</span>};
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">trace</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">transport</span>::<span class="ident">ConnectionOrigin</span>;
@@ -716,7 +715,7 @@
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">convert</span>::<span class="ident">TryFrom</span> <span class="kw">as</span> <span class="kw">_</span>,
     <span class="ident">fmt</span>::<span class="ident">Debug</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
+    <span class="ident">sync</span>::<span class="ident">Arc</span>,
 };
 
 <span class="doccomment">/// In a mutually authenticated network, a client message is accompanied with a timestamp.</span>
@@ -1042,7 +1041,7 @@
 
         <span class="comment">// if mutual auth mode, verify the remote pubkey is in our set of trusted peers</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">trusted_peers</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">auth_mode</span>.<span class="ident">trusted_peers</span>() {
-            <span class="kw">match</span> <span class="ident">trusted_peers</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>) {
+            <span class="kw">match</span> <span class="ident">trusted_peers</span>.<span class="ident">read</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">remote_pubkey_set</span>) <span class="op">=</span><span class="op">&gt;</span> {
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">remote_pubkey_set</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">remote_public_key</span>) {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">UnauthenticatedClientPubkey</span>(
@@ -1085,7 +1084,7 @@
             <span class="kw">let</span> <span class="ident">client_timestamp</span> <span class="op">=</span> <span class="ident">u64</span>::<span class="ident">from_le_bytes</span>(<span class="ident">client_timestamp</span>);
 
             <span class="comment">// check the timestamp is not a replay</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">anti_replay_timestamps</span> <span class="op">=</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">anti_replay_timestamps</span> <span class="op">=</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">write</span>();
             <span class="kw">if</span> <span class="ident">anti_replay_timestamps</span>.<span class="ident">is_replay</span>(<span class="ident">remote_public_key</span>, <span class="ident">client_timestamp</span>) {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ServerReplayDetected</span>(
                     <span class="ident">remote_peer_short</span>,
@@ -1141,7 +1140,6 @@
     <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">traits</span>::<span class="ident">Uniform</span> <span class="kw">as</span> <span class="kw">_</span>};
     <span class="kw">use</span> <span class="ident">memsocket</span>::<span class="ident">MemorySocket</span>;
     <span class="kw">use</span> <span class="ident">rand</span>::<span class="ident">SeedableRng</span> <span class="kw">as</span> <span class="kw">_</span>;
-    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
 
     <span class="kw">const</span> <span class="ident">TEST_SEED_2</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">42</span>; <span class="number">32</span>];
 

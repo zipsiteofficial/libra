@@ -160,9 +160,6 @@
 <span id="160">160</span>
 <span id="161">161</span>
 <span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -173,6 +170,7 @@
 <span class="kw">use</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span>;
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">config</span>::<span class="ident">HANDSHAKE_VERSION</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">hash</span>::<span class="ident">ACCUMULATOR_PLACEHOLDER_HASH</span>, <span class="ident">test_utils</span>::<span class="ident">TEST_SEED</span>, <span class="ident">x25519</span>, <span class="ident">Uniform</span>};
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">RwLock</span>;
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
     <span class="ident">encrypted</span>::{<span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY_VERSION</span>},
     <span class="ident">NetworkAddress</span>, <span class="ident">Protocol</span>,
@@ -186,7 +184,7 @@
 };
 <span class="kw">use</span> <span class="ident">memsocket</span>::<span class="ident">MemoryListener</span>;
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">rngs</span>::<span class="ident">StdRng</span>, <span class="ident">SeedableRng</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">SynchronizerEnvHelper</span>;
 
@@ -272,7 +270,7 @@
 
 <span class="kw">impl</span> <span class="ident">ExecutorProxyTrait</span> <span class="kw">for</span> <span class="ident">MockExecutorProxy</span> {
     <span class="kw">fn</span> <span class="ident">get_local_storage_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SynchronizerState</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">get_local_storage_state</span>())
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">read</span>().<span class="ident">get_local_storage_state</span>())
     }
 
     <span class="kw">fn</span> <span class="ident">execute_chunk</span>(
@@ -281,7 +279,7 @@
         <span class="ident">ledger_info_with_sigs</span>: <span class="ident">LedgerInfoWithSignatures</span>,
         <span class="ident">intermediate_end_of_epoch_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>().<span class="ident">add_txns_with_li</span>(
+        <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">write</span>().<span class="ident">add_txns_with_li</span>(
             <span class="ident">txn_list_with_proof</span>.<span class="ident">transactions</span>,
             <span class="ident">ledger_info_with_sigs</span>,
             <span class="ident">intermediate_end_of_epoch_li</span>,
@@ -298,7 +296,6 @@
         <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">storage</span>
             .<span class="ident">read</span>()
-            .<span class="ident">unwrap</span>()
             .<span class="ident">get_chunk</span>(<span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>, <span class="ident">limit</span>, <span class="ident">target_version</span>);
         <span class="kw">let</span> <span class="ident">first_txn_version</span> <span class="op">=</span> <span class="ident">txns</span>.<span class="ident">first</span>().<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span>);
         <span class="kw">let</span> <span class="ident">txns_with_proof</span> <span class="op">=</span> <span class="ident">TransactionListWithProof</span>::<span class="ident">new</span>(
@@ -311,14 +308,11 @@
     }
 
     <span class="kw">fn</span> <span class="ident">get_epoch_proof</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">epoch</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">get_epoch_changes</span>(<span class="ident">epoch</span>)
+        <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">read</span>().<span class="ident">get_epoch_changes</span>(<span class="ident">epoch</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">get_epoch_ending_ledger_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">storage</span>
-            .<span class="ident">read</span>()
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">get_epoch_ending_ledger_info</span>(<span class="ident">version</span>)
+        <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">read</span>().<span class="ident">get_epoch_ending_ledger_info</span>(<span class="ident">version</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">load_on_chain_configs</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {

@@ -284,6 +284,7 @@
 <span id="284">284</span>
 <span id="285">285</span>
 <span id="286">286</span>
+<span id="287">287</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -291,6 +292,7 @@
 <span class="attribute">#![<span class="ident">forbid</span>(<span class="ident">unsafe_code</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">libra_global_constants</span>::<span class="ident">VALIDATOR_NETWORK_ADDRESS_KEYS</span>;
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">RwLock</span>;
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::{
     <span class="ident">encrypted</span>::{
         <span class="ident">EncNetworkAddress</span>, <span class="ident">Key</span>, <span class="ident">KeyVersion</span>, <span class="ident">TEST_SHARED_VAL_NETADDR_KEY</span>,
@@ -301,7 +303,7 @@
 <span class="kw">use</span> <span class="ident">libra_secure_storage</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">StorageError</span>, <span class="ident">KVStorage</span>, <span class="ident">Storage</span>};
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">collections</span>::<span class="ident">HashMap</span>, <span class="ident">sync</span>::<span class="ident">RwLock</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">collections</span>::<span class="ident">HashMap</span>;
 <span class="kw">use</span> <span class="ident">thiserror</span>::<span class="ident">Error</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Error</span>)]</span>
@@ -425,7 +427,7 @@
 
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">result</span> {
             <span class="prelude-val">Ok</span>(<span class="ident">keys</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">keys</span>.<span class="ident">clone</span>());
+                <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>() <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">keys</span>.<span class="ident">clone</span>());
             }
             <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">libra_logger</span>::<span class="macro">error</span><span class="macro">!</span>(
                 <span class="string">&quot;Unable to read {} from storage: {}&quot;</span>,
@@ -434,7 +436,7 @@
             ),
         }
 
-        <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">cached_keys</span>.<span class="ident">read</span>();
         <span class="ident">keys</span>.<span class="ident">as_ref</span>().<span class="ident">map_or</span>(<span class="ident">result</span>, <span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">v</span>.<span class="ident">clone</span>()))
     }
 
@@ -545,7 +547,7 @@
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">addrs</span>, <span class="ident">dec_addrs</span>);
 
         <span class="comment">// Reset cache and we should get an err</span>
-        <span class="kw-2">*</span><span class="ident">encryptor</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw-2">*</span><span class="ident">encryptor</span>.<span class="ident">cached_keys</span>.<span class="ident">write</span>() <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="ident">encryptor</span>.<span class="ident">encrypt</span>(<span class="kw-2">&amp;</span><span class="ident">addrs</span>, <span class="ident">account</span>, <span class="number">1</span>).<span class="ident">unwrap_err</span>();
         <span class="ident">encryptor</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="ident">enc_addrs</span>, <span class="ident">account</span>).<span class="ident">unwrap_err</span>();
     }

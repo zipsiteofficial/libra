@@ -955,6 +955,7 @@
 <span id="955">955</span>
 <span id="956">956</span>
 <span id="957">957</span>
+<span id="958">958</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -996,6 +997,7 @@
 };
 <span class="kw">use</span> <span class="ident">libra_config</span>::<span class="ident">network_id</span>::<span class="ident">NetworkContext</span>;
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">x25519</span>;
+<span class="kw">use</span> <span class="ident">libra_infallible</span>::<span class="ident">RwLock</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_network_address</span>::<span class="ident">NetworkAddress</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
@@ -1009,7 +1011,7 @@
     <span class="ident">cmp</span>::<span class="ident">min</span>,
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">fmt</span>, <span class="ident">mem</span>,
-    <span class="ident">sync</span>::{<span class="ident">Arc</span>, <span class="ident">RwLock</span>},
+    <span class="ident">sync</span>::<span class="ident">Arc</span>,
     <span class="ident">time</span>::<span class="ident">Duration</span>,
 };
 <span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">time</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
@@ -1159,7 +1161,7 @@
         <span class="ident">connection_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">is_empty</span>(),
+            <span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">is_empty</span>(),
             <span class="string">&quot;Eligible peers must be initially empty. eligible: {:?}&quot;</span>,
             <span class="ident">eligible</span>
         );
@@ -1253,7 +1255,7 @@
     <span class="doccomment">/// reconfiguration. If we are currently connected to this validator, calling</span>
     <span class="doccomment">/// this function will close our connection to it.</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">close_stale_connections</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">stale_connections</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">connected</span>
             .<span class="ident">keys</span>()
@@ -1289,7 +1291,7 @@
     <span class="doccomment">/// reconfiguration. If there is a pending dial to this validator, calling</span>
     <span class="doccomment">/// this function will remove it from the dial queue.</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">cancel_stale_dials</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
-        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">stale_dials</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">dial_queue</span>
             .<span class="ident">keys</span>()
@@ -1312,7 +1314,7 @@
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">pending_dials</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">FuturesUnordered</span><span class="op">&lt;</span><span class="ident">BoxFuture</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">PeerId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     ) {
-        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">read</span>().<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">to_connect</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">peer_addrs</span>
             .<span class="number">0</span>
@@ -1595,7 +1597,7 @@
             <span class="comment">// Swap in the new eligible peers set. Drop the old set after releasing</span>
             <span class="comment">// the write lock.</span>
             <span class="kw">let</span> <span class="ident">_old_eligible</span> <span class="op">=</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
+                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">eligible</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">eligible</span>.<span class="ident">write</span>();
                 <span class="ident">mem</span>::<span class="ident">replace</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">*</span><span class="ident">eligible</span>, <span class="ident">new_eligible</span>)
             };
         }
