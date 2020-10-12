@@ -1235,6 +1235,9 @@
 <span id="1235">1235</span>
 <span id="1236">1236</span>
 <span id="1237">1237</span>
+<span id="1238">1238</span>
+<span id="1239">1239</span>
+<span id="1240">1240</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1677,22 +1680,25 @@
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Not minting accounts&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(()); <span class="comment">// Early return to skip printing &#39;Minting ...&#39; logs</span>
         }
-        <span class="kw">let</span> <span class="ident">num_seed_accounts</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">requested_accounts</span> <span class="op">/</span> <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">MAX_CHILD_VASP_NUM</span> {
-            <span class="ident">requested_accounts</span> <span class="op">/</span> <span class="ident">MAX_CHILD_VASP_NUM</span> <span class="op">+</span> <span class="number">1</span>
-        } <span class="kw">else</span> {
-            <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>()
-        };
+        <span class="kw">let</span> <span class="ident">expected_num_seed_accounts</span> <span class="op">=</span>
+            <span class="kw">if</span> <span class="ident">requested_accounts</span> <span class="op">/</span> <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">MAX_CHILD_VASP_NUM</span> {
+                <span class="ident">requested_accounts</span> <span class="op">/</span> <span class="ident">MAX_CHILD_VASP_NUM</span> <span class="op">+</span> <span class="number">1</span>
+            } <span class="kw">else</span> {
+                <span class="ident">req</span>.<span class="ident">instances</span>.<span class="ident">len</span>()
+            };
         <span class="kw">let</span> <span class="ident">num_accounts</span> <span class="op">=</span> <span class="ident">requested_accounts</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>(); <span class="comment">// Only minting extra accounts</span>
-        <span class="kw">let</span> <span class="ident">num_new_child_accounts</span> <span class="op">=</span> (<span class="ident">num_accounts</span> <span class="op">+</span> <span class="ident">num_seed_accounts</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">/</span> <span class="ident">num_seed_accounts</span>;
         <span class="kw">let</span> <span class="ident">coins_per_account</span> <span class="op">=</span> (<span class="ident">SEND_AMOUNT</span> <span class="op">+</span> <span class="ident">req</span>.<span class="ident">gas_price</span>) <span class="op">*</span> <span class="ident">MAX_TXNS</span>;
-        <span class="kw">let</span> <span class="ident">coins_per_seed_account</span> <span class="op">=</span> <span class="ident">coins_per_account</span> <span class="op">*</span> <span class="ident">num_new_child_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>;
         <span class="kw">let</span> <span class="ident">coins_total</span> <span class="op">=</span> <span class="ident">coins_per_account</span> <span class="op">*</span> <span class="ident">num_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">faucet_account</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_money_source</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>, <span class="ident">coins_total</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="comment">// Create seed accounts with which we can create actual accounts concurrently</span>
         <span class="kw">let</span> <span class="ident">seed_accounts</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">get_seed_accounts</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>, <span class="ident">num_seed_accounts</span>)
+            .<span class="ident">get_seed_accounts</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>.<span class="ident">instances</span>, <span class="ident">expected_num_seed_accounts</span>)
             .<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">actual_num_seed_accounts</span> <span class="op">=</span> <span class="ident">seed_accounts</span>.<span class="ident">len</span>();
+        <span class="kw">let</span> <span class="ident">num_new_child_accounts</span> <span class="op">=</span>
+            (<span class="ident">num_accounts</span> <span class="op">+</span> <span class="ident">actual_num_seed_accounts</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">/</span> <span class="ident">actual_num_seed_accounts</span>;
+        <span class="kw">let</span> <span class="ident">coins_per_seed_account</span> <span class="op">=</span> <span class="ident">coins_per_account</span> <span class="op">*</span> <span class="ident">num_new_child_accounts</span> <span class="kw">as</span> <span class="ident">u64</span>;
         <span class="ident">mint_to_new_accounts</span>(
             <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">faucet_account</span>,
             <span class="kw-2">&amp;</span><span class="ident">seed_accounts</span>,
@@ -1706,7 +1712,7 @@
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Completed minting seed accounts&quot;</span>);
         <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Minting additional {} accounts&quot;</span>, <span class="ident">num_accounts</span>);
 
-        <span class="kw">let</span> <span class="ident">seed_rngs</span> <span class="op">=</span> <span class="ident">gen_rng_for_reusable_account</span>(<span class="ident">num_seed_accounts</span>);
+        <span class="kw">let</span> <span class="ident">seed_rngs</span> <span class="op">=</span> <span class="ident">gen_rng_for_reusable_account</span>(<span class="ident">actual_num_seed_accounts</span>);
         <span class="comment">// For each seed account, create a future and transfer libra from that seed account to new accounts</span>
         <span class="kw">let</span> <span class="ident">account_futures</span> <span class="op">=</span> <span class="ident">seed_accounts</span>
             .<span class="ident">into_iter</span>()
