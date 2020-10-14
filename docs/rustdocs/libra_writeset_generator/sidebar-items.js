@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["SCRIPTS_DIR_PATH","The relative path to the scripts templates"]],"fn":[["encode_custom_script",""],["encode_halt_network_transaction",""],["encode_remove_validators_transaction",""],["template_path",""]]});
