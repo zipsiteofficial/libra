@@ -429,6 +429,42 @@
 <span id="429">429</span>
 <span id="430">430</span>
 <span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+<span id="457">457</span>
+<span id="458">458</span>
+<span id="459">459</span>
+<span id="460">460</span>
+<span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
+<span id="467">467</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -439,7 +475,7 @@
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">language_storage</span>::<span class="ident">TypeTag</span>;
 <span class="kw">use</span> <span class="ident">serde_generate</span>::{
     <span class="ident">indent</span>::{<span class="ident">IndentConfig</span>, <span class="ident">IndentedWriter</span>},
-    <span class="ident">python3</span>, <span class="ident">CodeGeneratorConfig</span>,
+    <span class="ident">python3</span>, <span class="ident">CodeGeneratorConfig</span>, <span class="ident">CustomCode</span>,
 };
 
 <span class="kw">use</span> <span class="ident">std</span>::{
@@ -482,6 +518,42 @@
     <span class="ident">emitter</span>.<span class="ident">output_decoding_helpers</span>(<span class="ident">abis</span>)<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(())
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_custom_libra_code</span>(<span class="ident">package_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CustomCode</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="ident">custom_code</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[(
+        <span class="string">&quot;AccountAddress&quot;</span>,
+        <span class="string">r#&quot;LENGTH = 16  # type: int
+
+def to_bytes(self) -&gt; bytes:
+    &quot;&quot;&quot;Convert account address to bytes.&quot;&quot;&quot;
+    return bytes(typing.cast(typing.Iterable[int], self.value))
+
+@staticmethod
+def from_bytes(addr: bytes) -&gt; &quot;AccountAddress&quot;:
+    &quot;&quot;&quot;Create an account address from bytes.&quot;&quot;&quot;
+    if len(addr) != AccountAddress.LENGTH:
+        raise ValueError(&quot;Incorrect length for an account address&quot;)
+    return AccountAddress(value=tuple(st.uint8(x) for x in addr))  # pyre-ignore
+
+def to_hex(self) -&gt; str:
+    &quot;&quot;&quot;Convert account address to an hexadecimal string.&quot;&quot;&quot;
+    return self.to_bytes().hex()
+
+@staticmethod
+def from_hex(addr: str) -&gt; &quot;AccountAddress&quot;:
+    &quot;&quot;&quot;Create an account address from an hexadecimal string.&quot;&quot;&quot;
+    return AccountAddress.from_bytes(bytes.fromhex(addr))
+&quot;#</span>,
+    )];
+    <span class="kw">for</span> (<span class="ident">name</span>, <span class="ident">code</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">custom_code</span> {
+        <span class="ident">map</span>.<span class="ident">insert</span>(
+            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">package_name</span>.<span class="ident">to_string</span>(), <span class="ident">name</span>.<span class="ident">to_string</span>()],
+            <span class="ident">code</span>.<span class="ident">to_string</span>(),
+        );
+    }
+    <span class="ident">map</span>
 }
 
 <span class="doccomment">/// Shared state for the Python code generator.</span>

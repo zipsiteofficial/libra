@@ -506,6 +506,40 @@
 <span id="506">506</span>
 <span id="507">507</span>
 <span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -515,7 +549,7 @@
 <span class="kw">use</span> <span class="ident">move_core_types</span>::<span class="ident">language_storage</span>::<span class="ident">TypeTag</span>;
 <span class="kw">use</span> <span class="ident">serde_generate</span>::{
     <span class="ident">indent</span>::{<span class="ident">IndentConfig</span>, <span class="ident">IndentedWriter</span>},
-    <span class="ident">java</span>, <span class="ident">CodeGeneratorConfig</span>,
+    <span class="ident">java</span>, <span class="ident">CodeGeneratorConfig</span>, <span class="ident">CustomCode</span>,
 };
 
 <span class="kw">use</span> <span class="ident">heck</span>::{<span class="ident">CamelCase</span>, <span class="ident">ShoutySnakeCase</span>};
@@ -535,6 +569,40 @@
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_script_call_files</span>(<span class="ident">install_dir</span>.<span class="ident">clone</span>(), <span class="ident">package_name</span>, <span class="ident">abis</span>)<span class="question-mark">?</span>;
     <span class="ident">write_helper_file</span>(<span class="ident">install_dir</span>, <span class="ident">package_name</span>, <span class="ident">abis</span>)
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_custom_libra_code</span>(<span class="ident">package</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CustomCode</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> <span class="ident">BTreeMap</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="ident">custom_code</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[(
+        <span class="string">&quot;AccountAddress&quot;</span>,
+        <span class="string">r#&quot;static final int LENGTH = 16;
+
+public static AccountAddress valueOf(byte[] values) {
+    if (values.length != LENGTH) {
+        throw new java.lang.IllegalArgumentException(&quot;Invalid length for AccountAddress&quot;);
+    }
+    Byte[] address = new Byte[LENGTH];
+    for (int i = 0; i &lt; LENGTH; i++) {
+        address[i] = Byte.valueOf(values[i]);
+    }
+    return new AccountAddress(address);
+}
+
+public byte[] toBytes() {
+    byte[] bytes = new byte[LENGTH];
+    for (int i = 0; i &lt; LENGTH; i++) {
+        bytes[i] = value[i].byteValue();
+    }
+    return bytes;
+}
+&quot;#</span>,
+    )];
+    <span class="kw">for</span> (<span class="ident">name</span>, <span class="ident">code</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">custom_code</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">package</span>.<span class="ident">to_vec</span>();
+        <span class="ident">path</span>.<span class="ident">push</span>(<span class="ident">name</span>.<span class="ident">to_string</span>());
+        <span class="ident">map</span>.<span class="ident">insert</span>(<span class="ident">path</span>, <span class="ident">code</span>.<span class="ident">to_string</span>());
+    }
+    <span class="ident">map</span>
 }
 
 <span class="doccomment">/// Output transaction helper functions for the given ABIs.</span>
