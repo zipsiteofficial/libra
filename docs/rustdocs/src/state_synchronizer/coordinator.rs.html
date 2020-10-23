@@ -1288,6 +1288,30 @@
 <span id="1288">1288</span>
 <span id="1289">1289</span>
 <span id="1290">1290</span>
+<span id="1291">1291</span>
+<span id="1292">1292</span>
+<span id="1293">1293</span>
+<span id="1294">1294</span>
+<span id="1295">1295</span>
+<span id="1296">1296</span>
+<span id="1297">1297</span>
+<span id="1298">1298</span>
+<span id="1299">1299</span>
+<span id="1300">1300</span>
+<span id="1301">1301</span>
+<span id="1302">1302</span>
+<span id="1303">1303</span>
+<span id="1304">1304</span>
+<span id="1305">1305</span>
+<span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
+<span id="1310">1310</span>
+<span id="1311">1311</span>
+<span id="1312">1312</span>
+<span id="1313">1313</span>
+<span id="1314">1314</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -2022,6 +2046,13 @@
             <span class="prelude-val">None</span>
         };
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>) <span class="op">=</span> <span class="ident">end_of_epoch_li</span>.<span class="ident">as_ref</span>() {
+            <span class="macro">ensure</span><span class="macro">!</span>(
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">request</span>.<span class="ident">known_version</span>,
+                <span class="string">&quot;waypoint request&#39;s current_epoch (epoch {}, version {}) &lt; waypoint request&#39;s known_version {}&quot;</span>,
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(),
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
+                <span class="ident">request</span>.<span class="ident">known_version</span>,
+            );
             <span class="kw">let</span> <span class="ident">num_txns_until_end_of_epoch</span> <span class="op">=</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">-</span> <span class="ident">request</span>.<span class="ident">known_version</span>;
             <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">limit</span>, <span class="ident">num_txns_until_end_of_epoch</span>);
         }
@@ -2117,6 +2148,7 @@
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ProcessChunkResponse</span>, <span class="ident">LogEvent</span>::<span class="ident">Received</span>)
                 .<span class="ident">chunk_resp</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>)
+                .<span class="ident">peer</span>(<span class="ident">peer</span>)
         );
         <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;state_sync::apply_chunk&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
             <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in apply_chunk&quot;</span>))
@@ -2334,12 +2366,12 @@
         <span class="comment">// Optimistically fetch the next chunk.</span>
         <span class="kw">let</span> <span class="ident">new_version</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>() <span class="op">+</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
-        <span class="comment">// The epoch in the optimistic request should be the next epoch if the current chunk</span>
+        <span class="comment">// The epoch in the optimistic request (= new_epoch) should be the next epoch if the current chunk</span>
         <span class="comment">// is the last one in its epoch.</span>
         <span class="kw">let</span> <span class="ident">new_epoch</span> <span class="op">=</span> <span class="ident">end_of_epoch_li</span>
             .<span class="ident">as_ref</span>()
             .<span class="ident">map_or</span>(<span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>(), <span class="op">|</span><span class="ident">li</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span> {
+                <span class="kw">if</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>() {
                     <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>() <span class="op">+</span> <span class="number">1</span>
                 } <span class="kw">else</span> {
                     <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()
@@ -2355,6 +2387,22 @@
             }
         }
 
+        <span class="comment">// verify the end-of-epoch LI for the following before passing it to execution:</span>
+        <span class="comment">// * verify end-of-epoch-li against local state</span>
+        <span class="comment">// * verify end-of-epoch-li&#39;s version corresponds to end-of-chunk version before</span>
+        <span class="comment">// passing it to execution</span>
+        <span class="comment">// * Executor expects that when it is passed an end-of-epoch LI, it is going to execute/commit</span>
+        <span class="comment">// transactions leading up to that end-of-epoch LI</span>
+        <span class="comment">// * verify end-of-epoch-li actually ends an epoch</span>
+        <span class="kw">let</span> <span class="ident">end_of_epoch_li</span> <span class="op">=</span> <span class="ident">end_of_epoch_li</span>
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> {
+                <span class="comment">// verify end-of-epoch-li against local state</span>
+                <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">trusted_epoch</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">li</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">li</span>)
+            })
+            .<span class="ident">transpose</span>()<span class="question-mark">?</span>
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> {
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>()
+            });
         <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">verify</span>(<span class="ident">waypoint_li</span>.<span class="ident">ledger_info</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">validate_and_store_chunk</span>(<span class="ident">txn_list_with_proof</span>, <span class="ident">waypoint_li</span>, <span class="ident">end_of_epoch_li</span>)
     }
