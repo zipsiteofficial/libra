@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["get_custom_libra_code",""],["output","Output transaction builders in Python for the given ABIs."]],"struct":[["Installer",""]]});
+initSidebarItems({"fn":[["output","Output transaction builders in Python for the given ABIs."]],"struct":[["Installer",""]]});
