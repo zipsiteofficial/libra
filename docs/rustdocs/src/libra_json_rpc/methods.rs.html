@@ -649,6 +649,8 @@
 <span id="649">649</span>
 <span id="650">650</span>
 <span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -956,20 +958,22 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">script_hash_allow_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BytesView</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module_publishing_allowed</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">libra_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">account</span>) <span class="op">=</span> <span class="ident">service</span>.<span class="ident">get_account_state</span>(<span class="ident">libra_root_address</span>(), <span class="ident">version</span>)<span class="question-mark">?</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vm_publishing_option</span>) <span class="op">=</span> <span class="ident">account</span>.<span class="ident">get_vm_publishing_option</span>()<span class="question-mark">?</span> {
-            <span class="ident">script_hash_allow_list</span> <span class="op">=</span> <span class="prelude-val">Some</span>(
-                <span class="ident">vm_publishing_option</span>
-                    .<span class="ident">script_allow_list</span>
-                    .<span class="ident">iter</span>()
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">BytesView</span>::<span class="ident">from</span>(<span class="ident">v</span>.<span class="ident">to_vec</span>()))
-                    .<span class="ident">collect</span>(),
-            );
+    <span class="kw">if</span> <span class="ident">version</span> <span class="op">=</span><span class="op">=</span> <span class="ident">request</span>.<span class="ident">version</span>() {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">account</span>) <span class="op">=</span> <span class="ident">service</span>.<span class="ident">get_account_state</span>(<span class="ident">libra_root_address</span>(), <span class="ident">version</span>)<span class="question-mark">?</span> {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vm_publishing_option</span>) <span class="op">=</span> <span class="ident">account</span>.<span class="ident">get_vm_publishing_option</span>()<span class="question-mark">?</span> {
+                <span class="ident">script_hash_allow_list</span> <span class="op">=</span> <span class="prelude-val">Some</span>(
+                    <span class="ident">vm_publishing_option</span>
+                        .<span class="ident">script_allow_list</span>
+                        .<span class="ident">iter</span>()
+                        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">BytesView</span>::<span class="ident">from</span>(<span class="ident">v</span>.<span class="ident">to_vec</span>()))
+                        .<span class="ident">collect</span>(),
+                );
 
-            <span class="ident">module_publishing_allowed</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">vm_publishing_option</span>.<span class="ident">is_open_module</span>);
-        }
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">account</span>.<span class="ident">get_libra_version</span>()<span class="question-mark">?</span> {
-            <span class="ident">libra_version</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>.<span class="ident">major</span>)
+                <span class="ident">module_publishing_allowed</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">vm_publishing_option</span>.<span class="ident">is_open_module</span>);
+            }
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">account</span>.<span class="ident">get_libra_version</span>()<span class="question-mark">?</span> {
+                <span class="ident">libra_version</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>.<span class="ident">major</span>)
+            }
         }
     }
     <span class="prelude-val">Ok</span>(<span class="ident">MetadataView</span> {
