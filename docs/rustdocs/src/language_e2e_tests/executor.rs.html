@@ -377,6 +377,33 @@
 <span id="377">377</span>
 <span id="378">378</span>
 <span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -386,6 +413,8 @@
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">account</span>::{<span class="ident">Account</span>, <span class="ident">AccountData</span>},
     <span class="ident">data_store</span>::{<span class="ident">FakeDataStore</span>, <span class="ident">GENESIS_CHANGE_SET</span>, <span class="ident">GENESIS_CHANGE_SET_FRESH</span>},
+    <span class="ident">golden_outputs</span>::<span class="ident">GoldenOutputs</span>,
+    <span class="ident">keygen</span>::<span class="ident">KeyGen</span>,
 };
 <span class="kw">use</span> <span class="ident">compiled_stdlib</span>::{<span class="ident">stdlib_modules</span>, <span class="ident">transaction_scripts</span>::<span class="ident">StdlibScript</span>, <span class="ident">StdLibOptions</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
@@ -418,6 +447,8 @@
 };
 <span class="kw">use</span> <span class="ident">vm</span>::<span class="ident">CompiledModule</span>;
 
+<span class="kw">static</span> <span class="ident">RNG_SEED</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">9u8</span>; <span class="number">32</span>];
+
 <span class="doccomment">/// Provides an environment to run a VM instance.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// This struct is a mock in-memory implementation of the Libra executor.</span>
@@ -425,6 +456,8 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FakeExecutor</span> {
     <span class="ident">data_store</span>: <span class="ident">FakeDataStore</span>,
     <span class="ident">block_time</span>: <span class="ident">u64</span>,
+    <span class="ident">executed_output</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">GoldenOutputs</span><span class="op">&gt;</span>,
+    <span class="ident">rng</span>: <span class="ident">KeyGen</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FakeExecutor</span> {
@@ -433,6 +466,8 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">FakeExecutor</span> {
             <span class="ident">data_store</span>: <span class="ident">FakeDataStore</span>::<span class="ident">default</span>(),
             <span class="ident">block_time</span>: <span class="number">0</span>,
+            <span class="ident">executed_output</span>: <span class="prelude-val">None</span>,
+            <span class="ident">rng</span>: <span class="ident">KeyGen</span>::<span class="ident">from_seed</span>(<span class="ident">RNG_SEED</span>),
         };
         <span class="ident">executor</span>.<span class="ident">apply_write_set</span>(<span class="ident">write_set</span>);
         <span class="ident">executor</span>
@@ -476,7 +511,13 @@
         <span class="ident">FakeExecutor</span> {
             <span class="ident">data_store</span>: <span class="ident">FakeDataStore</span>::<span class="ident">default</span>(),
             <span class="ident">block_time</span>: <span class="number">0</span>,
+            <span class="ident">executed_output</span>: <span class="prelude-val">None</span>,
+            <span class="ident">rng</span>: <span class="ident">KeyGen</span>::<span class="ident">from_seed</span>(<span class="ident">RNG_SEED</span>),
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_golden_file</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">test_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
+        <span class="self">self</span>.<span class="ident">executed_output</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">GoldenOutputs</span>::<span class="ident">new</span>(<span class="ident">test_name</span>));
     }
 
     <span class="doccomment">/// Creates an executor with only the standard library Move modules published and not other</span>
@@ -504,12 +545,22 @@
         <span class="self">Self</span>::<span class="ident">from_genesis</span>(<span class="ident">genesis</span>.<span class="number">0</span>.<span class="ident">write_set</span>())
     }
 
+    <span class="doccomment">/// Create one instance of [`AccountData`] without saving it to data store.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_raw_account</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Account</span> {
+        <span class="ident">Account</span>::<span class="ident">new_from_seed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>)
+    }
+
+    <span class="doccomment">/// Create one instance of [`AccountData`] without saving it to data store.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_raw_account_data</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">balance</span>: <span class="ident">u64</span>, <span class="ident">seq_num</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountData</span> {
+        <span class="ident">AccountData</span>::<span class="ident">new_from_seed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>, <span class="ident">balance</span>, <span class="ident">seq_num</span>)
+    }
+
     <span class="doccomment">/// Creates a number of [`Account`] instances all with the same balance and sequence number,</span>
     <span class="doccomment">/// and publishes them to this executor&#39;s data store.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_accounts</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">size</span>: <span class="ident">usize</span>, <span class="ident">balance</span>: <span class="ident">u64</span>, <span class="ident">seq_num</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Account</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Account</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="ident">size</span>);
         <span class="kw">for</span> <span class="ident">_i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">size</span> {
-            <span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="ident">AccountData</span>::<span class="ident">new</span>(<span class="ident">balance</span>, <span class="ident">seq_num</span>);
+            <span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="ident">AccountData</span>::<span class="ident">new_from_seed</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>, <span class="ident">balance</span>, <span class="ident">seq_num</span>);
             <span class="self">self</span>.<span class="ident">add_account_data</span>(<span class="kw-2">&amp;</span><span class="ident">account_data</span>);
             <span class="ident">accounts</span>.<span class="ident">push</span>(<span class="ident">account_data</span>.<span class="ident">into_account</span>());
         }
@@ -565,12 +616,11 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">txn_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="ident">LibraVM</span>::<span class="ident">execute_block</span>(
+        <span class="self">self</span>.<span class="ident">execute_transaction_block</span>(
             <span class="ident">txn_block</span>
                 .<span class="ident">into_iter</span>()
                 .<span class="ident">map</span>(<span class="ident">Transaction</span>::<span class="ident">UserTransaction</span>)
                 .<span class="ident">collect</span>(),
-            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">data_store</span>,
         )
     }
 
@@ -614,7 +664,11 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">txn_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
-        <span class="ident">LibraVM</span>::<span class="ident">execute_block</span>(<span class="ident">txn_block</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">data_store</span>)
+        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">LibraVM</span>::<span class="ident">execute_block</span>(<span class="ident">txn_block</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">data_store</span>);
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">logger</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">executed_output</span> {
+            <span class="ident">logger</span>.<span class="ident">log</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}\n&quot;</span>, <span class="ident">output</span>).<span class="ident">as_str</span>());
+        }
+        <span class="ident">output</span>
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionOutput</span> {
