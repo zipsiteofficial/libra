@@ -51,11 +51,20 @@
 <span id="51">51</span>
 <span id="52">52</span>
 <span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>, <span class="ident">TransactionContext</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">auto_validate</span>::<span class="ident">AutoValidate</span>, <span class="ident">json_rpc</span>::<span class="ident">JsonRpcClientWrapper</span>, <span class="ident">TransactionContext</span>};
 <span class="kw">use</span> <span class="ident">libra_management</span>::{
     <span class="ident">config</span>::<span class="ident">ConfigPath</span>, <span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">secure_backend</span>::<span class="ident">ValidatorBackend</span>,
     <span class="ident">transaction</span>::<span class="ident">build_raw_transaction</span>,
@@ -77,6 +86,8 @@
     <span class="ident">chain_id</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChainId</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">validator_backend</span>: <span class="ident">ValidatorBackend</span>,
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="ident">auto_validate</span>: <span class="ident">AutoValidate</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SetValidatorOperator</span> {
@@ -102,7 +113,14 @@
         );
 
         <span class="kw">let</span> <span class="ident">signed_txn</span> <span class="op">=</span> <span class="ident">storage</span>.<span class="ident">sign</span>(<span class="ident">libra_global_constants</span>::<span class="ident">OWNER_KEY</span>, <span class="string">&quot;set-operator&quot;</span>, <span class="ident">txn</span>)<span class="question-mark">?</span>;
-        <span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="ident">signed_txn</span>)
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transaction_context</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="ident">signed_txn</span>)<span class="question-mark">?</span>;
+
+        <span class="comment">// Perform auto validation if required</span>
+        <span class="ident">transaction_context</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">auto_validate</span>
+            .<span class="ident">execute</span>(<span class="ident">config</span>.<span class="ident">json_server</span>, <span class="ident">transaction_context</span>)<span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="ident">transaction_context</span>)
     }
 }
 </pre></div>
