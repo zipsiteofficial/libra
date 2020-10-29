@@ -167,10 +167,6 @@
 <span id="167">167</span>
 <span id="168">168</span>
 <span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -179,7 +175,7 @@
     <span class="ident">backup_types</span>::{
         <span class="ident">epoch_ending</span>::<span class="ident">restore</span>::<span class="ident">EpochHistoryRestoreController</span>,
         <span class="ident">state_snapshot</span>::<span class="ident">restore</span>::{<span class="ident">StateSnapshotRestoreController</span>, <span class="ident">StateSnapshotRestoreOpt</span>},
-        <span class="ident">transaction</span>::<span class="ident">restore</span>::{<span class="ident">TransactionRestoreController</span>, <span class="ident">TransactionRestoreOpt</span>},
+        <span class="ident">transaction</span>::<span class="ident">restore</span>::<span class="ident">TransactionRestoreBatchController</span>,
     },
     <span class="ident">metadata</span>,
     <span class="ident">metadata</span>::{<span class="ident">cache</span>::<span class="ident">MetadataCacheOpt</span>, <span class="ident">TransactionBackupMeta</span>},
@@ -298,24 +294,20 @@
             .<span class="kw">await</span><span class="question-mark">?</span>;
         }
 
-        <span class="kw">for</span> <span class="ident">backup</span> <span class="kw">in</span> <span class="ident">transactions</span> {
-            <span class="kw">if</span> <span class="ident">backup</span>.<span class="ident">last_version</span> <span class="op">&lt;</span> <span class="ident">txn_resume_point</span> {
-                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Skipping {} due to non-empty DB.&quot;</span>, <span class="ident">backup</span>.<span class="ident">manifest</span>);
-                <span class="kw">continue</span>;
-            }
-
-            <span class="ident">TransactionRestoreController</span>::<span class="ident">new</span>(
-                <span class="ident">TransactionRestoreOpt</span> {
-                    <span class="ident">manifest_handle</span>: <span class="ident">backup</span>.<span class="ident">manifest</span>,
-                    <span class="ident">replay_from_version</span>: <span class="prelude-val">Some</span>(<span class="ident">replay_transactions_from_version</span>),
-                },
-                <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
-                <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>),
-                <span class="prelude-val">Some</span>(<span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">epoch_history</span>)),
-            )
-            .<span class="ident">run</span>()
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-        }
+        <span class="kw">let</span> <span class="ident">txn_manifests</span> <span class="op">=</span> <span class="ident">transactions</span>
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">skip_while</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span>.<span class="ident">last_version</span> <span class="op">&lt;</span> <span class="ident">txn_resume_point</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span>.<span class="ident">manifest</span>)
+            .<span class="ident">collect</span>();
+        <span class="ident">TransactionRestoreBatchController</span>::<span class="ident">new</span>(
+            <span class="self">self</span>.<span class="ident">global_opt</span>,
+            <span class="self">self</span>.<span class="ident">storage</span>,
+            <span class="ident">txn_manifests</span>,
+            <span class="prelude-val">Some</span>(<span class="ident">replay_transactions_from_version</span>),
+            <span class="prelude-val">Some</span>(<span class="ident">epoch_history</span>),
+        )
+        .<span class="ident">run</span>()
+        .<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(())
     }

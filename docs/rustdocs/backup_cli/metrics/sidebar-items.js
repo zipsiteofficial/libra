@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["restore",""],["verify",""]]});
+initSidebarItems({"mod":[["metadata",""],["restore",""],["verify",""]]});

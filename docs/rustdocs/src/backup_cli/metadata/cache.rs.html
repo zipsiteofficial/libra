@@ -147,13 +147,41 @@
 <span id="147">147</span>
 <span id="148">148</span>
 <span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">metadata</span>::{<span class="ident">view</span>::<span class="ident">MetadataView</span>, <span class="ident">Metadata</span>},
+    <span class="ident">metrics</span>::<span class="ident">metadata</span>::{<span class="ident">NUM_META_DOWNLOAD</span>, <span class="ident">NUM_META_FILES</span>, <span class="ident">NUM_META_MISS</span>},
     <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
+    <span class="ident">utils</span>::<span class="ident">stream</span>::<span class="ident">StreamX</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">async_trait</span>::<span class="ident">async_trait</span>;
@@ -162,6 +190,7 @@
     <span class="ident">collections</span>::{<span class="ident">HashMap</span>, <span class="ident">HashSet</span>},
     <span class="ident">path</span>::<span class="ident">PathBuf</span>,
     <span class="ident">sync</span>::<span class="ident">Arc</span>,
+    <span class="ident">time</span>::<span class="ident">Instant</span>,
 };
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 <span class="kw">use</span> <span class="ident">tokio</span>::{
@@ -202,6 +231,7 @@
     <span class="ident">opt</span>: <span class="kw-2">&amp;</span><span class="ident">MetadataCacheOpt</span>,
     <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MetadataView</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
     <span class="kw">let</span> <span class="ident">cache_dir</span> <span class="op">=</span> <span class="ident">opt</span>.<span class="ident">cache_dir</span>();
     <span class="ident">create_dir_all</span>(<span class="kw-2">&amp;</span><span class="ident">cache_dir</span>).<span class="kw">await</span><span class="question-mark">?</span>; <span class="comment">// create if not present already</span>
 
@@ -227,31 +257,50 @@
         .<span class="ident">collect</span>();
     <span class="kw">let</span> <span class="ident">remote_hashes</span>: <span class="ident">HashSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">remote_file_handle_by_hash</span>.<span class="ident">keys</span>().<span class="ident">cloned</span>().<span class="ident">collect</span>();
     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Metadata files listed.&quot;</span>);
+    <span class="ident">NUM_META_FILES</span>.<span class="ident">set</span>(<span class="ident">remote_hashes</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
 
     <span class="comment">// Sync local cache with remote metadata files.</span>
     <span class="kw">let</span> <span class="ident">stale_local_hashes</span> <span class="op">=</span> <span class="ident">local_hashes</span>.<span class="ident">difference</span>(<span class="kw-2">&amp;</span><span class="ident">remote_hashes</span>);
-    <span class="kw">let</span> <span class="ident">new_remote_hashes</span> <span class="op">=</span> <span class="ident">remote_hashes</span>.<span class="ident">difference</span>(<span class="kw-2">&amp;</span><span class="ident">local_hashes</span>);
+    <span class="kw">let</span> <span class="ident">new_remote_hashes</span> <span class="op">=</span> <span class="ident">remote_hashes</span>.<span class="ident">difference</span>(<span class="kw-2">&amp;</span><span class="ident">local_hashes</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
     <span class="kw">let</span> <span class="ident">up_to_date_local_hashes</span> <span class="op">=</span> <span class="ident">local_hashes</span>.<span class="ident">intersection</span>(<span class="kw-2">&amp;</span><span class="ident">remote_hashes</span>);
 
     <span class="kw">for</span> <span class="ident">h</span> <span class="kw">in</span> <span class="ident">stale_local_hashes</span> {
         <span class="ident">remove_file</span>(<span class="kw-2">&amp;</span><span class="ident">cache_dir</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">h</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
     }
-    <span class="kw">for</span> <span class="ident">h</span> <span class="kw">in</span> <span class="ident">new_remote_hashes</span>.<span class="ident">clone</span>() {
-        <span class="kw">let</span> <span class="ident">file_handle</span> <span class="op">=</span> <span class="ident">remote_file_handle_by_hash</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">h</span>).<span class="ident">unwrap</span>();
-        <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">copy</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">storage</span>.<span class="ident">open_for_read</span>(<span class="ident">file_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">OpenOptions</span>::<span class="ident">new</span>()
-                .<span class="ident">write</span>(<span class="bool-val">true</span>)
-                .<span class="ident">create_new</span>(<span class="bool-val">true</span>)
-                .<span class="ident">open</span>(<span class="kw-2">&amp;</span><span class="ident">cache_dir</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">h</span>))
-                .<span class="kw">await</span><span class="question-mark">?</span>,
+
+    <span class="ident">NUM_META_MISS</span>.<span class="ident">set</span>(<span class="ident">new_remote_hashes</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+    <span class="ident">NUM_META_DOWNLOAD</span>.<span class="ident">set</span>(<span class="number">0</span>);
+    <span class="kw">let</span> <span class="ident">futs</span> <span class="op">=</span> <span class="ident">new_remote_hashes</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">h</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">fh_by_h_ref</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">remote_file_handle_by_hash</span>;
+        <span class="kw">let</span> <span class="ident">storage_ref</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">storage</span>;
+        <span class="kw">let</span> <span class="ident">cache_dir_ref</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">cache_dir</span>;
+
+        <span class="kw">async</span> <span class="kw">move</span> {
+            <span class="kw">let</span> <span class="ident">file_handle</span> <span class="op">=</span> <span class="ident">fh_by_h_ref</span>.<span class="ident">get</span>(<span class="kw-2">*</span><span class="ident">h</span>).<span class="ident">expect</span>(<span class="string">&quot;In map.&quot;</span>);
+            <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">copy</span>(
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">storage_ref</span>.<span class="ident">open_for_read</span>(<span class="ident">file_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">OpenOptions</span>::<span class="ident">new</span>()
+                    .<span class="ident">write</span>(<span class="bool-val">true</span>)
+                    .<span class="ident">create_new</span>(<span class="bool-val">true</span>)
+                    .<span class="ident">open</span>(<span class="kw-2">&amp;</span><span class="ident">cache_dir_ref</span>.<span class="ident">join</span>(<span class="kw-2">*</span><span class="ident">h</span>))
+                    .<span class="kw">await</span><span class="question-mark">?</span>,
+            )
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="ident">NUM_META_DOWNLOAD</span>.<span class="ident">inc</span>();
+            <span class="prelude-val">Ok</span>(())
+        }
+    });
+    <span class="ident">futures</span>::<span class="ident">stream</span>::<span class="ident">iter</span>(<span class="ident">futs</span>)
+        .<span class="ident">buffered_x</span>(
+            <span class="ident">num_cpus</span>::<span class="ident">get</span>() <span class="op">*</span> <span class="number">2</span>, <span class="comment">/* buffer size */</span>
+            <span class="ident">num_cpus</span>::<span class="ident">get</span>(),     <span class="comment">/* concurrency */</span>
         )
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
         .<span class="kw">await</span><span class="question-mark">?</span>;
-    }
 
     <span class="comment">// Load metadata from synced cache files.</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">metadata_vec</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
-    <span class="kw">for</span> <span class="ident">h</span> <span class="kw">in</span> <span class="ident">new_remote_hashes</span>.<span class="ident">chain</span>(<span class="ident">up_to_date_local_hashes</span>) {
+    <span class="kw">for</span> <span class="ident">h</span> <span class="kw">in</span> <span class="ident">new_remote_hashes</span>.<span class="ident">into_iter</span>().<span class="ident">chain</span>(<span class="ident">up_to_date_local_hashes</span>) {
         <span class="kw">let</span> <span class="ident">cached_file</span> <span class="op">=</span> <span class="ident">cache_dir</span>.<span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">h</span>);
         <span class="ident">metadata_vec</span>.<span class="ident">extend</span>(
             <span class="ident">OpenOptions</span>::<span class="ident">new</span>()
@@ -263,7 +312,10 @@
                 .<span class="ident">into_iter</span>(),
         )
     }
-    <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Metadata cache loaded.&quot;</span>);
+    <span class="macro">info</span><span class="macro">!</span>(
+        <span class="string">&quot;Metadata cache loaded in {:.2} seconds.&quot;</span>,
+        <span class="ident">timer</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>()
+    );
     <span class="prelude-val">Ok</span>(<span class="ident">metadata_vec</span>.<span class="ident">into</span>())
 }
 

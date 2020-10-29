@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["EpochEndingRestoreController",""],["EpochEndingRestoreOpt",""],["EpochHistory","Represents a history of epoch changes since epoch 0."],["EpochHistoryRestoreController",""]]});
+initSidebarItems({"struct":[["EpochEndingRestoreController",""],["EpochEndingRestoreOpt",""],["EpochHistory","Represents a history of epoch changes since epoch 0."],["EpochHistoryRestoreController",""],["PreheatedEpochEndingRestore",""]]});

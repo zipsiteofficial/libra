@@ -311,6 +311,72 @@
 <span id="311">311</span>
 <span id="312">312</span>
 <span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -321,13 +387,14 @@
         <span class="ident">restore</span>::{<span class="ident">EPOCH_ENDING_EPOCH</span>, <span class="ident">EPOCH_ENDING_VERSION</span>},
         <span class="ident">verify</span>::{<span class="ident">VERIFY_EPOCH_ENDING_EPOCH</span>, <span class="ident">VERIFY_EPOCH_ENDING_VERSION</span>},
     },
-    <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>},
+    <span class="ident">storage</span>::{<span class="ident">BackupStorage</span>, <span class="ident">FileHandle</span>, <span class="ident">FileHandleRef</span>},
     <span class="ident">utils</span>::{
-        <span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">GlobalRestoreOptions</span>,
-        <span class="ident">RestoreRunMode</span>,
+        <span class="ident">read_record_bytes</span>::<span class="ident">ReadRecordBytes</span>, <span class="ident">storage_ext</span>::<span class="ident">BackupStorageExt</span>, <span class="ident">stream</span>::<span class="ident">StreamX</span>,
+        <span class="ident">GlobalRestoreOptions</span>, <span class="ident">RestoreRunMode</span>,
     },
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">anyhow</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">StreamExt</span>;
 <span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">epoch_change</span>::<span class="ident">Verifier</span>,
@@ -335,7 +402,7 @@
     <span class="ident">transaction</span>::<span class="ident">Version</span>,
     <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>,
 };
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Instant</span>};
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">StructOpt</span>)]</span>
@@ -349,7 +416,6 @@
     <span class="ident">run_mode</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RestoreRunMode</span><span class="op">&gt;</span>,
     <span class="ident">manifest_handle</span>: <span class="ident">FileHandle</span>,
     <span class="ident">target_version</span>: <span class="ident">Version</span>,
-    <span class="ident">previous_epoch_ending_ledger_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">EpochEndingRestoreController</span> {
@@ -357,26 +423,30 @@
         <span class="ident">opt</span>: <span class="ident">EpochEndingRestoreOpt</span>,
         <span class="ident">global_opt</span>: <span class="ident">GlobalRestoreOptions</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
-        <span class="ident">previous_epoch_ending_ledger_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">storage</span>,
             <span class="ident">run_mode</span>: <span class="ident">global_opt</span>.<span class="ident">run_mode</span>,
             <span class="ident">manifest_handle</span>: <span class="ident">opt</span>.<span class="ident">manifest_handle</span>,
             <span class="ident">target_version</span>: <span class="ident">global_opt</span>.<span class="ident">target_version</span>,
-            <span class="ident">previous_epoch_ending_ledger_info</span>,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">name</span>();
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{} started. Manifest: {}&quot;</span>, <span class="ident">name</span>, <span class="self">self</span>.<span class="ident">manifest_handle</span>);
-        <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">run_impl</span>()
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">preheat</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PreheatedEpochEndingRestore</span> {
+        <span class="ident">PreheatedEpochEndingRestore</span> {
+            <span class="ident">preheat_result</span>: <span class="self">self</span>.<span class="ident">preheat_impl</span>().<span class="kw">await</span>,
+            <span class="ident">controller</span>: <span class="self">self</span>,
+        }
+    }
+
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(
+        <span class="self">self</span>,
+        <span class="ident">previous_epoch_ending_ledger_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">preheat</span>()
             .<span class="kw">await</span>
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;{} failed: {}&quot;</span>, <span class="ident">name</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
-        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{} succeeded.&quot;</span>, <span class="ident">name</span>);
-        <span class="prelude-val">Ok</span>(<span class="ident">res</span>)
+            .<span class="ident">run</span>(<span class="ident">previous_epoch_ending_ledger_info</span>)
+            .<span class="kw">await</span>
     }
 }
 
@@ -385,7 +455,7 @@
         <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;epoch ending {}&quot;</span>, <span class="self">self</span>.<span class="ident">run_mode</span>.<span class="ident">name</span>())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_impl</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">preheat_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochEndingRestorePreheatData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">manifest</span>: <span class="ident">EpochEndingBackup</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">load_json_file</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manifest_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">manifest</span>.<span class="ident">verify</span>()<span class="question-mark">?</span>;
@@ -393,31 +463,31 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_epoch</span> <span class="op">=</span> <span class="ident">manifest</span>.<span class="ident">first_epoch</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">waypoint_iter</span> <span class="op">=</span> <span class="ident">manifest</span>.<span class="ident">waypoints</span>.<span class="ident">iter</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_li</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">previous_epoch_ending_ledger_info</span>.<span class="ident">clone</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">previous_li</span> {
-            <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">li</span>.<span class="ident">next_block_epoch</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">next_epoch</span>,
-                <span class="string">&quot;Previous epoch ending LedgerInfo is not the one expected. \
-                My first epoch: {}, previous LedgerInfo next_block_epoch: {}&quot;</span>,
-                <span class="ident">next_epoch</span>,
-                <span class="ident">li</span>.<span class="ident">next_block_epoch</span>(),
-            );
-        }
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ledger_infos</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output_lis</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">past_target</span> <span class="op">=</span> <span class="bool-val">false</span>;
+        <span class="kw">for</span> <span class="ident">chunk</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">manifest</span>.<span class="ident">chunks</span> {
+            <span class="kw">if</span> <span class="ident">past_target</span> {
+                <span class="kw">break</span>;
+            }
 
-        <span class="kw">for</span> <span class="ident">chunk</span> <span class="kw">in</span> <span class="ident">manifest</span>.<span class="ident">chunks</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lis</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_chunk</span>(<span class="ident">chunk</span>.<span class="ident">ledger_infos</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">lis</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_chunk</span>(<span class="kw-2">&amp;</span><span class="ident">chunk</span>.<span class="ident">ledger_infos</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="ident">chunk</span>.<span class="ident">first_epoch</span> <span class="op">+</span> <span class="ident">lis</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span> <span class="op">=</span><span class="op">=</span> <span class="ident">chunk</span>.<span class="ident">last_epoch</span> <span class="op">+</span> <span class="number">1</span>,
-                <span class="string">&quot;Number of items in chunks doesn&#39;t match that in manifest. first_epoch: {}, last_epoch: {}, items in chunk: {}&quot;</span>,
+                <span class="string">&quot;Number of items in chunks doesn&#39;t match that in manifest. \
+                first_epoch: {}, last_epoch: {}, items in chunk: {}&quot;</span>,
                 <span class="ident">chunk</span>.<span class="ident">first_epoch</span>,
                 <span class="ident">chunk</span>.<span class="ident">last_epoch</span>,
                 <span class="ident">lis</span>.<span class="ident">len</span>(),
             );
-            <span class="comment">// verify</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_li_ref</span> <span class="op">=</span> <span class="ident">previous_li</span>.<span class="ident">as_ref</span>();
-            <span class="kw">for</span> <span class="ident">li</span> <span class="kw">in</span> <span class="ident">lis</span>.<span class="ident">iter</span>() {
+
+            <span class="kw">for</span> <span class="ident">li</span> <span class="kw">in</span> <span class="ident">lis</span> {
+                <span class="kw">if</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_version</span> {
+                    <span class="ident">past_target</span> <span class="op">=</span> <span class="bool-val">true</span>;
+                    <span class="kw">break</span>;
+                }
+
                 <span class="macro">ensure</span><span class="macro">!</span>(
                     <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">next_epoch</span>,
                     <span class="string">&quot;LedgerInfo epoch not expected. Expected: {}, actual: {}.&quot;</span>,
@@ -434,66 +504,35 @@
                     <span class="ident">wp_manifest</span>,
                     <span class="ident">wp_li</span>,
                 );
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pre_li</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">previous_li_ref</span> {
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pre_li</span>) <span class="op">=</span> <span class="ident">previous_li</span> {
                     <span class="ident">pre_li</span>
+                        .<span class="ident">ledger_info</span>()
                         .<span class="ident">next_epoch_state</span>()
                         .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
                             <span class="macro">anyhow</span><span class="macro">!</span>(
                                 <span class="string">&quot;Next epoch state not found from LI at epoch {}.&quot;</span>,
-                                <span class="ident">pre_li</span>.<span class="ident">epoch</span>()
+                                <span class="ident">pre_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>()
                             )
                         })<span class="question-mark">?</span>
-                        .<span class="ident">verify</span>(<span class="ident">li</span>)<span class="question-mark">?</span>;
+                        .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">li</span>)<span class="question-mark">?</span>;
                 }
-                <span class="ident">previous_li_ref</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>.<span class="ident">ledger_info</span>());
+                <span class="ident">ledger_infos</span>.<span class="ident">push</span>(<span class="ident">li</span>);
+                <span class="ident">previous_li</span> <span class="op">=</span> <span class="ident">ledger_infos</span>.<span class="ident">last</span>();
                 <span class="ident">next_epoch</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            }
-            <span class="ident">previous_li</span> <span class="op">=</span> <span class="ident">previous_li_ref</span>.<span class="ident">cloned</span>();
-
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">end</span> <span class="op">=</span> <span class="ident">lis</span>.<span class="ident">len</span>(); <span class="comment">// To apply: &quot;[0, end)&quot;</span>
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">_end</span>) <span class="op">=</span> <span class="ident">lis</span>
-                .<span class="ident">iter</span>()
-                .<span class="ident">position</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_version</span>)
-            {
-                <span class="macro">info</span><span class="macro">!</span>(
-                    <span class="string">&quot;Ignoring epoch ending info beyond target_version. Epoch {} ends at {}, target_version: {}.&quot;</span>,
-                    <span class="ident">lis</span>[<span class="ident">_end</span>].<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(),
-                    <span class="ident">lis</span>[<span class="ident">_end</span>].<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
-                    <span class="self">self</span>.<span class="ident">target_version</span>,
-                );
-                <span class="ident">end</span> <span class="op">=</span> <span class="ident">_end</span>;
-            }
-            <span class="kw">let</span> <span class="ident">should_skip_next</span> <span class="op">=</span> <span class="ident">lis</span>.<span class="ident">drain</span>(<span class="ident">end</span>..).<span class="ident">count</span>() <span class="op">&gt;</span> <span class="number">0</span>;
-
-            <span class="comment">// write to db</span>
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">lis</span>.<span class="ident">is_empty</span>() {
-                <span class="kw">let</span> <span class="ident">last_li</span> <span class="op">=</span> <span class="ident">lis</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>).<span class="ident">ledger_info</span>();
-                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">run_mode</span>.<span class="ident">as_ref</span>() {
-                    <span class="ident">RestoreRunMode</span>::<span class="ident">Restore</span> { <span class="ident">restore_handler</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="ident">restore_handler</span>.<span class="ident">save_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="ident">lis</span>)<span class="question-mark">?</span>;
-
-                        <span class="ident">EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-                        <span class="ident">EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-                    }
-                    <span class="ident">RestoreRunMode</span>::<span class="ident">Verify</span> <span class="op">=</span><span class="op">&gt;</span> {
-                        <span class="ident">VERIFY_EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-                        <span class="ident">VERIFY_EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
-                    }
-                };
-                <span class="ident">output_lis</span>.<span class="ident">extend</span>(<span class="ident">lis</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">clone</span>()));
-            }
-
-            <span class="comment">// skip remaining chunks if beyond target_version</span>
-            <span class="kw">if</span> <span class="ident">should_skip_next</span> {
-                <span class="kw">break</span>;
             }
         }
 
-        <span class="prelude-val">Ok</span>(<span class="ident">output_lis</span>)
+        <span class="prelude-val">Ok</span>(<span class="ident">EpochEndingRestorePreheatData</span> {
+            <span class="ident">manifest</span>,
+            <span class="ident">ledger_infos</span>,
+        })
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_chunk</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">file_handle</span>: <span class="ident">FileHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">open_for_read</span>(<span class="kw-2">&amp;</span><span class="ident">file_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_chunk</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">file_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FileHandleRef</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">open_for_read</span>(<span class="ident">file_handle</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">chunk</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
 
         <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">record_bytes</span>) <span class="op">=</span> <span class="ident">file</span>.<span class="ident">read_record_bytes</span>().<span class="kw">await</span><span class="question-mark">?</span> {
@@ -501,6 +540,88 @@
         }
 
         <span class="prelude-val">Ok</span>(<span class="ident">chunk</span>)
+    }
+}
+
+<span class="kw">struct</span> <span class="ident">EpochEndingRestorePreheatData</span> {
+    <span class="ident">manifest</span>: <span class="ident">EpochEndingBackup</span>,
+    <span class="ident">ledger_infos</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PreheatedEpochEndingRestore</span> {
+    <span class="ident">controller</span>: <span class="ident">EpochEndingRestoreController</span>,
+    <span class="ident">preheat_result</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochEndingRestorePreheatData</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">PreheatedEpochEndingRestore</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(
+        <span class="self">self</span>,
+        <span class="ident">previous_epoch_ending_ledger_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">controller</span>.<span class="ident">name</span>();
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="string">&quot;{} started. Manifest: {}&quot;</span>,
+            <span class="ident">name</span>, <span class="self">self</span>.<span class="ident">controller</span>.<span class="ident">manifest_handle</span>
+        );
+        <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">run_impl</span>(<span class="ident">previous_epoch_ending_ledger_info</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;{} failed: {}&quot;</span>, <span class="ident">name</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+        <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;{} succeeded.&quot;</span>, <span class="ident">name</span>);
+        <span class="prelude-val">Ok</span>(<span class="ident">res</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">PreheatedEpochEndingRestore</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_impl</span>(
+        <span class="self">self</span>,
+        <span class="ident">previous_epoch_ending_ledger_info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">LedgerInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">preheat_data</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">preheat_result</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Preheat failed: {}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
+
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>) <span class="op">=</span> <span class="ident">previous_epoch_ending_ledger_info</span> {
+            <span class="macro">ensure</span><span class="macro">!</span>(
+                <span class="ident">li</span>.<span class="ident">next_block_epoch</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">preheat_data</span>.<span class="ident">manifest</span>.<span class="ident">first_epoch</span>,
+                <span class="string">&quot;Previous epoch ending LedgerInfo is not the one expected. \
+                My first epoch: {}, previous LedgerInfo next_block_epoch: {}&quot;</span>,
+                <span class="ident">preheat_data</span>.<span class="ident">manifest</span>.<span class="ident">first_epoch</span>,
+                <span class="ident">li</span>.<span class="ident">next_block_epoch</span>(),
+            );
+            <span class="ident">li</span>.<span class="ident">next_epoch_state</span>()
+                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Previous epoch ending LedgerInfo doesn&#39;t end an epoch&quot;</span>))<span class="question-mark">?</span>
+                .<span class="ident">verify</span>(
+                    <span class="ident">preheat_data</span>
+                        .<span class="ident">ledger_infos</span>
+                        .<span class="ident">first</span>()
+                        .<span class="ident">expect</span>(<span class="string">&quot;Epoch ending backup can&#39;t be empty.&quot;</span>),
+                )<span class="question-mark">?</span>;
+        }
+
+        <span class="kw">let</span> <span class="ident">last_li</span> <span class="op">=</span> <span class="ident">preheat_data</span>
+            .<span class="ident">ledger_infos</span>
+            .<span class="ident">last</span>()
+            .<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>)
+            .<span class="ident">ledger_info</span>();
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">controller</span>.<span class="ident">run_mode</span>.<span class="ident">as_ref</span>() {
+            <span class="ident">RestoreRunMode</span>::<span class="ident">Restore</span> { <span class="ident">restore_handler</span> } <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">restore_handler</span>.<span class="ident">save_ledger_infos</span>(<span class="kw-2">&amp;</span><span class="ident">preheat_data</span>.<span class="ident">ledger_infos</span>)<span class="question-mark">?</span>;
+
+                <span class="ident">EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+                <span class="ident">EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+            }
+            <span class="ident">RestoreRunMode</span>::<span class="ident">Verify</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">VERIFY_EPOCH_ENDING_EPOCH</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">epoch</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+                <span class="ident">VERIFY_EPOCH_ENDING_VERSION</span>.<span class="ident">set</span>(<span class="ident">last_li</span>.<span class="ident">version</span>() <span class="kw">as</span> <span class="ident">i64</span>);
+            }
+        };
+
+        <span class="prelude-val">Ok</span>(<span class="ident">preheat_data</span>
+            .<span class="ident">ledger_infos</span>
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">ledger_info</span>().<span class="ident">clone</span>())
+            .<span class="ident">collect</span>())
     }
 }
 
@@ -576,28 +697,35 @@
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_impl</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EpochHistory</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">EpochHistory</span> {
                 <span class="ident">epoch_endings</span>: <span class="ident">Vec</span>::<span class="ident">new</span>(),
             });
         }
 
+        <span class="kw">let</span> <span class="ident">futs_iter</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">manifest_handles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">hdl</span><span class="op">|</span> {
+            <span class="ident">EpochEndingRestoreController</span>::<span class="ident">new</span>(
+                <span class="ident">EpochEndingRestoreOpt</span> {
+                    <span class="ident">manifest_handle</span>: <span class="ident">hdl</span>.<span class="ident">clone</span>(),
+                },
+                <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
+                <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">clone</span>(),
+            )
+            .<span class="ident">preheat</span>()
+        });
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">futs_stream</span> <span class="op">=</span> <span class="ident">futures</span>::<span class="ident">stream</span>::<span class="ident">iter</span>(<span class="ident">futs_iter</span>).<span class="ident">buffered_x</span>(
+            <span class="ident">num_cpus</span>::<span class="ident">get</span>() <span class="op">*</span> <span class="number">2</span>, <span class="comment">/* buffer size */</span>
+            <span class="ident">num_cpus</span>::<span class="ident">get</span>(),     <span class="comment">/* concurrency */</span>
+        );
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_epoch</span> <span class="op">=</span> <span class="number">0u64</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">previous_li</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">epoch_endings</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
 
-        <span class="kw">for</span> <span class="ident">manifest_handle</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manifest_handles</span> {
-            <span class="kw">let</span> <span class="ident">lis</span> <span class="op">=</span> <span class="ident">EpochEndingRestoreController</span>::<span class="ident">new</span>(
-                <span class="ident">EpochEndingRestoreOpt</span> {
-                    <span class="ident">manifest_handle</span>: <span class="ident">manifest_handle</span>.<span class="ident">clone</span>(),
-                },
-                <span class="self">self</span>.<span class="ident">global_opt</span>.<span class="ident">clone</span>(),
-                <span class="self">self</span>.<span class="ident">storage</span>.<span class="ident">clone</span>(),
-                <span class="ident">previous_li</span>.<span class="ident">clone</span>(),
-            )
-            .<span class="ident">run</span>()
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-
+        <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">preheated_restore</span>) <span class="op">=</span> <span class="ident">futs_stream</span>.<span class="ident">next</span>().<span class="kw">await</span> {
+            <span class="kw">let</span> <span class="ident">manifest_handle</span> <span class="op">=</span> <span class="ident">preheated_restore</span>.<span class="ident">controller</span>.<span class="ident">manifest_handle</span>.<span class="ident">clone</span>();
+            <span class="kw">let</span> <span class="ident">lis</span> <span class="op">=</span> <span class="ident">preheated_restore</span>.<span class="ident">run</span>(<span class="ident">previous_li</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="op">!</span><span class="ident">lis</span>.<span class="ident">is_empty</span>(),
                 <span class="string">&quot;No epochs restored from {}&quot;</span>,
@@ -618,10 +746,14 @@
                 <span class="ident">next_epoch</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
             }
 
-            <span class="ident">previous_li</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">lis</span>.<span class="ident">last</span>().<span class="ident">expect</span>(<span class="string">&quot;Verified not empty.&quot;</span>).<span class="ident">clone</span>());
             <span class="ident">epoch_endings</span>.<span class="ident">extend</span>(<span class="ident">lis</span>);
+            <span class="ident">previous_li</span> <span class="op">=</span> <span class="ident">epoch_endings</span>.<span class="ident">last</span>();
         }
 
+        <span class="macro">info</span><span class="macro">!</span>(
+            <span class="string">&quot;Epoch history recovered in {:.2} seconds&quot;</span>,
+            <span class="ident">timer</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>()
+        );
         <span class="prelude-val">Ok</span>(<span class="ident">EpochHistory</span> { <span class="ident">epoch_endings</span> })
     }
 }
