@@ -160,6 +160,14 @@
 <span id="160">160</span>
 <span id="161">161</span>
 <span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -171,12 +179,16 @@
 <span class="doccomment">//! `capacity`.</span>
 
 <span class="kw">use</span> <span class="ident">futures</span>::<span class="ident">future</span>::{<span class="ident">Future</span>, <span class="ident">FutureExt</span>};
-<span class="kw">use</span> <span class="ident">futures_semaphore</span>::{<span class="ident">Permit</span>, <span class="ident">Semaphore</span>};
-<span class="kw">use</span> <span class="ident">tokio</span>::{<span class="ident">runtime</span>::<span class="ident">Handle</span>, <span class="ident">task</span>::<span class="ident">JoinHandle</span>};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
+<span class="kw">use</span> <span class="ident">tokio</span>::{
+    <span class="ident">runtime</span>::<span class="ident">Handle</span>,
+    <span class="ident">sync</span>::{<span class="ident">OwnedSemaphorePermit</span>, <span class="ident">Semaphore</span>},
+    <span class="ident">task</span>::<span class="ident">JoinHandle</span>,
+};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BoundedExecutor</span> {
-    <span class="ident">semaphore</span>: <span class="ident">Semaphore</span>,
+    <span class="ident">semaphore</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Semaphore</span><span class="op">&gt;</span>,
     <span class="ident">executor</span>: <span class="ident">Handle</span>,
 }
 
@@ -184,7 +196,7 @@
     <span class="doccomment">/// Create a new `BoundedExecutor` from an existing tokio [`Handle`]</span>
     <span class="doccomment">/// with a maximum concurrent task capacity of `capacity`.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">capacity</span>: <span class="ident">usize</span>, <span class="ident">executor</span>: <span class="ident">Handle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">semaphore</span> <span class="op">=</span> <span class="ident">Semaphore</span>::<span class="ident">new</span>(<span class="ident">capacity</span>);
+        <span class="kw">let</span> <span class="ident">semaphore</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Semaphore</span>::<span class="ident">new</span>(<span class="ident">capacity</span>));
         <span class="self">Self</span> {
             <span class="ident">semaphore</span>,
             <span class="ident">executor</span>,
@@ -200,7 +212,7 @@
         <span class="ident">F</span>: <span class="ident">Future</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">F</span>::<span class="ident">Output</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">let</span> <span class="ident">permit</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">semaphore</span>.<span class="ident">acquire</span>().<span class="kw">await</span>;
+        <span class="kw">let</span> <span class="ident">permit</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">semaphore</span>.<span class="ident">clone</span>().<span class="ident">acquire_owned</span>().<span class="kw">await</span>;
         <span class="self">self</span>.<span class="ident">spawn_with_permit</span>(<span class="ident">f</span>, <span class="ident">permit</span>)
     }
 
@@ -214,13 +226,17 @@
         <span class="ident">F</span>: <span class="ident">Future</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">F</span>::<span class="ident">Output</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">semaphore</span>.<span class="ident">try_acquire</span>() {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">semaphore</span>.<span class="ident">clone</span>().<span class="ident">try_acquire_owned</span>().<span class="ident">ok</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">permit</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">spawn_with_permit</span>(<span class="ident">f</span>, <span class="ident">permit</span>)),
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">f</span>),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">spawn_with_permit</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>, <span class="ident">spawn_permit</span>: <span class="ident">Permit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Output</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">spawn_with_permit</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">f</span>: <span class="ident">F</span>,
+        <span class="ident">spawn_permit</span>: <span class="ident">OwnedSemaphorePermit</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Output</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Future</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
         <span class="ident">F</span>::<span class="ident">Output</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,

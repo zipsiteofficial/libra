@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["DisconnectReason",""],["PeerNotification",""],["PeerRequest",""]],"fn":[["message_codec","Returns a fully configured length-delimited codec for writing and reading [`NetworkMessage`]es to a socket."]],"mod":[["fuzzing",""]],"struct":[["Peer",""],["PeerHandle",""]]});

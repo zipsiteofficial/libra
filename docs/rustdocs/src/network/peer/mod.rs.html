@@ -568,9 +568,6 @@
 <span id="568">568</span>
 <span id="569">569</span>
 <span id="570">570</span>
-<span id="571">571</span>
-<span id="572">572</span>
-<span id="573">573</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -600,17 +597,15 @@
 <span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">PeerId</span>;
 <span class="kw">use</span> <span class="ident">netcore</span>::<span class="ident">compat</span>::<span class="ident">IoCompat</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">export</span>::<span class="ident">Formatter</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">io</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">time</span>::<span class="ident">Duration</span>};
-<span class="kw">use</span> <span class="ident">stream_ratelimiter</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>::<span class="ident">Debug</span>, <span class="ident">io</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 <span class="kw">use</span> <span class="ident">tokio</span>::<span class="ident">runtime</span>::<span class="ident">Handle</span>;
 <span class="kw">use</span> <span class="ident">tokio_util</span>::<span class="ident">codec</span>::{<span class="ident">FramedRead</span>, <span class="ident">FramedWrite</span>, <span class="ident">LengthDelimitedCodec</span>};
 
-<span class="comment">// Rate-limit configuration for inbound messages. Allows 100 messages for every 10ms window.</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MESSAGE_RATE_LIMIT_WINDOW</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">10</span>);
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MESSAGE_RATE_LIMIT_COUNT</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">100</span>;
-
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fuzzing</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PeerRequest</span> {
@@ -650,6 +645,16 @@
 <span class="kw">enum</span> <span class="ident">State</span> {
     <span class="ident">Connected</span>,
     <span class="ident">ShuttingDown</span>(<span class="ident">DisconnectReason</span>),
+}
+
+<span class="doccomment">/// Returns a fully configured length-delimited codec for writing and reading</span>
+<span class="doccomment">/// [`NetworkMessage`]es to a socket.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">message_codec</span>(<span class="ident">max_frame_size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LengthDelimitedCodec</span> {
+    <span class="ident">LengthDelimitedCodec</span>::<span class="ident">builder</span>()
+        .<span class="ident">max_frame_length</span>(<span class="ident">max_frame_size</span>)
+        .<span class="ident">length_field_length</span>(<span class="number">4</span>)
+        .<span class="ident">big_endian</span>()
+        .<span class="ident">new_codec</span>()
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Peer</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span> {
@@ -714,7 +719,7 @@
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start</span>(<span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="ident">remote_peer_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">remote_peer_id</span>();
-        <span class="macro">info</span><span class="macro">!</span>(
+        <span class="macro">trace</span><span class="macro">!</span>(
             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                 .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
             <span class="string">&quot;{} Starting Peer actor for peer: {:?}&quot;</span>,
@@ -724,21 +729,12 @@
 
         <span class="comment">// Split the connection into a ReadHalf and a WriteHalf.</span>
         <span class="kw">let</span> (<span class="ident">reader</span>, <span class="ident">writer</span>) <span class="op">=</span> <span class="ident">tokio</span>::<span class="ident">io</span>::<span class="ident">split</span>(<span class="ident">IoCompat</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">connection</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()));
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">codec_builder</span> <span class="op">=</span> <span class="ident">LengthDelimitedCodec</span>::<span class="ident">builder</span>();
-        <span class="ident">codec_builder</span>
-            .<span class="ident">max_frame_length</span>(<span class="self">self</span>.<span class="ident">max_frame_size</span>)
-            .<span class="ident">length_field_length</span>(<span class="number">4</span>)
-            .<span class="ident">big_endian</span>();
-        <span class="comment">// Convert ReadHalf to Stream of length-delimited messages.</span>
 
-        <span class="kw">let</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">FramedRead</span>::<span class="ident">new</span>(<span class="ident">reader</span>, <span class="ident">codec_builder</span>.<span class="ident">new_codec</span>()).<span class="ident">fuse</span>();
-        <span class="comment">// Create a rate-limited stream of inbound messages.</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">reader</span>
-            .<span class="ident">ratelimit</span>(<span class="ident">MESSAGE_RATE_LIMIT_WINDOW</span>, <span class="ident">MESSAGE_RATE_LIMIT_COUNT</span>)
-            .<span class="ident">fuse</span>();
+        <span class="comment">// Convert ReadHalf to Stream of length-delimited messages.</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">FramedRead</span>::<span class="ident">new</span>(<span class="ident">reader</span>, <span class="ident">message_codec</span>(<span class="self">self</span>.<span class="ident">max_frame_size</span>)).<span class="ident">fuse</span>();
 
         <span class="comment">// Convert WriteHalf to Sink of length-delimited messages.</span>
-        <span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">FramedWrite</span>::<span class="ident">new</span>(<span class="ident">writer</span>, <span class="ident">codec_builder</span>.<span class="ident">new_codec</span>());
+        <span class="kw">let</span> <span class="ident">writer</span> <span class="op">=</span> <span class="ident">FramedWrite</span>::<span class="ident">new</span>(<span class="ident">writer</span>, <span class="ident">message_codec</span>(<span class="self">self</span>.<span class="ident">max_frame_size</span>));
         <span class="comment">// Start writer &quot;process&quot; as a separate task. We receive two handles to communicate with</span>
         <span class="comment">// the task:</span>
         <span class="comment">// `write_reqs_tx`: Instruction to send a NetworkMessage on the wire.</span>
@@ -788,7 +784,7 @@
                                         <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>(),
                                         <span class="ident">err</span>
                                     );
-                                    <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
+                                    <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>);
                                 }
                                 <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
                                     <span class="macro">info</span><span class="macro">!</span>(
@@ -798,7 +794,7 @@
                                         <span class="self">self</span>.<span class="ident">network_context</span>,
                                         <span class="ident">remote_peer_id</span>.<span class="ident">short_str</span>()
                                     );
-                                    <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>).<span class="kw">await</span>;
+                                    <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">ConnectionLost</span>);
                                 }
                             }
                         },
@@ -841,7 +837,7 @@
             }
         }
 
-        <span class="macro">info</span><span class="macro">!</span>(
+        <span class="macro">trace</span><span class="macro">!</span>(
             <span class="ident">NetworkSchema</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">network_context</span>)
                 .<span class="ident">connection_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">connection_metadata</span>),
             <span class="string">&quot;{} Peer actor &#39;{}&#39; for terminated&quot;</span>,
@@ -1066,13 +1062,11 @@
                     );
                 }
             }
-            <span class="ident">PeerRequest</span>::<span class="ident">CloseConnection</span> <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">Requested</span>).<span class="kw">await</span>;
-            }
+            <span class="ident">PeerRequest</span>::<span class="ident">CloseConnection</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">close_connection</span>(<span class="ident">DisconnectReason</span>::<span class="ident">Requested</span>),
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">close_connection</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reason</span>: <span class="ident">DisconnectReason</span>) {
+    <span class="kw">fn</span> <span class="ident">close_connection</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reason</span>: <span class="ident">DisconnectReason</span>) {
         <span class="comment">// Set the state of the actor to `State::ShuttingDown` to true ensures that the peer actor</span>
         <span class="comment">// will terminate and close the connection.</span>
         <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State</span>::<span class="ident">ShuttingDown</span>(<span class="ident">reason</span>);
