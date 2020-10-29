@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Account",""],["AccountRole",""],["AccountStateProof",""],["AccountStateWithProof",""],["Amount",""],["CurrencyInfo",""],["Event",""],["EventData",""],["Metadata",""],["MoveAbortExplaination",""],["Script",""],["StateProof",""],["Transaction",""],["TransactionData",""],["VmStatus",""]]});

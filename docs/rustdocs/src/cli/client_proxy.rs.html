@@ -1808,26 +1808,6 @@
 <span id="1808">1808</span>
 <span id="1809">1809</span>
 <span id="1810">1810</span>
-<span id="1811">1811</span>
-<span id="1812">1812</span>
-<span id="1813">1813</span>
-<span id="1814">1814</span>
-<span id="1815">1815</span>
-<span id="1816">1816</span>
-<span id="1817">1817</span>
-<span id="1818">1818</span>
-<span id="1819">1819</span>
-<span id="1820">1820</span>
-<span id="1821">1821</span>
-<span id="1822">1822</span>
-<span id="1823">1823</span>
-<span id="1824">1824</span>
-<span id="1825">1825</span>
-<span id="1826">1826</span>
-<span id="1827">1827</span>
-<span id="1828">1828</span>
-<span id="1829">1829</span>
-<span id="1830">1830</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1844,10 +1824,8 @@
     <span class="ident">ed25519</span>::{<span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span>, <span class="ident">Ed25519Signature</span>},
     <span class="ident">test_utils</span>::<span class="ident">KeyPair</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_json_rpc_client</span>::<span class="ident">views</span>::{
-    <span class="ident">AccountView</span>, <span class="ident">EventView</span>, <span class="ident">MetadataView</span>, <span class="ident">TransactionView</span>, <span class="ident">VMStatusView</span>,
-};
-<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">libra_json_rpc_client</span>::<span class="ident">async_client</span>::{<span class="ident">types</span> <span class="kw">as</span> <span class="ident">jsonrpc</span>, <span class="ident">WaitForTransactionError</span>};
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::{<span class="ident">error</span>, <span class="ident">info</span>};
 <span class="kw">use</span> <span class="ident">libra_temppath</span>::<span class="ident">TempPath</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">access_path</span>::<span class="ident">AccessPath</span>,
@@ -1884,13 +1862,14 @@
     <span class="ident">path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>},
     <span class="ident">process</span>::<span class="ident">Command</span>,
     <span class="ident">str</span>::{<span class="self">self</span>, <span class="ident">FromStr</span>},
-    <span class="ident">thread</span>, <span class="ident">time</span>,
+    <span class="ident">time</span>,
 };
 
 <span class="kw">const</span> <span class="ident">CLIENT_WALLET_MNEMONIC_FILE</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;client.mnemonic&quot;</span>;
 <span class="kw">const</span> <span class="ident">GAS_UNIT_PRICE</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">const</span> <span class="ident">MAX_GAS_AMOUNT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1_000_000</span>;
 <span class="kw">const</span> <span class="ident">TX_EXPIRATION</span>: <span class="ident">i64</span> <span class="op">=</span> <span class="number">100</span>;
+<span class="kw">const</span> <span class="ident">DEFAULT_WAIT_TIMEOUT</span>: <span class="ident">time</span>::<span class="ident">Duration</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">60</span>);
 
 <span class="doccomment">/// Enum used for error formatting.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
@@ -1943,6 +1922,8 @@
     <span class="kw">pub</span> <span class="ident">tc_account</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Account used for &quot;minting&quot; operations</span>
     <span class="kw">pub</span> <span class="ident">testnet_designated_dealer_account</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// do not print &#39;.&#39; when waiting for signed transaction</span>
+    <span class="kw">pub</span> <span class="ident">quiet_wait</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Wallet library managing user accounts.</span>
     <span class="ident">wallet</span>: <span class="ident">WalletLibrary</span>,
     <span class="doccomment">/// Whether to sync with validator on wallet recovery.</span>
@@ -1964,10 +1945,11 @@
         <span class="ident">faucet_url</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">mnemonic_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>,
+        <span class="ident">quiet_wait</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="comment">// fail fast if url is not valid</span>
         <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">Url</span>::<span class="ident">parse</span>(<span class="ident">url</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">LibraClient</span>::<span class="ident">new</span>(<span class="ident">url</span>.<span class="ident">clone</span>(), <span class="ident">waypoint</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">LibraClient</span>::<span class="ident">new</span>(<span class="ident">url</span>.<span class="ident">clone</span>(), <span class="ident">waypoint</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
 
@@ -1976,7 +1958,7 @@
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">libra_root_account_key</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">libra_root_account_file</span>);
             <span class="kw">let</span> <span class="ident">libra_root_account_data</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_account_data_from_address</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>,
+                <span class="kw-2">&amp;</span><span class="ident">client</span>,
                 <span class="ident">libra_root_address</span>(),
                 <span class="bool-val">true</span>,
                 <span class="prelude-val">Some</span>(<span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">libra_root_account_key</span>)),
@@ -1990,7 +1972,7 @@
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">tc_account_key</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">tc_account_file</span>);
             <span class="kw">let</span> <span class="ident">tc_account_data</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_account_data_from_address</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>,
+                <span class="kw-2">&amp;</span><span class="ident">client</span>,
                 <span class="ident">treasury_compliance_account_address</span>(),
                 <span class="bool-val">true</span>,
                 <span class="prelude-val">Some</span>(<span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">tc_account_key</span>)),
@@ -2004,7 +1986,7 @@
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">dd_account_key</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">testnet_designated_dealer_account_file</span>);
             <span class="kw">let</span> <span class="ident">dd_account_data</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_account_data_from_address</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>,
+                <span class="kw-2">&amp;</span><span class="ident">client</span>,
                 <span class="ident">testnet_dd_account_address</span>(),
                 <span class="bool-val">true</span>,
                 <span class="prelude-val">Some</span>(<span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">dd_account_key</span>)),
@@ -2038,27 +2020,28 @@
             <span class="ident">wallet</span>: <span class="self">Self</span>::<span class="ident">get_libra_wallet</span>(<span class="ident">mnemonic_file</span>)<span class="question-mark">?</span>,
             <span class="ident">sync_on_wallet_recovery</span>,
             <span class="ident">temp_files</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="ident">quiet_wait</span>,
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">get_account_ref_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">sender_account_address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw-2">*</span><span class="self">self</span>
-            .<span class="ident">address_to_ref_id</span>
-            .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">sender_account_address</span>)
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format_err</span><span class="macro">!</span>(
-                    <span class="string">&quot;Unable to find existing managing account by address: {}, to see all existing \
+    <span class="kw">fn</span> <span class="ident">get_account_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">usize</span>, <span class="kw-2">&amp;</span><span class="ident">AccountData</span>)<span class="op">&gt;</span> {
+        <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">acc</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
+            <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">acc</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>((<span class="ident">index</span>, <span class="ident">acc</span>));
+            }
+        }
+        <span class="macro">bail</span><span class="macro">!</span>(
+            <span class="string">&quot;Unable to find existing managing account by address: {}, to see all existing \
                      accounts, run: &#39;account list&#39;&quot;</span>,
-                    <span class="ident">sender_account_address</span>
-                )
-            })<span class="question-mark">?</span>)
+            <span class="ident">address</span>
+        )
     }
 
     <span class="doccomment">/// Returns the account index that should be used by user to reference this account</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_next_account</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">sync_with_validator</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AddressAndIndex</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">auth_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">wallet</span>.<span class="ident">new_address</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_account_data_from_address</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">client</span>,
+            <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>,
             <span class="ident">auth_key</span>.<span class="ident">derived_address</span>(),
             <span class="ident">sync_with_validator</span>,
             <span class="prelude-val">None</span>,
@@ -2147,28 +2130,47 @@
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">view</span><span class="op">|</span> (<span class="ident">view</span>.<span class="ident">code</span>.<span class="ident">clone</span>(), <span class="ident">view</span>))
             .<span class="ident">collect</span>();
-        <span class="self">self</span>.<span class="ident">get_account_resource_and_update</span>(<span class="ident">address</span>)
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">res</span><span class="op">|</span> {
-                <span class="ident">res</span>.<span class="ident">balances</span>
-                    .<span class="ident">iter</span>()
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">amt_view</span><span class="op">|</span> {
-                        <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">currency_info</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">amt_view</span>.<span class="ident">currency</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                            <span class="macro">format_err</span><span class="macro">!</span>(
-                                <span class="string">&quot;Unable to get currencyy info for balance {}&quot;</span>,
-                                <span class="ident">amt_view</span>.<span class="ident">currency</span>
-                            )
-                        })<span class="question-mark">?</span>;
-                        <span class="kw">let</span> <span class="ident">whole_num</span> <span class="op">=</span> <span class="ident">amt_view</span>.<span class="ident">amount</span> <span class="op">/</span> <span class="ident">info</span>.<span class="ident">scaling_factor</span>;
-                        <span class="kw">let</span> <span class="ident">remainder</span> <span class="op">=</span> <span class="ident">amt_view</span>.<span class="ident">amount</span> <span class="op">%</span> <span class="ident">info</span>.<span class="ident">scaling_factor</span>;
-                        <span class="prelude-val">Ok</span>(<span class="macro">format</span><span class="macro">!</span>(
-                            <span class="string">&quot;{}.{:0&gt;6}{}&quot;</span>,
-                            <span class="ident">whole_num</span>.<span class="ident">to_string</span>(),
-                            <span class="ident">remainder</span>.<span class="ident">to_string</span>(),
-                            <span class="ident">amt_view</span>.<span class="ident">currency</span>
-                        ))
-                    })
-                    .<span class="ident">collect</span>()
+        <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_resource_and_update</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)<span class="question-mark">?</span>;
+        <span class="ident">account</span>
+            .<span class="ident">balances</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">amt_view</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">currency_info</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">amt_view</span>.<span class="ident">currency</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                    <span class="macro">format_err</span><span class="macro">!</span>(
+                        <span class="string">&quot;Unable to get currency info for balance {}&quot;</span>,
+                        <span class="ident">amt_view</span>.<span class="ident">currency</span>
+                    )
+                })<span class="question-mark">?</span>;
+
+                <span class="kw">let</span> <span class="ident">whole_num</span> <span class="op">=</span> <span class="ident">amt_view</span>
+                    .<span class="ident">amount</span>
+                    .<span class="ident">checked_div</span>(<span class="ident">info</span>.<span class="ident">scaling_factor</span>)
+                    .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                        <span class="macro">format_err</span><span class="macro">!</span>(
+                            <span class="string">&quot;checked_div failed, amount {}, scaling_factor: {}&quot;</span>,
+                            <span class="ident">amt_view</span>.<span class="ident">amount</span>,
+                            <span class="ident">info</span>.<span class="ident">scaling_factor</span>
+                        )
+                    })<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">remainder</span> <span class="op">=</span> <span class="ident">amt_view</span>
+                    .<span class="ident">amount</span>
+                    .<span class="ident">checked_rem</span>(<span class="ident">info</span>.<span class="ident">scaling_factor</span>)
+                    .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                        <span class="macro">format_err</span><span class="macro">!</span>(
+                            <span class="string">&quot;checked_rem failed, amount {}, scaling_factor: {}&quot;</span>,
+                            <span class="ident">amt_view</span>.<span class="ident">amount</span>,
+                            <span class="ident">info</span>.<span class="ident">scaling_factor</span>
+                        )
+                    })<span class="question-mark">?</span>;
+
+                <span class="prelude-val">Ok</span>(<span class="macro">format</span><span class="macro">!</span>(
+                    <span class="string">&quot;{}.{:0&gt;6}{}&quot;</span>,
+                    <span class="ident">whole_num</span>.<span class="ident">to_string</span>(),
+                    <span class="ident">remainder</span>.<span class="ident">to_string</span>(),
+                    <span class="ident">amt_view</span>.<span class="ident">currency</span>
+                ))
             })
+            .<span class="ident">collect</span>()
     }
 
     <span class="doccomment">/// Get the latest sequence number from validator for the account specified.</span>
@@ -2179,7 +2181,7 @@
         );
         <span class="kw">let</span> (<span class="ident">address</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">get_account_resource_and_update</span>(<span class="ident">address</span>)<span class="question-mark">?</span>
+            .<span class="ident">get_account_resource_and_update</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)<span class="question-mark">?</span>
             .<span class="ident">sequence_number</span>;
 
         <span class="kw">let</span> <span class="ident">reset_sequence_number</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">space_delim_strings</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">3</span> {
@@ -2195,28 +2197,9 @@
             <span class="bool-val">false</span>
         };
         <span class="kw">if</span> <span class="ident">reset_sequence_number</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">libra_root_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">libra_root_account</span> {
-                <span class="kw">if</span> <span class="ident">libra_root_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
-                    <span class="ident">libra_root_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sequence_number</span>;
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>);
-                }
-            }
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tc_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">tc_account</span> {
-                <span class="kw">if</span> <span class="ident">tc_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
-                    <span class="ident">tc_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sequence_number</span>;
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>);
-                }
-            }
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">testnet_dd_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span> {
-                <span class="kw">if</span> <span class="ident">testnet_dd_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
-                    <span class="ident">testnet_dd_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sequence_number</span>;
-                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>);
-                }
-            }
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">account</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">mut_account_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
-            <span class="comment">// Set sequence_number to latest one.</span>
-            <span class="ident">account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sequence_number</span>;
+            <span class="self">self</span>.<span class="ident">update_account_seq</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">sequence_number</span>);
         }
+
         <span class="prelude-val">Ok</span>(<span class="ident">sequence_number</span>)
     }
 
@@ -2229,9 +2212,8 @@
 
         <span class="kw">let</span> (<span class="ident">sender_address</span>, <span class="kw">_</span>) <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">sender_ref_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_ref_id</span>(<span class="kw-2">&amp;</span><span class="ident">sender_address</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get</span>(<span class="ident">sender_ref_id</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">sequence_number</span>;
+
+        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">sender</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_data</span>(<span class="kw-2">&amp;</span><span class="ident">sender_address</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">currency_to_add</span> <span class="op">=</span> <span class="ident">space_delim_strings</span>[<span class="number">2</span>];
         <span class="kw">let</span> <span class="ident">currency_code</span> <span class="op">=</span> <span class="ident">from_currency_code_string</span>(<span class="ident">currency_to_add</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
@@ -2285,11 +2267,8 @@
             <span class="ident">gas_currency_code</span>, <span class="comment">/* gas_currency_code */</span>
         )<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">client</span>
-            .<span class="ident">submit_transaction</span>(<span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get_mut</span>(<span class="ident">sender_ref_id</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">sender_address</span>, <span class="ident">sequence_number</span> <span class="op">+</span> <span class="number">1</span>)<span class="question-mark">?</span>;
-        }
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="ident">is_blocking</span>)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -2376,7 +2355,6 @@
                 <span class="ident">receiver_auth_key</span>,
                 <span class="ident">num_coins</span>,
                 <span class="ident">mint_currency</span>.<span class="ident">to_owned</span>(),
-                <span class="ident">is_blocking</span>,
             ),
         }
     }
@@ -2510,52 +2488,77 @@
         }
     }
 
-    <span class="doccomment">/// Waits for the next transaction for a specific address and prints it</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wait_for_transaction</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
-        <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">max_iterations</span> <span class="op">=</span> <span class="number">5000</span>;
-        <span class="macro">println</span><span class="macro">!</span>(
-            <span class="string">&quot;waiting for {} with sequence number {}&quot;</span>,
-            <span class="ident">account</span>, <span class="ident">sequence_number</span>
-        );
-        <span class="kw">loop</span> {
-            <span class="ident">stdout</span>().<span class="ident">flush</span>().<span class="ident">unwrap</span>();
+    <span class="doccomment">/// Wait for transaction, this function is not safe for waiting for a specific transaction,</span>
+    <span class="doccomment">/// should use wait_for_signed_transaction instead.</span>
+    <span class="doccomment">/// TODO: rename to wait_for_account_seq or remove</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wait_for_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">address</span>: <span class="ident">AccountAddress</span>, <span class="ident">seq</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">time</span>::<span class="ident">Instant</span>::<span class="ident">now</span>();
+        <span class="kw">while</span> <span class="ident">start</span>.<span class="ident">elapsed</span>() <span class="op">&lt;</span> <span class="ident">DEFAULT_WAIT_TIMEOUT</span> {
+            <span class="kw">let</span> <span class="ident">account_txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_txn_by_acc_seq</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>, <span class="ident">seq</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">txn</span>) <span class="op">=</span> <span class="ident">account_txn</span> {
+                <span class="kw">if</span> <span class="ident">txn</span>.<span class="ident">transaction</span>.<span class="ident">unwrap</span>().<span class="ident">sequence_number</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">seq</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                }
+            }
+            <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">sleep</span>(<span class="ident">time</span>::<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">10</span>));
+        }
+        <span class="macro">bail</span><span class="macro">!</span>(
+            <span class="string">&quot;wait for account(address={}) transaction(seq={}) timeout&quot;</span>,
+            <span class="ident">address</span>,
+            <span class="ident">seq</span>
+        )
+    }
 
-            <span class="kw">match</span> <span class="self">self</span>
-                .<span class="ident">client</span>
-                .<span class="ident">get_txn_by_acc_seq</span>(<span class="ident">account</span>, <span class="ident">sequence_number</span> <span class="op">-</span> <span class="number">1</span>, <span class="bool-val">true</span>)
-            {
-                <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">txn_view</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">println</span><span class="macro">!</span>();
-                    <span class="kw">if</span> <span class="ident">txn_view</span>.<span class="ident">vm_status</span> <span class="op">=</span><span class="op">=</span> <span class="ident">VMStatusView</span>::<span class="ident">Executed</span> {
-                        <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;transaction executed!&quot;</span>);
-                        <span class="kw">if</span> <span class="ident">txn_view</span>.<span class="ident">events</span>.<span class="ident">is_empty</span>() {
-                            <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;no events emitted&quot;</span>);
-                        }
-                        <span class="kw">break</span> <span class="prelude-val">Ok</span>(());
-                    } <span class="kw">else</span> {
-                        <span class="kw">break</span> <span class="prelude-val">Err</span>(<span class="macro">format_err</span><span class="macro">!</span>(
-                            <span class="string">&quot;transaction failed to execute; status: {:?}!&quot;</span>,
-                            <span class="ident">txn_view</span>.<span class="ident">vm_status</span>
-                        ));
-                    }
+    <span class="doccomment">/// Submit transaction and waits for the transaction executed</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>, <span class="ident">is_blocking</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>)<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="ident">is_blocking</span> {
+            <span class="self">self</span>.<span class="ident">wait_for_signed_transaction</span>(<span class="ident">txn</span>)<span class="question-mark">?</span>;
+        } <span class="kw">else</span> {
+            <span class="kw">let</span> <span class="ident">seq</span> <span class="op">=</span> <span class="ident">txn</span>
+                .<span class="ident">sequence_number</span>()
+                .<span class="ident">checked_add</span>(<span class="number">1</span>)
+                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;seqnum can&#39;t reach u64::max&quot;</span>))<span class="question-mark">?</span>;
+            <span class="self">self</span>.<span class="ident">update_account_seq</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>.<span class="ident">sender</span>(), <span class="ident">seq</span>);
+        }
+        <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="doccomment">/// Waits for the transaction</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wait_for_signed_transaction</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">mpsc</span>::<span class="ident">channel</span>();
+        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">quiet_wait</span> {
+            <span class="kw">let</span> <span class="ident">_handler</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="kw">loop</span> {
+                <span class="kw">if</span> <span class="ident">rx</span>.<span class="ident">try_recv</span>().<span class="ident">is_ok</span>() {
+                    <span class="kw">break</span>;
                 }
-                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">println</span><span class="macro">!</span>();
-                    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Response with error: {:?}&quot;</span>, <span class="ident">e</span>);
-                }
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">print</span><span class="macro">!</span>(<span class="string">&quot;.&quot;</span>);
-                }
-            }
-            <span class="ident">max_iterations</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="kw">if</span> <span class="ident">max_iterations</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-                <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;wait_for_transaction timeout&quot;</span>);
-            }
-            <span class="ident">thread</span>::<span class="ident">sleep</span>(<span class="ident">time</span>::<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">10</span>));
+                <span class="macro">print</span><span class="macro">!</span>(<span class="string">&quot;.&quot;</span>);
+                <span class="ident">stdout</span>().<span class="ident">flush</span>().<span class="ident">unwrap</span>();
+                <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">sleep</span>(<span class="ident">time</span>::<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">10</span>));
+            });
+        }
+
+        <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">txn</span>, <span class="ident">DEFAULT_WAIT_TIMEOUT</span>);
+        <span class="kw">let</span> <span class="ident">ac_update</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_and_update</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>.<span class="ident">sender</span>());
+
+        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">quiet_wait</span> {
+            <span class="ident">tx</span>.<span class="ident">send</span>(()).<span class="ident">expect</span>(<span class="string">&quot;stop waiting thread&quot;</span>);
+            <span class="macro">println</span><span class="macro">!</span>();
+        }
+
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span> <span class="ident">ac_update</span> {
+            <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;account update failed: {}&quot;</span>, <span class="ident">err</span>);
+        }
+        <span class="kw">match</span> <span class="ident">ret</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">t</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">TransactionExecutionFailed</span>(<span class="ident">txn</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="macro">format_err</span><span class="macro">!</span>(
+                <span class="string">&quot;transaction failed to execute; status: {:?}!&quot;</span>,
+                <span class="ident">txn</span>.<span class="ident">vm_status</span>
+            )),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>(<span class="ident">e</span>)),
         }
     }
 
@@ -2563,7 +2566,7 @@
     <span class="doccomment">/// it will keep querying validator till the sequence number is bumped up in validator.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transfer_coins_int</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">sender_account_ref_id</span>: <span class="ident">usize</span>,
+        <span class="ident">sender_address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">receiver_address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">num_coins</span>: <span class="ident">u64</span>,
         <span class="ident">coin_currency</span>: <span class="ident">String</span>,
@@ -2572,47 +2575,30 @@
         <span class="ident">max_gas_amount</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
         <span class="ident">is_blocking</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">IndexAndSequence</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">sender_address</span>;
-        <span class="kw">let</span> <span class="ident">sender_sequence</span>;
         <span class="kw">let</span> <span class="ident">currency_code</span> <span class="op">=</span> <span class="ident">from_currency_code_string</span>(<span class="kw-2">&amp;</span><span class="ident">coin_currency</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Invalid currency code {} specified&quot;</span>, <span class="ident">coin_currency</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">gas_currency_code</span> <span class="op">=</span> <span class="ident">gas_currency_code</span>.<span class="ident">or</span>(<span class="prelude-val">Some</span>(<span class="ident">coin_currency</span>));
-        {
-            <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get</span>(<span class="ident">sender_account_ref_id</span>).<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Unable to find sender account: {}&quot;</span>, <span class="ident">sender_account_ref_id</span>)
-            })<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">program</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_peer_to_peer_with_metadata_script</span>(
-                <span class="ident">type_tag_for_currency_code</span>(<span class="ident">currency_code</span>),
-                <span class="kw-2">*</span><span class="ident">receiver_address</span>,
-                <span class="ident">num_coins</span>,
-                <span class="macro">vec</span><span class="macro">!</span>[],
-                <span class="macro">vec</span><span class="macro">!</span>[],
-            );
-            <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(
-                <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">program</span>),
-                <span class="ident">sender</span>,
-                <span class="ident">max_gas_amount</span>,    <span class="comment">/* max_gas_amount */</span>
-                <span class="ident">gas_unit_price</span>,    <span class="comment">/* gas_unit_price */</span>
-                <span class="ident">gas_currency_code</span>, <span class="comment">/* gas_currency_code */</span>
-            )<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">sender_mut</span> <span class="op">=</span> <span class="self">self</span>
-                .<span class="ident">accounts</span>
-                .<span class="ident">get_mut</span>(<span class="ident">sender_account_ref_id</span>)
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                    <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Unable to find sender account: {}&quot;</span>, <span class="ident">sender_account_ref_id</span>)
-                })<span class="question-mark">?</span>;
-            <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="prelude-val">Some</span>(<span class="ident">sender_mut</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
-            <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">sender_mut</span>.<span class="ident">address</span>;
-            <span class="ident">sender_sequence</span> <span class="op">=</span> <span class="ident">sender_mut</span>.<span class="ident">sequence_number</span>;
-        }
 
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">sender_address</span>, <span class="ident">sender_sequence</span>)<span class="question-mark">?</span>;
-        }
+        <span class="kw">let</span> (<span class="ident">sender_account_ref_id</span>, <span class="ident">sender</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_data</span>(<span class="ident">sender_address</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">program</span> <span class="op">=</span> <span class="ident">transaction_builder</span>::<span class="ident">encode_peer_to_peer_with_metadata_script</span>(
+            <span class="ident">type_tag_for_currency_code</span>(<span class="ident">currency_code</span>),
+            <span class="kw-2">*</span><span class="ident">receiver_address</span>,
+            <span class="ident">num_coins</span>,
+            <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="macro">vec</span><span class="macro">!</span>[],
+        );
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(
+            <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">program</span>),
+            <span class="ident">sender</span>,
+            <span class="ident">max_gas_amount</span>,    <span class="comment">/* max_gas_amount */</span>
+            <span class="ident">gas_unit_price</span>,    <span class="comment">/* gas_unit_price */</span>
+            <span class="ident">gas_currency_code</span>, <span class="comment">/* gas_currency_code */</span>
+        )<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="ident">is_blocking</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">IndexAndSequence</span> {
             <span class="ident">account_index</span>: <span class="ident">AccountEntry</span>::<span class="ident">Index</span>(<span class="ident">sender_account_ref_id</span>),
-            <span class="ident">sequence_number</span>: <span class="ident">sender_sequence</span> <span class="op">-</span> <span class="number">1</span>,
+            <span class="ident">sequence_number</span>: <span class="ident">txn</span>.<span class="ident">sequence_number</span>(),
         })
     }
 
@@ -2702,10 +2688,8 @@
             <span class="ident">transfer_currency</span>.<span class="ident">to_owned</span>()
         };
 
-        <span class="kw">let</span> <span class="ident">sender_account_ref_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_ref_id</span>(<span class="kw-2">&amp;</span><span class="ident">sender_account_address</span>)<span class="question-mark">?</span>;
-
         <span class="self">self</span>.<span class="ident">transfer_coins_int</span>(
-            <span class="ident">sender_account_ref_id</span>,
+            <span class="kw-2">&amp;</span><span class="ident">sender_account_address</span>,
             <span class="kw-2">&amp;</span><span class="ident">receiver_address</span>,
             <span class="ident">num_coins</span>,
             <span class="ident">transfer_currency</span>.<span class="ident">to_owned</span>(),
@@ -2779,14 +2763,9 @@
         <span class="ident">public_key</span>: <span class="ident">Ed25519PublicKey</span>,
         <span class="ident">signature</span>: <span class="ident">Ed25519Signature</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">SignedTransaction</span>::<span class="ident">new</span>(<span class="ident">raw_txn</span>, <span class="ident">public_key</span>, <span class="ident">signature</span>);
-
-        <span class="kw">let</span> <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">sender</span>();
-        <span class="kw">let</span> <span class="ident">sender_sequence</span> <span class="op">=</span> <span class="ident">transaction</span>.<span class="ident">sequence_number</span>();
-
-        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="prelude-val">None</span>, <span class="ident">transaction</span>)<span class="question-mark">?</span>;
-        <span class="comment">// blocking by default (until transaction completion)</span>
-        <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">sender_address</span>, <span class="ident">sender_sequence</span> <span class="op">+</span> <span class="number">1</span>)
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">SignedTransaction</span>::<span class="ident">new</span>(<span class="ident">raw_txn</span>, <span class="ident">public_key</span>, <span class="ident">signature</span>);
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">fn</span> <span class="ident">submit_program</span>(
@@ -2796,15 +2775,11 @@
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">sender_address</span>, <span class="kw">_</span>) <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">sender_ref_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_ref_id</span>(<span class="kw-2">&amp;</span><span class="ident">sender_address</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get</span>(<span class="ident">sender_ref_id</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">sequence_number</span>;
-
+        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">sender</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_data</span>(<span class="kw-2">&amp;</span><span class="ident">sender_address</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(<span class="ident">program</span>, <span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">client</span>
-            .<span class="ident">submit_transaction</span>(<span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get_mut</span>(<span class="ident">sender_ref_id</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">sender_address</span>, <span class="ident">sequence_number</span> <span class="op">+</span> <span class="number">1</span>)
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="doccomment">/// Publish Move module</span>
@@ -2844,13 +2819,18 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_latest_account</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">space_delim_strings</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">space_delim_strings</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">2</span>,
             <span class="string">&quot;Invalid number of arguments to get latest account&quot;</span>
         );
         <span class="kw">let</span> (<span class="ident">account</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">get_account_and_update</span>(<span class="ident">account</span>)
+        <span class="self">self</span>.<span class="ident">get_account_and_update</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>)
+    }
+
+    <span class="doccomment">/// Get the latest version</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_latest_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Version</span> {
+        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">trusted_state</span>().<span class="ident">latest_version</span>()
     }
 
     <span class="doccomment">/// Get the latest annotated account resources from validator.</span>
@@ -2870,7 +2850,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_committed_txn_by_acc_seq</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">space_delim_strings</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">space_delim_strings</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">4</span>,
             <span class="string">&quot;Invalid number of arguments to get transaction by account and sequence number&quot;</span>
@@ -2895,14 +2875,14 @@
         })<span class="question-mark">?</span>;
 
         <span class="self">self</span>.<span class="ident">client</span>
-            .<span class="ident">get_txn_by_acc_seq</span>(<span class="ident">account</span>, <span class="ident">sequence_number</span>, <span class="ident">fetch_events</span>)
+            .<span class="ident">get_txn_by_acc_seq</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">sequence_number</span>, <span class="ident">fetch_events</span>)
     }
 
     <span class="doccomment">/// Get committed txn by account and sequence number</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_committed_txn_by_range</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">space_delim_strings</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">space_delim_strings</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">4</span>,
             <span class="string">&quot;Invalid number of arguments to get transaction by range&quot;</span>
@@ -2978,10 +2958,11 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_events_by_account_and_type</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">space_delim_strings</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventView</span><span class="op">&gt;</span>, <span class="ident">AccountView</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Event</span><span class="op">&gt;</span>, <span class="ident">jsonrpc</span>::<span class="ident">Account</span>)<span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="ident">space_delim_strings</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">5</span>,
-            <span class="string">&quot;Invalid number of arguments to get events by access path&quot;</span>
+            <span class="string">&quot;Invalid number of arguments, required 5, given {}&quot;</span>,
+            <span class="ident">space_delim_strings</span>.<span class="ident">len</span>()
         );
         <span class="kw">let</span> (<span class="ident">account</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_address_from_parameter</span>(<span class="ident">space_delim_strings</span>[<span class="number">1</span>])<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">space_delim_strings</span>[<span class="number">2</span>] {
@@ -3045,7 +3026,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">address</span> <span class="kw">in</span> <span class="ident">wallet_addresses</span> {
             <span class="ident">account_data</span>.<span class="ident">push</span>(<span class="self">Self</span>::<span class="ident">get_account_data_from_address</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">client</span>,
+                <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">client</span>,
                 <span class="ident">address</span>,
                 <span class="self">self</span>.<span class="ident">sync_on_wallet_recovery</span>,
                 <span class="prelude-val">None</span>,
@@ -3071,20 +3052,21 @@
     }
 
     <span class="doccomment">/// Test JSON RPC client connection with validator.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_validator_connection</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MetadataView</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_validator_connection</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">update_and_verify_state_proof</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_metadata</span>()
     }
 
     <span class="doccomment">/// Test client&#39;s connection to validator with proof.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_trusted_connection</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_state_proof</span>()
+        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">update_and_verify_state_proof</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">get_annotate_account_blob</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AnnotatedAccountStateBlob</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">blob</span>, <span class="ident">ver</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_account_state_blob</span>(<span class="ident">address</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> (<span class="ident">blob</span>, <span class="ident">ver</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_account_state_blob</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)<span class="question-mark">?</span>;
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">account_blob</span>) <span class="op">=</span> <span class="ident">blob</span> {
             <span class="kw">let</span> <span class="ident">state_view</span> <span class="op">=</span> <span class="ident">NullStateView</span>::<span class="ident">default</span>();
             <span class="kw">let</span> <span class="ident">annotator</span> <span class="op">=</span> <span class="ident">MoveValueAnnotator</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">state_view</span>);
@@ -3099,50 +3081,68 @@
     <span class="doccomment">/// Get account from validator and update status of account if it is cached locally.</span>
     <span class="kw">fn</span> <span class="ident">get_account_and_update</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_account</span>(<span class="ident">address</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">address_to_ref_id</span>.<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>) {
-            <span class="kw">let</span> <span class="ident">account_ref_id</span> <span class="op">=</span> <span class="self">self</span>
-                .<span class="ident">address_to_ref_id</span>
-                .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)
-                .<span class="ident">expect</span>(<span class="string">&quot;Should have the key&quot;</span>);
-            <span class="comment">// assumption follows from invariant</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">account_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span> <span class="op">=</span>
-                <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get_mut</span>(<span class="kw-2">*</span><span class="ident">account_ref_id</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Local cache not consistent, reference id {} not available in local accounts&quot;</span>, <span class="ident">account_ref_id</span>));
-            <span class="kw">if</span> <span class="ident">account</span>.<span class="number">0</span>.<span class="ident">is_some</span>() {
-                <span class="ident">account_data</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">AccountStatus</span>::<span class="ident">Persisted</span>;
-            }
-        };
+        <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_account</span>(<span class="ident">address</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">update_and_verify_state_proof</span>()<span class="question-mark">?</span>;
+
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">ac</span>) <span class="op">=</span> <span class="ident">account</span>.<span class="ident">as_ref</span>() {
+            <span class="self">self</span>.<span class="ident">update_account_seq</span>(<span class="ident">address</span>, <span class="ident">ac</span>.<span class="ident">sequence_number</span>)
+        }
         <span class="prelude-val">Ok</span>(<span class="ident">account</span>)
     }
 
-    <span class="doccomment">/// Get account resource from validator and update status of account if it is cached locally.</span>
-    <span class="kw">fn</span> <span class="ident">get_account_resource_and_update</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_and_update</span>(<span class="ident">address</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">view</span>) <span class="op">=</span> <span class="ident">result</span>.<span class="number">0</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">view</span>)
-        } <span class="kw">else</span> {
-            <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No account exists at {:?}&quot;</span>, <span class="ident">address</span>)
+    <span class="doccomment">/// Update account seq</span>
+    <span class="kw">fn</span> <span class="ident">update_account_seq</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>, <span class="ident">seq</span>: <span class="ident">u64</span>) {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">libra_root_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">libra_root_account</span> {
+            <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">libra_root_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
+                <span class="ident">libra_root_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">seq</span>;
+            }
         }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tc_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">tc_account</span> {
+            <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">tc_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
+                <span class="ident">tc_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">seq</span>;
+            }
+        }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">testnet_dd_account</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span> {
+            <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">testnet_dd_account</span>.<span class="ident">address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">address</span> {
+                <span class="ident">testnet_dd_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">seq</span>;
+            }
+        }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>((<span class="ident">ref_id</span>, <span class="kw">_</span>)) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_account_data</span>(<span class="ident">address</span>) {
+            <span class="comment">// assumption follows from invariant</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">account_data</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">get_mut</span>(<span class="ident">ref_id</span>).<span class="ident">unwrap</span>();
+            <span class="ident">account_data</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">AccountStatus</span>::<span class="ident">Persisted</span>;
+            <span class="ident">account_data</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">seq</span>;
+        };
+    }
+
+    <span class="doccomment">/// Get account resource from validator and update status of account if it is cached locally.</span>
+    <span class="kw">fn</span> <span class="ident">get_account_resource_and_update</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">get_account_and_update</span>(<span class="ident">address</span>)<span class="question-mark">?</span>
+            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;No account exists at {:?}&quot;</span>, <span class="ident">address</span>))
     }
 
     <span class="doccomment">/// Get account using specific address.</span>
     <span class="doccomment">/// Sync with validator for account sequence number in case it is already created on chain.</span>
     <span class="doccomment">/// This assumes we have a very low probability of mnemonic word conflict.</span>
     <span class="kw">fn</span> <span class="ident">get_account_data_from_address</span>(
-        <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LibraClient</span>,
+        <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">LibraClient</span>,
         <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
         <span class="ident">sync_with_validator</span>: <span class="ident">bool</span>,
         <span class="ident">key_pair</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">authentication_key_opt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">sequence_number</span>, <span class="ident">authentication_key</span>, <span class="ident">status</span>) <span class="op">=</span> <span class="kw">if</span> <span class="ident">sync_with_validator</span> {
-            <span class="kw">match</span> <span class="ident">client</span>.<span class="ident">get_account</span>(<span class="ident">address</span>, <span class="bool-val">true</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">resp</span>.<span class="number">0</span> {
+            <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">get_account</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>);
+            <span class="kw">match</span> <span class="ident">ret</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">resp</span> {
                     <span class="prelude-val">Some</span>(<span class="ident">account_view</span>) <span class="op">=</span><span class="op">&gt;</span> (
                         <span class="ident">account_view</span>.<span class="ident">sequence_number</span>,
-                        <span class="prelude-val">Some</span>(<span class="ident">account_view</span>.<span class="ident">authentication_key</span>.<span class="ident">into_bytes</span>()<span class="question-mark">?</span>),
+                        <span class="prelude-val">Some</span>(<span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">account_view</span>.<span class="ident">authentication_key</span>)<span class="question-mark">?</span>),
                         <span class="ident">AccountStatus</span>::<span class="ident">Persisted</span>,
                     ),
                     <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">0</span>, <span class="ident">authentication_key_opt</span>, <span class="ident">AccountStatus</span>::<span class="ident">Local</span>),
@@ -3231,16 +3231,10 @@
             <span class="string">&quot;No assoc root account loaded&quot;</span>
         );
         <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">libra_root_account</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">address</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(<span class="ident">payload</span>, <span class="ident">sender</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sender_mut</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">libra_root_account</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
-        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sender_mut</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(
-                <span class="ident">sender_address</span>,
-                <span class="self">self</span>.<span class="ident">libra_root_account</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">sequence_number</span>,
-            )<span class="question-mark">?</span>;
-        }
+
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="ident">is_blocking</span>)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -3254,17 +3248,10 @@
             <span class="string">&quot;No treasury compliance account loaded&quot;</span>
         );
         <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">tc_account</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">address</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(<span class="ident">payload</span>, <span class="ident">sender</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sender_mut</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">tc_account</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
-        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sender_mut</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(
-                <span class="ident">sender_address</span>,
-                <span class="self">self</span>.<span class="ident">tc_account</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>().<span class="ident">sequence_number</span>,
-            )<span class="question-mark">?</span>;
-        }
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="ident">is_blocking</span>)<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -3278,19 +3265,9 @@
             <span class="string">&quot;No testnet Designated Dealer account loaded&quot;</span>
         );
         <span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">sender_address</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">address</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">create_txn_to_submit</span>(<span class="ident">payload</span>, <span class="ident">sender</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sender_mut</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
-        <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sender_mut</span>), <span class="ident">txn</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(
-                <span class="ident">sender_address</span>,
-                <span class="self">self</span>.<span class="ident">testnet_designated_dealer_account</span>
-                    .<span class="ident">as_ref</span>()
-                    .<span class="ident">unwrap</span>()
-                    .<span class="ident">sequence_number</span>,
-            )<span class="question-mark">?</span>;
-        }
+
+        <span class="self">self</span>.<span class="ident">submit_and_wait</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>, <span class="ident">is_blocking</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -3299,9 +3276,8 @@
         <span class="ident">receiver</span>: <span class="ident">AuthenticationKey</span>,
         <span class="ident">num_coins</span>: <span class="ident">u64</span>,
         <span class="ident">coin_currency</span>: <span class="ident">String</span>,
-        <span class="ident">is_blocking</span>: <span class="ident">bool</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">reqwest</span>::<span class="ident">blocking</span>::<span class="ident">ClientBuilder</span>::<span class="ident">new</span>().<span class="ident">build</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">reqwest</span>::<span class="ident">blocking</span>::<span class="ident">Client</span>::<span class="ident">new</span>();
 
         <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="ident">Url</span>::<span class="ident">parse_with_params</span>(
             <span class="self">self</span>.<span class="ident">faucet_url</span>.<span class="ident">as_str</span>(),
@@ -3309,6 +3285,7 @@
                 (<span class="string">&quot;amount&quot;</span>, <span class="ident">num_coins</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>()),
                 (<span class="string">&quot;auth_key&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">receiver</span>)),
                 (<span class="string">&quot;currency_code&quot;</span>, <span class="ident">coin_currency</span>.<span class="ident">as_str</span>()),
+                (<span class="string">&quot;return_txns&quot;</span>, <span class="string">&quot;true&quot;</span>),
             ],
         )<span class="question-mark">?</span>;
 
@@ -3322,9 +3299,13 @@
                 <span class="ident">body</span>,
             ));
         }
-        <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">body</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">is_blocking</span> {
-            <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(<span class="ident">testnet_dd_account_address</span>(), <span class="ident">sequence_number</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">body</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>();
+        <span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">txns</span> {
+            <span class="self">self</span>.<span class="ident">wait_for_signed_transaction</span>(<span class="ident">txn</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+                <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;minting transaction error: {}&quot;</span>, <span class="ident">e</span>);
+                <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;transaction execution failed, please retry&quot;</span>)
+            })<span class="question-mark">?</span>;
         }
 
         <span class="prelude-val">Ok</span>(())
@@ -3428,28 +3409,6 @@
             <span class="self">self</span>.<span class="ident">chain_id</span>,
         )
     }
-
-    <span class="kw">fn</span> <span class="ident">mut_account_from_parameter</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">para</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">account_ref_id</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_address</span>(<span class="ident">para</span>) {
-            <span class="kw">let</span> <span class="ident">account_address</span> <span class="op">=</span> <span class="ident">ClientProxy</span>::<span class="ident">address_from_strings</span>(<span class="ident">para</span>)<span class="question-mark">?</span>;
-            <span class="kw-2">*</span><span class="self">self</span>
-                .<span class="ident">address_to_ref_id</span>
-                .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">account_address</span>)
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-                    <span class="macro">format_err</span><span class="macro">!</span>(
-                        <span class="string">&quot;Unable to find local account by address: {:?}&quot;</span>,
-                        <span class="ident">account_address</span>
-                    )
-                })<span class="question-mark">?</span>
-        } <span class="kw">else</span> {
-            <span class="ident">para</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>()<span class="question-mark">?</span>
-        };
-        <span class="kw">let</span> <span class="ident">account_data</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">accounts</span>
-            .<span class="ident">get_mut</span>(<span class="ident">account_ref_id</span>)
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Unable to find account by ref id: {}&quot;</span>, <span class="ident">account_ref_id</span>))<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">account_data</span>)
-    }
 }
 
 <span class="kw">fn</span> <span class="ident">parse_transaction_argument_for_client</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionArgument</span><span class="op">&gt;</span> {
@@ -3521,6 +3480,7 @@
             <span class="prelude-val">None</span>,
             <span class="prelude-val">Some</span>(<span class="ident">mnemonic_path</span>),
             <span class="ident">waypoint</span>,
+            <span class="bool-val">true</span>,
         )
         .<span class="ident">unwrap</span>();
         <span class="kw">for</span> <span class="kw">_</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">count</span> {

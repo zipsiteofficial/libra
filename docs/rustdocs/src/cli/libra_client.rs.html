@@ -287,96 +287,15 @@
 <span id="287">287</span>
 <span id="288">288</span>
 <span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
-<span id="329">329</span>
-<span id="330">330</span>
-<span id="331">331</span>
-<span id="332">332</span>
-<span id="333">333</span>
-<span id="334">334</span>
-<span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
-<span id="343">343</span>
-<span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
-<span id="347">347</span>
-<span id="348">348</span>
-<span id="349">349</span>
-<span id="350">350</span>
-<span id="351">351</span>
-<span id="352">352</span>
-<span id="353">353</span>
-<span id="354">354</span>
-<span id="355">355</span>
-<span id="356">356</span>
-<span id="357">357</span>
-<span id="358">358</span>
-<span id="359">359</span>
-<span id="360">360</span>
-<span id="361">361</span>
-<span id="362">362</span>
-<span id="363">363</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">AccountData</span>;
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="ident">ensure</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">use</span> <span class="ident">libra_json_rpc_client</span>::{
-    <span class="ident">errors</span>::<span class="ident">JsonRpcError</span>,
-    <span class="ident">get_response_from_batch</span>,
-    <span class="ident">views</span>::{
-        <span class="ident">AccountStateWithProofView</span>, <span class="ident">AccountView</span>, <span class="ident">BytesView</span>, <span class="ident">CurrencyInfoView</span>, <span class="ident">EventView</span>,
-        <span class="ident">MetadataView</span>, <span class="ident">StateProofView</span>, <span class="ident">TransactionView</span>,
-    },
-    <span class="ident">JsonRpcBatch</span>, <span class="ident">JsonRpcClient</span>, <span class="ident">JsonRpcResponse</span>, <span class="ident">ResponseAsView</span>,
+<span class="kw">use</span> <span class="ident">libra_json_rpc_client</span>::<span class="ident">async_client</span>::{
+    <span class="ident">types</span> <span class="kw">as</span> <span class="ident">jsonrpc</span>, <span class="ident">Client</span>, <span class="ident">Retry</span>, <span class="ident">WaitForTransactionError</span>,
 };
-<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">libra_logger</span>::<span class="ident">prelude</span>::<span class="ident">info</span>;
 <span class="kw">use</span> <span class="ident">libra_types</span>::{
     <span class="ident">access_path</span>::<span class="ident">AccessPath</span>,
     <span class="ident">account_address</span>::<span class="ident">AccountAddress</span>,
@@ -386,10 +305,10 @@
     <span class="ident">ledger_info</span>::<span class="ident">LedgerInfoWithSignatures</span>,
     <span class="ident">transaction</span>::{<span class="ident">SignedTransaction</span>, <span class="ident">Version</span>},
     <span class="ident">trusted_state</span>::{<span class="ident">TrustedState</span>, <span class="ident">TrustedStateChange</span>},
-    <span class="ident">vm_status</span>::<span class="ident">StatusCode</span>,
     <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>,
 };
 <span class="kw">use</span> <span class="ident">reqwest</span>::<span class="ident">Url</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Duration</span>;
 
 <span class="doccomment">/// A client connection to an AdmissionControl (AC) service. `LibraClient` also</span>
 <span class="doccomment">/// handles verifying the server&#39;s responses, retrying on non-fatal failures, and</span>
@@ -406,21 +325,31 @@
 <span class="doccomment">/// 3. We make another request to the remote AC service. In this case, the remote</span>
 <span class="doccomment">///    AC will be behind us and we will reject their response as stale.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LibraClient</span> {
-    <span class="ident">client</span>: <span class="ident">JsonRpcClient</span>,
+    <span class="ident">client</span>: <span class="ident">Client</span><span class="op">&lt;</span><span class="ident">Retry</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The latest verified chain state.</span>
     <span class="ident">trusted_state</span>: <span class="ident">TrustedState</span>,
     <span class="doccomment">/// The most recent epoch change ledger info. This is `None` if we only know</span>
     <span class="doccomment">/// about our local [`Waypoint`] and have not yet ratcheted to the remote&#39;s</span>
     <span class="doccomment">/// latest state.</span>
     <span class="ident">latest_epoch_change_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
+    <span class="ident">runtime</span>: <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">tokio</span>::<span class="ident">runtime</span>::<span class="ident">Runtime</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">LibraClient</span> {
     <span class="doccomment">/// Construct a new Client instance.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">url</span>: <span class="ident">Url</span>, <span class="ident">waypoint</span>: <span class="ident">Waypoint</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">initial_trusted_state</span> <span class="op">=</span> <span class="ident">TrustedState</span>::<span class="ident">from</span>(<span class="ident">waypoint</span>);
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">JsonRpcClient</span>::<span class="ident">new</span>(<span class="ident">url</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Client</span>::<span class="ident">from_url</span>(<span class="ident">url</span>, <span class="ident">Retry</span>::<span class="ident">default</span>())<span class="question-mark">?</span>;
+
         <span class="prelude-val">Ok</span>(<span class="ident">LibraClient</span> {
+            <span class="ident">runtime</span>: <span class="ident">libra_infallible</span>::<span class="ident">Mutex</span>::<span class="ident">new</span>(
+                <span class="ident">tokio</span>::<span class="ident">runtime</span>::<span class="ident">Builder</span>::<span class="ident">new</span>()
+                    .<span class="ident">thread_name</span>(<span class="string">&quot;cli-client&quot;</span>)
+                    .<span class="ident">threaded_scheduler</span>()
+                    .<span class="ident">enable_all</span>()
+                    .<span class="ident">build</span>()
+                    .<span class="ident">expect</span>(<span class="string">&quot;failed to create runtime&quot;</span>),
+            ),
             <span class="ident">client</span>,
             <span class="ident">trusted_state</span>: <span class="ident">initial_trusted_state</span>,
             <span class="ident">latest_epoch_change_li</span>: <span class="prelude-val">None</span>,
@@ -429,189 +358,121 @@
 
     <span class="doccomment">/// Submits a transaction and bumps the sequence number for the sender, pass in `None` for</span>
     <span class="doccomment">/// sender_account if sender&#39;s address is not managed by the client.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">submit_transaction</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">sender_account_opt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span><span class="op">&gt;</span>,
-        <span class="ident">transaction</span>: <span class="ident">SignedTransaction</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="comment">// form request</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_submit_request</span>(<span class="ident">transaction</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">response</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">JsonRpcResponse</span>::<span class="ident">SubmissionResponse</span> {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sender_account</span>) <span class="op">=</span> <span class="ident">sender_account_opt</span> {
-                        <span class="comment">// Bump up sequence_number if transaction is accepted.</span>
-                        <span class="ident">sender_account</span>.<span class="ident">sequence_number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                    }
-                    <span class="prelude-val">Ok</span>(())
-                } <span class="kw">else</span> {
-                    <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Received non-submit response payload: {:?}&quot;</span>, <span class="ident">response</span>)
-                }
-            }
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">e</span>.<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">JsonRpcError</span><span class="op">&gt;</span>() {
-                    <span class="comment">// check VM status</span>
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status_code</span>) <span class="op">=</span> <span class="ident">error</span>.<span class="ident">as_status_code</span>() {
-                        <span class="kw">if</span> <span class="ident">status_code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">StatusCode</span>::<span class="ident">SEQUENCE_NUMBER_TOO_OLD</span> {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">sender_account</span>) <span class="op">=</span> <span class="ident">sender_account_opt</span> {
-                                <span class="comment">// update sender&#39;s sequence number if too old</span>
-                                <span class="ident">sender_account</span>.<span class="ident">sequence_number</span> <span class="op">=</span>
-                                    <span class="self">self</span>.<span class="ident">get_sequence_number</span>(<span class="ident">sender_account</span>.<span class="ident">address</span>)<span class="question-mark">?</span>;
-                            }
-                        }
-                    }
-                }
-                <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Transaction submission failed with error: {:?}&quot;</span>, <span class="ident">e</span>)
-            }
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">submit_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit</span>(<span class="ident">transaction</span>))
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
     }
 
     <span class="doccomment">/// Retrieves account information</span>
     <span class="doccomment">/// - If `with_state_proof`, will also retrieve state proof from node and update trusted_state accordingly</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
-        <span class="ident">with_state_proof</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountView</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">client_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_account_request</span>(<span class="ident">account</span>);
-        <span class="kw">if</span> <span class="ident">with_state_proof</span> {
-            <span class="ident">batch</span>.<span class="ident">add_get_state_proof_request</span>(<span class="ident">client_version</span>);
-        }
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">if</span> <span class="ident">with_state_proof</span> {
-            <span class="kw">let</span> <span class="ident">state_proof</span> <span class="op">=</span> <span class="ident">get_response_from_batch</span>(<span class="number">1</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span>.<span class="ident">as_ref</span>();
-            <span class="self">self</span>.<span class="ident">process_state_proof_response</span>(<span class="ident">state_proof</span>)<span class="question-mark">?</span>;
-        }
-
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">account_view</span> <span class="op">=</span> <span class="ident">AccountView</span>::<span class="ident">optional_from_response</span>(<span class="ident">result</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>((<span class="ident">account_view</span>, <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>()))
-            }
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(
-                <span class="string">&quot;Failed to get account for account address {} with error: {:?}&quot;</span>,
-                <span class="ident">account</span>,
-                <span class="ident">e</span>
-            ),
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_account</span>(<span class="ident">account</span>))
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_state_blob</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountStateBlob</span><span class="op">&gt;</span>, <span class="ident">Version</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_account_state_with_proof_request</span>(<span class="ident">account</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">account_state_with_proof</span> <span class="op">=</span>
-                    <span class="ident">AccountStateWithProofView</span>::<span class="ident">from_response</span>(<span class="ident">result</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">bytes</span>) <span class="op">=</span> <span class="ident">account_state_with_proof</span>.<span class="ident">blob</span> {
-                    <span class="prelude-val">Ok</span>((
-                        <span class="prelude-val">Some</span>(<span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>.<span class="ident">into_bytes</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>),
-                        <span class="ident">account_state_with_proof</span>.<span class="ident">version</span>,
-                    ))
-                } <span class="kw">else</span> {
-                    <span class="prelude-val">Ok</span>((<span class="prelude-val">None</span>, <span class="ident">account_state_with_proof</span>.<span class="ident">version</span>))
-                }
-            }
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(
-                <span class="string">&quot;Failed to get account state blob for account address {} with error: {:?}&quot;</span>,
-                <span class="ident">account</span>,
-                <span class="ident">e</span>
-            ),
+        <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(
+                <span class="self">self</span>.<span class="ident">client</span>
+                    .<span class="ident">get_account_state_with_proof</span>(<span class="ident">account</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+            )
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)<span class="question-mark">?</span>;
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">ret</span>.<span class="ident">blob</span>.<span class="ident">is_empty</span>() {
+            <span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(<span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">ret</span>.<span class="ident">blob</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>), <span class="ident">ret</span>.<span class="ident">version</span>))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Ok</span>((<span class="prelude-val">None</span>, <span class="ident">ret</span>.<span class="ident">version</span>))
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_events</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">event_key</span>: <span class="ident">String</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">event_key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">start</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_events_request</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">limit</span>);
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_events</span>(<span class="ident">event_key</span>, <span class="ident">start</span>, <span class="ident">limit</span>))
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
+    }
 
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">EventView</span>::<span class="ident">vec_from_response</span>(<span class="ident">resp</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get events with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wait_for_transaction</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>,
+        <span class="ident">timeout</span>: <span class="ident">Duration</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span>, <span class="ident">WaitForTransactionError</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(
+                <span class="self">self</span>.<span class="ident">client</span>
+                    .<span class="ident">wait_for_signed_transaction</span>(<span class="ident">txn</span>, <span class="prelude-val">Some</span>(<span class="ident">timeout</span>), <span class="prelude-val">None</span>),
+            )
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
     }
 
     <span class="doccomment">/// Gets the block metadata</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MetadataView</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_metadata_request</span>(<span class="prelude-val">None</span>);
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">MetadataView</span>::<span class="ident">from_response</span>(<span class="ident">resp</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get block metadata with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_metadata</span>())
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
     }
 
     <span class="doccomment">/// Gets the currency info stored on-chain</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_currency_info</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CurrencyInfoView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_currencies_info</span>();
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">CurrencyInfoView</span>::<span class="ident">vec_from_response</span>(<span class="ident">resp</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get currencies info with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_currency_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">CurrencyInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_currencies</span>())
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
     }
 
     <span class="doccomment">/// Retrieves and checks the state proof</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_state_proof</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_state_proof_request</span>(<span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>());
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">state_proof</span> <span class="op">=</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span>.<span class="ident">as_ref</span>();
-        <span class="self">self</span>.<span class="ident">process_state_proof_response</span>(<span class="ident">state_proof</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_and_verify_state_proof</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">state_proof</span> <span class="op">=</span> <span class="self">self</span>
+            .<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(
+                <span class="self">self</span>.<span class="ident">client</span>
+                    .<span class="ident">get_state_proof</span>(<span class="self">self</span>.<span class="ident">trusted_state</span>().<span class="ident">latest_version</span>()),
+            )
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">verify_state_proof</span>(<span class="ident">state_proof</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">process_state_proof_response</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">response</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">JsonRpcResponse</span>, <span class="kw-2">&amp;</span><span class="ident">anyhow</span>::<span class="ident">Error</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">response</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">resp</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">state_proof</span> <span class="op">=</span> <span class="ident">StateProofView</span>::<span class="ident">from_response</span>(<span class="ident">resp</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
-                <span class="self">self</span>.<span class="ident">verify_state_proof</span>(<span class="ident">state_proof</span>)
-            }
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get state proof with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
-    }
+    <span class="kw">fn</span> <span class="ident">verify_state_proof</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state_proof</span>: <span class="ident">jsonrpc</span>::<span class="ident">StateProof</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">trusted_state</span>();
 
-    <span class="kw">fn</span> <span class="ident">verify_state_proof</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state_proof</span>: <span class="ident">StateProofView</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">client_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>();
         <span class="kw">let</span> <span class="ident">li</span>: <span class="ident">LedgerInfoWithSignatures</span> <span class="op">=</span>
-            <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">state_proof</span>.<span class="ident">ledger_info_with_signatures</span>.<span class="ident">into_bytes</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">state_proof</span>.<span class="ident">ledger_info_with_signatures</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">epoch_change_proof</span>: <span class="ident">EpochChangeProof</span> <span class="op">=</span>
-            <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">state_proof</span>.<span class="ident">epoch_change_proof</span>.<span class="ident">into_bytes</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+            <span class="ident">lcs</span>::<span class="ident">from_bytes</span>(<span class="kw-2">&amp;</span><span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">state_proof</span>.<span class="ident">epoch_change_proof</span>)<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// check ledger info version</span>
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">client_version</span>,
+            <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">state</span>.<span class="ident">latest_version</span>(),
             <span class="string">&quot;Got stale ledger_info with version {}, known version: {}&quot;</span>,
             <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
-            <span class="ident">client_version</span>,
+            <span class="ident">state</span>.<span class="ident">latest_version</span>(),
         );
 
         <span class="comment">// trusted_state_change</span>
-        <span class="kw">match</span> <span class="self">self</span>
-            .<span class="ident">trusted_state</span>
-            .<span class="ident">verify_and_ratchet</span>(<span class="kw-2">&amp;</span><span class="ident">li</span>, <span class="kw-2">&amp;</span><span class="ident">epoch_change_proof</span>)<span class="question-mark">?</span>
-        {
+        <span class="kw">match</span> <span class="ident">state</span>.<span class="ident">verify_and_ratchet</span>(<span class="kw-2">&amp;</span><span class="ident">li</span>, <span class="kw-2">&amp;</span><span class="ident">epoch_change_proof</span>)<span class="question-mark">?</span> {
             <span class="ident">TrustedStateChange</span>::<span class="ident">Epoch</span> {
                 <span class="ident">new_state</span>,
                 <span class="ident">latest_epoch_change_li</span>,
@@ -624,14 +485,14 @@
                         .<span class="ident">expect</span>(<span class="string">&quot;no validator set in epoch change ledger info&quot;</span>),
                 );
                 <span class="comment">// Update client state</span>
-                <span class="self">self</span>.<span class="ident">trusted_state</span> <span class="op">=</span> <span class="ident">new_state</span>;
-                <span class="self">self</span>.<span class="ident">latest_epoch_change_li</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">latest_epoch_change_li</span>.<span class="ident">clone</span>());
+                <span class="self">self</span>.<span class="ident">update_trusted_state</span>(<span class="ident">new_state</span>);
+                <span class="self">self</span>.<span class="ident">update_latest_epoch_change_li</span>(<span class="ident">latest_epoch_change_li</span>.<span class="ident">clone</span>());
             }
             <span class="ident">TrustedStateChange</span>::<span class="ident">Version</span> { <span class="ident">new_state</span> } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>() <span class="op">&lt;</span> <span class="ident">new_state</span>.<span class="ident">latest_version</span>() {
+                <span class="kw">if</span> <span class="ident">state</span>.<span class="ident">latest_version</span>() <span class="op">&lt;</span> <span class="ident">new_state</span>.<span class="ident">latest_version</span>() {
                     <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Verified version change to: {}&quot;</span>, <span class="ident">new_state</span>.<span class="ident">latest_version</span>());
                 }
-                <span class="self">self</span>.<span class="ident">trusted_state</span> <span class="op">=</span> <span class="ident">new_state</span>;
+                <span class="self">self</span>.<span class="ident">update_trusted_state</span>(<span class="ident">new_state</span>);
             }
             <span class="ident">TrustedStateChange</span>::<span class="ident">NoChange</span> <span class="op">=</span><span class="op">&gt;</span> (),
         }
@@ -648,78 +509,69 @@
         <span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">clone</span>()
     }
 
+    <span class="kw">fn</span> <span class="ident">update_latest_epoch_change_li</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ledger</span>: <span class="ident">LedgerInfoWithSignatures</span>) {
+        <span class="self">self</span>.<span class="ident">latest_epoch_change_li</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">ledger</span>);
+    }
+
+    <span class="kw">fn</span> <span class="ident">update_trusted_state</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="ident">TrustedState</span>) {
+        <span class="self">self</span>.<span class="ident">trusted_state</span> <span class="op">=</span> <span class="ident">state</span>
+    }
+
     <span class="doccomment">/// Get transaction from validator by account and sequence number.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_txn_by_acc_seq</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
-        <span class="ident">account</span>: <span class="ident">AccountAddress</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">sequence_number</span>: <span class="ident">u64</span>,
         <span class="ident">fetch_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_account_transaction_request</span>(<span class="ident">account</span>, <span class="ident">sequence_number</span>, <span class="ident">fetch_events</span>);
-        <span class="ident">batch</span>.<span class="ident">add_get_state_proof_request</span>(<span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>());
-
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">state_proof_view</span> <span class="op">=</span> <span class="ident">get_response_from_batch</span>(<span class="number">1</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span>.<span class="ident">as_ref</span>();
-        <span class="self">self</span>.<span class="ident">process_state_proof_response</span>(<span class="ident">state_proof_view</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">TransactionView</span>::<span class="ident">optional_from_response</span>(<span class="ident">response</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get account txn with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(
+                <span class="self">self</span>.<span class="ident">client</span>
+                    .<span class="ident">get_account_transaction</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">sequence_number</span>, <span class="ident">fetch_events</span>),
+            )
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
     }
 
     <span class="doccomment">/// Get transactions in range (start_version..start_version + limit - 1) from validator.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_txn_by_range</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">start_version</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
         <span class="ident">fetch_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">batch</span> <span class="op">=</span> <span class="ident">JsonRpcBatch</span>::<span class="ident">new</span>();
-        <span class="ident">batch</span>.<span class="ident">add_get_transactions_request</span>(<span class="ident">start_version</span>, <span class="ident">limit</span>, <span class="ident">fetch_events</span>);
-        <span class="ident">batch</span>.<span class="ident">add_get_state_proof_request</span>(<span class="self">self</span>.<span class="ident">trusted_state</span>.<span class="ident">latest_version</span>());
-
-        <span class="kw">let</span> <span class="ident">responses</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">execute</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">state_proof</span> <span class="op">=</span> <span class="ident">get_response_from_batch</span>(<span class="number">1</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span>.<span class="ident">as_ref</span>();
-        <span class="self">self</span>.<span class="ident">process_state_proof_response</span>(<span class="ident">state_proof</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">match</span> <span class="ident">get_response_from_batch</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">responses</span>)<span class="question-mark">?</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">result</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">TransactionView</span>::<span class="ident">vec_from_response</span>(<span class="ident">result</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Failed to get transactions with error: {:?}&quot;</span>, <span class="ident">e</span>),
-        }
-    }
-
-    <span class="kw">fn</span> <span class="ident">get_sequence_number</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">account</span>: <span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account</span>(<span class="ident">account</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No account found for address {:?}&quot;</span>, <span class="ident">account</span>),
-            <span class="prelude-val">Some</span>(<span class="ident">account_view</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">account_view</span>.<span class="ident">sequence_number</span>),
-        }
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="self">self</span>.<span class="ident">runtime</span>
+            .<span class="ident">lock</span>()
+            .<span class="ident">block_on</span>(
+                <span class="self">self</span>.<span class="ident">client</span>
+                    .<span class="ident">get_transactions</span>(<span class="ident">start_version</span>, <span class="ident">limit</span>, <span class="ident">fetch_events</span>),
+            )
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">r</span><span class="op">|</span> <span class="ident">r</span>.<span class="ident">result</span>)
+            .<span class="ident">map_err</span>(<span class="ident">anyhow</span>::<span class="ident">Error</span>::<span class="ident">new</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_events_by_access_path</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">access_path</span>: <span class="ident">AccessPath</span>,
         <span class="ident">start_event_seq_num</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EventView</span><span class="op">&gt;</span>, <span class="ident">AccountView</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Event</span><span class="op">&gt;</span>, <span class="ident">jsonrpc</span>::<span class="ident">Account</span>)<span class="op">&gt;</span> {
         <span class="comment">// get event key from access_path</span>
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account</span>(<span class="ident">access_path</span>.<span class="ident">address</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>.<span class="number">0</span> {
+        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_account</span>(<span class="kw-2">&amp;</span><span class="ident">access_path</span>.<span class="ident">address</span>)<span class="question-mark">?</span> {
             <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;No account found for address {:?}&quot;</span>, <span class="ident">access_path</span>.<span class="ident">address</span>),
             <span class="prelude-val">Some</span>(<span class="ident">account_view</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">access_path</span>.<span class="ident">path</span>;
                 <span class="kw">let</span> <span class="ident">event_key</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">path</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ACCOUNT_SENT_EVENT_PATH</span>.<span class="ident">to_vec</span>() {
-                    <span class="kw">let</span> <span class="ident">BytesView</span>(<span class="ident">sent_events_key</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">account_view</span>.<span class="ident">sent_events_key</span>;
-                    <span class="ident">sent_events_key</span>
+                    <span class="kw-2">&amp;</span><span class="ident">account_view</span>.<span class="ident">sent_events_key</span>
                 } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">path</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ACCOUNT_RECEIVED_EVENT_PATH</span>.<span class="ident">to_vec</span>() {
-                    <span class="kw">let</span> <span class="ident">BytesView</span>(<span class="ident">received_events_key</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">account_view</span>.<span class="ident">received_events_key</span>;
-                    <span class="ident">received_events_key</span>
+                    <span class="kw-2">&amp;</span><span class="ident">account_view</span>.<span class="ident">received_events_key</span>
                 } <span class="kw">else</span> {
                     <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Unexpected event path found in access path&quot;</span>);
                 };
 
                 <span class="comment">// get_events</span>
-                <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_events</span>(<span class="ident">event_key</span>.<span class="ident">to_string</span>(), <span class="ident">start_event_seq_num</span>, <span class="ident">limit</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_events</span>(<span class="ident">event_key</span>, <span class="ident">start_event_seq_num</span>, <span class="ident">limit</span>)<span class="question-mark">?</span>;
                 <span class="prelude-val">Ok</span>((<span class="ident">events</span>, <span class="ident">account_view</span>))
             }
         }
