@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["percent_coverage_for_counts",""]],"struct":[["FunctionSummary",""],["ModuleSummary",""],["ModuleSummaryOptions",""]]});
+initSidebarItems({"fn":[["summarize_inst_cov",""],["summarize_path_cov",""]],"struct":[["FunctionInfo",""],["FunctionSummary",""],["ModuleSummary",""]]});
