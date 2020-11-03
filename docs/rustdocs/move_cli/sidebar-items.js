@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["DEFAULT_BUILD_OUTPUT_DIR","Default directory for build output"],["MOVE_DATA","Default directory where saved Move resources live"],["MOVE_SRC","Default directory where Move modules live"]],"mod":[["test",""]],"struct":[["OnDiskStateView",""]]});
+initSidebarItems({"constant":[["DEFAULT_BUILD_DIR","Default directory for build output"],["DEFAULT_SOURCE_DIR","Default directory where Move modules live"],["DEFAULT_STORAGE_DIR","Default directory where saved Move resources live"]],"mod":[["test",""]],"struct":[["OnDiskStateView",""]]});
