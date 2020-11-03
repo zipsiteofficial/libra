@@ -336,6 +336,26 @@
 <span id="336">336</span>
 <span id="337">337</span>
 <span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -346,7 +366,7 @@
 };
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::{<span class="ident">ed25519</span>::<span class="ident">Ed25519PublicKey</span>, <span class="ident">x25519</span>};
 <span class="kw">use</span> <span class="ident">libra_management</span>::{<span class="ident">error</span>::<span class="ident">Error</span>, <span class="ident">execute_command</span>};
-<span class="kw">use</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>;
+<span class="kw">use</span> <span class="ident">libra_types</span>::{<span class="ident">account_address</span>::<span class="ident">AccountAddress</span>, <span class="ident">waypoint</span>::<span class="ident">Waypoint</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::<span class="ident">Serialize</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
@@ -370,7 +390,11 @@
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Set the waypoint in the validator storage&quot;</span>)]</span>
     <span class="ident">InsertWaypoint</span>(<span class="ident">libra_management</span>::<span class="ident">waypoint</span>::<span class="ident">InsertWaypoint</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Prints an account from the validator storage&quot;</span>)]</span>
-    <span class="ident">PrintAccount</span>(<span class="kw">crate</span>::<span class="ident">account</span>::<span class="ident">PrintAccount</span>),
+    <span class="ident">PrintAccount</span>(<span class="kw">crate</span>::<span class="ident">print</span>::<span class="ident">PrintAccount</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Prints a public key from the validator storage&quot;</span>)]</span>
+    <span class="ident">PrintKey</span>(<span class="kw">crate</span>::<span class="ident">print</span>::<span class="ident">PrintKey</span>),
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Prints a waypoint from the validator storage&quot;</span>)]</span>
+    <span class="ident">PrintWaypoint</span>(<span class="kw">crate</span>::<span class="ident">print</span>::<span class="ident">PrintWaypoint</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Remove a validator from ValidatorSet&quot;</span>)]</span>
     <span class="ident">RemoveValidator</span>(<span class="kw">crate</span>::<span class="ident">governance</span>::<span class="ident">RemoveValidator</span>),
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Rotates the consensus key for a validator&quot;</span>)]</span>
@@ -404,6 +428,8 @@
     <span class="ident">ExtractPublicKey</span>,
     <span class="ident">InsertWaypoint</span>,
     <span class="ident">PrintAccount</span>,
+    <span class="ident">PrintKey</span>,
+    <span class="ident">PrintWaypoint</span>,
     <span class="ident">RemoveValidator</span>,
     <span class="ident">RotateConsensusKey</span>,
     <span class="ident">RotateOperatorKey</span>,
@@ -428,6 +454,8 @@
             <span class="ident">Command</span>::<span class="ident">ExtractPublicKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">ExtractPublicKey</span>,
             <span class="ident">Command</span>::<span class="ident">InsertWaypoint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span>,
             <span class="ident">Command</span>::<span class="ident">PrintAccount</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">PrintAccount</span>,
+            <span class="ident">Command</span>::<span class="ident">PrintKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">PrintKey</span>,
+            <span class="ident">Command</span>::<span class="ident">PrintWaypoint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">PrintWaypoint</span>,
             <span class="ident">Command</span>::<span class="ident">RemoveValidator</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RemoveValidator</span>,
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span>,
             <span class="ident">Command</span>::<span class="ident">RotateOperatorKey</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CommandName</span>::<span class="ident">RotateOperatorKey</span>,
@@ -454,6 +482,8 @@
             <span class="ident">CommandName</span>::<span class="ident">ExtractPublicKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;extract-public-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">InsertWaypoint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;insert-waypoint&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">PrintAccount</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;print-account&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">PrintKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;print-key&quot;</span>,
+            <span class="ident">CommandName</span>::<span class="ident">PrintWaypoint</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;print-waypoint&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RemoveValidator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;remove-validator&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateConsensusKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-consensus-key&quot;</span>,
             <span class="ident">CommandName</span>::<span class="ident">RotateOperatorKey</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;rotate-operator-key&quot;</span>,
@@ -485,6 +515,8 @@
             <span class="ident">Command</span>::<span class="ident">ExtractPrivateKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_success</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">ExtractPublicKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_success</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">PrintAccount</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
+            <span class="ident">Command</span>::<span class="ident">PrintKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
+            <span class="ident">Command</span>::<span class="ident">PrintWaypoint</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">pretty_print</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">RemoveValidator</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">print_transaction_context</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>()),
             <span class="ident">Command</span>::<span class="ident">RotateConsensusKey</span>(<span class="ident">cmd</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="self">Self</span>::<span class="ident">print_transaction_context</span>(<span class="ident">cmd</span>.<span class="ident">execute</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">txn_ctx</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">txn_ctx</span>))
@@ -586,6 +618,14 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_account</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountAddress</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="macro">execute_command</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Command</span>::<span class="ident">PrintAccount</span>, <span class="ident">CommandName</span>::<span class="ident">PrintAccount</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_key</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="macro">execute_command</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Command</span>::<span class="ident">PrintKey</span>, <span class="ident">CommandName</span>::<span class="ident">PrintKey</span>)
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_waypoint</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Waypoint</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="macro">execute_command</span><span class="macro">!</span>(<span class="self">self</span>, <span class="ident">Command</span>::<span class="ident">PrintWaypoint</span>, <span class="ident">CommandName</span>::<span class="ident">PrintWaypoint</span>)
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_validator</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionContext</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
