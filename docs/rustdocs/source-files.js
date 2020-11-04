@@ -43,6 +43,7 @@ sourcesIndex["libra_crypto"] = {"name":"","files":["compat.rs","ed25519.rs","err
 sourcesIndex["libra_crypto_derive"] = {"name":"","files":["hasher.rs","lib.rs","unions.rs"]};
 sourcesIndex["libra_dev"] = {"name":"","files":["crypto.rs","error.rs","interface.rs","lib.rs","transaction.rs"]};
 sourcesIndex["libra_documentation_tool"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["libra_events_fetcher"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_faucet"] = {"name":"","files":["lib.rs","mint.rs"]};
 sourcesIndex["libra_fuzzer"] = {"name":"","dirs":[{"name":"fuzz_targets","files":["consensus.rs","executor.rs","json_rpc_service.rs","mempool.rs","move_vm.rs","network.rs","proof.rs","safety_rules.rs","secure_json_rpc_client.rs","secure_storage_vault.rs","state_sync.rs","storage.rs","transaction.rs","vm.rs"]}],"files":["commands.rs","fuzz_targets.rs","lib.rs"]};
 sourcesIndex["libra_genesis_tool"] = {"name":"","files":["command.rs","config_builder.rs","genesis.rs","key.rs","layout.rs","lib.rs","storage_helper.rs","swarm_config.rs","validator_config.rs","validator_operator.rs","verify.rs","waypoint.rs"]};
