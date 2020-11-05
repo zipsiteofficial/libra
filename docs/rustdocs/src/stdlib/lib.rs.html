@@ -459,6 +459,11 @@
 <span id="459">459</span>
 <span id="460">460</span>
 <span id="461">461</span>
+<span id="462">462</span>
+<span id="463">463</span>
+<span id="464">464</span>
+<span id="465">465</span>
+<span id="466">466</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -652,7 +657,7 @@
     <span class="bool-val">true</span>
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_stdlib_doc</span>() {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_stdlib_doc</span>(<span class="ident">with_diagram</span>: <span class="ident">bool</span>) {
     <span class="ident">build_doc</span>(
         <span class="ident">STD_LIB_DOC_DIR</span>,
         <span class="string">&quot;&quot;</span>,
@@ -666,10 +671,11 @@
         ),
         <span class="ident">stdlib_files</span>().<span class="ident">as_slice</span>(),
         <span class="string">&quot;&quot;</span>,
+        <span class="ident">with_diagram</span>,
     )
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_transaction_script_doc</span>(<span class="ident">script_files</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>]) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_transaction_script_doc</span>(<span class="ident">script_files</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>], <span class="ident">with_diagram</span>: <span class="ident">bool</span>) {
     <span class="ident">build_doc</span>(
         <span class="ident">TRANSACTION_SCRIPTS_DOC_DIR</span>,
         <span class="ident">STD_LIB_DOC_DIR</span>,
@@ -688,6 +694,7 @@
         ),
         <span class="ident">script_files</span>,
         <span class="ident">STD_LIB_DIR</span>,
+        <span class="ident">with_diagram</span>,
     )
 }
 
@@ -716,6 +723,7 @@
     <span class="ident">references_file</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="ident">sources</span>: <span class="kw-2">&amp;</span>[<span class="ident">String</span>],
     <span class="ident">dep_path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+    <span class="ident">with_diagram</span>: <span class="ident">bool</span>,
 ) {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">options</span> <span class="op">=</span> <span class="ident">move_prover</span>::<span class="ident">cli</span>::<span class="ident">Options</span>::<span class="ident">default</span>();
     <span class="ident">options</span>.<span class="ident">move_sources</span> <span class="op">=</span> <span class="ident">sources</span>.<span class="ident">to_vec</span>();
@@ -735,6 +743,8 @@
     }
     <span class="ident">options</span>.<span class="ident">docgen</span>.<span class="ident">output_directory</span> <span class="op">=</span> <span class="ident">output_path</span>.<span class="ident">to_string</span>();
     <span class="ident">options</span>.<span class="ident">setup_logging_for_test</span>();
+    <span class="ident">options</span>.<span class="ident">docgen</span>.<span class="ident">include_dep_diagrams</span> <span class="op">=</span> <span class="ident">with_diagram</span>;
+    <span class="ident">options</span>.<span class="ident">docgen</span>.<span class="ident">include_call_diagrams</span> <span class="op">=</span> <span class="ident">with_diagram</span>;
     <span class="ident">move_prover</span>::<span class="ident">run_move_prover_errors_to_stderr</span>(<span class="ident">options</span>).<span class="ident">unwrap</span>();
 }
 
@@ -912,7 +922,7 @@
         <span class="comment">// (1) Verify new_module (TODO)</span>
         <span class="comment">// (2) Link new_module against new_module dependencies. (TODO)</span>
         <span class="comment">//     Note: this will *NOT* prevent cylic deps. We need to think about a different scheme</span>
-        <span class="comment">//     if we care about this (wich we almost certainly do). One (probably too restrictive)</span>
+        <span class="comment">//     if we care about this (which we almost certainly do). One (probably too restrictive)</span>
         <span class="comment">//     solution would be: insist that deps(new_module) are a subset of deps(old_module).</span>
         <span class="comment">//     That would not only prevent cyclic deps, but also preclude the need for linking</span>
         <span class="comment">//     entirely.</span>
