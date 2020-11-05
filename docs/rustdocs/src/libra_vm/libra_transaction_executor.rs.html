@@ -838,6 +838,14 @@
 <span id="838">838</span>
 <span id="839">839</span>
 <span id="840">840</span>
+<span id="841">841</span>
+<span id="842">842</span>
+<span id="843">843</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -1463,6 +1471,9 @@
 
         <span class="kw">let</span> <span class="ident">signature_verified_block</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreprocessedTransaction</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>;
         {
+            <span class="comment">// Verify the signatures of all the transactions in parallel.</span>
+            <span class="comment">// This is time consuming so don&#39;t wait and do the checking</span>
+            <span class="comment">// sequentially while executing the transactions.</span>
             <span class="ident">signature_verified_block</span> <span class="op">=</span> <span class="ident">transactions</span>
                 .<span class="ident">into_par_iter</span>()
                 .<span class="ident">map</span>(<span class="ident">preprocess_transaction</span>)
@@ -1572,6 +1583,10 @@
     }
 }
 
+<span class="doccomment">/// Check the signature (if any) of a transaction. If the signature is OK, the result</span>
+<span class="doccomment">/// is a PreprocessedTransaction, where a user transaction is translated to a</span>
+<span class="doccomment">/// SignatureCheckedTransaction and also categorized into either a UserTransaction</span>
+<span class="doccomment">/// or a WriteSet transaction.</span>
 <span class="kw">fn</span> <span class="ident">preprocess_transaction</span>(<span class="ident">txn</span>: <span class="ident">Transaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PreprocessedTransaction</span>, <span class="ident">VMStatus</span><span class="op">&gt;</span> {
     <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">txn</span> {
         <span class="ident">Transaction</span>::<span class="ident">BlockMetadata</span>(<span class="ident">b</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PreprocessedTransaction</span>::<span class="ident">BlockPrologue</span>(<span class="ident">b</span>),
@@ -1597,8 +1612,9 @@
         .<span class="ident">any</span>(<span class="op">|</span><span class="ident">event</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">event</span>.<span class="ident">key</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_epoch_event_key</span>)
 }
 
-<span class="doccomment">/// Transactions divided by transaction flow.</span>
-<span class="doccomment">/// Transaction flows are different across different types of transactions.</span>
+<span class="doccomment">/// Transactions after signature checking:</span>
+<span class="doccomment">/// Waypoints and BlockPrologues are not signed and are unaffected by signature checking,</span>
+<span class="doccomment">/// but a user transaction or writeset transaction is transformed to a SignatureCheckedTransaction.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">enum</span> <span class="ident">PreprocessedTransaction</span> {
     <span class="ident">UserTransaction</span>(<span class="ident">Box</span><span class="op">&lt;</span><span class="ident">SignatureCheckedTransaction</span><span class="op">&gt;</span>),
