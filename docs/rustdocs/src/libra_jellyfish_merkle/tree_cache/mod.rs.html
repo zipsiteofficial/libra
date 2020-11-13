@@ -268,6 +268,9 @@
 <span id="268">268</span>
 <span id="269">269</span>
 <span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -342,7 +345,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">node_type</span>::{<span class="ident">Node</span>, <span class="ident">NodeKey</span>},
-    <span class="ident">StaleNodeIndex</span>, <span class="ident">TreeReader</span>, <span class="ident">TreeUpdateBatch</span>,
+    <span class="ident">NodeStats</span>, <span class="ident">StaleNodeIndex</span>, <span class="ident">TreeReader</span>, <span class="ident">TreeUpdateBatch</span>,
 };
 <span class="kw">use</span> <span class="ident">anyhow</span>::{<span class="ident">bail</span>, <span class="prelude-ty">Result</span>};
 <span class="kw">use</span> <span class="ident">libra_crypto</span>::<span class="ident">HashValue</span>;
@@ -361,14 +364,11 @@
     <span class="doccomment">/// Immutable node_cache.</span>
     <span class="ident">node_cache</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">NodeKey</span>, <span class="ident">Node</span><span class="op">&gt;</span>,
 
-    <span class="doccomment">/// # of leaves in the `node_cache`,</span>
-    <span class="ident">num_new_leaves</span>: <span class="ident">usize</span>,
-
     <span class="doccomment">/// Immutable stale_node_index_cache.</span>
     <span class="ident">stale_node_index_cache</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">StaleNodeIndex</span><span class="op">&gt;</span>,
 
-    <span class="doccomment">/// # of leaves in the `stale_node_index_cache`,</span>
-    <span class="ident">num_stale_leaves</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// the stats vector including the number of new nodes, new leaves, stale nodes and stale leaves.</span>
+    <span class="ident">node_stats</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NodeStats</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// Frozen root hashes after each earlier transaction.</span>
     <span class="ident">root_hashes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span>,
@@ -501,8 +501,14 @@
             .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Root node with key {:?} must exist&quot;</span>, <span class="ident">root_node_key</span>))
             .<span class="ident">hash</span>();
         <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">root_hashes</span>.<span class="ident">push</span>(<span class="ident">root_hash</span>);
+        <span class="kw">let</span> <span class="ident">node_stats</span> <span class="op">=</span> <span class="ident">NodeStats</span> {
+            <span class="ident">new_nodes</span>: <span class="self">self</span>.<span class="ident">node_cache</span>.<span class="ident">len</span>(),
+            <span class="ident">new_leaves</span>: <span class="self">self</span>.<span class="ident">num_new_leaves</span>,
+            <span class="ident">stale_nodes</span>: <span class="self">self</span>.<span class="ident">stale_node_index_cache</span>.<span class="ident">len</span>(),
+            <span class="ident">stale_leaves</span>: <span class="self">self</span>.<span class="ident">num_stale_leaves</span>,
+        };
+        <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">node_stats</span>.<span class="ident">push</span>(<span class="ident">node_stats</span>);
         <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">node_cache</span>.<span class="ident">extend</span>(<span class="self">self</span>.<span class="ident">node_cache</span>.<span class="ident">drain</span>());
-
         <span class="kw">let</span> <span class="ident">stale_since_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">next_version</span>;
         <span class="self">self</span>.<span class="ident">frozen_cache</span>
             .<span class="ident">stale_node_index_cache</span>
@@ -514,11 +520,12 @@
                         <span class="ident">node_key</span>,
                     }),
             );
-        <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">num_stale_leaves</span> <span class="op">+</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_stale_leaves</span>;
+
+        <span class="comment">// Clean up</span>
         <span class="self">self</span>.<span class="ident">num_stale_leaves</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">num_new_leaves</span> <span class="op">+</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_new_leaves</span>;
         <span class="self">self</span>.<span class="ident">num_new_leaves</span> <span class="op">=</span> <span class="number">0</span>;
 
+        <span class="comment">// Prepare for the next version after freezing</span>
         <span class="self">self</span>.<span class="ident">next_version</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
     }
 }
@@ -533,8 +540,7 @@
             <span class="ident">TreeUpdateBatch</span> {
                 <span class="ident">node_batch</span>: <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">node_cache</span>,
                 <span class="ident">stale_node_index_batch</span>: <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">stale_node_index_cache</span>,
-                <span class="ident">num_new_leaves</span>: <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">num_new_leaves</span>,
-                <span class="ident">num_stale_leaves</span>: <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">num_stale_leaves</span>,
+                <span class="ident">node_stats</span>: <span class="self">self</span>.<span class="ident">frozen_cache</span>.<span class="ident">node_stats</span>,
             },
         )
     }

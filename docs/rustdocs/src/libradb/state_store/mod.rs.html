@@ -219,8 +219,6 @@
 <span id="219">219</span>
 <span id="220">220</span>
 <span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -301,24 +299,22 @@
         <span class="kw">let</span> (<span class="ident">new_root_hash_vec</span>, <span class="ident">tree_update_batch</span>) <span class="op">=</span>
             <span class="ident">JellyfishMerkleTree</span>::<span class="ident">new</span>(<span class="self">self</span>).<span class="ident">put_blob_sets</span>(<span class="ident">blob_sets</span>, <span class="ident">first_version</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">cs</span>.<span class="ident">counter_bumps</span>.<span class="ident">bump</span>(
-            <span class="ident">LedgerCounter</span>::<span class="ident">NewStateNodes</span>,
-            <span class="ident">tree_update_batch</span>.<span class="ident">node_batch</span>.<span class="ident">len</span>(),
-        );
-        <span class="ident">cs</span>.<span class="ident">counter_bumps</span>.<span class="ident">bump</span>(
-            <span class="ident">LedgerCounter</span>::<span class="ident">NewStateLeaves</span>,
-            <span class="ident">tree_update_batch</span>.<span class="ident">num_new_leaves</span>,
-        );
+        <span class="kw">let</span> <span class="ident">num_versions</span> <span class="op">=</span> <span class="ident">new_root_hash_vec</span>.<span class="ident">len</span>();
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">num_versions</span>, <span class="ident">tree_update_batch</span>.<span class="ident">node_stats</span>.<span class="ident">len</span>());
+
+        <span class="ident">tree_update_batch</span>
+            .<span class="ident">node_stats</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">enumerate</span>()
+            .<span class="ident">for_each</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">stats</span>)<span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">counter_bumps</span> <span class="op">=</span> <span class="ident">cs</span>.<span class="ident">counter_bumps</span>(<span class="ident">first_version</span> <span class="op">+</span> <span class="ident">i</span> <span class="kw">as</span> <span class="ident">u64</span>);
+                <span class="ident">counter_bumps</span>.<span class="ident">bump</span>(<span class="ident">LedgerCounter</span>::<span class="ident">NewStateNodes</span>, <span class="ident">stats</span>.<span class="ident">new_nodes</span>);
+                <span class="ident">counter_bumps</span>.<span class="ident">bump</span>(<span class="ident">LedgerCounter</span>::<span class="ident">NewStateLeaves</span>, <span class="ident">stats</span>.<span class="ident">new_leaves</span>);
+                <span class="ident">counter_bumps</span>.<span class="ident">bump</span>(<span class="ident">LedgerCounter</span>::<span class="ident">StaleStateNodes</span>, <span class="ident">stats</span>.<span class="ident">stale_nodes</span>);
+                <span class="ident">counter_bumps</span>.<span class="ident">bump</span>(<span class="ident">LedgerCounter</span>::<span class="ident">StaleStateLeaves</span>, <span class="ident">stats</span>.<span class="ident">stale_leaves</span>);
+            });
         <span class="ident">add_node_batch</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cs</span>.<span class="ident">batch</span>, <span class="kw-2">&amp;</span><span class="ident">tree_update_batch</span>.<span class="ident">node_batch</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">cs</span>.<span class="ident">counter_bumps</span>.<span class="ident">bump</span>(
-            <span class="ident">LedgerCounter</span>::<span class="ident">StaleStateNodes</span>,
-            <span class="ident">tree_update_batch</span>.<span class="ident">stale_node_index_batch</span>.<span class="ident">len</span>(),
-        );
-        <span class="ident">cs</span>.<span class="ident">counter_bumps</span>.<span class="ident">bump</span>(
-            <span class="ident">LedgerCounter</span>::<span class="ident">StaleStateLeaves</span>,
-            <span class="ident">tree_update_batch</span>.<span class="ident">num_stale_leaves</span>,
-        );
         <span class="ident">tree_update_batch</span>
             .<span class="ident">stale_node_index_batch</span>
             .<span class="ident">iter</span>()
