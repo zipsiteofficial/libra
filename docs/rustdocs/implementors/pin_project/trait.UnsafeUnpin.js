@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["netcore"] = [{"text":"impl&lt;T&gt; UnsafeUnpin for IoCompat&lt;T&gt;","synthetic":false,"types":[]},{"text":"impl&lt;St, F&gt; UnsafeUnpin for AndThenStream&lt;St, F&gt;","synthetic":false,"types":[]},{"text":"impl&lt;Fut1, Fut2, F&gt; UnsafeUnpin for AndThenFuture&lt;Fut1, Fut2, F&gt;","synthetic":false,"types":[]}];
-implementors["network"] = [{"text":"impl&lt;TMessage&gt; UnsafeUnpin for NetworkEvents&lt;TMessage&gt;","synthetic":false,"types":[]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
