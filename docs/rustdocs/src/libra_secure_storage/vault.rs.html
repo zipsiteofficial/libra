@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `secure/storage/src/vault.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>vault.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_secure_storage/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `secure/storage/src/vault.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>vault.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_secure_storage/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -454,7 +455,7 @@
     <span class="ident">renew_ttl_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     <span class="ident">next_renewal</span>: <span class="ident">AtomicU64</span>,
     <span class="ident">use_cas</span>: <span class="ident">bool</span>,
-    <span class="ident">secret_versions</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">secret_versions</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">u32</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">VaultStorage</span> {
@@ -465,7 +466,7 @@
         <span class="ident">certificate</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
         <span class="ident">renew_ttl_secs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
         <span class="ident">use_cas</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">client</span>: <span class="ident">Client</span>::<span class="ident">new</span>(<span class="ident">host</span>, <span class="ident">token</span>, <span class="ident">certificate</span>),
             <span class="ident">namespace</span>,
@@ -477,11 +478,11 @@
     }
 
     <span class="comment">// Made into an accessor so we can get auto-renewal</span>
-    <span class="kw">fn</span> <span class="ident">client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Client</span> {
+    <span class="kw">fn</span> <span class="ident">client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Client</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">renew_ttl_secs</span>.<span class="ident">is_some</span>() {
             <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">RealTimeService</span>::<span class="ident">new</span>().<span class="ident">now</span>();
             <span class="kw">let</span> <span class="ident">next_renewal</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">next_renewal</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>);
-            <span class="kw">if</span> <span class="ident">now</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">next_renewal</span> {
+            <span class="kw">if</span> <span class="ident">now</span> <span class="op">&gt;=</span> <span class="ident">next_renewal</span> {
                 <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">renew_token_self</span>(<span class="self">self</span>.<span class="ident">renew_ttl_secs</span>);
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">ttl</span>) <span class="op">=</span> <span class="ident">result</span> {
                     <span class="kw">let</span> <span class="ident">next_renewal</span> <span class="op">=</span> <span class="ident">now</span> <span class="op">+</span> (<span class="ident">ttl</span> <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">/</span> <span class="number">2</span>;
@@ -495,7 +496,7 @@
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-    <span class="kw">fn</span> <span class="ident">reset_kv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">reset_kv</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">secrets</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">list_secrets</span>(<span class="ident">path</span>)<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">secret</span> <span class="kw">in</span> <span class="ident">secrets</span> {
             <span class="kw">if</span> <span class="ident">secret</span>.<span class="ident">ends_with</span>(<span class="string">&#39;/&#39;</span>) {
@@ -509,12 +510,12 @@
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-    <span class="kw">fn</span> <span class="ident">reset_crypto</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">reset_crypto</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">list_keys</span>() {
-            <span class="prelude-val">Ok</span>(<span class="ident">keys</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">keys</span>,
+            <span class="prelude-val">Ok</span>(<span class="ident">keys</span>) <span class="op">=&gt;</span> <span class="ident">keys</span>,
             <span class="comment">// No keys were found, so there&#39;s no need to reset.</span>
-            <span class="prelude-val">Err</span>(<span class="ident">libra_vault_client</span>::<span class="ident">Error</span>::<span class="ident">NotFound</span>(<span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>.<span class="ident">into</span>()),
+            <span class="prelude-val">Err</span>(<span class="ident">libra_vault_client</span>::<span class="ident">Error</span>::<span class="ident">NotFound</span>(<span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>.<span class="ident">into</span>()),
         };
         <span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident">keys</span> {
             <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">delete_key</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)<span class="question-mark">?</span>;
@@ -523,16 +524,16 @@
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-    <span class="kw">fn</span> <span class="ident">reset_policies</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">reset_policies</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">policies</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">list_policies</span>() {
-            <span class="prelude-val">Ok</span>(<span class="ident">policies</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">policies</span>,
-            <span class="prelude-val">Err</span>(<span class="ident">libra_vault_client</span>::<span class="ident">Error</span>::<span class="ident">NotFound</span>(<span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>.<span class="ident">into</span>()),
+            <span class="prelude-val">Ok</span>(<span class="ident">policies</span>) <span class="op">=&gt;</span> <span class="ident">policies</span>,
+            <span class="prelude-val">Err</span>(<span class="ident">libra_vault_client</span>::<span class="ident">Error</span>::<span class="ident">NotFound</span>(<span class="kw">_</span>, <span class="kw">_</span>)) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>.<span class="ident">into</span>()),
         };
 
         <span class="kw">for</span> <span class="ident">policy</span> <span class="kw">in</span> <span class="ident">policies</span> {
             <span class="comment">// Never touch the default or root policy</span>
-            <span class="kw">if</span> <span class="ident">policy</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;default&quot;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">policy</span> <span class="op">=</span><span class="op">=</span> <span class="string">&quot;root&quot;</span> {
+            <span class="kw">if</span> <span class="ident">policy</span> <span class="op">==</span> <span class="string">&quot;default&quot;</span> <span class="op">||</span> <span class="ident">policy</span> <span class="op">==</span> <span class="string">&quot;root&quot;</span> {
                 <span class="kw">continue</span>;
             }
 
@@ -542,7 +543,7 @@
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_token_self</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">revoke_token_self</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">client</span>.<span class="ident">revoke_token_self</span>()<span class="question-mark">?</span>)
     }
 
@@ -550,12 +551,12 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_all_key_versions</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReadResponse</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReadResponse</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_ed25519_key</span>(<span class="ident">name</span>)<span class="question-mark">?</span>)
     }
 
     <span class="doccomment">/// Creates a token but uses the namespace for policies</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_token</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">policies</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_token</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">policies</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="ident">policies</span>.<span class="ident">push</span>(<span class="ident">LIBRA_DEFAULT</span>);
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ns</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">namespace</span> {
             <span class="kw">let</span> <span class="ident">policies</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">policies</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}/{}&quot;</span>, <span class="ident">ns</span>, <span class="ident">p</span>)).<span class="ident">collect</span>();
@@ -576,30 +577,30 @@
         <span class="ident">engine</span>: <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>,
         <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">capabilities</span>: <span class="kw-2">&amp;</span>[<span class="ident">Capability</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">policy_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">name</span>(<span class="ident">policy_name</span>, <span class="ident">engine</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vault_policy</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_policy</span>(<span class="kw-2">&amp;</span><span class="ident">policy_name</span>).<span class="ident">unwrap_or_default</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">core_capabilities</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">capability</span> <span class="kw">in</span> <span class="ident">capabilities</span> {
             <span class="kw">match</span> <span class="ident">capability</span> {
-                <span class="ident">Capability</span>::<span class="ident">Export</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Capability</span>::<span class="ident">Export</span> <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">export_capability</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Read</span>];
                     <span class="kw">let</span> <span class="ident">export_policy</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;transit/export/signing-key/{}&quot;</span>, <span class="ident">key</span>);
                     <span class="ident">vault_policy</span>.<span class="ident">add_policy</span>(<span class="kw-2">&amp;</span><span class="ident">export_policy</span>, <span class="ident">export_capability</span>);
                 }
-                <span class="ident">Capability</span>::<span class="ident">Read</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">core_capabilities</span>.<span class="ident">push</span>(<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Read</span>),
-                <span class="ident">Capability</span>::<span class="ident">Rotate</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Capability</span>::<span class="ident">Read</span> <span class="op">=&gt;</span> <span class="ident">core_capabilities</span>.<span class="ident">push</span>(<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Read</span>),
+                <span class="ident">Capability</span>::<span class="ident">Rotate</span> <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">rotate_capability</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Update</span>];
                     <span class="kw">let</span> <span class="ident">rotate_policy</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;transit/keys/{}/rotate&quot;</span>, <span class="ident">key</span>);
                     <span class="ident">vault_policy</span>.<span class="ident">add_policy</span>(<span class="kw-2">&amp;</span><span class="ident">rotate_policy</span>, <span class="ident">rotate_capability</span>);
                 }
-                <span class="ident">Capability</span>::<span class="ident">Sign</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Capability</span>::<span class="ident">Sign</span> <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">sign_capability</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Update</span>];
                     <span class="kw">let</span> <span class="ident">sign_policy</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;transit/sign/{}&quot;</span>, <span class="ident">key</span>);
                     <span class="ident">vault_policy</span>.<span class="ident">add_policy</span>(<span class="kw-2">&amp;</span><span class="ident">sign_policy</span>, <span class="ident">sign_capability</span>);
                 }
-                <span class="ident">Capability</span>::<span class="ident">Write</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">core_capabilities</span>.<span class="ident">push</span>(<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Update</span>),
+                <span class="ident">Capability</span>::<span class="ident">Write</span> <span class="op">=&gt;</span> <span class="ident">core_capabilities</span>.<span class="ident">push</span>(<span class="ident">vault</span>::<span class="ident">Capability</span>::<span class="ident">Update</span>),
             }
         }
 
@@ -609,11 +610,11 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">key_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">version</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">key_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">version</span>: <span class="kw-2">&amp;</span><span class="ident">Ed25519PublicKey</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pubkeys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_ed25519_key</span>(<span class="ident">name</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="ident">pubkeys</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">pubkey</span><span class="op">|</span> <span class="ident">version</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">pubkey</span>.<span class="ident">value</span>);
+        <span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="ident">pubkeys</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">pubkey</span><span class="op">|</span> <span class="ident">version</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">pubkey</span>.<span class="ident">value</span>);
         <span class="prelude-val">Ok</span>(<span class="ident">pubkey</span>
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>.<span class="ident">into</span>(), <span class="ident">version</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>
+            .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>.<span class="ident">into</span>(), <span class="ident">version</span>.<span class="ident">to_string</span>()))<span class="question-mark">?</span>
             .<span class="ident">version</span>)
     }
 
@@ -622,28 +623,28 @@
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">engine</span>: <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>,
         <span class="ident">policy</span>: <span class="kw-2">&amp;</span><span class="ident">Policy</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">for</span> <span class="ident">perm</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">permissions</span> {
             <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">perm</span>.<span class="ident">id</span> {
-                <span class="ident">Identity</span>::<span class="ident">User</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">set_policy</span>(<span class="ident">id</span>, <span class="ident">engine</span>, <span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">perm</span>.<span class="ident">capabilities</span>)<span class="question-mark">?</span>,
-                <span class="ident">Identity</span>::<span class="ident">Anyone</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Identity</span>::<span class="ident">User</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">set_policy</span>(<span class="ident">id</span>, <span class="ident">engine</span>, <span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">perm</span>.<span class="ident">capabilities</span>)<span class="question-mark">?</span>,
+                <span class="ident">Identity</span>::<span class="ident">Anyone</span> <span class="op">=&gt;</span> {
                     <span class="self">self</span>.<span class="ident">set_policy</span>(<span class="ident">LIBRA_DEFAULT</span>, <span class="ident">engine</span>, <span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">perm</span>.<span class="ident">capabilities</span>)<span class="question-mark">?</span>
                 }
-                <span class="ident">Identity</span>::<span class="ident">NoOne</span> <span class="op">=</span><span class="op">&gt;</span> (),
+                <span class="ident">Identity</span>::<span class="ident">NoOne</span> <span class="op">=&gt;</span> (),
             };
         }
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">crypto_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">fn</span> <span class="ident">crypto_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="self">self</span>.<span class="ident">name</span>(<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>::<span class="ident">Transit</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">secret_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">fn</span> <span class="ident">secret_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="self">self</span>.<span class="ident">name</span>(<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>::<span class="ident">KVSecrets</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">engine</span>: <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">engine</span>: <span class="kw-2">&amp;</span><span class="ident">VaultEngine</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">namespace</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">namespace</span> {
             <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}{}{}&quot;</span>, <span class="ident">namespace</span>, <span class="ident">engine</span>.<span class="ident">ns_seperator</span>(), <span class="ident">name</span>)
         } <span class="kw">else</span> {
@@ -653,7 +654,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">KVStorage</span> <span class="kw">for</span> <span class="ident">VaultStorage</span> {
-    <span class="kw">fn</span> <span class="ident">available</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">available</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">client</span>().<span class="ident">unsealed</span>()<span class="question-mark">?</span> {
             <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InternalError</span>(<span class="string">&quot;Vault is not unsealed&quot;</span>.<span class="ident">into</span>()))
         } <span class="kw">else</span> {
@@ -661,7 +662,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">get</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">GetResponse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">GetResponse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">secret_name</span>(<span class="ident">key</span>);
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_secret</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>, <span class="ident">key</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">last_update</span> <span class="op">=</span> <span class="ident">DateTime</span>::<span class="ident">parse_from_rfc3339</span>(<span class="kw-2">&amp;</span><span class="ident">resp</span>.<span class="ident">creation_time</span>)<span class="question-mark">?</span>.<span class="ident">timestamp</span>() <span class="kw">as</span> <span class="ident">u64</span>;
@@ -672,7 +673,7 @@
         <span class="prelude-val">Ok</span>(<span class="ident">GetResponse</span> { <span class="ident">last_update</span>, <span class="ident">value</span> })
     }
 
-    <span class="kw">fn</span> <span class="ident">set</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Serialize</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">value</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">set</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Serialize</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">value</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">secret_name</span>(<span class="ident">key</span>);
         <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">use_cas</span> {
             <span class="self">self</span>.<span class="ident">secret_versions</span>.<span class="ident">read</span>().<span class="ident">get</span>(<span class="ident">key</span>).<span class="ident">copied</span>()
@@ -689,7 +690,7 @@
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;testing&quot;</span>))]</span>
-    <span class="kw">fn</span> <span class="ident">reset_and_clear</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">reset_and_clear</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">secret_versions</span>.<span class="ident">write</span>().<span class="ident">clear</span>();
         <span class="self">self</span>.<span class="ident">reset_kv</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">reset_crypto</span>()<span class="question-mark">?</span>;
@@ -698,19 +699,19 @@
 }
 
 <span class="kw">impl</span> <span class="ident">CryptoStorage</span> <span class="kw">for</span> <span class="ident">VaultStorage</span> {
-    <span class="kw">fn</span> <span class="ident">create_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">create_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ns_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_public_key</span>(<span class="ident">name</span>) {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyAlreadyExists</span>(<span class="ident">ns_name</span>)),
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="comment">/* Expected this for new keys! */</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyAlreadyExists</span>(<span class="ident">ns_name</span>)),
+            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="kw">_</span>)) <span class="op">=&gt;</span> (<span class="comment">/* Expected this for new keys! */</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
         }
 
         <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">create_ed25519_key</span>(<span class="kw-2">&amp;</span><span class="ident">ns_name</span>, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">get_public_key</span>(<span class="ident">name</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">public_key</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">export_private_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">export_private_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">client</span>().<span class="ident">export_ed25519_key</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>)
     }
@@ -719,18 +720,18 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">version</span>: <span class="ident">Ed25519PublicKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">let</span> <span class="ident">vers</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">key_version</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">version</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">client</span>().<span class="ident">export_ed25519_key</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="prelude-val">Some</span>(<span class="ident">vers</span>))<span class="question-mark">?</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">import_private_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">key</span>: <span class="ident">Ed25519PrivateKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">import_private_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">key</span>: <span class="ident">Ed25519PrivateKey</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ns_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_public_key</span>(<span class="ident">name</span>) {
-            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyAlreadyExists</span>(<span class="ident">ns_name</span>)),
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> (<span class="comment">/* Expected this for new keys! */</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
+            <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyAlreadyExists</span>(<span class="ident">ns_name</span>)),
+            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="kw">_</span>)) <span class="op">=&gt;</span> (<span class="comment">/* Expected this for new keys! */</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>),
         }
 
         <span class="self">self</span>.<span class="ident">client</span>()
@@ -738,10 +739,10 @@
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">into</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">get_public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PublicKeyResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_public_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">PublicKeyResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_ed25519_key</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_key</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">first</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="ident">name</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_key</span> <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">first</span>().<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="ident">name</span>))<span class="question-mark">?</span>;
         <span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">resp</span> {
             <span class="ident">last_key</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">last_key</span>.<span class="ident">version</span> <span class="op">&gt;</span> <span class="ident">key</span>.<span class="ident">version</span> {
                 <span class="ident">last_key</span>
@@ -756,23 +757,23 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">get_public_key_previous_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_public_key_previous_version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">let</span> <span class="ident">pubkeys</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">read_ed25519_key</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">highest_version</span> <span class="op">=</span> <span class="ident">pubkeys</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">pubkey</span><span class="op">|</span> <span class="ident">pubkey</span>.<span class="ident">version</span>).<span class="ident">max</span>();
         <span class="kw">match</span> <span class="ident">highest_version</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">version</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="ident">pubkeys</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">pubkey</span><span class="op">|</span> <span class="ident">pubkey</span>.<span class="ident">version</span> <span class="op">=</span><span class="op">=</span> <span class="ident">version</span> <span class="op">-</span> <span class="number">1</span>);
+            <span class="prelude-val">Some</span>(<span class="ident">version</span>) <span class="op">=&gt;</span> {
+                <span class="kw">let</span> <span class="ident">pubkey</span> <span class="op">=</span> <span class="ident">pubkeys</span>.<span class="ident">iter</span>().<span class="ident">find</span>(<span class="op">|</span><span class="ident">pubkey</span><span class="op">|</span> <span class="ident">pubkey</span>.<span class="ident">version</span> <span class="op">==</span> <span class="ident">version</span> <span class="op">-</span> <span class="number">1</span>);
                 <span class="prelude-val">Ok</span>(<span class="ident">pubkey</span>
-                    .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>, <span class="string">&quot;previous version&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>
+                    .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>, <span class="string">&quot;previous version&quot;</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>
                     .<span class="ident">value</span>
                     .<span class="ident">clone</span>())
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>, <span class="string">&quot;previous version&quot;</span>.<span class="ident">into</span>())),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="ident">name</span>, <span class="string">&quot;previous version&quot;</span>.<span class="ident">into</span>())),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">rotate_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">rotate_key</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519PublicKey</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ns_name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="self">self</span>.<span class="ident">client</span>().<span class="ident">rotate_key</span>(<span class="kw-2">&amp;</span><span class="ident">ns_name</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">client</span>().<span class="ident">trim_key_versions</span>(<span class="kw-2">&amp;</span><span class="ident">ns_name</span>)<span class="question-mark">?</span>)
@@ -782,7 +783,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hasher</span> <span class="kw">as</span> <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">CryptoHasher</span><span class="op">&gt;</span>::<span class="ident">seed</span>().<span class="ident">to_vec</span>();
         <span class="ident">lcs</span>::<span class="ident">serialize_into</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>, <span class="kw-2">&amp;</span><span class="ident">message</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
@@ -799,7 +800,7 @@
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">version</span>: <span class="ident">Ed25519PublicKey</span>,
         <span class="ident">message</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">crypto_name</span>(<span class="ident">name</span>);
         <span class="kw">let</span> <span class="ident">vers</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">key_version</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">version</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hasher</span> <span class="kw">as</span> <span class="ident">libra_crypto</span>::<span class="ident">hash</span>::<span class="ident">CryptoHasher</span><span class="op">&gt;</span>::<span class="ident">seed</span>().<span class="ident">to_vec</span>();
@@ -819,17 +820,17 @@
 }
 
 <span class="kw">impl</span> <span class="ident">VaultEngine</span> {
-    <span class="kw">fn</span> <span class="ident">to_policy_path</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">to_policy_path</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">VaultEngine</span>::<span class="ident">KVSecrets</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;secret/data&quot;</span>,
-            <span class="ident">VaultEngine</span>::<span class="ident">Transit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;transit/keys&quot;</span>,
+            <span class="ident">VaultEngine</span>::<span class="ident">KVSecrets</span> <span class="op">=&gt;</span> <span class="string">&quot;secret/data&quot;</span>,
+            <span class="ident">VaultEngine</span>::<span class="ident">Transit</span> <span class="op">=&gt;</span> <span class="string">&quot;transit/keys&quot;</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">ns_seperator</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
+    <span class="kw">fn</span> <span class="ident">ns_seperator</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">str</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">VaultEngine</span>::<span class="ident">KVSecrets</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;/&quot;</span>,
-            <span class="ident">VaultEngine</span>::<span class="ident">Transit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="string">&quot;__&quot;</span>,
+            <span class="ident">VaultEngine</span>::<span class="ident">KVSecrets</span> <span class="op">=&gt;</span> <span class="string">&quot;/&quot;</span>,
+            <span class="ident">VaultEngine</span>::<span class="ident">Transit</span> <span class="op">=&gt;</span> <span class="string">&quot;__&quot;</span>,
         }
     }
 }

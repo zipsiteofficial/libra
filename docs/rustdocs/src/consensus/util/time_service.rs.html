@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/util/time_service.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>time_service.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/util/time_service.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>time_service.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -145,7 +146,7 @@
     <span class="kw">fn</span> <span class="ident">run_after</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">timeout</span>: <span class="ident">Duration</span>, <span class="ident">task</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ScheduledTask</span><span class="op">&gt;</span>);
 
     <span class="doccomment">/// Retrieve the current time stamp as a Duration (assuming it is on or after the UNIX_EPOCH)</span>
-    <span class="kw">fn</span> <span class="ident">get_current_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span>;
+    <span class="kw">fn</span> <span class="ident">get_current_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span>;
 
     <span class="doccomment">/// Makes a future that will sleep for given Duration</span>
     <span class="doccomment">/// This function guarantees that get_current_timestamp will increase at least by</span>
@@ -159,7 +160,7 @@
     <span class="doccomment">/// Wait until the Duration t since UNIX_EPOCH pass at least 1ms.</span>
     <span class="kw">fn</span> <span class="ident">wait_until</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">t</span>: <span class="ident">Duration</span>) {
         <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">wait_duration</span>) <span class="op">=</span> <span class="ident">t</span>.<span class="ident">checked_sub</span>(<span class="self">self</span>.<span class="ident">get_current_timestamp</span>()) {
-            <span class="ident">wait_duration</span> <span class="op">+</span><span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1</span>);
+            <span class="ident">wait_duration</span> <span class="op">+=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1</span>);
             <span class="kw">if</span> <span class="ident">wait_duration</span> <span class="op">&gt;</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">10</span>) {
                 <span class="macro">error</span><span class="macro">!</span>(
                     <span class="string">&quot;[TimeService] long wait time {} seconds required&quot;</span>,
@@ -176,7 +177,7 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ScheduledTask</span>: <span class="ident">Send</span> {
     <span class="doccomment">/// TimeService::run_after will run this method when time expires</span>
     <span class="doccomment">/// It is expected that this function is lightweight and does not take long time to complete</span>
-    <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;&gt;</span>;
 }
 
 <span class="doccomment">/// This tasks send message to given Sender</span>
@@ -184,7 +185,7 @@
 <span class="kw">where</span>
     <span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="ident">sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
 }
 
@@ -193,7 +194,7 @@
     <span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
     <span class="doccomment">/// Makes new SendTask for given sender and message and wraps it to Box</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">make</span>(<span class="ident">sender</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">message</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ScheduledTask</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">make</span>(<span class="ident">sender</span>: <span class="ident">channel</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">message</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ScheduledTask</span><span class="op">&gt;</span> {
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">SendTask</span> {
             <span class="ident">sender</span>: <span class="prelude-val">Some</span>(<span class="ident">sender</span>),
             <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>),
@@ -205,7 +206,7 @@
 <span class="kw">where</span>
     <span class="ident">T</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sender</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">sender</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">message</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="kw">async</span> <span class="kw">move</span> {
@@ -225,7 +226,7 @@
 <span class="kw">impl</span> <span class="ident">ClockTimeService</span> {
     <span class="doccomment">/// Creates new TimeService that runs tasks based on actual clock</span>
     <span class="doccomment">/// It needs executor to schedule internal tasks that facilitates it&#39;s work</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">executor</span>: <span class="ident">Handle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ClockTimeService</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">executor</span>: <span class="ident">Handle</span>) <span class="op">-&gt;</span> <span class="ident">ClockTimeService</span> {
         <span class="ident">ClockTimeService</span> { <span class="ident">executor</span> }
     }
 }
@@ -239,7 +240,7 @@
         <span class="self">self</span>.<span class="ident">executor</span>.<span class="ident">spawn</span>(<span class="ident">task</span>);
     }
 
-    <span class="kw">fn</span> <span class="ident">get_current_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Duration</span> {
+    <span class="kw">fn</span> <span class="ident">get_current_timestamp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Duration</span> {
         <span class="ident">libra_infallible</span>::<span class="ident">duration_since_epoch</span>()
     }
 

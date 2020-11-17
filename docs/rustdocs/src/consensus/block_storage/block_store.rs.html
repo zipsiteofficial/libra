@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/block_storage/block_store.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>block_store.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/block_storage/block_store.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>block_store.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -528,17 +529,17 @@
 
         <span class="kw">for</span> <span class="ident">status</span> <span class="kw">in</span> <span class="ident">txn_status</span>.<span class="ident">iter</span>() {
             <span class="kw">match</span> <span class="ident">status</span> {
-                <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                     <span class="ident">counters</span>::<span class="ident">COMMITTED_TXNS_COUNT</span>
                         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;success&quot;</span>])
                         .<span class="ident">inc</span>();
                 }
-                <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                     <span class="ident">counters</span>::<span class="ident">COMMITTED_TXNS_COUNT</span>
                         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;failed&quot;</span>])
                         .<span class="ident">inc</span>();
                 }
-                <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=&gt;</span> {
                     <span class="ident">counters</span>::<span class="ident">COMMITTED_TXNS_COUNT</span>
                         .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;retry&quot;</span>])
                         .<span class="ident">inc</span>();
@@ -565,7 +566,7 @@
 <span class="doccomment">///             ├--------&gt; C2</span>
 <span class="doccomment">///             ╰--------------&gt; D3</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BlockStore</span> {
-    <span class="ident">inner</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">BlockTree</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">BlockTree</span><span class="op">&gt;&gt;</span>,
     <span class="ident">state_computer</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StateComputer</span><span class="op">&gt;</span>,
     <span class="doccomment">/// The persistent storage backing up the in-memory data structure, every write should go</span>
     <span class="doccomment">/// through this before in-memory tree.</span>
@@ -581,7 +582,7 @@
         <span class="ident">state_computer</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StateComputer</span><span class="op">&gt;</span>,
         <span class="ident">max_pruned_blocks_in_mem</span>: <span class="ident">usize</span>,
         <span class="ident">time_service</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">TimeService</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">highest_tc</span> <span class="op">=</span> <span class="ident">initial_data</span>.<span class="ident">highest_timeout_certificate</span>();
         <span class="kw">let</span> (<span class="ident">root</span>, <span class="ident">root_metadata</span>, <span class="ident">blocks</span>, <span class="ident">quorum_certs</span>) <span class="op">=</span> <span class="ident">initial_data</span>.<span class="ident">take</span>();
         <span class="self">Self</span>::<span class="ident">build</span>(
@@ -607,7 +608,7 @@
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PersistentLivenessStorage</span><span class="op">&gt;</span>,
         <span class="ident">max_pruned_blocks_in_mem</span>: <span class="ident">usize</span>,
         <span class="ident">time_service</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">TimeService</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">RootInfo</span>(<span class="ident">root_block</span>, <span class="ident">root_qc</span>, <span class="ident">root_li</span>) <span class="op">=</span> <span class="ident">root</span>;
         <span class="comment">//verify root is correct</span>
         <span class="macro">assert_eq</span><span class="macro">!</span>(
@@ -676,11 +677,11 @@
     }
 
     <span class="doccomment">/// Commit the given block id with the proof, returns () on success or error</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">commit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">finality_proof</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">commit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">finality_proof</span>: <span class="ident">LedgerInfoWithSignatures</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">block_id_to_commit</span> <span class="op">=</span> <span class="ident">finality_proof</span>.<span class="ident">ledger_info</span>().<span class="ident">consensus_block_id</span>();
         <span class="kw">let</span> <span class="ident">block_to_commit</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">get_block</span>(<span class="ident">block_id_to_commit</span>)
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Committed block id not found&quot;</span>))<span class="question-mark">?</span>;
+            .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Committed block id not found&quot;</span>))<span class="question-mark">?</span>;
 
         <span class="comment">// First make sure that this commit is new.</span>
         <span class="macro">ensure</span><span class="macro">!</span>(
@@ -771,7 +772,7 @@
     <span class="doccomment">/// Duplicate inserts will return the previously inserted block (</span>
     <span class="doccomment">/// note that it is considered a valid non-error case, for example, it can happen if a validator</span>
     <span class="doccomment">/// receives a certificate for a block that is currently being added).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute_and_insert_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">execute_and_insert_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">existing_block</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_block</span>(<span class="ident">block</span>.<span class="ident">id</span>()) {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">existing_block</span>);
         }
@@ -781,8 +782,8 @@
         );
 
         <span class="kw">let</span> <span class="ident">executed_block</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">execute_block</span>(<span class="ident">block</span>.<span class="ident">clone</span>()) {
-            <span class="prelude-val">Ok</span>(<span class="ident">res</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">res</span>),
-            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">BlockNotFound</span>(<span class="ident">parent_block_id</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">res</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">res</span>),
+            <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">BlockNotFound</span>(<span class="ident">parent_block_id</span>)) <span class="op">=&gt;</span> {
                 <span class="comment">// recover the block tree in executor</span>
                 <span class="kw">let</span> <span class="ident">blocks_to_reexecute</span> <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">path_from_root</span>(<span class="ident">parent_block_id</span>)
@@ -793,7 +794,7 @@
                 }
                 <span class="self">self</span>.<span class="ident">execute_block</span>(<span class="ident">block</span>)
             }
-            <span class="ident">err</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">err</span>,
+            <span class="ident">err</span> <span class="op">=&gt;</span> <span class="ident">err</span>,
         }<span class="question-mark">?</span>;
 
         <span class="comment">// ensure local time past the block time</span>
@@ -805,7 +806,7 @@
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">write</span>().<span class="ident">insert_block</span>(<span class="ident">executed_block</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">execute_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">execute_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="macro">trace_code_block</span><span class="macro">!</span>(<span class="string">&quot;block_store::execute_block&quot;</span>, {<span class="string">&quot;block&quot;</span>, <span class="ident">block</span>.<span class="ident">id</span>()});
 
         <span class="comment">// Although NIL blocks don&#39;t have a payload, we still send a T::default() to compute</span>
@@ -816,23 +817,23 @@
     }
 
     <span class="doccomment">/// Validates quorum certificates and inserts it into block tree assuming dependencies exist.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_single_quorum_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">qc</span>: <span class="ident">QuorumCert</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_single_quorum_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">qc</span>: <span class="ident">QuorumCert</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// If the parent block is not the root block (i.e not None), ensure the executed state</span>
         <span class="comment">// of a block is consistent with its QuorumCert, otherwise persist the QuorumCert&#39;s</span>
         <span class="comment">// state and on restart, a new execution will agree with it.  A new execution will match</span>
         <span class="comment">// the QuorumCert&#39;s state on the next restart will work if there is a memory</span>
         <span class="comment">// corruption, for example.</span>
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">get_block</span>(<span class="ident">qc</span>.<span class="ident">certified_block</span>().<span class="ident">id</span>()) {
-            <span class="prelude-val">Some</span>(<span class="ident">executed_block</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">executed_block</span>) <span class="op">=&gt;</span> {
                 <span class="macro">ensure</span><span class="macro">!</span>(
-                    <span class="ident">executed_block</span>.<span class="ident">block_info</span>() <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">qc</span>.<span class="ident">certified_block</span>(),
+                    <span class="ident">executed_block</span>.<span class="ident">block_info</span>() <span class="op">==</span> <span class="kw-2">*</span><span class="ident">qc</span>.<span class="ident">certified_block</span>(),
                     <span class="string">&quot;QC for block {} has different {:?} than local {:?}&quot;</span>,
                     <span class="ident">qc</span>.<span class="ident">certified_block</span>().<span class="ident">id</span>(),
                     <span class="ident">qc</span>.<span class="ident">certified_block</span>(),
                     <span class="ident">executed_block</span>.<span class="ident">block_info</span>()
                 );
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Insert {} without having the block in store first&quot;</span>, <span class="ident">qc</span>),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="macro">bail</span><span class="macro">!</span>(<span class="string">&quot;Insert {} without having the block in store first&quot;</span>, <span class="ident">qc</span>),
         }
 
         <span class="self">self</span>.<span class="ident">storage</span>
@@ -843,9 +844,9 @@
 
     <span class="doccomment">/// Replace the highest timeout certificate in case the given one has a higher round.</span>
     <span class="doccomment">/// In case a timeout certificate is updated, persist it to storage.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_timeout_certificate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">tc</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">TimeoutCertificate</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_timeout_certificate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">tc</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">TimeoutCertificate</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">cur_tc_round</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">highest_timeout_cert</span>().<span class="ident">map_or</span>(<span class="number">0</span>, <span class="op">|</span><span class="ident">tc</span><span class="op">|</span> <span class="ident">tc</span>.<span class="ident">round</span>());
-        <span class="kw">if</span> <span class="ident">tc</span>.<span class="ident">round</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">cur_tc_round</span> {
+        <span class="kw">if</span> <span class="ident">tc</span>.<span class="ident">round</span>() <span class="op">&lt;=</span> <span class="ident">cur_tc_round</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
         <span class="self">self</span>.<span class="ident">storage</span>
@@ -866,7 +867,7 @@
     <span class="doccomment">/// B3--&gt; B4, root = B3</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns the block ids of the blocks removed.</span>
-    <span class="kw">fn</span> <span class="ident">prune_tree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">next_root_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">prune_tree</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">next_root_id</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">HashValue</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">id_to_remove</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">find_blocks_to_prune</span>(<span class="ident">next_root_id</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">storage</span>
@@ -885,43 +886,43 @@
 }
 
 <span class="kw">impl</span> <span class="ident">BlockReader</span> <span class="kw">for</span> <span class="ident">BlockStore</span> {
-    <span class="kw">fn</span> <span class="ident">block_exists</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">block_exists</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">block_exists</span>(<span class="kw-2">&amp;</span><span class="ident">block_id</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">get_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">get_block</span>(<span class="kw-2">&amp;</span><span class="ident">block_id</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">root</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">get_quorum_cert_for_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_quorum_cert_for_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">get_quorum_cert_for_block</span>(<span class="kw-2">&amp;</span><span class="ident">block_id</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">path_from_root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">path_from_root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block_id</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">path_from_root</span>(<span class="ident">block_id</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">highest_certified_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">highest_certified_block</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">highest_certified_block</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">highest_quorum_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">highest_quorum_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">highest_quorum_cert</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">highest_commit_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">highest_commit_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">QuorumCert</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">highest_commit_cert</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">highest_timeout_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">TimeoutCertificate</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">highest_timeout_cert</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">TimeoutCertificate</span><span class="op">&gt;&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">highest_timeout_cert</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">sync_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SyncInfo</span> {
+    <span class="kw">fn</span> <span class="ident">sync_info</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">SyncInfo</span> {
         <span class="ident">SyncInfo</span>::<span class="ident">new</span>(
             <span class="self">self</span>.<span class="ident">highest_quorum_cert</span>().<span class="ident">as_ref</span>().<span class="ident">clone</span>(),
             <span class="self">self</span>.<span class="ident">highest_commit_cert</span>().<span class="ident">as_ref</span>().<span class="ident">clone</span>(),
@@ -933,22 +934,22 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>))]</span>
 <span class="kw">impl</span> <span class="ident">BlockStore</span> {
     <span class="doccomment">/// Returns the number of blocks in the tree</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">len</span>()
     }
 
     <span class="doccomment">/// Returns the number of child links in the tree</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">child_links</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">child_links</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">child_links</span>()
     }
 
     <span class="doccomment">/// The number of pruned blocks that are still available in memory</span>
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">pruned_blocks_in_mem</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">pruned_blocks_in_mem</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">read</span>().<span class="ident">pruned_blocks_in_mem</span>()
     }
 
     <span class="doccomment">/// Helper function to insert the block with the qc together</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_block_with_qc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">insert_block_with_qc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="ident">Block</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ExecutedBlock</span><span class="op">&gt;&gt;</span> {
         <span class="self">self</span>.<span class="ident">insert_single_quorum_cert</span>(<span class="ident">block</span>.<span class="ident">quorum_cert</span>().<span class="ident">clone</span>())<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">execute_and_insert_block</span>(<span class="ident">block</span>)<span class="question-mark">?</span>)
     }

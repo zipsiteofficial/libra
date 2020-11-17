@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/vm/src/serializer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serializer.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../vm/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/vm/src/serializer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serializer.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../vm/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1296,12 +1297,12 @@
 <span class="kw">impl</span> <span class="ident">CompiledScript</span> {
     <span class="doccomment">/// Serializes a `CompiledScript` into a binary. The mutable `Vec&lt;u8&gt;` will contain the</span>
     <span class="doccomment">/// binary blob on return.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">as_inner</span>().<span class="ident">serialize</span>(<span class="ident">binary</span>)
     }
 }
 
-<span class="kw">fn</span> <span class="ident">write_as_uleb128</span><span class="op">&lt;</span><span class="ident">T1</span>, <span class="ident">T2</span><span class="op">&gt;</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">x</span>: <span class="ident">T1</span>, <span class="ident">max</span>: <span class="ident">T2</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
+<span class="kw">fn</span> <span class="ident">write_as_uleb128</span><span class="op">&lt;</span><span class="ident">T1</span>, <span class="ident">T2</span><span class="op">&gt;</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">x</span>: <span class="ident">T1</span>, <span class="ident">max</span>: <span class="ident">T2</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">T1</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
     <span class="ident">T2</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
@@ -1314,122 +1315,122 @@
     <span class="ident">write_u64_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">x</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">SIGNATURE_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_module_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandleIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_module_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandleIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">MODULE_HANDLE_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">IdentifierIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">IdentifierIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">IDENTIFIER_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandleIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandleIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">STRUCT_HANDLE_INDEX_MAX</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">serialize_address_identifier_index</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">AddressIdentifierIndex</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">ADDRESS_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinitionIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinitionIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">STRUCT_DEF_INDEX_MAX</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">serialize_function_handle_index</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandleIndex</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">FUNCTION_HANDLE_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_field_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandleIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_field_handle_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandleIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">FIELD_HANDLE_INDEX_MAX</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">serialize_field_inst_index</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">FieldInstantiationIndex</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">FIELD_INST_INDEX_MAX</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">serialize_function_inst_index</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionInstantiationIndex</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">FUNCTION_INST_INDEX_MAX</span>)
 }
 
 <span class="kw">fn</span> <span class="ident">serialize_struct_def_inst_index</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefInstantiationIndex</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">STRUCT_DEF_INST_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">seiralize_table_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">seiralize_table_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">offset</span>, <span class="ident">TABLE_OFFSET_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_table_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">size</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_table_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">size</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">size</span>, <span class="ident">TABLE_SIZE_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_constant_pool_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">ConstantPoolIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_constant_pool_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="kw-2">&amp;</span><span class="ident">ConstantPoolIndex</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>.<span class="number">0</span>, <span class="ident">CONSTANT_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_bytecode_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_bytecode_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">BYTECODE_COUNT_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_identifier_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_identifier_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">IDENTIFIER_SIZE_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_constant_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_constant_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">CONSTANT_SIZE_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_field_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_field_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">FIELD_COUNT_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_field_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_field_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u16</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">offset</span>, <span class="ident">FIELD_OFFSET_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_acquires_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_acquires_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">ACQUIRES_COUNT_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">SIGNATURE_SIZE_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_type_parameter_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_type_parameter_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="ident">u16</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>, <span class="ident">TYPE_PARAMETER_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_type_parameter_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_type_parameter_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">TYPE_PARAMETER_COUNT_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_bytecode_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_bytecode_offset</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">offset</span>: <span class="ident">u16</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">offset</span>, <span class="ident">BYTECODE_INDEX_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_table_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_table_count</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">len</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">len</span>, <span class="ident">TABLE_COUNT_MAX</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">idx</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">write_as_uleb128</span>(<span class="ident">binary</span>, <span class="ident">idx</span>, <span class="ident">LOCAL_INDEX_MAX</span>)
 }
 
@@ -1438,7 +1439,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This is intended mainly for test code. Production code will typically use</span>
     <span class="doccomment">/// [`CompiledScript::serialize`].</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">binary_data</span> <span class="op">=</span> <span class="ident">BinaryData</span>::<span class="ident">from</span>(<span class="ident">binary</span>.<span class="ident">clone</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ser</span> <span class="op">=</span> <span class="ident">ScriptSerializer</span>::<span class="ident">new</span>(<span class="number">1</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp</span> <span class="op">=</span> <span class="ident">BinaryData</span>::<span class="ident">new</span>();
@@ -1466,7 +1467,7 @@
 <span class="kw">impl</span> <span class="ident">CompiledModule</span> {
     <span class="doccomment">/// Serializes a `CompiledModule` into a binary. The mutable `Vec&lt;u8&gt;` will contain the</span>
     <span class="doccomment">/// binary blob on return.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">as_inner</span>().<span class="ident">serialize</span>(<span class="ident">binary</span>)
     }
 }
@@ -1476,7 +1477,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// This is intended mainly for test code. Production code will typically use</span>
     <span class="doccomment">/// [`CompiledModule::serialize`].</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">binary_data</span> <span class="op">=</span> <span class="ident">BinaryData</span>::<span class="ident">from</span>(<span class="ident">binary</span>.<span class="ident">clone</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ser</span> <span class="op">=</span> <span class="ident">ModuleSerializer</span>::<span class="ident">new</span>(<span class="number">1</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp</span> <span class="op">=</span> <span class="ident">BinaryData</span>::<span class="ident">new</span>();
@@ -1541,7 +1542,7 @@
 <span class="comment">//</span>
 <span class="comment">// Helpers</span>
 <span class="comment">//</span>
-<span class="kw">fn</span> <span class="ident">check_index_in_binary</span>(<span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">check_index_in_binary</span>(<span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="ident">index</span> <span class="op">&gt;</span> <span class="ident">u32</span>::<span class="ident">max_value</span>() <span class="kw">as</span> <span class="ident">usize</span> {
         <span class="macro">bail</span><span class="macro">!</span>(
             <span class="string">&quot;Compilation unit too big ({}) cannot exceed {}&quot;</span>,
@@ -1557,8 +1558,8 @@
     <span class="ident">kind</span>: <span class="ident">TableType</span>,
     <span class="ident">offset</span>: <span class="ident">u32</span>,
     <span class="ident">count</span>: <span class="ident">u32</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="ident">count</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">if</span> <span class="ident">count</span> <span class="op">!=</span> <span class="number">0</span> {
         <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">kind</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
         <span class="ident">seiralize_table_offset</span>(<span class="ident">binary</span>, <span class="ident">offset</span>)<span class="question-mark">?</span>;
         <span class="ident">serialize_table_size</span>(<span class="ident">binary</span>, <span class="ident">count</span>)<span class="question-mark">?</span>;
@@ -1566,7 +1567,7 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_magic</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_magic</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">BinaryConstants</span>::<span class="ident">LIBRA_MAGIC</span> {
         <span class="ident">binary</span>.<span class="ident">push</span>(<span class="kw-2">*</span><span class="ident">byte</span>)<span class="question-mark">?</span>;
     }
@@ -1576,80 +1577,80 @@
 <span class="doccomment">/// Trait to access tables for both `CompiledScript` and `CompiledModule`,</span>
 <span class="doccomment">/// used by `CommonSerializer`.</span>
 <span class="kw">trait</span> <span class="ident">CommonTables</span> {
-    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>];
-    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>];
-    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>];
-    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>];
-    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>];
-    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>];
-    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>];
-    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>];
+    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>];
+    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>];
+    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>];
+    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>];
+    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>];
+    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>];
+    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>];
+    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>];
 }
 
 <span class="kw">impl</span> <span class="ident">CommonTables</span> <span class="kw">for</span> <span class="ident">CompiledScriptMut</span> {
-    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">struct_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>] {
+    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_instantiations</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>] {
+    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">identifiers</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>] {
+    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">address_identifiers</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>] {
+    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">constant_pool</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>] {
+    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signatures</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">CommonTables</span> <span class="kw">for</span> <span class="ident">CompiledModuleMut</span> {
-    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_module_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">module_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_struct_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">struct_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>] {
+    <span class="kw">fn</span> <span class="ident">get_function_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_handles</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>] {
+    <span class="kw">fn</span> <span class="ident">get_function_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">function_instantiations</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>] {
+    <span class="kw">fn</span> <span class="ident">get_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">identifiers</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>] {
+    <span class="kw">fn</span> <span class="ident">get_address_identifiers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">address_identifiers</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>] {
+    <span class="kw">fn</span> <span class="ident">get_constant_pool</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">constant_pool</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>] {
+    <span class="kw">fn</span> <span class="ident">get_signatures</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>] {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signatures</span>
     }
 }
@@ -1659,7 +1660,7 @@
 <span class="doccomment">/// A `ModuleHandle` gets serialized as follows:</span>
 <span class="doccomment">/// - `ModuleHandle.address` as a ULEB128 (index into the `AddressPool`)</span>
 <span class="doccomment">/// - `ModuleHandle.name` as a ULEB128 (index into the `IdentifierPool`)</span>
-<span class="kw">fn</span> <span class="ident">serialize_module_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">module_handle</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_module_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">module_handle</span>: <span class="kw-2">&amp;</span><span class="ident">ModuleHandle</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_address_identifier_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">module_handle</span>.<span class="ident">address</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">module_handle</span>.<span class="ident">name</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
@@ -1671,7 +1672,7 @@
 <span class="doccomment">/// - `StructHandle.module` as a ULEB128 (index into the `ModuleHandle` table)</span>
 <span class="doccomment">/// - `StructHandle.name` as a ULEB128 (index into the `IdentifierPool`)</span>
 <span class="doccomment">/// - `StructHandle.is_nominal_resource` as a 1 byte boolean (0 for false, 1 for true)</span>
-<span class="kw">fn</span> <span class="ident">serialize_struct_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">struct_handle</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_struct_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">struct_handle</span>: <span class="kw-2">&amp;</span><span class="ident">StructHandle</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_module_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">struct_handle</span>.<span class="ident">module</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">struct_handle</span>.<span class="ident">name</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_nominal_resource_flag</span>(<span class="ident">binary</span>, <span class="ident">struct_handle</span>.<span class="ident">is_nominal_resource</span>)<span class="question-mark">?</span>;
@@ -1689,7 +1690,7 @@
 <span class="kw">fn</span> <span class="ident">serialize_function_handle</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">function_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_module_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">function_handle</span>.<span class="ident">module</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">function_handle</span>.<span class="ident">name</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">function_handle</span>.<span class="ident">parameters</span>)<span class="question-mark">?</span>;
@@ -1700,7 +1701,7 @@
 <span class="kw">fn</span> <span class="ident">serialize_function_instantiation</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">func_inst</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionInstantiation</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_function_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">func_inst</span>.<span class="ident">handle</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">func_inst</span>.<span class="ident">type_parameters</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
@@ -1711,7 +1712,7 @@
 <span class="doccomment">/// A `String` gets serialized as follows:</span>
 <span class="doccomment">/// - `String` size as a ULEB128</span>
 <span class="doccomment">/// - `String` bytes - *exact format to be defined, Rust utf8 right now*</span>
-<span class="kw">fn</span> <span class="ident">serialize_identifier</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_identifier</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">string</span>.<span class="ident">as_bytes</span>();
     <span class="ident">serialize_identifier_size</span>(<span class="ident">binary</span>, <span class="ident">bytes</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="ident">bytes</span> {
@@ -1724,7 +1725,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// A `AccountAddress` gets serialized as follows:</span>
 <span class="doccomment">/// - 32 bytes in increasing index order</span>
-<span class="kw">fn</span> <span class="ident">serialize_address</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_address</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="ident">address</span>.<span class="ident">as_ref</span>() {
         <span class="ident">binary</span>.<span class="ident">push</span>(<span class="kw-2">*</span><span class="ident">byte</span>)<span class="question-mark">?</span>;
     }
@@ -1737,7 +1738,7 @@
 <span class="doccomment">/// - `type_` serialized (see `serialize_signature_token`)</span>
 <span class="doccomment">/// - `data` size as a ULEB128</span>
 <span class="doccomment">/// - `data` bytes in increasing index order</span>
-<span class="kw">fn</span> <span class="ident">serialize_constant</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">constant</span>: <span class="kw-2">&amp;</span><span class="ident">Constant</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_constant</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">constant</span>: <span class="kw-2">&amp;</span><span class="ident">Constant</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_signature_token</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">type_</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_constant_size</span>(<span class="ident">binary</span>, <span class="ident">constant</span>.<span class="ident">data</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">constant</span>.<span class="ident">data</span> {
@@ -1756,11 +1757,11 @@
 <span class="kw">fn</span> <span class="ident">serialize_struct_definition</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">struct_definition</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">struct_handle</span>)<span class="question-mark">?</span>;
     <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_definition</span>.<span class="ident">field_information</span> {
-        <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedNativeStructFlag</span>::<span class="ident">NATIVE</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedNativeStructFlag</span>::<span class="ident">NATIVE</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedNativeStructFlag</span>::<span class="ident">DECLARED</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_field_definitions</span>(<span class="ident">binary</span>, <span class="ident">fields</span>)
         }
@@ -1770,14 +1771,14 @@
 <span class="kw">fn</span> <span class="ident">serialize_struct_def_instantiation</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">struct_inst</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefInstantiation</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">struct_inst</span>.<span class="ident">def</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">struct_inst</span>.<span class="ident">type_parameters</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
 <span class="doccomment">/// Serializes `FieldDefinition` within a struct.</span>
-<span class="kw">fn</span> <span class="ident">serialize_field_definitions</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">fields</span>: <span class="kw-2">&amp;</span>[<span class="ident">FieldDefinition</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_field_definitions</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">fields</span>: <span class="kw-2">&amp;</span>[<span class="ident">FieldDefinition</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_field_count</span>(<span class="ident">binary</span>, <span class="ident">fields</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">field_definition</span> <span class="kw">in</span> <span class="ident">fields</span> {
         <span class="ident">serialize_field_definition</span>(<span class="ident">binary</span>, <span class="ident">field_definition</span>)<span class="question-mark">?</span>;
@@ -1794,7 +1795,7 @@
 <span class="kw">fn</span> <span class="ident">serialize_field_definition</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">field_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FieldDefinition</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_identifier_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">field_definition</span>.<span class="ident">name</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_signature_token</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">field_definition</span>.<span class="ident">signature</span>.<span class="number">0</span>)
 }
@@ -1808,7 +1809,7 @@
 <span class="kw">fn</span> <span class="ident">serialize_function_definition</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">function_definition</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionDefinition</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_function_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">function_definition</span>.<span class="ident">function</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">is_public</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">function_definition</span>.<span class="ident">is_public</span>() {
@@ -1830,7 +1831,7 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_field_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">field_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_field_handle</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">field_handle</span>: <span class="kw-2">&amp;</span><span class="ident">FieldHandle</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">field_handle</span>.<span class="ident">owner</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_field_offset</span>(<span class="ident">binary</span>, <span class="ident">field_handle</span>.<span class="ident">field</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
@@ -1839,14 +1840,14 @@
 <span class="kw">fn</span> <span class="ident">serialize_field_instantiation</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">field_inst</span>: <span class="kw-2">&amp;</span><span class="ident">FieldInstantiation</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_field_handle_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">field_inst</span>.<span class="ident">handle</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">field_inst</span>.<span class="ident">type_parameters</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
 <span class="doccomment">/// Serializes a `Vec&lt;StructDefinitionIndex&gt;`.</span>
-<span class="kw">fn</span> <span class="ident">serialize_acquires</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">indices</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructDefinitionIndex</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_acquires</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">indices</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructDefinitionIndex</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_acquires_count</span>(<span class="ident">binary</span>, <span class="ident">indices</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">def_idx</span> <span class="kw">in</span> <span class="ident">indices</span> {
         <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">def_idx</span>)<span class="question-mark">?</span>;
@@ -1857,12 +1858,12 @@
 <span class="doccomment">/// Serializes a `Signature`.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// A `Signature` gets serialized as follows the vector of `SignatureToken`s for locals</span>
-<span class="kw">fn</span> <span class="ident">serialize_signature</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_signature</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">signature</span>: <span class="kw-2">&amp;</span><span class="ident">Signature</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_signature_tokens</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="number">0</span>)
 }
 
 <span class="doccomment">/// Serializes a slice of `SignatureToken`s.</span>
-<span class="kw">fn</span> <span class="ident">serialize_signature_tokens</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">tokens</span>: <span class="kw-2">&amp;</span>[<span class="ident">SignatureToken</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_signature_tokens</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">tokens</span>: <span class="kw-2">&amp;</span>[<span class="ident">SignatureToken</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>, <span class="ident">tokens</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">token</span> <span class="kw">in</span> <span class="ident">tokens</span> {
         <span class="ident">serialize_signature_token</span>(<span class="ident">binary</span>, <span class="ident">token</span>)<span class="question-mark">?</span>;
@@ -1873,33 +1874,33 @@
 <span class="kw">fn</span> <span class="ident">serialize_signature_token_single_node_impl</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="ident">token</span> {
-        <span class="ident">SignatureToken</span>::<span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">BOOL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U8</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U64</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U128</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">ADDRESS</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">SIGNER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
-        <span class="ident">SignatureToken</span>::<span class="ident">Vector</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">BOOL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U8</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U8</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U64</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U64</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">U128</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">U128</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Address</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">ADDRESS</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Signer</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">SIGNER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>,
+        <span class="ident">SignatureToken</span>::<span class="ident">Vector</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">VECTOR</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
         }
-        <span class="ident">SignatureToken</span>::<span class="ident">Struct</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">Struct</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
         }
-        <span class="ident">SignatureToken</span>::<span class="ident">StructInstantiation</span>(<span class="ident">idx</span>, <span class="ident">type_params</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">StructInstantiation</span>(<span class="ident">idx</span>, <span class="ident">type_params</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">STRUCT_INST</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_handle_index</span>(<span class="ident">binary</span>, <span class="ident">idx</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_signature_size</span>(<span class="ident">binary</span>, <span class="ident">type_params</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
         }
-        <span class="ident">SignatureToken</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
         }
-        <span class="ident">SignatureToken</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">MUTABLE_REFERENCE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
         }
-        <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">SignatureToken</span>::<span class="ident">TypeParameter</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">SerializedType</span>::<span class="ident">TYPE_PARAMETER</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_type_parameter_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">idx</span>)<span class="question-mark">?</span>;
         }
@@ -1911,7 +1912,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">serialize_signature_token_unchecked</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">for</span> <span class="ident">token</span> <span class="kw">in</span> <span class="ident">token</span>.<span class="ident">preorder_traversal</span>() {
         <span class="ident">serialize_signature_token_single_node_impl</span>(<span class="ident">binary</span>, <span class="ident">token</span>)<span class="question-mark">?</span>;
     }
@@ -1925,7 +1926,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">serialize_signature_token</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">token</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="comment">// Non-recursive implementation to avoid overflowing the stack.</span>
     <span class="kw">for</span> (<span class="ident">token</span>, <span class="ident">depth</span>) <span class="kw">in</span> <span class="ident">token</span>.<span class="ident">preorder_traversal_with_depth</span>() {
         <span class="kw">if</span> <span class="ident">depth</span> <span class="op">&gt;</span> <span class="ident">SIGNATURE_TOKEN_DEPTH_MAX</span> {
@@ -1939,7 +1940,7 @@
 <span class="kw">fn</span> <span class="ident">serialize_nominal_resource_flag</span>(
     <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
     <span class="ident">is_nominal_resource</span>: <span class="ident">bool</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">binary</span>.<span class="ident">push</span>(<span class="kw">if</span> <span class="ident">is_nominal_resource</span> {
         <span class="ident">SerializedNominalResourceFlag</span>::<span class="ident">NOMINAL_RESOURCE</span>
     } <span class="kw">else</span> {
@@ -1948,16 +1949,16 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_kind</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">kind</span>: <span class="ident">Kind</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_kind</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">kind</span>: <span class="ident">Kind</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">binary</span>.<span class="ident">push</span>(<span class="kw">match</span> <span class="ident">kind</span> {
-        <span class="ident">Kind</span>::<span class="ident">All</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">ALL</span>,
-        <span class="ident">Kind</span>::<span class="ident">Resource</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">RESOURCE</span>,
-        <span class="ident">Kind</span>::<span class="ident">Copyable</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">COPYABLE</span>,
+        <span class="ident">Kind</span>::<span class="ident">All</span> <span class="op">=&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">ALL</span>,
+        <span class="ident">Kind</span>::<span class="ident">Resource</span> <span class="op">=&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">RESOURCE</span>,
+        <span class="ident">Kind</span>::<span class="ident">Copyable</span> <span class="op">=&gt;</span> <span class="ident">SerializedKind</span>::<span class="ident">COPYABLE</span>,
     } <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">serialize_kinds</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">kinds</span>: <span class="kw-2">&amp;</span>[<span class="ident">Kind</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_kinds</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">kinds</span>: <span class="kw-2">&amp;</span>[<span class="ident">Kind</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_type_parameter_count</span>(<span class="ident">binary</span>, <span class="ident">kinds</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">kind</span> <span class="kw">in</span> <span class="ident">kinds</span> {
         <span class="ident">serialize_kind</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">kind</span>)<span class="question-mark">?</span>;
@@ -1972,170 +1973,170 @@
 <span class="doccomment">/// - `CodeUnit.max_stack_size` as a ULEB128</span>
 <span class="doccomment">/// - `CodeUnit.locals` as a ULEB128 (index into the `LocalSignaturePool`)</span>
 <span class="doccomment">/// - `CodeUnit.code` as variable size byte stream for the bytecode</span>
-<span class="kw">fn</span> <span class="ident">serialize_code_unit</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="ident">CodeUnit</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_code_unit</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="ident">CodeUnit</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">code</span>.<span class="ident">locals</span>)<span class="question-mark">?</span>;
     <span class="ident">serialize_code</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">code</span>.<span class="ident">code</span>)
 }
 
 <span class="doccomment">/// Serializes a single `Bytecode` instruction.</span>
-<span class="kw">fn</span> <span class="ident">serialize_instruction_inner</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">opcode</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_instruction_inner</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">opcode</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">opcode</span> {
-        <span class="ident">Bytecode</span>::<span class="ident">FreezeRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">FREEZE_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Pop</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">POP</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Ret</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">RET</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">code_offset</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">FreezeRef</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">FREEZE_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Pop</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">POP</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Ret</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">RET</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">code_offset</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BR_TRUE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_bytecode_offset</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">code_offset</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">code_offset</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">code_offset</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BR_FALSE</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_bytecode_offset</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">code_offset</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">code_offset</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">code_offset</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BRANCH</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_bytecode_offset</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">code_offset</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">LdU8</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">LdU8</span>(<span class="ident">value</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_U8</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="kw-2">*</span><span class="ident">value</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">LdU64</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">LdU64</span>(<span class="ident">value</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_U64</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">write_u64</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">value</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">LdU128</span>(<span class="ident">value</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">LdU128</span>(<span class="ident">value</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_U128</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">write_u128</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">value</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">CastU8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U8</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">CastU64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U64</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">CastU128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U128</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">LdConst</span>(<span class="ident">const_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">CastU8</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U8</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">CastU64</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U64</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">CastU128</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CAST_U128</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">LdConst</span>(<span class="ident">const_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_CONST</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_constant_pool_index</span>(<span class="ident">binary</span>, <span class="ident">const_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">LdTrue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_TRUE</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">LdFalse</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_FALSE</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">CopyLoc</span>(<span class="ident">local_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">LdTrue</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_TRUE</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">LdFalse</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LD_FALSE</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">CopyLoc</span>(<span class="ident">local_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">COPY_LOC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">local_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MoveLoc</span>(<span class="ident">local_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MoveLoc</span>(<span class="ident">local_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOVE_LOC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">local_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">StLoc</span>(<span class="ident">local_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">StLoc</span>(<span class="ident">local_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">ST_LOC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">local_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowLoc</span>(<span class="ident">local_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowLoc</span>(<span class="ident">local_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUT_BORROW_LOC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">local_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowLoc</span>(<span class="ident">local_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowLoc</span>(<span class="ident">local_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">IMM_BORROW_LOC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_local_index</span>(<span class="ident">binary</span>, <span class="kw-2">*</span><span class="ident">local_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowField</span>(<span class="ident">field_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowField</span>(<span class="ident">field_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUT_BORROW_FIELD</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_field_handle_index</span>(<span class="ident">binary</span>, <span class="ident">field_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowFieldGeneric</span>(<span class="ident">field_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowFieldGeneric</span>(<span class="ident">field_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUT_BORROW_FIELD_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_field_inst_index</span>(<span class="ident">binary</span>, <span class="ident">field_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowField</span>(<span class="ident">field_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowField</span>(<span class="ident">field_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">IMM_BORROW_FIELD</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_field_handle_index</span>(<span class="ident">binary</span>, <span class="ident">field_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowFieldGeneric</span>(<span class="ident">field_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowFieldGeneric</span>(<span class="ident">field_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">IMM_BORROW_FIELD_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_field_inst_index</span>(<span class="ident">binary</span>, <span class="ident">field_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">Call</span>(<span class="ident">method_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">Call</span>(<span class="ident">method_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CALL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_function_handle_index</span>(<span class="ident">binary</span>, <span class="ident">method_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">Pack</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">Pack</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">PACK</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">Unpack</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">Unpack</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">UNPACK</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">CallGeneric</span>(<span class="ident">method_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">CallGeneric</span>(<span class="ident">method_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">CALL_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_function_inst_index</span>(<span class="ident">binary</span>, <span class="ident">method_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">PackGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">PackGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">PACK_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">UnpackGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">UnpackGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">UNPACK_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ReadRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">READ_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">WriteRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">WRITE_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Add</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">ADD</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Sub</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SUB</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Mul</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUL</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Mod</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOD</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Div</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">DIV</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">BitOr</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BIT_OR</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">BitAnd</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BIT_AND</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Xor</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">XOR</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Shl</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SHL</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Shr</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SHR</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">OR</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">AND</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Not</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NOT</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Eq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">EQ</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Neq</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NEQ</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Lt</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LT</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Gt</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">GT</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Le</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LE</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Ge</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">GE</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Abort</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">ABORT</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Nop</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NOP</span> <span class="kw">as</span> <span class="ident">u8</span>),
-        <span class="ident">Bytecode</span>::<span class="ident">Exists</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ReadRef</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">READ_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">WriteRef</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">WRITE_REF</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Add</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">ADD</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Sub</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SUB</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Mul</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUL</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Mod</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOD</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Div</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">DIV</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">BitOr</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BIT_OR</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">BitAnd</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">BIT_AND</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Xor</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">XOR</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Shl</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SHL</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Shr</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">SHR</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Or</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">OR</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">And</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">AND</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Not</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NOT</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Eq</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">EQ</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Neq</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NEQ</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Lt</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LT</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Gt</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">GT</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Le</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">LE</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Ge</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">GE</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Abort</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">ABORT</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Nop</span> <span class="op">=&gt;</span> <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">NOP</span> <span class="kw">as</span> <span class="ident">u8</span>),
+        <span class="ident">Bytecode</span>::<span class="ident">Exists</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">EXISTS</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowGlobal</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowGlobal</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUT_BORROW_GLOBAL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowGlobal</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowGlobal</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">IMM_BORROW_GLOBAL</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MoveFrom</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MoveFrom</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOVE_FROM</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MoveTo</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MoveTo</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOVE_TO</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ExistsGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ExistsGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">EXISTS_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowGlobalGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MutBorrowGlobalGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MUT_BORROW_GLOBAL_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowGlobalGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">ImmBorrowGlobalGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">IMM_BORROW_GLOBAL_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MoveFromGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MoveFromGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOVE_FROM_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
-        <span class="ident">Bytecode</span>::<span class="ident">MoveToGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">Bytecode</span>::<span class="ident">MoveToGeneric</span>(<span class="ident">class_idx</span>) <span class="op">=&gt;</span> {
             <span class="ident">binary</span>.<span class="ident">push</span>(<span class="ident">Opcodes</span>::<span class="ident">MOVE_TO_GENERIC</span> <span class="kw">as</span> <span class="ident">u8</span>)<span class="question-mark">?</span>;
             <span class="ident">serialize_struct_def_inst_index</span>(<span class="ident">binary</span>, <span class="ident">class_idx</span>)
         }
@@ -2145,7 +2146,7 @@
 }
 
 <span class="doccomment">/// Serializes a `Bytecode` stream. Serialization of the function body.</span>
-<span class="kw">fn</span> <span class="ident">serialize_code</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span>[<span class="ident">Bytecode</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_code</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span>[<span class="ident">Bytecode</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">serialize_bytecode_count</span>(<span class="ident">binary</span>, <span class="ident">code</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
     <span class="kw">for</span> <span class="ident">opcode</span> <span class="kw">in</span> <span class="ident">code</span> {
         <span class="ident">serialize_instruction_inner</span>(<span class="ident">binary</span>, <span class="ident">opcode</span>)<span class="question-mark">?</span>;
@@ -2154,14 +2155,14 @@
 }
 
 <span class="doccomment">/// Compute the table size with a check for underflow</span>
-<span class="kw">fn</span> <span class="ident">checked_calculate_table_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">start</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">checked_calculate_table_size</span>(<span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>, <span class="ident">start</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
-    <span class="macro">checked_assume</span><span class="macro">!</span>(<span class="ident">offset</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">start</span>, <span class="string">&quot;table start must be before end&quot;</span>);
+    <span class="macro">checked_assume</span><span class="macro">!</span>(<span class="ident">offset</span> <span class="op">&gt;=</span> <span class="ident">start</span>, <span class="string">&quot;table start must be before end&quot;</span>);
     <span class="prelude-val">Ok</span>(<span class="ident">offset</span> <span class="op">-</span> <span class="ident">start</span>)
 }
 
 <span class="kw">impl</span> <span class="ident">CommonSerializer</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CommonSerializer</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="ident">CommonSerializer</span> {
         <span class="ident">CommonSerializer</span> {
             <span class="ident">major_version</span>,
             <span class="ident">table_count</span>: <span class="number">0</span>,
@@ -2176,14 +2177,14 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">serialize_header</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">serialize_header</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">serialize_magic</span>(<span class="ident">binary</span>)<span class="question-mark">?</span>;
         <span class="ident">write_u32</span>(<span class="ident">binary</span>, <span class="self">self</span>.<span class="ident">major_version</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
     <span class="doccomment">/// Common binary header serialization.</span>
-    <span class="kw">fn</span> <span class="ident">serialize_table_indices</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">serialize_table_indices</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">serialize_table_count</span>(<span class="ident">binary</span>, <span class="self">self</span>.<span class="ident">table_count</span>)<span class="question-mark">?</span>;
 
         <span class="ident">serialize_table_index</span>(
@@ -2241,8 +2242,8 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">tables</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">verify</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">table_count</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span>); <span class="comment">// Should not be necessary, but it helps MIRAI right now</span>
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="macro">verify</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">table_count</span> <span class="op">==</span> <span class="number">0</span>); <span class="comment">// Should not be necessary, but it helps MIRAI right now</span>
         <span class="self">self</span>.<span class="ident">serialize_module_handles</span>(<span class="ident">binary</span>, <span class="ident">tables</span>.<span class="ident">get_module_handles</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">serialize_struct_handles</span>(<span class="ident">binary</span>, <span class="ident">tables</span>.<span class="ident">get_struct_handles</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">serialize_function_handles</span>(<span class="ident">binary</span>, <span class="ident">tables</span>.<span class="ident">get_function_handles</span>())<span class="question-mark">?</span>;
@@ -2260,9 +2261,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">module_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">module_handles</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">module_handles</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">module_handle</span> <span class="kw">in</span> <span class="ident">module_handles</span> {
                 <span class="ident">serialize_module_handle</span>(<span class="ident">binary</span>, <span class="ident">module_handle</span>)<span class="question-mark">?</span>;
@@ -2277,9 +2278,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">struct_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">struct_handles</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">struct_handles</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">struct_handle</span> <span class="kw">in</span> <span class="ident">struct_handles</span> {
                 <span class="ident">serialize_struct_handle</span>(<span class="ident">binary</span>, <span class="ident">struct_handle</span>)<span class="question-mark">?</span>;
@@ -2294,9 +2295,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">function_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">function_handles</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">function_handles</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">function_handle</span> <span class="kw">in</span> <span class="ident">function_handles</span> {
                 <span class="ident">serialize_function_handle</span>(<span class="ident">binary</span>, <span class="ident">function_handle</span>)<span class="question-mark">?</span>;
@@ -2312,9 +2313,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">function_instantiations</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">function_instantiations</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">function_instantiations</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">function_instantiation</span> <span class="kw">in</span> <span class="ident">function_instantiations</span> {
                 <span class="ident">serialize_function_instantiation</span>(<span class="ident">binary</span>, <span class="ident">function_instantiation</span>)<span class="question-mark">?</span>;
@@ -2330,9 +2331,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">identifiers</span>: <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">identifiers</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">identifiers</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">identifier</span> <span class="kw">in</span> <span class="ident">identifiers</span> {
                 <span class="comment">// User strings and identifiers use the same serialization.</span>
@@ -2348,9 +2349,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">addresses</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">addresses</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">address_identifiers</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">address</span> <span class="kw">in</span> <span class="ident">addresses</span> {
                 <span class="ident">serialize_address</span>(<span class="ident">binary</span>, <span class="ident">address</span>)<span class="question-mark">?</span>;
@@ -2366,9 +2367,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">constants</span>: <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">constants</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">constant_pool</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">constant</span> <span class="kw">in</span> <span class="ident">constants</span> {
                 <span class="ident">serialize_constant</span>(<span class="ident">binary</span>, <span class="ident">constant</span>)<span class="question-mark">?</span>;
@@ -2383,9 +2384,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">signatures</span>: <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">signatures</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">signatures</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">signature</span> <span class="kw">in</span> <span class="ident">signatures</span> {
                 <span class="ident">serialize_signature</span>(<span class="ident">binary</span>, <span class="ident">signature</span>)<span class="question-mark">?</span>;
@@ -2397,7 +2398,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ModuleSerializer</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ModuleSerializer</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="ident">ModuleSerializer</span> {
         <span class="ident">ModuleSerializer</span> {
             <span class="ident">common</span>: <span class="ident">CommonSerializer</span>::<span class="ident">new</span>(<span class="ident">major_version</span>),
             <span class="ident">struct_defs</span>: (<span class="number">0</span>, <span class="number">0</span>),
@@ -2412,7 +2413,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModuleMut</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">serialize_common_tables</span>(<span class="ident">binary</span>, <span class="ident">module</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">serialize_struct_definitions</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">struct_defs</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">serialize_struct_def_instantiations</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">struct_def_instantiations</span>)<span class="question-mark">?</span>;
@@ -2421,7 +2422,7 @@
         <span class="self">self</span>.<span class="ident">serialize_field_instantiations</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">module</span>.<span class="ident">field_instantiations</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">serialize_table_indices</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">serialize_table_indices</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">serialize_table_indices</span>(<span class="ident">binary</span>)<span class="question-mark">?</span>;
         <span class="ident">serialize_table_index</span>(
             <span class="ident">binary</span>,
@@ -2461,7 +2462,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">struct_definitions</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructDefinition</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">struct_definitions</span>.<span class="ident">is_empty</span>() {
             <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span>.<span class="ident">wrapping_add</span>(<span class="number">1</span>); <span class="comment">// the count will bound to a small number</span>
             <span class="self">self</span>.<span class="ident">struct_defs</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
@@ -2478,7 +2479,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">struct_def_instantiations</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructDefInstantiation</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">struct_def_instantiations</span>.<span class="ident">is_empty</span>() {
             <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span>.<span class="ident">wrapping_add</span>(<span class="number">1</span>); <span class="comment">// the count will bound to a small number</span>
             <span class="self">self</span>.<span class="ident">struct_def_instantiations</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
@@ -2496,9 +2497,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">field_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">FieldHandle</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">field_handles</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">field_handles</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">field_handle</span> <span class="kw">in</span> <span class="ident">field_handles</span> {
                 <span class="ident">serialize_field_handle</span>(<span class="ident">binary</span>, <span class="ident">field_handle</span>)<span class="question-mark">?</span>;
@@ -2512,9 +2513,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">field_instantiations</span>: <span class="kw-2">&amp;</span>[<span class="ident">FieldInstantiation</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">field_instantiations</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="self">self</span>.<span class="ident">field_instantiations</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
             <span class="kw">for</span> <span class="ident">field_instantiation</span> <span class="kw">in</span> <span class="ident">field_instantiations</span> {
                 <span class="ident">serialize_field_instantiation</span>(<span class="ident">binary</span>, <span class="ident">field_instantiation</span>)<span class="question-mark">?</span>;
@@ -2529,7 +2530,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">function_definitions</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionDefinition</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="ident">function_definitions</span>.<span class="ident">is_empty</span>() {
             <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">common</span>.<span class="ident">table_count</span>.<span class="ident">wrapping_add</span>(<span class="number">1</span>); <span class="comment">// the count will bound to a small number</span>
             <span class="self">self</span>.<span class="ident">function_defs</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">check_index_in_binary</span>(<span class="ident">binary</span>.<span class="ident">len</span>())<span class="question-mark">?</span>;
@@ -2543,7 +2544,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ScriptSerializer</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ScriptSerializer</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">major_version</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="ident">ScriptSerializer</span> {
         <span class="ident">ScriptSerializer</span> {
             <span class="ident">common</span>: <span class="ident">CommonSerializer</span>::<span class="ident">new</span>(<span class="ident">major_version</span>),
         }
@@ -2554,7 +2555,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">binary</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BinaryData</span>,
         <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScriptMut</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">serialize_kinds</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">type_parameters</span>)<span class="question-mark">?</span>;
         <span class="ident">serialize_signature_index</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">parameters</span>)<span class="question-mark">?</span>;
         <span class="ident">serialize_code_unit</span>(<span class="ident">binary</span>, <span class="kw-2">&amp;</span><span class="ident">script</span>.<span class="ident">code</span>)<span class="question-mark">?</span>;

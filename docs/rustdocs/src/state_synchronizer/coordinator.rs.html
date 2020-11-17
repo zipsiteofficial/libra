@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `state-synchronizer/src/coordinator.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>coordinator.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../state_synchronizer/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `state-synchronizer/src/coordinator.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>coordinator.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../state_synchronizer/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1358,7 +1359,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SyncRequest</span> {
     <span class="comment">// The Result value returned to the caller is Error in case the StateSynchronizer failed to</span>
     <span class="comment">// reach the target (the LI in the storage remains unchanged as if nothing happened).</span>
-    <span class="kw">pub</span> <span class="ident">callback</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">callback</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>,
     <span class="kw">pub</span> <span class="ident">target</span>: <span class="ident">LedgerInfoWithSignatures</span>,
     <span class="kw">pub</span> <span class="ident">last_progress_tst</span>: <span class="ident">SystemTime</span>,
 }
@@ -1374,11 +1375,11 @@
         <span class="comment">// reconfiguration events</span>
         <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ContractEvent</span><span class="op">&gt;</span>,
         <span class="comment">// callback for recipient to send response back to this sender</span>
-        <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CommitResponse</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CommitResponse</span><span class="op">&gt;&gt;</span>,
     ),
     <span class="ident">GetState</span>(<span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">SynchronizerState</span><span class="op">&gt;</span>),
     <span class="comment">// Receive a notification via a given channel when coordinator is initialized.</span>
-    <span class="ident">WaitInitialize</span>(<span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>),
+    <span class="ident">WaitInitialize</span>(<span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>),
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -1403,7 +1404,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PendingLedgerInfos</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">max_pending_li_limit</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">max_pending_li_limit</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">pending_li_queue</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">max_pending_li_limit</span>,
@@ -1413,7 +1414,7 @@
 
     <span class="doccomment">/// Adds `new_li` to the queue of pending LI&#39;s</span>
     <span class="kw">fn</span> <span class="ident">add_li</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">new_li</span>: <span class="ident">LedgerInfoWithSignatures</span>) {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">pending_li_queue</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_pending_li_limit</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">pending_li_queue</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="self">self</span>.<span class="ident">max_pending_li_limit</span> {
             <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">ProcessChunkResponse</span>),
                 <span class="string">&quot;pending LI store reached max capacity {}, failed to add LI {}&quot;</span>,
@@ -1442,7 +1443,7 @@
         <span class="self">self</span>.<span class="ident">pending_li_queue</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pending_li_queue</span>.<span class="ident">split_off</span>(<span class="kw-2">&amp;</span>(<span class="ident">highest_synced</span> <span class="op">+</span> <span class="number">1</span>));
 
         <span class="comment">// pick target LI to use for sending ProgressiveTargetType requests.</span>
-        <span class="self">self</span>.<span class="ident">target_li</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">highest_committed_li</span> <span class="op">=</span><span class="op">=</span> <span class="ident">highest_synced</span> {
+        <span class="self">self</span>.<span class="ident">target_li</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">highest_committed_li</span> <span class="op">==</span> <span class="ident">highest_synced</span> {
             <span class="comment">// try to find LI with max version that will fit in a single chunk</span>
             <span class="self">self</span>.<span class="ident">pending_li_queue</span>
                 .<span class="ident">range</span>((<span class="ident">Included</span>(<span class="number">0</span>), <span class="ident">Included</span>(<span class="ident">highest_synced</span> <span class="op">+</span> <span class="ident">chunk_limit</span>)))
@@ -1457,7 +1458,7 @@
         };
     }
 
-    <span class="kw">fn</span> <span class="ident">target_li</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">target_li</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">target_li</span>.<span class="ident">clone</span>()
     }
 }
@@ -1497,7 +1498,7 @@
     <span class="ident">pending_ledger_infos</span>: <span class="ident">PendingLedgerInfos</span>,
     <span class="comment">// Option initialization listener to be called when the coordinator is caught up with</span>
     <span class="comment">// its waypoint.</span>
-    <span class="ident">initialization_listener</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">initialization_listener</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
     <span class="comment">// queue of incoming long polling requests</span>
     <span class="comment">// peer will be notified about new chunk of transactions if it&#39;s available before expiry time</span>
     <span class="ident">subscriptions</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span>, <span class="ident">PendingRequestInfo</span><span class="op">&gt;</span>,
@@ -1515,11 +1516,11 @@
         <span class="ident">upstream_config</span>: <span class="ident">UpstreamConfig</span>,
         <span class="ident">executor_proxy</span>: <span class="ident">T</span>,
         <span class="ident">initial_state</span>: <span class="ident">SynchronizerState</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Waypoint</span>, <span class="ident">LogEvent</span>::<span class="ident">Initialize</span>).<span class="ident">waypoint</span>(<span class="ident">waypoint</span>));
         <span class="kw">let</span> <span class="ident">retry_timeout_val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">role</span> {
-            <span class="ident">RoleType</span>::<span class="ident">FullNode</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">long_poll_timeout_ms</span>,
-            <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">2</span> <span class="op">*</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span>,
+            <span class="ident">RoleType</span>::<span class="ident">FullNode</span> <span class="op">=&gt;</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">long_poll_timeout_ms</span>,
+            <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="op">=&gt;</span> <span class="number">2</span> <span class="op">*</span> <span class="ident">config</span>.<span class="ident">tick_interval_ms</span>,
         };
         <span class="kw">let</span> <span class="ident">multicast_timeout</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="ident">config</span>.<span class="ident">multicast_timeout_ms</span>);
 
@@ -1566,9 +1567,9 @@
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">MAIN_LOOP</span>.<span class="ident">start_timer</span>();
             ::<span class="ident">futures</span>::<span class="macro">select</span><span class="macro">!</span> {
-                <span class="ident">msg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client_events</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">msg</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client_events</span>.<span class="ident">select_next_some</span>() <span class="op">=&gt;</span> {
                     <span class="kw">match</span> <span class="ident">msg</span> {
-                        <span class="ident">CoordinatorMessage</span>::<span class="ident">Request</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">CoordinatorMessage</span>::<span class="ident">Request</span>(<span class="ident">request</span>) <span class="op">=&gt;</span> {
                             <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_COORDINATOR_MSG_LATENCY</span>
                                 .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">SYNC_MSG_LABEL</span>])
                                 .<span class="ident">start_timer</span>();
@@ -1577,7 +1578,7 @@
                                 <span class="ident">counters</span>::<span class="ident">SYNC_REQUEST_RESULT</span>.<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">FAIL_LABEL</span>]).<span class="ident">inc</span>();
                             }
                         }
-                        <span class="ident">CoordinatorMessage</span>::<span class="ident">Commit</span>(<span class="ident">txns</span>, <span class="ident">events</span>, <span class="ident">callback</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">CoordinatorMessage</span>::<span class="ident">Commit</span>(<span class="ident">txns</span>, <span class="ident">events</span>, <span class="ident">callback</span>) <span class="op">=&gt;</span> {
                             {
                                 <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_COORDINATOR_MSG_LATENCY</span>
                                     .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">COMMIT_MSG_LABEL</span>])
@@ -1594,34 +1595,34 @@
                                 <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Reconfig</span>, <span class="ident">LogEvent</span>::<span class="ident">Fail</span>).<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
                             }
                         }
-                        <span class="ident">CoordinatorMessage</span>::<span class="ident">GetState</span>(<span class="ident">callback</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">CoordinatorMessage</span>::<span class="ident">GetState</span>(<span class="ident">callback</span>) <span class="op">=&gt;</span> {
                             <span class="self">self</span>.<span class="ident">get_state</span>(<span class="ident">callback</span>);
                         }
-                        <span class="ident">CoordinatorMessage</span>::<span class="ident">WaitInitialize</span>(<span class="ident">cb_sender</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">CoordinatorMessage</span>::<span class="ident">WaitInitialize</span>(<span class="ident">cb_sender</span>) <span class="op">=&gt;</span> {
                             <span class="self">self</span>.<span class="ident">set_initialization_listener</span>(<span class="ident">cb_sender</span>);
                         }
                     };
                 },
-                (<span class="ident">network_id</span>, <span class="ident">event</span>) <span class="op">=</span> <span class="ident">network_events</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
+                (<span class="ident">network_id</span>, <span class="ident">event</span>) <span class="op">=</span> <span class="ident">network_events</span>.<span class="ident">select_next_some</span>() <span class="op">=&gt;</span> {
                     <span class="kw">match</span> <span class="ident">event</span> {
-                        <span class="ident">Event</span>::<span class="ident">NewPeer</span>(<span class="ident">peer_id</span>, <span class="ident">origin</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">Event</span>::<span class="ident">NewPeer</span>(<span class="ident">peer_id</span>, <span class="ident">origin</span>) <span class="op">=&gt;</span> {
                             <span class="kw">let</span> <span class="ident">peer</span> <span class="op">=</span> <span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>, <span class="ident">peer_id</span>);
                             <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">enable_peer</span>(<span class="ident">peer</span>, <span class="ident">origin</span>);
                             <span class="self">self</span>.<span class="ident">check_progress</span>();
                         }
-                        <span class="ident">Event</span>::<span class="ident">LostPeer</span>(<span class="ident">peer_id</span>, <span class="ident">origin</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">Event</span>::<span class="ident">LostPeer</span>(<span class="ident">peer_id</span>, <span class="ident">origin</span>) <span class="op">=&gt;</span> {
                             <span class="kw">let</span> <span class="ident">peer</span> <span class="op">=</span> <span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>, <span class="ident">peer_id</span>);
                             <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">disable_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">origin</span>);
                         }
-                        <span class="ident">Event</span>::<span class="ident">Message</span>(<span class="ident">peer_id</span>, <span class="ident">message</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_one_message</span>(<span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>.<span class="ident">clone</span>(), <span class="ident">peer_id</span>), <span class="ident">message</span>).<span class="kw">await</span>,
-                        <span class="ident">unexpected_event</span> <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">Event</span>::<span class="ident">Message</span>(<span class="ident">peer_id</span>, <span class="ident">message</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">process_one_message</span>(<span class="ident">PeerNetworkId</span>(<span class="ident">network_id</span>.<span class="ident">clone</span>(), <span class="ident">peer_id</span>), <span class="ident">message</span>).<span class="kw">await</span>,
+                        <span class="ident">unexpected_event</span> <span class="op">=&gt;</span> {
                             <span class="ident">counters</span>::<span class="ident">NETWORK_ERROR_COUNT</span>.<span class="ident">inc</span>();
                             <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">NetworkError</span>),
                             <span class="string">&quot;received unexpected network event: {:?}&quot;</span>, <span class="ident">unexpected_event</span>);
                         },
                     }
                 },
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">interval</span>.<span class="ident">select_next_some</span>() <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="kw">_</span> <span class="op">=</span> <span class="ident">interval</span>.<span class="ident">select_next_some</span>() <span class="op">=&gt;</span> {
                     <span class="self">self</span>.<span class="ident">check_progress</span>();
                 }
             }
@@ -1634,7 +1635,7 @@
         <span class="ident">msg</span>: <span class="ident">StateSynchronizerMsg</span>,
     ) {
         <span class="kw">match</span> <span class="ident">msg</span> {
-            <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkRequest</span>(<span class="ident">request</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkRequest</span>(<span class="ident">request</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
                     .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
                         <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>(),
@@ -1665,7 +1666,7 @@
                     ])
                     .<span class="ident">inc</span>();
             }
-            <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkResponse</span>(<span class="ident">response</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">StateSynchronizerMsg</span>::<span class="ident">GetChunkResponse</span>(<span class="ident">response</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">_timer</span> <span class="op">=</span> <span class="ident">counters</span>::<span class="ident">PROCESS_MSG_LATENCY</span>
                     .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[
                         <span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>(),
@@ -1680,7 +1681,7 @@
 
     <span class="doccomment">/// Sync up coordinator state with the local storage</span>
     <span class="doccomment">/// and updates the pending ledger info accordingly</span>
-    <span class="kw">fn</span> <span class="ident">sync_state_with_local_storage</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">sync_state_with_local_storage</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">new_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">executor_proxy</span>.<span class="ident">get_local_storage_state</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
             <span class="ident">counters</span>::<span class="ident">STORAGE_READ_FAIL_COUNT</span>.<span class="ident">inc</span>();
             <span class="ident">e</span>
@@ -1698,11 +1699,11 @@
     }
 
     <span class="doccomment">/// Verify that the local state&#39;s latest LI version (i.e. committed version) has reached the waypoint version.</span>
-    <span class="kw">fn</span> <span class="ident">is_initialized</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>()
+    <span class="kw">fn</span> <span class="ident">is_initialized</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">version</span>() <span class="op">&lt;=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">set_initialization_listener</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cb_sender</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">set_initialization_listener</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cb_sender</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>) {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_initialized</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">send_initialization_callback</span>(<span class="ident">cb_sender</span>, <span class="prelude-val">Ok</span>(())) {
                 <span class="macro">error</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">Waypoint</span>, <span class="ident">LogEvent</span>::<span class="ident">CallbackFail</span>).<span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>));
@@ -1718,7 +1719,7 @@
     <span class="doccomment">/// target LI.</span>
     <span class="doccomment">/// StateSynchronizer assumes that it&#39;s the only one modifying the storage (consensus is not</span>
     <span class="doccomment">/// trying to commit transactions concurrently).</span>
-    <span class="kw">fn</span> <span class="ident">request_sync</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">request</span>: <span class="ident">SyncRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">request_sync</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">request</span>: <span class="ident">SyncRequest</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">fail_point</span><span class="macro">!</span>(<span class="string">&quot;state_sync::request_sync&quot;</span>, <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
             <span class="prelude-val">Err</span>(<span class="ident">anyhow</span>::<span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Injected error in request_sync&quot;</span>))
         });
@@ -1735,7 +1736,7 @@
             <span class="self">self</span>.<span class="ident">is_initialized</span>(),
             <span class="string">&quot;[state sync] Sync request but initialization is not complete!&quot;</span>
         );
-        <span class="kw">if</span> <span class="ident">target_version</span> <span class="op">=</span><span class="op">=</span> <span class="ident">local_li_version</span> {
+        <span class="kw">if</span> <span class="ident">target_version</span> <span class="op">==</span> <span class="ident">local_li_version</span> {
             <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">send_sync_req_callback</span>(<span class="ident">request</span>, <span class="prelude-val">Ok</span>(()));
         }
 
@@ -1761,9 +1762,9 @@
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">process_commit</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">transactions</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Transaction</span><span class="op">&gt;</span>,
-        <span class="ident">commit_callback</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CommitResponse</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">commit_callback</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CommitResponse</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
         <span class="ident">chunk_sender</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// We choose to re-sync the state with the storage as it&#39;s the simplest approach:</span>
         <span class="comment">// in case the performance implications of re-syncing upon every commit are high,</span>
         <span class="comment">// it&#39;s possible to manage some of the highest known versions in memory.</span>
@@ -1855,19 +1856,19 @@
             <span class="ident">req</span>.<span class="ident">last_progress_tst</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>();
         }
         <span class="kw">let</span> <span class="ident">sync_request_complete</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_ref</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">sync_req</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">sync_req</span>) <span class="op">=&gt;</span> {
                 <span class="comment">// Each `ChunkResponse` is verified to make sure it never goes beyond the requested</span>
                 <span class="comment">// target version, hence, the local version should never go beyond sync req target.</span>
                 <span class="kw">let</span> <span class="ident">sync_target_version</span> <span class="op">=</span> <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
                 <span class="macro">ensure</span><span class="macro">!</span>(
-                    <span class="ident">synced_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sync_target_version</span>,
+                    <span class="ident">synced_version</span> <span class="op">&lt;=</span> <span class="ident">sync_target_version</span>,
                     <span class="string">&quot;local version {} is beyond sync req target {}&quot;</span>,
                     <span class="ident">synced_version</span>,
                     <span class="ident">sync_target_version</span>
                 );
-                <span class="ident">sync_target_version</span> <span class="op">=</span><span class="op">=</span> <span class="ident">synced_version</span>
+                <span class="ident">sync_target_version</span> <span class="op">==</span> <span class="ident">synced_version</span>
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
         };
 
         <span class="kw">if</span> <span class="ident">sync_request_complete</span> {
@@ -1920,7 +1921,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
         <span class="ident">request</span>: <span class="ident">GetChunkRequest</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ProcessChunkRequest</span>, <span class="ident">LogEvent</span>::<span class="ident">Received</span>)
                 .<span class="ident">peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>)
@@ -1933,12 +1934,12 @@
         <span class="self">self</span>.<span class="ident">sync_state_with_local_storage</span>()<span class="question-mark">?</span>;
 
         <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">target</span>().<span class="ident">clone</span>() {
-            <span class="ident">TargetType</span>::<span class="ident">TargetLedgerInfo</span>(<span class="ident">li</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_request_target_li</span>(<span class="ident">peer</span>, <span class="ident">request</span>, <span class="ident">li</span>),
+            <span class="ident">TargetType</span>::<span class="ident">TargetLedgerInfo</span>(<span class="ident">li</span>) <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">process_request_target_li</span>(<span class="ident">peer</span>, <span class="ident">request</span>, <span class="ident">li</span>),
             <span class="ident">TargetType</span>::<span class="ident">HighestAvailable</span> {
                 <span class="ident">target_li</span>,
                 <span class="ident">timeout_ms</span>,
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_request_highest_available</span>(<span class="ident">peer</span>, <span class="ident">request</span>, <span class="ident">target_li</span>, <span class="ident">timeout_ms</span>),
-            <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">waypoint_version</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            } <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">process_request_highest_available</span>(<span class="ident">peer</span>, <span class="ident">request</span>, <span class="ident">target_li</span>, <span class="ident">timeout_ms</span>),
+            <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">waypoint_version</span>) <span class="op">=&gt;</span> {
                 <span class="self">self</span>.<span class="ident">process_request_waypoint</span>(<span class="ident">peer</span>, <span class="ident">request</span>, <span class="ident">waypoint_version</span>)
             }
         }
@@ -1951,7 +1952,7 @@
         <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
         <span class="ident">request</span>: <span class="ident">GetChunkRequest</span>,
         <span class="ident">target_li</span>: <span class="ident">LedgerInfoWithSignatures</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">request</span>.<span class="ident">limit</span>, <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_chunk_limit</span>);
         <span class="kw">let</span> <span class="ident">response_li</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">choose_response_li</span>(<span class="ident">request</span>.<span class="ident">current_epoch</span>, <span class="prelude-val">Some</span>(<span class="ident">target_li</span>))<span class="question-mark">?</span>;
         <span class="comment">// In case known_version is lower than the requested ledger info an empty response might be</span>
@@ -1973,14 +1974,14 @@
         <span class="ident">request</span>: <span class="ident">GetChunkRequest</span>,
         <span class="ident">target_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
         <span class="ident">timeout_ms</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">request</span>.<span class="ident">limit</span>, <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_chunk_limit</span>);
         <span class="kw">let</span> <span class="ident">timeout</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">timeout_ms</span>, <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_timeout_ms</span>);
 
         <span class="comment">// If there is nothing a node can help with, and the request supports long polling,</span>
         <span class="comment">// add it to the subscriptions.</span>
         <span class="kw">let</span> <span class="ident">local_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
-        <span class="kw">if</span> <span class="ident">local_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">request</span>.<span class="ident">known_version</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">timeout</span> <span class="op">&gt;</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">local_version</span> <span class="op">&lt;=</span> <span class="ident">request</span>.<span class="ident">known_version</span> <span class="op">&amp;&amp;</span> <span class="ident">timeout</span> <span class="op">&gt;</span> <span class="number">0</span> {
             <span class="kw">let</span> <span class="ident">expiration_time</span> <span class="op">=</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">checked_add</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="ident">timeout</span>));
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">time</span>) <span class="op">=</span> <span class="ident">expiration_time</span> {
                 <span class="kw">let</span> <span class="ident">request_info</span> <span class="op">=</span> <span class="ident">PendingRequestInfo</span> {
@@ -1998,7 +1999,7 @@
         <span class="kw">let</span> <span class="ident">target_li</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">choose_response_li</span>(<span class="ident">request</span>.<span class="ident">current_epoch</span>, <span class="ident">target_li</span>)<span class="question-mark">?</span>;
         <span class="comment">// Only populate highest_li field if it is different from target_li</span>
         <span class="kw">let</span> <span class="ident">highest_li</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&lt;</span> <span class="ident">local_version</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()
+            <span class="op">&amp;&amp;</span> <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()
         {
             <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">clone</span>())
         } <span class="kw">else</span> {
@@ -2021,10 +2022,10 @@
         <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
         <span class="ident">request</span>: <span class="ident">GetChunkRequest</span>,
         <span class="ident">waypoint_version</span>: <span class="ident">Version</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">limit</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="ident">request</span>.<span class="ident">limit</span>, <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_chunk_limit</span>);
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">waypoint_version</span>,
+            <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;=</span> <span class="ident">waypoint_version</span>,
             <span class="string">&quot;Local version {} &lt; requested waypoint version {}.&quot;</span>,
             <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
             <span class="ident">waypoint_version</span>
@@ -2049,7 +2050,7 @@
         };
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>) <span class="op">=</span> <span class="ident">end_of_epoch_li</span>.<span class="ident">as_ref</span>() {
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">request</span>.<span class="ident">known_version</span>,
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&gt;=</span> <span class="ident">request</span>.<span class="ident">known_version</span>,
                 <span class="string">&quot;waypoint request&#39;s current_epoch (epoch {}, version {}) &lt; waypoint request&#39;s known_version {}&quot;</span>,
                 <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>(),
                 <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
@@ -2079,7 +2080,7 @@
         <span class="ident">known_version</span>: <span class="ident">u64</span>,
         <span class="ident">response_li</span>: <span class="ident">ResponseLedgerInfo</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">executor_proxy</span>
             .<span class="ident">get_chunk</span>(<span class="ident">known_version</span>, <span class="ident">limit</span>, <span class="ident">response_li</span>.<span class="ident">version</span>())<span class="question-mark">?</span>;
@@ -2122,8 +2123,8 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">request_epoch</span>: <span class="ident">u64</span>,
         <span class="ident">target</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">target_li</span> <span class="op">=</span> <span class="ident">target</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">clone</span>());
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">target_li</span> <span class="op">=</span> <span class="ident">target</span>.<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">clone</span>());
         <span class="kw">let</span> <span class="ident">target_epoch</span> <span class="op">=</span> <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>();
         <span class="kw">if</span> <span class="ident">target_epoch</span> <span class="op">&gt;</span> <span class="ident">request_epoch</span> {
             <span class="kw">let</span> <span class="ident">end_of_epoch_li</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">executor_proxy</span>.<span class="ident">get_epoch_proof</span>(<span class="ident">request_epoch</span>)<span class="question-mark">?</span>;
@@ -2146,7 +2147,7 @@
     <span class="doccomment">/// - execute and commit chunk</span>
     <span class="doccomment">/// Returns error if above chunk response checks fail or chunk was not able to be stored to storage, else</span>
     <span class="doccomment">/// return Ok(()) if above checks all pass and chunk was stored to storage</span>
-    <span class="kw">fn</span> <span class="ident">apply_chunk</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">response</span>: <span class="ident">GetChunkResponse</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">apply_chunk</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">response</span>: <span class="ident">GetChunkResponse</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">debug</span><span class="macro">!</span>(
             <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ProcessChunkResponse</span>, <span class="ident">LogEvent</span>::<span class="ident">Received</span>)
                 .<span class="ident">chunk_resp</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>)
@@ -2171,13 +2172,13 @@
         <span class="kw">let</span> <span class="ident">chunk_start_version</span> <span class="op">=</span>
             <span class="ident">txn_list_with_proof</span>
                 .<span class="ident">first_transaction_version</span>
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                .<span class="ident">ok_or_else</span>(<span class="op">||</span> {
                     <span class="self">self</span>.<span class="ident">request_manager</span>
                         .<span class="ident">update_score</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="ident">PeerScoreUpdateType</span>::<span class="ident">EmptyChunk</span>);
                     <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[state sync] Empty chunk from {:?}&quot;</span>, <span class="ident">peer</span>)
                 })<span class="question-mark">?</span>;
 
-        <span class="kw">if</span> <span class="ident">chunk_start_version</span> <span class="op">!</span><span class="op">=</span> <span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span> {
+        <span class="kw">if</span> <span class="ident">chunk_start_version</span> <span class="op">!=</span> <span class="ident">known_version</span> <span class="op">+</span> <span class="number">1</span> {
             <span class="comment">// Old / wrong chunk.</span>
             <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">process_chunk_version_mismatch</span>(
                 <span class="ident">peer</span>,
@@ -2188,16 +2189,16 @@
 
         <span class="kw">let</span> <span class="ident">chunk_size</span> <span class="op">=</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
         <span class="kw">match</span> <span class="ident">response</span>.<span class="ident">response_li</span> {
-            <span class="ident">ResponseLedgerInfo</span>::<span class="ident">VerifiableLedgerInfo</span>(<span class="ident">li</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ResponseLedgerInfo</span>::<span class="ident">VerifiableLedgerInfo</span>(<span class="ident">li</span>) <span class="op">=&gt;</span> {
                 <span class="self">self</span>.<span class="ident">process_response_with_verifiable_li</span>(<span class="ident">txn_list_with_proof</span>, <span class="ident">li</span>, <span class="prelude-val">None</span>)
             }
             <span class="ident">ResponseLedgerInfo</span>::<span class="ident">ProgressiveLedgerInfo</span> {
                 <span class="ident">target_li</span>,
                 <span class="ident">highest_li</span>,
-            } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">highest_li</span> <span class="op">=</span> <span class="ident">highest_li</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">target_li</span>.<span class="ident">clone</span>());
+            } <span class="op">=&gt;</span> {
+                <span class="kw">let</span> <span class="ident">highest_li</span> <span class="op">=</span> <span class="ident">highest_li</span>.<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="ident">target_li</span>.<span class="ident">clone</span>());
                 <span class="macro">ensure</span><span class="macro">!</span>(
-                    <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">highest_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
+                    <span class="ident">target_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">&lt;=</span> <span class="ident">highest_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>(),
                     <span class="string">&quot;Progressive ledger info received target LI {} higher than highest LI {}&quot;</span>,
                     <span class="ident">target_li</span>,
                     <span class="ident">highest_li</span>
@@ -2211,7 +2212,7 @@
             <span class="ident">ResponseLedgerInfo</span>::<span class="ident">LedgerInfoForWaypoint</span> {
                 <span class="ident">waypoint_li</span>,
                 <span class="ident">end_of_epoch_li</span>,
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">process_response_with_waypoint_li</span>(
+            } <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">process_response_with_waypoint_li</span>(
                 <span class="ident">txn_list_with_proof</span>,
                 <span class="ident">waypoint_li</span>,
                 <span class="ident">end_of_epoch_li</span>,
@@ -2298,7 +2299,7 @@
         <span class="comment">// LI to verify and add to pending_ledger_infos</span>
         <span class="comment">// may be the same as response_li</span>
         <span class="ident">pending_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="self">self</span>.<span class="ident">is_initialized</span>(),
             <span class="string">&quot;Response with a non-waypoint LI while still not initialized&quot;</span>
@@ -2317,8 +2318,8 @@
         <span class="comment">// successfully.</span>
         <span class="kw">let</span> <span class="ident">new_version</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_version_in_local_storage</span>() <span class="op">+</span> <span class="ident">txn_list_with_proof</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span>;
-        <span class="kw">let</span> <span class="ident">new_epoch</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">response_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">response_li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>()
+        <span class="kw">let</span> <span class="ident">new_epoch</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">response_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">==</span> <span class="ident">new_version</span>
+            <span class="op">&amp;&amp;</span> <span class="ident">response_li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>()
         {
             <span class="comment">// This chunk is going to finish the current epoch, optimistically request a chunk</span>
             <span class="comment">// from the next epoch.</span>
@@ -2329,7 +2330,7 @@
         };
         <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">trusted_epoch</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">response_li</span>)<span class="question-mark">?</span>;
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">li</span>) <span class="op">=</span> <span class="ident">pending_li</span> {
-            <span class="kw">if</span> <span class="ident">li</span> <span class="op">!</span><span class="op">=</span> <span class="ident">response_li</span> {
+            <span class="kw">if</span> <span class="ident">li</span> <span class="op">!=</span> <span class="ident">response_li</span> {
                 <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">trusted_epoch</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">li</span>)<span class="question-mark">?</span>;
             }
             <span class="self">self</span>.<span class="ident">pending_ledger_infos</span>.<span class="ident">add_li</span>(<span class="ident">li</span>);
@@ -2360,7 +2361,7 @@
         <span class="ident">txn_list_with_proof</span>: <span class="ident">TransactionListWithProof</span>,
         <span class="ident">waypoint_li</span>: <span class="ident">LedgerInfoWithSignatures</span>,
         <span class="ident">end_of_epoch_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="op">!</span><span class="self">self</span>.<span class="ident">is_initialized</span>(),
             <span class="string">&quot;Response with a waypoint LI but we&#39;re already initialized&quot;</span>
@@ -2373,7 +2374,7 @@
         <span class="kw">let</span> <span class="ident">new_epoch</span> <span class="op">=</span> <span class="ident">end_of_epoch_li</span>
             .<span class="ident">as_ref</span>()
             .<span class="ident">map_or</span>(<span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>(), <span class="op">|</span><span class="ident">li</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>() {
+                <span class="kw">if</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">==</span> <span class="ident">new_version</span> <span class="op">&amp;&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>() {
                     <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>() <span class="op">+</span> <span class="number">1</span>
                 } <span class="kw">else</span> {
                     <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">epoch</span>()
@@ -2403,7 +2404,7 @@
             })
             .<span class="ident">transpose</span>()<span class="question-mark">?</span>
             .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">li</span><span class="op">|</span> {
-                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">new_version</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>()
+                <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>() <span class="op">==</span> <span class="ident">new_version</span> <span class="op">&amp;&amp;</span> <span class="ident">li</span>.<span class="ident">ledger_info</span>().<span class="ident">ends_epoch</span>()
             });
         <span class="self">self</span>.<span class="ident">waypoint</span>.<span class="ident">verify</span>(<span class="ident">waypoint_li</span>.<span class="ident">ledger_info</span>())<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">validate_and_store_chunk</span>(<span class="ident">txn_list_with_proof</span>, <span class="ident">waypoint_li</span>, <span class="ident">end_of_epoch_li</span>)
@@ -2415,12 +2416,12 @@
         <span class="ident">txn_list_with_proof</span>: <span class="ident">TransactionListWithProof</span>,
         <span class="ident">target</span>: <span class="ident">LedgerInfoWithSignatures</span>,
         <span class="ident">intermediate_end_of_epoch_li</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">LedgerInfoWithSignatures</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">target_epoch</span> <span class="op">=</span> <span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>();
         <span class="kw">let</span> <span class="ident">target_version</span> <span class="op">=</span> <span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
         <span class="kw">let</span> <span class="ident">local_epoch</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">epoch</span>();
         <span class="kw">let</span> <span class="ident">local_version</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_state</span>.<span class="ident">highest_local_li</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
-        <span class="kw">if</span> (<span class="ident">target_epoch</span>, <span class="ident">target_version</span>) <span class="op">&lt;</span><span class="op">=</span> (<span class="ident">local_epoch</span>, <span class="ident">local_version</span>) {
+        <span class="kw">if</span> (<span class="ident">target_epoch</span>, <span class="ident">target_version</span>) <span class="op">&lt;=</span> (<span class="ident">local_epoch</span>, <span class="ident">local_version</span>) {
             <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="ident">LogSchema</span>::<span class="ident">event_log</span>(<span class="ident">LogEntry</span>::<span class="ident">ProcessChunkResponse</span>, <span class="ident">LogEvent</span>::<span class="ident">OldResponseLI</span>)
                     .<span class="ident">local_li_version</span>(<span class="ident">local_version</span>)
@@ -2442,7 +2443,7 @@
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">no_available_peers</span>() {
             <span class="kw">return</span>;
         }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">role</span> <span class="op">=</span><span class="op">=</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">is_none</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">is_initialized</span>()
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">role</span> <span class="op">==</span> <span class="ident">RoleType</span>::<span class="ident">Validator</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">is_none</span>() <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">is_initialized</span>()
         {
             <span class="kw">return</span>;
         }
@@ -2498,7 +2499,7 @@
 
     <span class="doccomment">/// Sends a chunk request with a given `known_version` and `known_epoch`</span>
     <span class="doccomment">/// (might be chosen optimistically).</span>
-    <span class="kw">fn</span> <span class="ident">send_chunk_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">known_version</span>: <span class="ident">u64</span>, <span class="ident">known_epoch</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">send_chunk_request</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">known_version</span>: <span class="ident">u64</span>, <span class="ident">known_epoch</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">request_manager</span>.<span class="ident">no_available_peers</span>() {
             <span class="macro">warn</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
                 <span class="ident">LogEntry</span>::<span class="ident">SendChunkRequest</span>,
@@ -2512,7 +2513,7 @@
             <span class="ident">TargetType</span>::<span class="ident">Waypoint</span>(<span class="ident">waypoint_version</span>)
         } <span class="kw">else</span> {
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">sync_request</span>.<span class="ident">as_ref</span>() {
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="ident">TargetType</span>::<span class="ident">HighestAvailable</span> {
                         <span class="comment">// here, we need to ensure pending_ledger_infos is up-to-date with storage</span>
                         <span class="comment">// this is the responsibility of the caller of send_chunk_request</span>
@@ -2520,9 +2521,9 @@
                         <span class="ident">timeout_ms</span>: <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">long_poll_timeout_ms</span>,
                     }
                 }
-                <span class="prelude-val">Some</span>(<span class="ident">sync_req</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">sync_req</span>) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">sync_target_version</span> <span class="op">=</span> <span class="ident">sync_req</span>.<span class="ident">target</span>.<span class="ident">ledger_info</span>().<span class="ident">version</span>();
-                    <span class="kw">if</span> <span class="ident">sync_target_version</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">known_version</span> {
+                    <span class="kw">if</span> <span class="ident">sync_target_version</span> <span class="op">&lt;=</span> <span class="ident">known_version</span> {
                         <span class="comment">// sync request is already fulfilled, so don&#39;t send chunk requests with this request as target</span>
                         <span class="macro">debug</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">event_log</span>(
                             <span class="ident">LogEntry</span>::<span class="ident">SendChunkRequest</span>,
@@ -2545,7 +2546,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>,
         <span class="ident">request_info</span>: <span class="ident">PendingRequestInfo</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">response_li</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">choose_response_li</span>(<span class="ident">request_info</span>.<span class="ident">request_epoch</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">deliver_chunk</span>(
             <span class="ident">peer</span>,
@@ -2602,7 +2603,7 @@
         });
     }
 
-    <span class="kw">fn</span> <span class="ident">send_sync_req_callback</span>(<span class="ident">sync_req</span>: <span class="ident">SyncRequest</span>, <span class="ident">msg</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">send_sync_req_callback</span>(<span class="ident">sync_req</span>: <span class="ident">SyncRequest</span>, <span class="ident">msg</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">sync_req</span>.<span class="ident">callback</span>.<span class="ident">send</span>(<span class="ident">msg</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">failed_msg</span><span class="op">|</span> {
             <span class="ident">counters</span>::<span class="ident">FAILED_CHANNEL_SEND</span>
                 .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">CONSENSUS_SYNC_REQ_CALLBACK</span>])
@@ -2615,9 +2616,9 @@
     }
 
     <span class="kw">fn</span> <span class="ident">send_initialization_callback</span>(
-        <span class="ident">cb</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">cb</span>: <span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>,
         <span class="ident">msg</span>: <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">cb</span>.<span class="ident">send</span>(<span class="ident">msg</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">failed_msg</span><span class="op">|</span> {
             <span class="ident">counters</span>::<span class="ident">FAILED_CHANNEL_SEND</span>
                 .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="ident">counters</span>::<span class="ident">WAYPOINT_INIT_CALLBACK</span>])

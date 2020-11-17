@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `mempool/src/shared_mempool/peer_manager.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>peer_manager.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_mempool/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `mempool/src/shared_mempool/peer_manager.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>peer_manager.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_mempool/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -577,6 +578,12 @@
 <span id="577">577</span>
 <span id="578">578</span>
 <span id="579">579</span>
+<span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -629,19 +636,25 @@
     <span class="ident">peer_info</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">PeerInfo</span><span class="op">&gt;</span>,
     <span class="comment">// the upstream peer to failover to if all peers in the primary upstream network are dead</span>
     <span class="comment">// the number of failover peers is limited to 1 to avoid network competition in the failover networks</span>
-    <span class="ident">failover_peer</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">failover_peer</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;&gt;</span>,
     <span class="comment">// set of `mempool_config.default_failover` number of peers in the non-primary networks to</span>
     <span class="comment">// broadcast to in addition to the primary network when the primary network is up</span>
-    <span class="ident">default_failovers</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">default_failovers</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">PeerNetworkId</span><span class="op">&gt;&gt;</span>,
 }
 <span class="doccomment">/// Identifier for a broadcasted batch of txns</span>
 <span class="doccomment">/// For BatchId(`start_id`, `end_id`), (`start_id`, `end_id`) is the range of timeline IDs read from</span>
 <span class="doccomment">/// the core mempool timeline index that produced the txns in this batch</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialEq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Serialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">PartialEq</span>, <span class="ident">Serialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BatchId</span>(<span class="kw">pub</span> <span class="ident">u64</span>, <span class="kw">pub</span> <span class="ident">u64</span>);
 
+<span class="kw">impl</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">BatchId</span> {
+    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">BatchId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">Ordering</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Some</span>((<span class="ident">other</span>.<span class="number">0</span>, <span class="ident">other</span>.<span class="number">1</span>).<span class="ident">cmp</span>(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">1</span>)))
+    }
+}
+
 <span class="kw">impl</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">BatchId</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">BatchId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">Ordering</span> {
+    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">BatchId</span>) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">Ordering</span> {
         (<span class="ident">other</span>.<span class="number">0</span>, <span class="ident">other</span>.<span class="number">1</span>).<span class="ident">cmp</span>(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="number">0</span>, <span class="self">self</span>.<span class="number">1</span>))
     }
 }
@@ -658,7 +671,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">BroadcastInfo</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">sent_batches</span>: <span class="ident">BTreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">retry_batches</span>: <span class="ident">BTreeSet</span>::<span class="ident">new</span>(),
@@ -668,7 +681,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PeerManager</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">mempool_config</span>: <span class="ident">MempoolConfig</span>, <span class="ident">upstream_config</span>: <span class="ident">UpstreamConfig</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">mempool_config</span>: <span class="ident">MempoolConfig</span>, <span class="ident">upstream_config</span>: <span class="ident">UpstreamConfig</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="comment">// primary network is always chosen at initialization</span>
         <span class="ident">counters</span>::<span class="ident">UPSTREAM_NETWORK</span>.<span class="ident">set</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span>);
         <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">UpstreamNetwork</span>)
@@ -683,14 +696,14 @@
     }
 
     <span class="comment">// returns true if `peer` is discovered for first time, else false</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">peer_info</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">peer_info</span>.<span class="ident">lock</span>();
         <span class="kw">let</span> <span class="ident">is_new_peer</span> <span class="op">=</span> <span class="op">!</span><span class="ident">peer_info</span>.<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>);
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>, <span class="prelude-val">Some</span>(<span class="ident">origin</span>)) {
             <span class="ident">counters</span>::<span class="ident">ACTIVE_UPSTREAM_PEERS_COUNT</span>
                 .<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">peer</span>.<span class="ident">raw_network_id</span>().<span class="ident">to_string</span>()])
                 .<span class="ident">inc</span>();
-            <span class="kw">if</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Validator</span> {
+            <span class="kw">if</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>() <span class="op">==</span> <span class="ident">NetworkId</span>::<span class="ident">Validator</span> {
                 <span class="comment">// For a validator network, resume broadcasting from previous state</span>
                 <span class="comment">// we can afford to not re-broadcast here since the transaction is already in a validator</span>
                 <span class="ident">peer_info</span>
@@ -734,7 +747,7 @@
         <span class="self">self</span>.<span class="ident">update_failover</span>();
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_backoff_mode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_backoff_mode</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">peer_info</span>
             .<span class="ident">lock</span>()
             .<span class="ident">get</span>(<span class="ident">peer</span>)
@@ -760,14 +773,14 @@
             .<span class="ident">expect</span>(<span class="string">&quot;missing peer info for peer&quot;</span>);
 
         <span class="comment">// only broadcast to peer that is both alive and picked</span>
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">state</span>.<span class="ident">is_alive</span> <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_picked_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
+        <span class="kw">if</span> <span class="op">!</span><span class="ident">state</span>.<span class="ident">is_alive</span> <span class="op">||</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_picked_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
             <span class="kw">return</span>;
         }
 
         <span class="comment">// If backoff mode is on for this peer, only execute broadcasts that were scheduled as a backoff broadcast</span>
         <span class="comment">// This is to ensure the backoff mode is actually honored (there is a chance a broadcast was scheduled</span>
         <span class="comment">// in non-backoff mode before backoff mode was turned on - ignore such scheduled broadcasts)</span>
-        <span class="kw">if</span> <span class="ident">state</span>.<span class="ident">broadcast_info</span>.<span class="ident">backoff_mode</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">scheduled_backoff</span> {
+        <span class="kw">if</span> <span class="ident">state</span>.<span class="ident">broadcast_info</span>.<span class="ident">backoff_mode</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">scheduled_backoff</span> {
             <span class="kw">return</span>;
         }
 
@@ -786,7 +799,7 @@
                 .<span class="ident">clone</span>()
                 .<span class="ident">into_iter</span>()
                 .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">id</span>, <span class="ident">_batch</span>)<span class="op">|</span> <span class="op">!</span><span class="ident">mempool</span>.<span class="ident">timeline_range</span>(<span class="ident">id</span>.<span class="number">0</span>, <span class="ident">id</span>.<span class="number">1</span>).<span class="ident">is_empty</span>())
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">BatchId</span>, <span class="ident">SystemTime</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">BatchId</span>, <span class="ident">SystemTime</span><span class="op">&gt;&gt;</span>();
 
             <span class="comment">// check for batch to rebroadcast:</span>
             <span class="comment">// 1. batch that did not receive ACK in configured window of time</span>
@@ -803,7 +816,7 @@
                 <span class="kw">if</span> <span class="ident">SystemTime</span>::<span class="ident">now</span>().<span class="ident">duration_since</span>(<span class="ident">deadline</span>).<span class="ident">is_ok</span>() {
                     <span class="ident">expired</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">batch</span>);
                 } <span class="kw">else</span> {
-                    <span class="ident">pending_broadcasts</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                    <span class="ident">pending_broadcasts</span> <span class="op">+=</span> <span class="number">1</span>;
                 }
 
                 <span class="comment">// The maximum number of broadcasts sent to a single peer that are pending a response ACK at any point</span>
@@ -811,15 +824,15 @@
                 <span class="comment">// and wait until an ACK is received or a sent broadcast expires</span>
                 <span class="comment">// This helps rate-limit egress network bandwidth and not overload a remote peer or this</span>
                 <span class="comment">// node&#39;s Libra network sender</span>
-                <span class="kw">if</span> <span class="ident">pending_broadcasts</span> <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">mempool_config</span>.<span class="ident">max_broadcasts_per_peer</span> {
+                <span class="kw">if</span> <span class="ident">pending_broadcasts</span> <span class="op">&gt;=</span> <span class="self">self</span>.<span class="ident">mempool_config</span>.<span class="ident">max_broadcasts_per_peer</span> {
                     <span class="kw">return</span>;
                 }
             }
             <span class="kw">let</span> <span class="ident">retry</span> <span class="op">=</span> <span class="ident">state</span>.<span class="ident">broadcast_info</span>.<span class="ident">retry_batches</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">next</span>();
 
             <span class="kw">let</span> (<span class="ident">new_batch_id</span>, <span class="ident">new_transactions</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="ident">expired</span>, <span class="ident">retry</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="ident">metric_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">expired</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> {
+                    <span class="ident">metric_label</span> <span class="op">=</span> <span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>) <span class="op">==</span> <span class="ident">expired</span> {
                         <span class="prelude-val">Some</span>(<span class="ident">counters</span>::<span class="ident">EXPIRED_BROADCAST_LABEL</span>)
                     } <span class="kw">else</span> {
                         <span class="prelude-val">Some</span>(<span class="ident">counters</span>::<span class="ident">RETRY_BROADCAST_LABEL</span>)
@@ -828,7 +841,7 @@
                     <span class="kw">let</span> <span class="ident">txns</span> <span class="op">=</span> <span class="ident">mempool</span>.<span class="ident">timeline_range</span>(<span class="ident">id</span>.<span class="number">0</span>, <span class="ident">id</span>.<span class="number">1</span>);
                     (<span class="kw-2">*</span><span class="ident">id</span>, <span class="ident">txns</span>)
                 }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="comment">// fresh broadcast</span>
                     <span class="kw">let</span> (<span class="ident">txns</span>, <span class="ident">new_timeline_id</span>) <span class="op">=</span> <span class="ident">mempool</span>.<span class="ident">read_timeline</span>(
                         <span class="ident">state</span>.<span class="ident">timeline_id</span>,
@@ -953,7 +966,7 @@
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">active_peers</span>) <span class="op">=</span> <span class="ident">active_peers_by_network</span>.<span class="ident">get</span>(<span class="ident">failover_network</span>) {
                     <span class="kw">for</span> <span class="ident">p</span> <span class="kw">in</span> <span class="ident">active_peers</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>() {
                         <span class="kw">if</span> <span class="ident">default_failovers</span>.<span class="ident">insert</span>(<span class="ident">p</span>.<span class="ident">clone</span>())
-                            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">default_failovers</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">mempool_config</span>.<span class="ident">default_failovers</span>
+                            <span class="op">&amp;&amp;</span> <span class="ident">default_failovers</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="self">self</span>.<span class="ident">mempool_config</span>.<span class="ident">default_failovers</span>
                         {
                             <span class="kw">break</span>;
                         }
@@ -984,8 +997,8 @@
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chosen</span>) <span class="op">=</span> <span class="ident">current_failover</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">candidate</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">failover_candidate</span> {
-                    <span class="kw">if</span> <span class="ident">chosen</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">candidate</span>.<span class="ident">raw_network_id</span>()
-                        <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">peer_info</span>.<span class="ident">get</span>(<span class="ident">chosen</span>).<span class="ident">expect</span>(<span class="string">&quot;missing peer state&quot;</span>).<span class="ident">is_alive</span>
+                    <span class="kw">if</span> <span class="ident">chosen</span>.<span class="ident">raw_network_id</span>() <span class="op">==</span> <span class="ident">candidate</span>.<span class="ident">raw_network_id</span>()
+                        <span class="op">&amp;&amp;</span> <span class="ident">peer_info</span>.<span class="ident">get</span>(<span class="ident">chosen</span>).<span class="ident">expect</span>(<span class="string">&quot;missing peer state&quot;</span>).<span class="ident">is_alive</span>
                     {
                         <span class="comment">// if current chosen failover peer is alive, then do not overwrite it</span>
                         <span class="comment">// with another live peer of the same network</span>
@@ -1004,7 +1017,7 @@
 
         <span class="comment">// log/update metric for the updated failover network</span>
         <span class="kw">match</span> <span class="ident">failover</span>.<span class="ident">as_ref</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">peer</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">failover_network</span> <span class="op">=</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">network_preference</span>) <span class="op">=</span> <span class="self">self</span>
                     .<span class="ident">upstream_config</span>
@@ -1016,7 +1029,7 @@
                     <span class="ident">counters</span>::<span class="ident">UPSTREAM_NETWORK</span>.<span class="ident">set</span>(<span class="ident">network_preference</span> <span class="kw">as</span> <span class="ident">i64</span>);
                 }
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                 <span class="macro">info</span><span class="macro">!</span>(<span class="ident">LogSchema</span>::<span class="ident">new</span>(<span class="ident">LogEntry</span>::<span class="ident">UpstreamNetwork</span>)
                     .<span class="ident">upstream_network</span>(<span class="ident">primary_upstream</span>)
                     .<span class="ident">network_level</span>(<span class="ident">PRIMARY_NETWORK_PREFERENCE</span> <span class="kw">as</span> <span class="ident">u64</span>));
@@ -1104,7 +1117,7 @@
     <span class="comment">// if the origin is provided, checks whether this peer is an upstream peer based on configured preferences and</span>
     <span class="comment">// connection origin</span>
     <span class="comment">// if the origin is not provided, checks whether this peer is an upstream peer that was seen before</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConnectionOrigin</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>, <span class="ident">origin</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ConnectionOrigin</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">origin</span>) <span class="op">=</span> <span class="ident">origin</span> {
             <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_public_downstream</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>(), <span class="ident">origin</span>) {
                 <span class="bool-val">false</span>
@@ -1118,21 +1131,21 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">is_primary_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_primary_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">upstream_config</span>
             .<span class="ident">get_upstream_preference</span>(<span class="ident">peer</span>.<span class="ident">raw_network_id</span>())
-            <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="number">0</span>)
+            <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="number">0</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">is_public_downstream</span>(<span class="ident">network_id</span>: <span class="ident">NetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="ident">network_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">NetworkId</span>::<span class="ident">Public</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">origin</span> <span class="op">=</span><span class="op">=</span> <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>
+    <span class="kw">fn</span> <span class="ident">is_public_downstream</span>(<span class="ident">network_id</span>: <span class="ident">NetworkId</span>, <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">network_id</span> <span class="op">==</span> <span class="ident">NetworkId</span>::<span class="ident">Public</span> <span class="op">&amp;&amp;</span> <span class="ident">origin</span> <span class="op">==</span> <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span>
     }
 
     <span class="comment">// checks whether a peer is a chosen broadcast recipient:</span>
     <span class="comment">// - all primary peers</span>
     <span class="comment">// - fallback peers, if k-policy is enabled</span>
     <span class="comment">// this does NOT check for whether this peer is alive</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_picked_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_picked_peer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">peer</span>: <span class="kw-2">&amp;</span><span class="ident">PeerNetworkId</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_primary_upstream_peer</span>(<span class="kw-2">&amp;</span><span class="ident">peer</span>) {
             <span class="kw">return</span> <span class="bool-val">true</span>;
         }
@@ -1150,7 +1163,7 @@
             <span class="comment">// self-broadcasted and make no actual progress.</span>
             <span class="comment">// So until self-connection is actively checked against for in the networking layer, mempool</span>
             <span class="comment">// will temporarily broadcast to all peers in its selected failover network as well</span>
-            <span class="ident">failover_peer</span>.<span class="ident">raw_network_id</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>()
+            <span class="ident">failover_peer</span>.<span class="ident">raw_network_id</span>() <span class="op">==</span> <span class="ident">peer</span>.<span class="ident">raw_network_id</span>()
         } <span class="kw">else</span> {
             <span class="comment">// if primary network is up, broadcast to all default_failovers in addition to it</span>
             <span class="self">self</span>.<span class="ident">default_failovers</span>.<span class="ident">lock</span>().<span class="ident">contains</span>(<span class="ident">peer</span>)

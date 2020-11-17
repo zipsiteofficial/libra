@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/scratchpad/src/sparse_merkle/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../scratchpad/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/scratchpad/src/sparse_merkle/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../scratchpad/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -564,9 +565,9 @@
     <span class="doccomment">/// Constructs a Sparse Merkle Tree with a root hash. This is often used when we restart and</span>
     <span class="doccomment">/// the scratch pad and the storage have identical state, so we use a single root hash to</span>
     <span class="doccomment">/// represent the entire state.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">root_hash</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">root_hash</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">SparseMerkleTree</span> {
-            <span class="ident">root</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="kw">if</span> <span class="ident">root_hash</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span> {
+            <span class="ident">root</span>: <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="kw">if</span> <span class="ident">root_hash</span> <span class="op">!=</span> <span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span> {
                 <span class="ident">SparseMerkleNode</span>::<span class="ident">new_subtree</span>(<span class="ident">root_hash</span>)
             } <span class="kw">else</span> {
                 <span class="ident">SparseMerkleNode</span>::<span class="ident">new_empty</span>()
@@ -581,7 +582,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">updates</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">HashValue</span>, <span class="ident">AccountStateBlob</span>)<span class="op">&gt;</span>,
         <span class="ident">proof_reader</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">ProofRead</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">root</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">root</span>);
         <span class="kw">for</span> (<span class="ident">key</span>, <span class="ident">new_blob</span>) <span class="kw">in</span> <span class="ident">updates</span> {
             <span class="ident">root</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">update_one</span>(<span class="ident">root</span>, <span class="ident">key</span>, <span class="ident">new_blob</span>, <span class="ident">proof_reader</span>)<span class="question-mark">?</span>;
@@ -594,7 +595,7 @@
         <span class="ident">key</span>: <span class="ident">HashValue</span>,
         <span class="ident">new_blob</span>: <span class="ident">AccountStateBlob</span>,
         <span class="ident">proof_reader</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">ProofRead</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_node</span> <span class="op">=</span> <span class="ident">root</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bits</span> <span class="op">=</span> <span class="ident">key</span>.<span class="ident">iter_bits</span>();
 
@@ -604,7 +605,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">siblings_on_path</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">next_node</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">node</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">current_node</span>.<span class="ident">read_lock</span>() {
-                <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="ident">bits</span>.<span class="ident">next</span>().<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="ident">bits</span>.<span class="ident">next</span>().<span class="ident">unwrap_or_else</span>(<span class="op">||</span> {
                     <span class="comment">// invariant of HashValueBitIterator</span>
                     <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Tree is deeper than {} levels.&quot;</span>, <span class="ident">HashValue</span>::<span class="ident">LENGTH_IN_BITS</span>)
                 });
@@ -646,18 +647,18 @@
         <span class="ident">new_blob</span>: <span class="ident">AccountStateBlob</span>,
         <span class="ident">remaining_bits</span>: <span class="ident">HashValueBitIterator</span>,
         <span class="ident">proof_reader</span>: <span class="kw-2">&amp;</span><span class="kw">impl</span> <span class="ident">ProofRead</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span>, <span class="ident">UpdateError</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">current_node</span>.<span class="ident">read_lock</span>() {
-            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Reached an internal node at the bottom of the tree.&quot;</span>)
             }
-            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">node</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">construct_subtree_with_new_leaf</span>(
+            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">node</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">construct_subtree_with_new_leaf</span>(
                 <span class="ident">key</span>,
                 <span class="ident">new_blob</span>,
                 <span class="ident">node</span>,
                 <span class="ident">HashValue</span>::<span class="ident">LENGTH_IN_BITS</span> <span class="op">-</span> <span class="ident">remaining_bits</span>.<span class="ident">len</span>(),
             )),
-            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="comment">// When the search reaches an Subtree node, we need proof to give us more</span>
                 <span class="comment">// information about this part of the tree.</span>
                 <span class="kw">let</span> <span class="ident">proof</span> <span class="op">=</span> <span class="ident">proof_reader</span>
@@ -668,13 +669,13 @@
                 <span class="comment">// root hash of this subtree in memory). So we need to take into account the leaf</span>
                 <span class="comment">// in the proof.</span>
                 <span class="kw">let</span> <span class="ident">new_subtree</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proof</span>.<span class="ident">leaf</span>() {
-                    <span class="prelude-val">Some</span>(<span class="ident">existing_leaf</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">construct_subtree_with_new_leaf</span>(
+                    <span class="prelude-val">Some</span>(<span class="ident">existing_leaf</span>) <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">construct_subtree_with_new_leaf</span>(
                         <span class="ident">key</span>,
                         <span class="ident">new_blob</span>,
                         <span class="kw-2">&amp;</span><span class="ident">existing_leaf</span>.<span class="ident">into</span>(),
                         <span class="ident">proof</span>.<span class="ident">siblings</span>().<span class="ident">len</span>(),
                     ),
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">SparseMerkleNode</span>::<span class="ident">new_leaf</span>(<span class="ident">key</span>, <span class="ident">LeafValue</span>::<span class="ident">Blob</span>(<span class="ident">new_blob</span>))),
+                    <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">SparseMerkleNode</span>::<span class="ident">new_leaf</span>(<span class="ident">key</span>, <span class="ident">LeafValue</span>::<span class="ident">Blob</span>(<span class="ident">new_blob</span>))),
                 };
 
                 <span class="kw">let</span> <span class="ident">num_remaining_bits</span> <span class="op">=</span> <span class="ident">remaining_bits</span>.<span class="ident">len</span>();
@@ -688,7 +689,7 @@
                         .<span class="ident">iter</span>()
                         .<span class="ident">take</span>(<span class="ident">num_remaining_bits</span> <span class="op">+</span> <span class="ident">proof_length</span> <span class="op">-</span> <span class="ident">HashValue</span>::<span class="ident">LENGTH_IN_BITS</span>)
                         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">sibling_hash</span><span class="op">|</span> {
-                            <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">sibling_hash</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span> {
+                            <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">sibling_hash</span> <span class="op">!=</span> <span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span> {
                                 <span class="ident">SparseMerkleNode</span>::<span class="ident">new_subtree</span>(<span class="kw-2">*</span><span class="ident">sibling_hash</span>)
                             } <span class="kw">else</span> {
                                 <span class="ident">SparseMerkleNode</span>::<span class="ident">new_empty</span>()
@@ -697,7 +698,7 @@
                     <span class="ident">new_subtree</span>,
                 ))
             }
-            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=&gt;</span> {
                 <span class="comment">// When we reach an empty node, we just place the leaf node at the same position to</span>
                 <span class="comment">// replace the empty node.</span>
                 <span class="prelude-val">Ok</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">SparseMerkleNode</span>::<span class="ident">new_leaf</span>(
@@ -747,10 +748,10 @@
         <span class="ident">new_blob</span>: <span class="ident">AccountStateBlob</span>,
         <span class="ident">existing_leaf</span>: <span class="kw-2">&amp;</span><span class="ident">LeafNode</span>,
         <span class="ident">distance_from_root_to_existing_leaf</span>: <span class="ident">usize</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">new_leaf</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">SparseMerkleNode</span>::<span class="ident">new_leaf</span>(<span class="ident">key</span>, <span class="ident">LeafValue</span>::<span class="ident">Blob</span>(<span class="ident">new_blob</span>)));
 
-        <span class="kw">if</span> <span class="ident">key</span> <span class="op">=</span><span class="op">=</span> <span class="ident">existing_leaf</span>.<span class="ident">key</span>() {
+        <span class="kw">if</span> <span class="ident">key</span> <span class="op">==</span> <span class="ident">existing_leaf</span>.<span class="ident">key</span>() {
             <span class="comment">// This implies that `key` already existed and the proof is an inclusion proof.</span>
             <span class="kw">return</span> <span class="ident">new_leaf</span>;
         }
@@ -759,7 +760,7 @@
         <span class="comment">// proof. See above example for how extension_len is computed.</span>
         <span class="kw">let</span> <span class="ident">common_prefix_len</span> <span class="op">=</span> <span class="ident">key</span>.<span class="ident">common_prefix_bits_len</span>(<span class="ident">existing_leaf</span>.<span class="ident">key</span>());
         <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="ident">common_prefix_len</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">distance_from_root_to_existing_leaf</span>,
+            <span class="ident">common_prefix_len</span> <span class="op">&gt;=</span> <span class="ident">distance_from_root_to_existing_leaf</span>,
             <span class="string">&quot;common_prefix_len: {}, distance_from_root_to_existing_leaf: {}&quot;</span>,
             <span class="ident">common_prefix_len</span>,
             <span class="ident">distance_from_root_to_existing_leaf</span>,
@@ -793,9 +794,9 @@
     <span class="doccomment">/// and this function will return `x`. Both `bits` and `siblings` start from the bottom.</span>
     <span class="kw">fn</span> <span class="ident">construct_subtree</span>(
         <span class="ident">bits</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">bool</span><span class="op">&gt;</span>,
-        <span class="ident">siblings</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">siblings</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;&gt;</span>,
         <span class="ident">leaf</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">SparseMerkleNode</span><span class="op">&gt;</span> {
         <span class="ident">itertools</span>::<span class="ident">zip_eq</span>(<span class="ident">bits</span>, <span class="ident">siblings</span>).<span class="ident">fold</span>(<span class="ident">leaf</span>, <span class="op">|</span><span class="ident">previous_node</span>, (<span class="ident">bit</span>, <span class="ident">sibling</span>)<span class="op">|</span> {
             <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="kw">if</span> <span class="ident">bit</span> {
                 <span class="ident">SparseMerkleNode</span>::<span class="ident">new_internal</span>(<span class="ident">sibling</span>, <span class="ident">previous_node</span>)
@@ -806,21 +807,21 @@
     }
 
     <span class="doccomment">/// Queries a `key` in this `SparseMerkleTree`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountStatus</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="ident">AccountStatus</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_node</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">root</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bits</span> <span class="op">=</span> <span class="ident">key</span>.<span class="ident">iter_bits</span>();
 
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">next_node</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">node</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">current_node</span>.<span class="ident">read_lock</span>() {
                 <span class="kw">match</span> <span class="ident">bits</span>.<span class="ident">next</span>() {
-                    <span class="prelude-val">Some</span>(<span class="ident">bit</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="prelude-val">Some</span>(<span class="ident">bit</span>) <span class="op">=&gt;</span> {
                         <span class="kw">if</span> <span class="ident">bit</span> {
                             <span class="ident">node</span>.<span class="ident">clone_right_child</span>()
                         } <span class="kw">else</span> {
                             <span class="ident">node</span>.<span class="ident">clone_left_child</span>()
                         }
                     }
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Tree is deeper than {} levels.&quot;</span>, <span class="ident">HashValue</span>::<span class="ident">LENGTH_IN_BITS</span>),
+                    <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Tree is deeper than {} levels.&quot;</span>, <span class="ident">HashValue</span>::<span class="ident">LENGTH_IN_BITS</span>),
                 }
             } <span class="kw">else</span> {
                 <span class="kw">break</span>;
@@ -829,19 +830,19 @@
         }
 
         <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">current_node</span>.<span class="ident">read_lock</span>() {
-            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">node</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">key</span> <span class="op">=</span><span class="op">=</span> <span class="ident">node</span>.<span class="ident">key</span>() {
+            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">node</span>) <span class="op">=&gt;</span> {
+                <span class="kw">if</span> <span class="ident">key</span> <span class="op">==</span> <span class="ident">node</span>.<span class="ident">key</span>() {
                     <span class="kw">match</span> <span class="ident">node</span>.<span class="ident">value</span>() {
-                        <span class="ident">LeafValue</span>::<span class="ident">Blob</span>(<span class="ident">blob</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">ExistsInScratchPad</span>(<span class="ident">blob</span>.<span class="ident">clone</span>()),
-                        <span class="ident">LeafValue</span>::<span class="ident">BlobHash</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">ExistsInDB</span>,
+                        <span class="ident">LeafValue</span>::<span class="ident">Blob</span>(<span class="ident">blob</span>) <span class="op">=&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">ExistsInScratchPad</span>(<span class="ident">blob</span>.<span class="ident">clone</span>()),
+                        <span class="ident">LeafValue</span>::<span class="ident">BlobHash</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">ExistsInDB</span>,
                     }
                 } <span class="kw">else</span> {
                     <span class="ident">AccountStatus</span>::<span class="ident">DoesNotExist</span>
                 }
             }
-            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">Unknown</span>,
-            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">DoesNotExist</span>,
-            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">Unknown</span>,
+            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=&gt;</span> <span class="ident">AccountStatus</span>::<span class="ident">DoesNotExist</span>,
+            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;There is an internal node at the bottom of the tree.&quot;</span>)
             }
         };
@@ -849,7 +850,7 @@
     }
 
     <span class="doccomment">/// Returns the root hash of this tree.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">root_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">HashValue</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">root_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">HashValue</span> {
         <span class="self">self</span>.<span class="ident">root</span>.<span class="ident">read_lock</span>().<span class="ident">hash</span>()
     }
 
@@ -877,15 +878,15 @@
         <span class="kw">let</span> <span class="ident">node_hash</span> <span class="op">=</span> <span class="ident">writable_node</span>.<span class="ident">hash</span>();
 
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">writable_node</span> {
-            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span>,
-            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span>,
-            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">node</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Empty</span> <span class="op">=&gt;</span> <span class="kw">return</span>,
+            <span class="ident">Node</span>::<span class="ident">Subtree</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span>,
+            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">node</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">left_child</span> <span class="op">=</span> <span class="ident">node</span>.<span class="ident">clone_left_child</span>();
                 <span class="kw">let</span> <span class="ident">right_child</span> <span class="op">=</span> <span class="ident">node</span>.<span class="ident">clone_right_child</span>();
                 <span class="self">Self</span>::<span class="ident">prune_node</span>(<span class="ident">left_child</span>);
                 <span class="self">Self</span>::<span class="ident">prune_node</span>(<span class="ident">right_child</span>);
             }
-            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> (),
         }
 
         <span class="kw-2">*</span><span class="ident">writable_node</span> <span class="op">=</span> <span class="ident">Node</span>::<span class="ident">new_subtree</span>(<span class="ident">node_hash</span>);
@@ -893,7 +894,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">SparseMerkleTree</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">SparseMerkleTree</span>::<span class="ident">new</span>(<span class="kw-2">*</span><span class="ident">SPARSE_MERKLE_PLACEHOLDER_HASH</span>)
     }
 }
@@ -901,7 +902,7 @@
 <span class="doccomment">/// A type that implements `ProofRead` can provide proof for keys in persistent storage.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ProofRead</span> {
     <span class="doccomment">/// Gets verified proof for this key in persistent storage.</span>
-    <span class="kw">fn</span> <span class="ident">get_proof</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SparseMerkleProof</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">get_proof</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SparseMerkleProof</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// All errors `update` can possibly return.</span>

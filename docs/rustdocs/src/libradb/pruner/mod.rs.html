@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/libradb/src/pruner/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libradb/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/libradb/src/pruner/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libradb/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -413,9 +414,9 @@
     <span class="ident">historical_versions_to_keep</span>: <span class="ident">u64</span>,
     <span class="doccomment">/// The worker thread handle, created upon Pruner instance construction and joined upon its</span>
     <span class="doccomment">/// destruction. It only becomes `None` after joined in `drop()`.</span>
-    <span class="ident">worker_thread</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">JoinHandle</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">worker_thread</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">JoinHandle</span><span class="op">&lt;</span>()<span class="op">&gt;&gt;</span>,
     <span class="doccomment">/// The sender side of the channel talking to the worker thread.</span>
-    <span class="ident">command_sender</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Command</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">command_sender</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Command</span><span class="op">&gt;&gt;</span>,
     <span class="doccomment">/// (For tests) A way for the worker thread to inform the `Pruner` the pruning progress. If it</span>
     <span class="doccomment">/// sets this atomic value to `V`, all versions before `V` can no longer be accessed.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
@@ -424,7 +425,7 @@
 
 <span class="kw">impl</span> <span class="ident">Pruner</span> {
     <span class="doccomment">/// Creates a worker thread that waits on a channel for pruning commands.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">DB</span><span class="op">&gt;</span>, <span class="ident">historical_versions_to_keep</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">DB</span><span class="op">&gt;</span>, <span class="ident">historical_versions_to_keep</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">command_sender</span>, <span class="ident">command_receiver</span>) <span class="op">=</span> <span class="ident">channel</span>();
         <span class="kw">let</span> <span class="ident">worker_progress</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">AtomicU64</span>::<span class="ident">new</span>(<span class="number">0</span>));
         <span class="kw">let</span> <span class="ident">worker_progress_clone</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="ident">worker_progress</span>);
@@ -432,7 +433,7 @@
         <span class="ident">LIBRA_STORAGE_PRUNE_WINDOW</span>.<span class="ident">set</span>(<span class="ident">historical_versions_to_keep</span> <span class="kw">as</span> <span class="ident">i64</span>);
         <span class="kw">let</span> <span class="ident">worker_thread</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">Builder</span>::<span class="ident">new</span>()
             .<span class="ident">name</span>(<span class="string">&quot;libradb_pruner&quot;</span>.<span class="ident">into</span>())
-            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="ident">Worker</span>::<span class="ident">new</span>(<span class="ident">db</span>, <span class="ident">command_receiver</span>, <span class="ident">worker_progress_clone</span>).<span class="ident">work_loop</span>())
+            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> <span class="ident">Worker</span>::<span class="ident">new</span>(<span class="ident">db</span>, <span class="ident">command_receiver</span>, <span class="ident">worker_progress_clone</span>).<span class="ident">work_loop</span>())
             .<span class="ident">expect</span>(<span class="string">&quot;Creating pruner thread should succeed.&quot;</span>);
 
         <span class="self">Self</span> {
@@ -459,7 +460,7 @@
     <span class="doccomment">/// (For tests only.) Notifies the worker thread and waits for it to finish its job by polling</span>
     <span class="doccomment">/// an internal counter.</span>
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wake_and_wait</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">latest_version</span>: <span class="ident">Version</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">wake_and_wait</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">latest_version</span>: <span class="ident">Version</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">wake</span>(<span class="ident">latest_version</span>);
 
         <span class="kw">if</span> <span class="ident">latest_version</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">historical_versions_to_keep</span> {
@@ -469,7 +470,7 @@
             <span class="kw">let</span> <span class="ident">end</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>() <span class="op">+</span> <span class="ident">TIMEOUT</span>;
 
             <span class="kw">while</span> <span class="ident">Instant</span>::<span class="ident">now</span>() <span class="op">&lt;</span> <span class="ident">end</span> {
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">worker_progress</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>) <span class="op">&gt;</span><span class="op">=</span> <span class="ident">least_readable_version</span> {
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">worker_progress</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>) <span class="op">&gt;=</span> <span class="ident">least_readable_version</span> {
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
                 }
                 <span class="ident">sleep</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">1</span>));
@@ -521,7 +522,7 @@
         <span class="ident">db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">DB</span><span class="op">&gt;</span>,
         <span class="ident">command_receiver</span>: <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">Command</span><span class="op">&gt;</span>,
         <span class="ident">least_readable_version</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">AtomicU64</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">db</span>,
             <span class="ident">command_receiver</span>,
@@ -543,10 +544,10 @@
                 <span class="self">self</span>.<span class="ident">target_least_readable_version</span>,
                 <span class="self">Self</span>::<span class="ident">MAX_VERSIONS_TO_PRUNE_PER_BATCH</span>,
             ) {
-                <span class="prelude-val">Ok</span>(<span class="ident">least_readable_version</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">least_readable_version</span>) <span class="op">=&gt;</span> {
                     <span class="comment">// Make next recv() blocking if all done.</span>
                     <span class="self">self</span>.<span class="ident">blocking_recv</span> <span class="op">=</span>
-                        <span class="ident">least_readable_version</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">target_least_readable_version</span>;
+                        <span class="ident">least_readable_version</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">target_least_readable_version</span>;
 
                     <span class="comment">// Log the progress.</span>
                     <span class="self">self</span>.<span class="ident">least_readable_version</span>
@@ -562,7 +563,7 @@
                         );
                     }
                 }
-                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> {
                     <span class="macro">error</span><span class="macro">!</span>(
                         <span class="ident">error</span> <span class="op">=</span> <span class="question-mark">?</span><span class="ident">e</span>,
                         <span class="string">&quot;Error pruning stale state nodes.&quot;</span>,
@@ -580,7 +581,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Returns `false` if `Command::Quit` is received, to break the outer loop and let</span>
     <span class="doccomment">/// `work_loop()` return.</span>
-    <span class="kw">fn</span> <span class="ident">receive_commands</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">receive_commands</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">command</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">blocking_recv</span> {
                 <span class="comment">// Worker has nothing to do, blocking wait for the next command.</span>
@@ -590,18 +591,18 @@
             } <span class="kw">else</span> {
                 <span class="comment">// Worker has pending work to do, non-blocking recv.</span>
                 <span class="kw">match</span> <span class="self">self</span>.<span class="ident">command_receiver</span>.<span class="ident">try_recv</span>() {
-                    <span class="prelude-val">Ok</span>(<span class="ident">command</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">command</span>,
+                    <span class="prelude-val">Ok</span>(<span class="ident">command</span>) <span class="op">=&gt;</span> <span class="ident">command</span>,
                     <span class="comment">// Channel has drained, yield control to the outer loop.</span>
-                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="bool-val">true</span>,
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="bool-val">true</span>,
                 }
             };
 
             <span class="kw">match</span> <span class="ident">command</span> {
                 <span class="comment">// On `Command::Quit` inform the outer loop to quit by returning `false`.</span>
-                <span class="ident">Command</span>::<span class="ident">Quit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="bool-val">false</span>,
+                <span class="ident">Command</span>::<span class="ident">Quit</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="bool-val">false</span>,
                 <span class="ident">Command</span>::<span class="ident">Prune</span> {
                     <span class="ident">least_readable_version</span>,
-                } <span class="op">=</span><span class="op">&gt;</span> {
+                } <span class="op">=&gt;</span> {
                     <span class="kw">if</span> <span class="ident">least_readable_version</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_least_readable_version</span> {
                         <span class="self">self</span>.<span class="ident">target_least_readable_version</span> <span class="op">=</span> <span class="ident">least_readable_version</span>;
                         <span class="comment">// Switch to non-blocking to allow some work to be done after the</span>
@@ -618,7 +619,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// We issue (range) deletes on the index only periodically instead of after every pruning batch</span>
     <span class="doccomment">/// to avoid sending too many deletions to the DB, which takes disk space and slows it down.</span>
-    <span class="kw">fn</span> <span class="ident">maybe_purge_index</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">maybe_purge_index</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">const</span> <span class="ident">MIN_INTERVAL</span>: <span class="ident">Duration</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">60</span>);
         <span class="kw">const</span> <span class="ident">MIN_VERSIONS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60000</span>;
 
@@ -645,7 +646,7 @@
 }
 
 <span class="kw">struct</span> <span class="ident">StaleNodeIndicesByVersionIterator</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="ident">inner</span>: <span class="ident">Peekable</span><span class="op">&lt;</span><span class="ident">SchemaIterator</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">StaleNodeIndexSchema</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">inner</span>: <span class="ident">Peekable</span><span class="op">&lt;</span><span class="ident">SchemaIterator</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">StaleNodeIndexSchema</span><span class="op">&gt;&gt;</span>,
     <span class="ident">target_least_readable_version</span>: <span class="ident">Version</span>,
 }
 
@@ -654,7 +655,7 @@
         <span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">DB</span>,
         <span class="ident">least_readable_version</span>: <span class="ident">Version</span>,
         <span class="ident">target_least_readable_version</span>: <span class="ident">Version</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iter</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">iter</span>::<span class="op">&lt;</span><span class="ident">StaleNodeIndexSchema</span><span class="op">&gt;</span>(<span class="ident">ReadOptions</span>::<span class="ident">default</span>())<span class="question-mark">?</span>;
         <span class="ident">iter</span>.<span class="ident">seek</span>(<span class="kw-2">&amp;</span><span class="ident">least_readable_version</span>)<span class="question-mark">?</span>;
 
@@ -664,10 +665,10 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">next_result</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StaleNodeIndex</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next_result</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StaleNodeIndex</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">next</span>().<span class="ident">transpose</span>()<span class="question-mark">?</span> {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-            <span class="prelude-val">Some</span>((<span class="ident">index</span>, <span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+            <span class="prelude-val">Some</span>((<span class="ident">index</span>, <span class="kw">_</span>)) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">index</span>.<span class="ident">stale_since_version</span>;
                 <span class="kw">if</span> <span class="ident">version</span> <span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">target_least_readable_version</span> {
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
@@ -676,7 +677,7 @@
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">indices</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">index</span>];
                 <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">peek</span>() {
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>((<span class="ident">index_ref</span>, <span class="kw">_</span>)) <span class="op">=</span> <span class="ident">res</span> {
-                        <span class="kw">if</span> <span class="ident">index_ref</span>.<span class="ident">stale_since_version</span> <span class="op">!</span><span class="op">=</span> <span class="ident">version</span> {
+                        <span class="kw">if</span> <span class="ident">index_ref</span>.<span class="ident">stale_since_version</span> <span class="op">!=</span> <span class="ident">version</span> {
                             <span class="kw">break</span>;
                         }
                     }
@@ -692,9 +693,9 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Iterator</span> <span class="kw">for</span> <span class="ident">StaleNodeIndicesByVersionIterator</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StaleNodeIndex</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StaleNodeIndex</span><span class="op">&gt;&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">next_result</span>().<span class="ident">transpose</span>()
     }
 }
@@ -704,17 +705,17 @@
     <span class="ident">least_readable_version</span>: <span class="ident">Version</span>,
     <span class="ident">target_least_readable_version</span>: <span class="ident">Version</span>,
     <span class="ident">max_versions</span>: <span class="ident">usize</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">indices</span> <span class="op">=</span> <span class="ident">StaleNodeIndicesByVersionIterator</span>::<span class="ident">new</span>(
         <span class="kw-2">&amp;</span><span class="ident">db</span>,
         <span class="ident">least_readable_version</span>,
         <span class="ident">target_least_readable_version</span>,
     )<span class="question-mark">?</span>
     .<span class="ident">take</span>(<span class="ident">max_versions</span>) <span class="comment">// Iterator&lt;Item = Result&lt;Vec&lt;StaleNodeIndex&gt;&gt;&gt;</span>
-    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span> <span class="comment">// now Vec&lt;Vec&lt;StaleNodeIndex&gt;&gt;</span>
+    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span> <span class="comment">// now Vec&lt;Vec&lt;StaleNodeIndex&gt;&gt;</span>
     .<span class="ident">into_iter</span>()
     .<span class="ident">flatten</span>()
-    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>();
 
     <span class="kw">if</span> <span class="ident">indices</span>.<span class="ident">is_empty</span>() {
         <span class="prelude-val">Ok</span>(<span class="ident">least_readable_version</span>)
@@ -727,7 +728,7 @@
         <span class="ident">indices</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">index</span><span class="op">|</span> <span class="ident">batch</span>.<span class="ident">delete</span>::<span class="op">&lt;</span><span class="ident">JellyfishMerkleNodeSchema</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">index</span>.<span class="ident">node_key</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>()<span class="question-mark">?</span>;
         <span class="ident">db</span>.<span class="ident">write_schemas</span>(<span class="ident">batch</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">new_least_readable_version</span>)
     }

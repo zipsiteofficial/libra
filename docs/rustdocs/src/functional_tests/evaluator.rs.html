@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/testing-infra/functional-tests/src/evaluator.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>evaluator.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../functional_tests/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/testing-infra/functional-tests/src/evaluator.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>evaluator.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../functional_tests/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -812,7 +813,7 @@
     <span class="ident">views</span>::<span class="ident">ModuleView</span>,
 };
 
-<span class="kw">static</span> <span class="ident">PRECOMPILED_TXN_SCRIPTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CompiledScript</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+<span class="kw">static</span> <span class="ident">PRECOMPILED_TXN_SCRIPTS</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CompiledScript</span><span class="op">&gt;&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
     <span class="ident">StdlibScript</span>::<span class="ident">all</span>()
         .<span class="ident">into_iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">script</span><span class="op">|</span> {
@@ -821,7 +822,7 @@
             <span class="kw">let</span> <span class="ident">compiled_script</span> <span class="op">=</span> <span class="ident">CompiledScript</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>();
             (<span class="ident">name</span>, <span class="ident">compiled_script</span>)
         })
-        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CompiledScript</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">CompiledScript</span><span class="op">&gt;&gt;</span>()
 });
 
 <span class="doccomment">/// A transaction to be evaluated by the testing infra.</span>
@@ -858,13 +859,13 @@
 <span class="kw">impl</span> <span class="ident">FromStr</span> <span class="kw">for</span> <span class="ident">Stage</span> {
     <span class="kw">type</span> <span class="prelude-val">Err</span> <span class="op">=</span> <span class="ident">Error</span>;
 
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">s</span> {
-            <span class="string">&quot;compiler&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Compiler</span>),
-            <span class="string">&quot;verifier&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Verifier</span>),
-            <span class="string">&quot;serializer&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Serializer</span>),
-            <span class="string">&quot;runtime&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Runtime</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;unrecognized stage &#39;{:?}&#39;&quot;</span>, <span class="ident">s</span>)).<span class="ident">into</span>()),
+            <span class="string">&quot;compiler&quot;</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Compiler</span>),
+            <span class="string">&quot;verifier&quot;</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Verifier</span>),
+            <span class="string">&quot;serializer&quot;</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Serializer</span>),
+            <span class="string">&quot;runtime&quot;</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">Stage</span>::<span class="ident">Runtime</span>),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;unrecognized stage &#39;{:?}&#39;&quot;</span>, <span class="ident">s</span>)).<span class="ident">into</span>()),
         }
     }
 }
@@ -885,7 +886,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">OutputType</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_check_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_check_string</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>)
     }
 }
@@ -904,15 +905,15 @@
 }
 
 <span class="kw">impl</span> <span class="ident">EvaluationOutput</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="macro">matches</span><span class="macro">!</span>(<span class="self">self</span>, <span class="self">Self</span>::<span class="ident">Error</span>(<span class="kw">_</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_string_for_matching</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_string_for_matching</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>.<span class="ident">root_cause</span>()),
-            <span class="ident">EvaluationOutput</span>::<span class="ident">PlainMessage</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">s</span>.<span class="ident">to_string</span>(),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>),
+            <span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>.<span class="ident">root_cause</span>()),
+            <span class="ident">EvaluationOutput</span>::<span class="ident">PlainMessage</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="ident">s</span>.<span class="ident">to_string</span>(),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="self">self</span>),
         }
     }
 }
@@ -925,31 +926,31 @@
 }
 
 <span class="kw">impl</span> <span class="ident">EvaluationLog</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> { <span class="ident">outputs</span>: <span class="macro">vec</span><span class="macro">!</span>[] }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_failed_transactions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">usize</span>, <span class="ident">Stage</span>)<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_failed_transactions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">usize</span>, <span class="ident">Stage</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_txn</span> <span class="op">=</span> <span class="prelude-val">None</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_stage</span> <span class="op">=</span> <span class="prelude-val">None</span>;
 
         <span class="kw">for</span> <span class="ident">output</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">outputs</span> {
             <span class="kw">match</span> <span class="ident">output</span> {
-                <span class="ident">EvaluationOutput</span>::<span class="ident">Transaction</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">last_txn</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>),
-                <span class="ident">EvaluationOutput</span>::<span class="ident">Stage</span>(<span class="ident">stage</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">last_stage</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">stage</span>),
-                <span class="ident">EvaluationOutput</span>::<span class="ident">Status</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> (<span class="ident">last_txn</span>, <span class="ident">last_stage</span>) {
-                    (<span class="prelude-val">Some</span>(<span class="ident">idx</span>), <span class="prelude-val">Some</span>(<span class="ident">stage</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>((<span class="kw-2">*</span><span class="ident">idx</span>, <span class="kw-2">*</span><span class="ident">stage</span>)),
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+                <span class="ident">EvaluationOutput</span>::<span class="ident">Transaction</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="ident">last_txn</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>),
+                <span class="ident">EvaluationOutput</span>::<span class="ident">Stage</span>(<span class="ident">stage</span>) <span class="op">=&gt;</span> <span class="ident">last_stage</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">stage</span>),
+                <span class="ident">EvaluationOutput</span>::<span class="ident">Status</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>) <span class="op">=&gt;</span> <span class="kw">match</span> (<span class="ident">last_txn</span>, <span class="ident">last_stage</span>) {
+                    (<span class="prelude-val">Some</span>(<span class="ident">idx</span>), <span class="prelude-val">Some</span>(<span class="ident">stage</span>)) <span class="op">=&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>((<span class="kw-2">*</span><span class="ident">idx</span>, <span class="kw-2">*</span><span class="ident">stage</span>)),
+                    <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
                 },
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+                <span class="kw">_</span> <span class="op">=&gt;</span> (),
             }
         }
 
         <span class="ident">res</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_text_for_matching</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_text_for_matching</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">outputs</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">to_string_for_matching</span>)
@@ -962,33 +963,33 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">OutputType</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">use</span> <span class="ident">OutputType</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">CompiledModule</span>(<span class="ident">cm</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">cm</span>),
-            <span class="ident">CompiledScript</span>(<span class="ident">cs</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">cs</span>),
-            <span class="ident">CompilerLog</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
-            <span class="ident">TransactionOutput</span>(<span class="ident">output</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">output</span>),
+            <span class="ident">CompiledModule</span>(<span class="ident">cm</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">cm</span>),
+            <span class="ident">CompiledScript</span>(<span class="ident">cs</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">cs</span>),
+            <span class="ident">CompilerLog</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
+            <span class="ident">TransactionOutput</span>(<span class="ident">output</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:#?}&quot;</span>, <span class="ident">output</span>),
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">EvaluationOutput</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">use</span> <span class="ident">EvaluationOutput</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Transaction</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Transaction {}&quot;</span>, <span class="ident">idx</span>),
-            <span class="ident">Stage</span>(<span class="ident">stage</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Stage: {:?}&quot;</span>, <span class="ident">stage</span>),
-            <span class="ident">Output</span>(<span class="ident">output</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">output</span>),
-            <span class="ident">Error</span>(<span class="ident">error</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Error: {:#?}&quot;</span>, <span class="ident">error</span>),
-            <span class="ident">Status</span>(<span class="ident">status</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Status: {:?}&quot;</span>, <span class="ident">status</span>),
-            <span class="ident">PlainMessage</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
+            <span class="ident">Transaction</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Transaction {}&quot;</span>, <span class="ident">idx</span>),
+            <span class="ident">Stage</span>(<span class="ident">stage</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Stage: {:?}&quot;</span>, <span class="ident">stage</span>),
+            <span class="ident">Output</span>(<span class="ident">output</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">output</span>),
+            <span class="ident">Error</span>(<span class="ident">error</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Error: {:#?}&quot;</span>, <span class="ident">error</span>),
+            <span class="ident">Status</span>(<span class="ident">status</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Status: {:?}&quot;</span>, <span class="ident">status</span>),
+            <span class="ident">PlainMessage</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">EvaluationLog</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">output</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">outputs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="macro">writeln</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;[{}] {}&quot;</span>, <span class="ident">i</span>, <span class="ident">output</span>)<span class="question-mark">?</span>;
         }
@@ -999,7 +1000,7 @@
 <span class="kw">fn</span> <span class="ident">fetch_script_dependencies</span>(
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">inner</span> <span class="op">=</span> <span class="ident">script</span>.<span class="ident">as_inner</span>();
     <span class="kw">let</span> <span class="ident">idents</span> <span class="op">=</span> <span class="ident">inner</span>.<span class="ident">module_handles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">handle</span><span class="op">|</span> {
         <span class="ident">ModuleId</span>::<span class="ident">new</span>(
@@ -1013,7 +1014,7 @@
 <span class="kw">fn</span> <span class="ident">fetch_module_dependencies</span>(
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">idents</span> <span class="op">=</span> <span class="ident">ModuleView</span>::<span class="ident">new</span>(<span class="ident">module</span>)
         .<span class="ident">module_handles</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">handle_view</span><span class="op">|</span> <span class="ident">handle_view</span>.<span class="ident">module_id</span>());
@@ -1023,20 +1024,20 @@
 <span class="kw">fn</span> <span class="ident">fetch_dependencies</span>(
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">idents</span>: <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">ModuleId</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
     <span class="comment">// idents.into_inner().</span>
     <span class="ident">idents</span>
         .<span class="ident">flat_map</span>(<span class="op">|</span><span class="ident">ident</span><span class="op">|</span> <span class="ident">fetch_dependency</span>(<span class="ident">exec</span>, <span class="ident">ident</span>))
         .<span class="ident">collect</span>()
 }
 
-<span class="kw">fn</span> <span class="ident">fetch_dependency</span>(<span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>, <span class="ident">ident</span>: <span class="ident">ModuleId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">fetch_dependency</span>(<span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>, <span class="ident">ident</span>: <span class="ident">ModuleId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">CompiledModule</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">ap</span> <span class="op">=</span> <span class="ident">AccessPath</span>::<span class="ident">from</span>(<span class="kw-2">&amp;</span><span class="ident">ident</span>);
     <span class="kw">let</span> <span class="ident">blob</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">exec</span>.<span class="ident">get_state_view</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">ap</span>).<span class="ident">ok</span>().<span class="ident">flatten</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">compiled</span>: <span class="ident">CompiledModule</span> <span class="op">=</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">blob</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
     <span class="kw">match</span> <span class="ident">bytecode_verifier</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">compiled</span>) {
-        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">compiled</span>),
-        <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">compiled</span>),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
     }
 }
 
@@ -1044,7 +1045,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script</span>(
     <span class="ident">script</span>: <span class="ident">CompiledScript</span>,
     <span class="ident">deps</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledScript</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledScript</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
     <span class="ident">bytecode_verifier</span>::<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>)<span class="question-mark">?</span>;
     <span class="ident">DependencyChecker</span>::<span class="ident">verify_script</span>(<span class="kw-2">&amp;</span><span class="ident">script</span>, <span class="ident">deps</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">script</span>)
@@ -1054,7 +1055,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(
     <span class="ident">module</span>: <span class="ident">CompiledModule</span>,
     <span class="ident">deps</span>: <span class="kw-2">&amp;</span>[<span class="ident">CompiledModule</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledModule</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">CompiledModule</span>, <span class="ident">VMError</span><span class="op">&gt;</span> {
     <span class="ident">bytecode_verifier</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>)<span class="question-mark">?</span>;
     <span class="ident">DependencyChecker</span>::<span class="ident">verify_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="ident">deps</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">module</span>)
@@ -1076,16 +1077,16 @@
 <span class="kw">fn</span> <span class="ident">get_transaction_parameters</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TransactionConfig</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionParameters</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">TransactionParameters</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">account_resource</span> <span class="op">=</span> <span class="ident">exec</span>.<span class="ident">read_account_resource</span>(<span class="ident">config</span>.<span class="ident">sender</span>).<span class="ident">unwrap</span>();
     <span class="kw">let</span> <span class="ident">gas_unit_price</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">gas_price</span>.<span class="ident">unwrap_or</span>(<span class="number">0</span>);
     <span class="kw">let</span> <span class="ident">gas_currency_code</span> <span class="op">=</span> <span class="ident">config</span>
         .<span class="ident">gas_currency_code</span>
         .<span class="ident">clone</span>()
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">COIN1_NAME</span>.<span class="ident">to_owned</span>());
+        .<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="ident">COIN1_NAME</span>.<span class="ident">to_owned</span>());
     <span class="kw">let</span> <span class="ident">max_number_of_gas_units</span> <span class="op">=</span> <span class="ident">GasConstants</span>::<span class="ident">default</span>().<span class="ident">maximum_number_of_gas_units</span>;
-    <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">max_gas</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
-        <span class="kw">if</span> <span class="ident">gas_unit_price</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+    <span class="kw">let</span> <span class="ident">max_gas_amount</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">max_gas</span>.<span class="ident">unwrap_or_else</span>(<span class="op">||</span> {
+        <span class="kw">if</span> <span class="ident">gas_unit_price</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="ident">max_number_of_gas_units</span>.<span class="ident">get</span>()
         } <span class="kw">else</span> {
             <span class="kw">let</span> <span class="ident">account_balance</span> <span class="op">=</span> <span class="ident">exec</span>
@@ -1093,7 +1094,7 @@
                     <span class="ident">config</span>.<span class="ident">sender</span>,
                     <span class="ident">account_config</span>::<span class="ident">from_currency_code_string</span>(<span class="kw-2">&amp;</span><span class="ident">gas_currency_code</span>).<span class="ident">unwrap</span>(),
                 )
-                .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">panic</span><span class="macro">!</span>(
+                .<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="macro">panic</span><span class="macro">!</span>(
                         <span class="string">&quot;Couldn&#39;t read balance of type {:?} for account {:?}; did you forget to specify //! gas-currency: {:?} ?&quot;</span>,
                         <span class="ident">config</span>.<span class="ident">sender</span>.<span class="ident">address</span>(),
                         <span class="ident">gas_currency_code</span>,
@@ -1112,12 +1113,12 @@
         <span class="ident">privkey</span>: <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">sender</span>.<span class="ident">privkey</span>,
         <span class="ident">sequence_number</span>: <span class="ident">config</span>
             .<span class="ident">sequence_number</span>
-            .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">account_resource</span>.<span class="ident">sequence_number</span>()),
+            .<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="ident">account_resource</span>.<span class="ident">sequence_number</span>()),
         <span class="ident">max_gas_amount</span>,
         <span class="ident">gas_unit_price</span>,
         <span class="ident">gas_currency_code</span>,
         <span class="comment">// TTL is 86400s. Initial time was set to 0.</span>
-        <span class="ident">expiration_timestamp_secs</span>: <span class="ident">config</span>.<span class="ident">expiration_timestamp_secs</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="number">40000</span>),
+        <span class="ident">expiration_timestamp_secs</span>: <span class="ident">config</span>.<span class="ident">expiration_timestamp_secs</span>.<span class="ident">unwrap_or_else</span>(<span class="op">||</span> <span class="number">40000</span>),
     }
 }
 
@@ -1126,7 +1127,7 @@
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="ident">FakeExecutor</span>,
     <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionConfig</span>,
     <span class="ident">script</span>: <span class="ident">CompiledScript</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">script</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">blob</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">script</span> <span class="op">=</span> <span class="ident">TransactionScript</span>::<span class="ident">new</span>(<span class="ident">blob</span>, <span class="ident">config</span>.<span class="ident">ty_args</span>.<span class="ident">clone</span>(), <span class="ident">config</span>.<span class="ident">args</span>.<span class="ident">clone</span>());
@@ -1161,7 +1162,7 @@
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="ident">FakeExecutor</span>,
     <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionConfig</span>,
     <span class="ident">module</span>: <span class="ident">CompiledModule</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">module</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">blob</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">TransactionModule</span>::<span class="ident">new</span>(<span class="ident">blob</span>);
@@ -1185,22 +1186,22 @@
 <span class="kw">fn</span> <span class="ident">run_transaction</span>(
     <span class="ident">exec</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">transaction</span>: <span class="ident">SignedTransaction</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransactionOutput</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">outputs</span> <span class="op">=</span> <span class="ident">exec</span>
         .<span class="ident">execute_block_and_keep_vm_status</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">transaction</span>])
         .<span class="ident">unwrap</span>();
-    <span class="kw">if</span> <span class="ident">outputs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+    <span class="kw">if</span> <span class="ident">outputs</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span> {
         <span class="kw">let</span> (<span class="ident">vm_status</span>, <span class="ident">txn_output</span>) <span class="op">=</span> <span class="ident">outputs</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>();
         <span class="kw">match</span> <span class="ident">txn_output</span>.<span class="ident">status</span>() {
-            <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">status</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">status</span>) <span class="op">=&gt;</span> {
                 <span class="ident">exec</span>.<span class="ident">apply_write_set</span>(<span class="ident">txn_output</span>.<span class="ident">write_set</span>());
-                <span class="kw">if</span> <span class="ident">status</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">KeptVMStatus</span>::<span class="ident">Executed</span> {
+                <span class="kw">if</span> <span class="ident">status</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">KeptVMStatus</span>::<span class="ident">Executed</span> {
                     <span class="prelude-val">Ok</span>(<span class="ident">txn_output</span>)
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">VMExecutionFailure</span>(<span class="ident">vm_status</span>, <span class="ident">txn_output</span>).<span class="ident">into</span>())
                 }
             }
-            <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=&gt;</span> {
                 <span class="macro">checked_verify</span><span class="macro">!</span>(<span class="ident">txn_output</span>.<span class="ident">write_set</span>().<span class="ident">is_empty</span>());
                 <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">DiscardedTransaction</span>(<span class="ident">txn_output</span>).<span class="ident">into</span>())
             }
@@ -1215,13 +1216,13 @@
     <span class="ident">transaction</span>: <span class="ident">SignedTransaction</span>,
     <span class="ident">log</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">EvaluationLog</span>,
     <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">TransactionConfig</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">outputs</span> <span class="op">=</span> <span class="ident">exec</span>
         .<span class="ident">execute_block_and_keep_vm_status</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">transaction</span>])
         .<span class="ident">unwrap</span>();
     <span class="kw">let</span> (<span class="ident">vm_status</span>, <span class="ident">txn_output</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">outputs</span>.<span class="ident">pop</span>() {
-        <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">x</span>,
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;expected 1 output got {}&quot;</span>),
+        <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=&gt;</span> <span class="ident">x</span>,
+        <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;expected 1 output got {}&quot;</span>),
     };
 
     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">PlainMessage</span>(<span class="macro">format</span><span class="macro">!</span>(
@@ -1252,10 +1253,10 @@
     }
 
     <span class="kw">match</span> <span class="ident">txn_output</span>.<span class="ident">status</span>() {
-        <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="ident">exec</span>.<span class="ident">apply_write_set</span>(<span class="ident">txn_output</span>.<span class="ident">write_set</span>());
         }
-        <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">TransactionStatus</span>::<span class="ident">Retry</span> <span class="op">=&gt;</span> {
             <span class="macro">checked_verify</span><span class="macro">!</span>(<span class="ident">txn_output</span>.<span class="ident">write_set</span>().<span class="ident">is_empty</span>());
         }
     }
@@ -1264,13 +1265,13 @@
 }
 
 <span class="doccomment">/// Serializes the script then deserializes it.</span>
-<span class="kw">fn</span> <span class="ident">serialize_and_deserialize_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_and_deserialize_script</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledScript</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">script_blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">script</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">script_blob</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">deserialized_script</span> <span class="op">=</span> <span class="ident">CompiledScript</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">script_blob</span>)
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>).<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
-    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">script</span> <span class="op">!</span><span class="op">=</span> <span class="ident">deserialized_script</span> {
+    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">script</span> <span class="op">!=</span> <span class="ident">deserialized_script</span> {
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(
             <span class="string">&quot;deserialized script different from original one&quot;</span>.<span class="ident">to_string</span>(),
         )
@@ -1281,13 +1282,13 @@
 }
 
 <span class="doccomment">/// Serializes the module then deserializes it.</span>
-<span class="kw">fn</span> <span class="ident">serialize_and_deserialize_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">serialize_and_deserialize_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module_blob</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="ident">module</span>.<span class="ident">serialize</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">module_blob</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">deserialized_module</span> <span class="op">=</span> <span class="ident">CompiledModule</span>::<span class="ident">deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">module_blob</span>)
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>).<span class="ident">into_vm_status</span>())<span class="question-mark">?</span>;
 
-    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">module</span> <span class="op">!</span><span class="op">=</span> <span class="ident">deserialized_module</span> {
+    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">module</span> <span class="op">!=</span> <span class="ident">deserialized_module</span> {
         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ErrorKind</span>::<span class="ident">Other</span>(
             <span class="string">&quot;deserialized module different from original one&quot;</span>.<span class="ident">to_string</span>(),
         )
@@ -1297,7 +1298,7 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">is_precompiled_script</span>(<span class="ident">input_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">CompiledScript</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">is_precompiled_script</span>(<span class="ident">input_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">CompiledScript</span><span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">script_name</span>) <span class="op">=</span> <span class="ident">input_str</span>.<span class="ident">strip_prefix</span>(<span class="string">&quot;stdlib_script::&quot;</span>) {
         <span class="kw">return</span> <span class="ident">PRECOMPILED_TXN_SCRIPTS</span>.<span class="ident">get</span>(<span class="ident">script_name</span>).<span class="ident">cloned</span>();
     }
@@ -1311,13 +1312,13 @@
     <span class="ident">idx</span>: <span class="ident">usize</span>,
     <span class="ident">transaction</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>,
     <span class="ident">log</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">EvaluationLog</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Status</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Status</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Unwrap the given results. Upon failure, logs the error and aborts.</span>
     <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">unwrap_or_abort</span> {
-        (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {{
+        (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span>: <span class="ident">expr</span>) <span class="op">=&gt;</span> {{
             <span class="kw">match</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">res</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">r</span>,
-                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=&gt;</span> <span class="ident">r</span>,
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> {
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">e</span>)));
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>);
                 }
@@ -1351,7 +1352,7 @@
         };
 
     <span class="kw">match</span> <span class="ident">parsed_script_or_module</span> {
-        <span class="ident">ScriptOrModule</span>::<span class="ident">Script</span>(<span class="ident">compiled_script</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">ScriptOrModule</span>::<span class="ident">Script</span>(<span class="ident">compiled_script</span>) <span class="op">=&gt;</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="ident">global_config</span>.<span class="ident">exp_mode</span> {
                 <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Output</span>(<span class="ident">OutputType</span>::<span class="ident">CompiledScript</span>(
                     <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">compiled_script</span>.<span class="ident">clone</span>()),
@@ -1367,8 +1368,8 @@
             }
             <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">fetch_script_dependencies</span>(<span class="ident">exec</span>, <span class="kw-2">&amp;</span><span class="ident">compiled_script</span>);
             <span class="kw">let</span> <span class="ident">compiled_script</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">verify_script</span>(<span class="ident">compiled_script</span>, <span class="kw-2">&amp;</span><span class="ident">deps</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">script</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">script</span>,
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">script</span>) <span class="op">=&gt;</span> <span class="ident">script</span>,
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>.<span class="ident">into_vm_status</span>()).<span class="ident">into</span>();
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">err</span>)));
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>);
@@ -1402,7 +1403,7 @@
                 )));
             }
         }
-        <span class="ident">ScriptOrModule</span>::<span class="ident">Module</span>(<span class="ident">compiled_module</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">ScriptOrModule</span>::<span class="ident">Module</span>(<span class="ident">compiled_module</span>) <span class="op">=&gt;</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="ident">global_config</span>.<span class="ident">exp_mode</span> {
                 <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Output</span>(<span class="ident">OutputType</span>::<span class="ident">CompiledModule</span>(
                     <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">compiled_module</span>.<span class="ident">clone</span>()),
@@ -1418,8 +1419,8 @@
             }
             <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">fetch_module_dependencies</span>(<span class="ident">exec</span>, <span class="kw-2">&amp;</span><span class="ident">compiled_module</span>);
             <span class="kw">let</span> <span class="ident">compiled_module</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">verify_module</span>(<span class="ident">compiled_module</span>, <span class="kw-2">&amp;</span><span class="ident">deps</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">module</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">module</span>,
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">module</span>) <span class="op">=&gt;</span> <span class="ident">module</span>,
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>.<span class="ident">into_vm_status</span>()).<span class="ident">into</span>();
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">err</span>)));
                     <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>);
@@ -1461,12 +1462,12 @@
     <span class="ident">executor</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FakeExecutor</span>,
     <span class="ident">block_metadata</span>: <span class="ident">BlockMetadata</span>,
     <span class="ident">log</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">EvaluationLog</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Status</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Status</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">outputs</span> <span class="op">=</span>
         <span class="ident">executor</span>.<span class="ident">execute_transaction_block</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">LibraTransaction</span>::<span class="ident">BlockMetadata</span>(<span class="ident">block_metadata</span>)]);
 
     <span class="kw">match</span> <span class="ident">outputs</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">outputs</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="kw-2">mut</span> <span class="ident">outputs</span>) <span class="op">=&gt;</span> {
             <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">outputs</span>
                 .<span class="ident">pop</span>()
                 .<span class="ident">expect</span>(<span class="string">&quot;There should be one output in the result&quot;</span>);
@@ -1476,7 +1477,7 @@
             )));
             <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Success</span>)
         }
-        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> {
             <span class="kw">let</span> <span class="ident">err</span>: <span class="ident">Error</span> <span class="op">=</span> <span class="ident">ErrorKind</span>::<span class="ident">VerificationError</span>(<span class="ident">err</span>).<span class="ident">into</span>();
             <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Error</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">err</span>)));
             <span class="prelude-val">Ok</span>(<span class="ident">Status</span>::<span class="ident">Failure</span>)
@@ -1489,11 +1490,11 @@
     <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">GlobalConfig</span>,
     <span class="kw-2">mut</span> <span class="ident">compiler</span>: <span class="ident">TComp</span>,
     <span class="ident">commands</span>: <span class="kw-2">&amp;</span>[<span class="ident">Command</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EvaluationLog</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EvaluationLog</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">log</span> <span class="op">=</span> <span class="ident">EvaluationLog</span> { <span class="ident">outputs</span>: <span class="macro">vec</span><span class="macro">!</span>[] };
 
     <span class="comment">// Set up a fake executor with the genesis block and create the accounts.</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exec</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">validator_accounts</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">exec</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">validator_accounts</span> <span class="op">==</span> <span class="number">0</span> {
         <span class="kw">if</span> <span class="ident">compiler</span>.<span class="ident">use_compiled_genesis</span>() {
             <span class="ident">FakeExecutor</span>::<span class="ident">from_genesis_file</span>()
         } <span class="kw">else</span> {
@@ -1519,14 +1520,14 @@
 
     <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">command</span>) <span class="kw">in</span> <span class="ident">commands</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
         <span class="kw">match</span> <span class="ident">command</span> {
-            <span class="ident">Command</span>::<span class="ident">Transaction</span>(<span class="ident">transaction</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Command</span>::<span class="ident">Transaction</span>(<span class="ident">transaction</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span>
                     <span class="ident">eval_transaction</span>(<span class="ident">config</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">compiler</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exec</span>, <span class="ident">idx</span>, <span class="ident">transaction</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">log</span>)<span class="question-mark">?</span>;
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">exp_mode</span> {
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Status</span>(<span class="ident">status</span>));
                 }
             }
-            <span class="ident">Command</span>::<span class="ident">BlockMetadata</span>(<span class="ident">block_metadata</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Command</span>::<span class="ident">BlockMetadata</span>(<span class="ident">block_metadata</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">eval_block_metadata</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">exec</span>, <span class="ident">block_metadata</span>.<span class="ident">clone</span>(), <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">log</span>)<span class="question-mark">?</span>;
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">exp_mode</span> {
                     <span class="ident">log</span>.<span class="ident">append</span>(<span class="ident">EvaluationOutput</span>::<span class="ident">Status</span>(<span class="ident">status</span>));

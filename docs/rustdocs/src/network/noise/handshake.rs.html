@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `network/src/noise/handshake.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>handshake.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../network/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `network/src/noise/handshake.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>handshake.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../network/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -738,7 +739,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TIMESTAMP_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
     <span class="doccomment">/// obtain the current timestamp</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">now</span>() <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="self">Self</span>::<span class="ident">TIMESTAMP_SIZE</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">now</span>() <span class="op">-&gt;</span> [<span class="ident">u8</span>; <span class="self">Self</span>::<span class="ident">TIMESTAMP_SIZE</span>] {
         <span class="kw">let</span> <span class="ident">now</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">duration_since_epoch</span>().<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>; <span class="comment">// (TIMESTAMP_SIZE)</span>
 
         <span class="comment">// e.g. [157, 126, 253, 97, 114, 1, 0, 0]</span>
@@ -747,9 +748,9 @@
 
     <span class="doccomment">/// Returns true if the timestamp has already been observed for this peer</span>
     <span class="doccomment">/// or if it&#39;s an old timestamp</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_replay</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">pubkey</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">timestamp</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_replay</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">pubkey</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">timestamp</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">last_timestamp</span>) <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">pubkey</span>) {
-            <span class="kw-2">&amp;</span><span class="ident">timestamp</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">last_timestamp</span>
+            <span class="kw-2">&amp;</span><span class="ident">timestamp</span> <span class="op">&lt;=</span> <span class="ident">last_timestamp</span>
         } <span class="kw">else</span> {
             <span class="bool-val">false</span>
         }
@@ -781,7 +782,7 @@
         <span class="comment">// mutual-auth scenarios because we have a bounded set of trusted peers</span>
         <span class="comment">// that rarely changes.</span>
         <span class="ident">anti_replay_timestamps</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">AntiReplayTimestamps</span><span class="op">&gt;</span>,
-        <span class="ident">trusted_peers</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">trusted_peers</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;&gt;</span><span class="op">&gt;&gt;</span>,
     },
     <span class="doccomment">/// In `ServerOnly` mode, the dialer authenticates the server. However, the</span>
     <span class="doccomment">/// server does not care who connects to them and will allow inbound connections</span>
@@ -790,27 +791,27 @@
 }
 
 <span class="kw">impl</span> <span class="ident">HandshakeAuthMode</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mutual</span>(<span class="ident">trusted_peers</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mutual</span>(<span class="ident">trusted_peers</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;&gt;</span><span class="op">&gt;&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">HandshakeAuthMode</span>::<span class="ident">Mutual</span> {
             <span class="ident">anti_replay_timestamps</span>: <span class="ident">RwLock</span>::<span class="ident">new</span>(<span class="ident">AntiReplayTimestamps</span>::<span class="ident">default</span>()),
             <span class="ident">trusted_peers</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">anti_replay_timestamps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">AntiReplayTimestamps</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">anti_replay_timestamps</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">AntiReplayTimestamps</span><span class="op">&gt;&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span> {
             <span class="ident">HandshakeAuthMode</span>::<span class="ident">Mutual</span> {
                 <span class="ident">anti_replay_timestamps</span>,
                 ..
-            } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">anti_replay_timestamps</span>),
-            <span class="ident">HandshakeAuthMode</span>::<span class="ident">ServerOnly</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">anti_replay_timestamps</span>),
+            <span class="ident">HandshakeAuthMode</span>::<span class="ident">ServerOnly</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">trusted_peers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">trusted_peers</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RwLock</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">PeerId</span>, <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;&gt;</span><span class="op">&gt;&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span> {
-            <span class="ident">HandshakeAuthMode</span>::<span class="ident">Mutual</span> { <span class="ident">trusted_peers</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">trusted_peers</span>),
-            <span class="ident">HandshakeAuthMode</span>::<span class="ident">ServerOnly</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            <span class="ident">HandshakeAuthMode</span>::<span class="ident">Mutual</span> { <span class="ident">trusted_peers</span>, .. } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">trusted_peers</span>),
+            <span class="ident">HandshakeAuthMode</span>::<span class="ident">ServerOnly</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         }
     }
 }
@@ -841,7 +842,7 @@
         <span class="ident">network_context</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">NetworkContext</span><span class="op">&gt;</span>,
         <span class="ident">key</span>: <span class="ident">x25519</span>::<span class="ident">PrivateKey</span>,
         <span class="ident">auth_mode</span>: <span class="ident">HandshakeAuthMode</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">network_context</span>,
             <span class="ident">noise_config</span>: <span class="ident">noise</span>::<span class="ident">NoiseConfig</span>::<span class="ident">new</span>(<span class="ident">key</span>),
@@ -859,22 +860,22 @@
         <span class="ident">socket</span>: <span class="ident">TSocket</span>,
         <span class="ident">origin</span>: <span class="ident">ConnectionOrigin</span>,
         <span class="ident">remote_public_key</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">x25519</span>::<span class="ident">PublicKey</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">x25519</span>::<span class="ident">PublicKey</span>, <span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
     {
         <span class="comment">// perform the noise handshake</span>
         <span class="kw">let</span> <span class="ident">socket</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">origin</span> {
-            <span class="ident">ConnectionOrigin</span>::<span class="ident">Outbound</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ConnectionOrigin</span>::<span class="ident">Outbound</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">remote_public_key</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">remote_public_key</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">key</span>,
-                    <span class="prelude-val">None</span> <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">MissingServerPublicKey</span>),
+                    <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=&gt;</span> <span class="ident">key</span>,
+                    <span class="prelude-val">None</span> <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;fuzzing&quot;</span>)) <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+                    <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">MissingServerPublicKey</span>),
                 };
                 <span class="self">self</span>.<span class="ident">upgrade_outbound</span>(<span class="ident">socket</span>, <span class="ident">remote_public_key</span>, <span class="ident">AntiReplayTimestamps</span>::<span class="ident">now</span>)
                     .<span class="kw">await</span><span class="question-mark">?</span>
             }
-            <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">ConnectionOrigin</span>::<span class="ident">Inbound</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> (<span class="ident">socket</span>, <span class="ident">_peer_id</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">upgrade_inbound</span>(<span class="ident">socket</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="ident">socket</span>
             }
@@ -907,10 +908,10 @@
         <span class="kw-2">mut</span> <span class="ident">socket</span>: <span class="ident">TSocket</span>,
         <span class="ident">remote_public_key</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>,
         <span class="ident">time_provider</span>: <span class="ident">F</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
-        <span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>],
+        <span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-&gt;</span> [<span class="ident">u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>],
     {
         <span class="comment">// buffer to hold prologue + first noise handshake message</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client_message</span> <span class="op">=</span> [<span class="number">0</span>; <span class="self">Self</span>::<span class="ident">CLIENT_MESSAGE_SIZE</span>];
@@ -991,7 +992,7 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">upgrade_inbound</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="kw-2">mut</span> <span class="ident">socket</span>: <span class="ident">TSocket</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">TSocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">TSocket</span>: <span class="ident">AsyncRead</span> <span class="op">+</span> <span class="ident">AsyncWrite</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="ident">Unpin</span>,
     {
@@ -1020,12 +1021,12 @@
         <span class="comment">// this situation could occur either as a result of our own discovery</span>
         <span class="comment">// mis-configuration or a potentially malicious discovery peer advertising</span>
         <span class="comment">// a (loopback ip or mirror proxy) and our public key.</span>
-        <span class="kw">if</span> <span class="ident">remote_peer_id</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">peer_id</span>() {
+        <span class="kw">if</span> <span class="ident">remote_peer_id</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">network_context</span>.<span class="ident">peer_id</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">SelfDialDetected</span>);
         }
 
         <span class="comment">// verify that this is indeed our public key</span>
-        <span class="kw">if</span> <span class="ident">self_expected_public_key</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">noise_config</span>.<span class="ident">public_key</span>().<span class="ident">as_slice</span>() {
+        <span class="kw">if</span> <span class="ident">self_expected_public_key</span> <span class="op">!=</span> <span class="self">self</span>.<span class="ident">noise_config</span>.<span class="ident">public_key</span>().<span class="ident">as_slice</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientExpectingDifferentPubkey</span>(
                 <span class="ident">remote_peer_short</span>,
                 <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">self_expected_public_key</span>),
@@ -1042,7 +1043,7 @@
         <span class="comment">// if mutual auth mode, verify the remote pubkey is in our set of trusted peers</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">trusted_peers</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">auth_mode</span>.<span class="ident">trusted_peers</span>() {
             <span class="kw">match</span> <span class="ident">trusted_peers</span>.<span class="ident">read</span>().<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">remote_peer_id</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">remote_pubkey_set</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">remote_pubkey_set</span>) <span class="op">=&gt;</span> {
                     <span class="kw">if</span> <span class="op">!</span><span class="ident">remote_pubkey_set</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">remote_public_key</span>) {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">UnauthenticatedClientPubkey</span>(
                             <span class="ident">remote_peer_short</span>,
@@ -1050,7 +1051,7 @@
                         ));
                     }
                 }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">UnauthenticatedClient</span>(
                         <span class="ident">remote_peer_short</span>,
                         <span class="ident">remote_peer_id</span>,
@@ -1060,7 +1061,7 @@
         } <span class="kw">else</span> {
             <span class="comment">// if not, verify that their peerid is constructed correctly from their public key</span>
             <span class="kw">let</span> <span class="ident">derived_remote_peer_id</span> <span class="op">=</span> <span class="ident">PeerId</span>::<span class="ident">from_identity_public_key</span>(<span class="ident">remote_public_key</span>);
-            <span class="kw">if</span> <span class="ident">derived_remote_peer_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">remote_peer_id</span> {
+            <span class="kw">if</span> <span class="ident">derived_remote_peer_id</span> <span class="op">!=</span> <span class="ident">remote_peer_id</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">ClientPeerIdMismatch</span>(
                     <span class="ident">remote_peer_short</span>,
                     <span class="ident">remote_peer_id</span>,
@@ -1073,7 +1074,7 @@
         <span class="comment">// the payload should contain a u64 client timestamp</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">anti_replay_timestamps</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">auth_mode</span>.<span class="ident">anti_replay_timestamps</span>() {
             <span class="comment">// check that the payload received as the client timestamp (in seconds)</span>
-            <span class="kw">if</span> <span class="ident">payload</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span> {
+            <span class="kw">if</span> <span class="ident">payload</span>.<span class="ident">len</span>() <span class="op">!=</span> <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">NoiseHandshakeError</span>::<span class="ident">MissingAntiReplayTimestamp</span>(
                     <span class="ident">remote_peer_short</span>,
                 ));
@@ -1146,7 +1147,7 @@
     <span class="doccomment">/// helper to setup two testing peers</span>
     <span class="kw">fn</span> <span class="ident">build_peers</span>(
         <span class="ident">is_mutual_auth</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (
+    ) <span class="op">-&gt;</span> (
         (<span class="ident">NoiseUpgrader</span>, <span class="ident">x25519</span>::<span class="ident">PublicKey</span>),
         (<span class="ident">NoiseUpgrader</span>, <span class="ident">x25519</span>::<span class="ident">PublicKey</span>),
     ) {
@@ -1204,7 +1205,7 @@
         <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">NoiseUpgrader</span>,
         <span class="ident">server</span>: <span class="kw-2">&amp;</span><span class="ident">NoiseUpgrader</span>,
         <span class="ident">server_public_key</span>: <span class="ident">x25519</span>::<span class="ident">PublicKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (
+    ) <span class="op">-&gt;</span> (
         <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span>, <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>,
         <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">NoiseStream</span><span class="op">&lt;</span><span class="ident">MemorySocket</span><span class="op">&gt;</span>, <span class="ident">PeerId</span>), <span class="ident">NoiseHandshakeError</span><span class="op">&gt;</span>,
     ) {
@@ -1219,8 +1220,8 @@
     }
 
     <span class="doccomment">/// provide a function that will return the same given value as a timestamp</span>
-    <span class="kw">fn</span> <span class="ident">bad_timestamp</span>(<span class="ident">value</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>] {
-        <span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="ident">value</span>.<span class="ident">to_le_bytes</span>()
+    <span class="kw">fn</span> <span class="ident">bad_timestamp</span>(<span class="ident">value</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Fn</span>() <span class="op">-&gt;</span> [<span class="ident">u8</span>; <span class="ident">AntiReplayTimestamps</span>::<span class="ident">TIMESTAMP_SIZE</span>] {
+        <span class="kw">move</span> <span class="op">||</span> <span class="ident">value</span>.<span class="ident">to_le_bytes</span>()
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>

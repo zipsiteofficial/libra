@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-vm/types/src/gas_schedule.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>gas_schedule.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../move_vm_types/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-vm/types/src/gas_schedule.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>gas_schedule.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../move_vm_types/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -360,7 +361,7 @@
     <span class="doccomment">/// is no more gas to pay for operations.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// This is the instantiation that must be used when executing a user script.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transaction</span>(<span class="ident">cost_table</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">gas_left</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">transaction</span>(<span class="ident">cost_table</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">gas_left</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">gas_left</span>: <span class="ident">gas_left</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="op">*</span> <span class="ident">cost_table</span>.<span class="ident">gas_constants</span>.<span class="ident">gas_unit_scaling_factor</span>),
             <span class="ident">cost_table</span>,
@@ -372,7 +373,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// It should be used by clients in very specific cases and when executing system</span>
     <span class="doccomment">/// code that does not have to charge the user.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">system</span>(<span class="ident">cost_table</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">gas_left</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">system</span>(<span class="ident">cost_table</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CostTable</span>, <span class="ident">gas_left</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">gas_left</span>: <span class="ident">gas_left</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="op">*</span> <span class="ident">cost_table</span>.<span class="ident">gas_constants</span>.<span class="ident">gas_unit_scaling_factor</span>),
             <span class="ident">cost_table</span>,
@@ -381,25 +382,25 @@
     }
 
     <span class="doccomment">/// Return the `CostTable` behind this `CostStrategy`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cost_table</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">CostTable</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cost_table</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">CostTable</span> {
         <span class="self">self</span>.<span class="ident">cost_table</span>
     }
 
     <span class="doccomment">/// Return the gas left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remaining_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remaining_gas</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">gas_left</span>
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">gas</span><span class="op">|</span> <span class="ident">gas</span> <span class="op">/</span> <span class="self">self</span>.<span class="ident">cost_table</span>.<span class="ident">gas_constants</span>.<span class="ident">gas_unit_scaling_factor</span>)
     }
 
     <span class="doccomment">/// Charge a given amount of gas and fail if not enough gas units are left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deduct_gas</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deduct_gas</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">charge</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">amount</span>.<span class="ident">get</span>() <span class="op">&gt;</span> <span class="number">0</span>);
         <span class="kw">if</span> <span class="self">self</span>
             .<span class="ident">gas_left</span>
-            .<span class="ident">app</span>(<span class="kw-2">&amp;</span><span class="ident">amount</span>, <span class="op">|</span><span class="ident">curr_gas</span>, <span class="ident">gas_amt</span><span class="op">|</span> <span class="ident">curr_gas</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">gas_amt</span>)
+            .<span class="ident">app</span>(<span class="kw-2">&amp;</span><span class="ident">amount</span>, <span class="op">|</span><span class="ident">curr_gas</span>, <span class="ident">gas_amt</span><span class="op">|</span> <span class="ident">curr_gas</span> <span class="op">&gt;=</span> <span class="ident">gas_amt</span>)
         {
             <span class="self">self</span>.<span class="ident">gas_left</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gas_left</span>.<span class="ident">sub</span>(<span class="ident">amount</span>);
             <span class="prelude-val">Ok</span>(())
@@ -415,7 +416,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">opcode</span>: <span class="ident">Opcodes</span>,
         <span class="ident">size</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// Make sure that the size is always non-zero</span>
         <span class="kw">let</span> <span class="ident">size</span> <span class="op">=</span> <span class="ident">size</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">max</span>(<span class="number">1</span>, <span class="ident">x</span>));
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">size</span>.<span class="ident">get</span>() <span class="op">&gt;</span> <span class="number">0</span>);
@@ -428,7 +429,7 @@
     }
 
     <span class="doccomment">/// Charge an instruction and fail if not enough gas units are left.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">charge_instr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">opcode</span>: <span class="ident">Opcodes</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">charge_instr</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">opcode</span>: <span class="ident">Opcodes</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">deduct_gas</span>(<span class="self">self</span>.<span class="ident">cost_table</span>.<span class="ident">instruction_cost</span>(<span class="ident">opcode</span> <span class="kw">as</span> <span class="ident">u8</span>).<span class="ident">total</span>())
     }
 
@@ -437,7 +438,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">charge_intrinsic_gas</span>(
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">intrinsic_cost</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">cost</span> <span class="op">=</span> <span class="ident">calculate_intrinsic_gas</span>(<span class="ident">intrinsic_cost</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cost_table</span>.<span class="ident">gas_constants</span>);
         <span class="self">self</span>.<span class="ident">deduct_gas</span>(<span class="ident">cost</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Undefined</span>))
@@ -454,26 +455,26 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_from_instructions</span>(
     <span class="kw-2">mut</span> <span class="ident">instrs</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Bytecode</span>, <span class="ident">GasCost</span>)<span class="op">&gt;</span>,
     <span class="ident">native_table</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GasCost</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CostTable</span> {
+) <span class="op">-&gt;</span> <span class="ident">CostTable</span> {
     <span class="ident">instrs</span>.<span class="ident">sort_by_key</span>(<span class="op">|</span><span class="ident">cost</span><span class="op">|</span> <span class="ident">instruction_key</span>(<span class="kw-2">&amp;</span><span class="ident">cost</span>.<span class="number">0</span>));
 
     <span class="kw">if</span> <span class="macro">cfg</span><span class="macro">!</span>(<span class="ident">debug_assertions</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">instructions_covered</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">for</span> (<span class="ident">index</span>, (<span class="ident">instr</span>, <span class="kw">_</span>)) <span class="kw">in</span> <span class="ident">instrs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">instruction_key</span>(<span class="ident">instr</span>);
-            <span class="kw">if</span> <span class="ident">index</span> <span class="op">=</span><span class="op">=</span> (<span class="ident">key</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span> {
-                <span class="ident">instructions_covered</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="kw">if</span> <span class="ident">index</span> <span class="op">==</span> (<span class="ident">key</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span> {
+                <span class="ident">instructions_covered</span> <span class="op">+=</span> <span class="number">1</span>;
             }
         }
         <span class="macro">debug_assert</span><span class="macro">!</span>(
-            <span class="ident">instructions_covered</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Bytecode</span>::<span class="ident">NUM_INSTRUCTIONS</span>,
+            <span class="ident">instructions_covered</span> <span class="op">==</span> <span class="ident">Bytecode</span>::<span class="ident">NUM_INSTRUCTIONS</span>,
             <span class="string">&quot;all instructions must be in the cost table&quot;</span>
         );
     }
     <span class="kw">let</span> <span class="ident">instruction_table</span> <span class="op">=</span> <span class="ident">instrs</span>
         .<span class="ident">into_iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">cost</span>)<span class="op">|</span> <span class="ident">cost</span>)
-        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GasCost</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GasCost</span><span class="op">&gt;&gt;</span>();
     <span class="ident">CostTable</span> {
         <span class="ident">instruction_table</span>,
         <span class="ident">native_table</span>,
@@ -483,7 +484,7 @@
 
 <span class="comment">// Only used for genesis and for tests where we need a cost table and</span>
 <span class="comment">// don&#39;t have a genesis storage state.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zero_cost_schedule</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CostTable</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">zero_cost_schedule</span>() <span class="op">-&gt;</span> <span class="ident">CostTable</span> {
     <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
     <span class="comment">// The actual costs for the instructions in this table _DO NOT MATTER_. This is only used</span>
     <span class="comment">// for genesis and testing, and for these cases we don&#39;t need to worry</span>
@@ -592,7 +593,7 @@
     ];
     <span class="kw">let</span> <span class="ident">native_table</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">NUMBER_OF_NATIVE_FUNCTIONS</span>)
         .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">GasCost</span>::<span class="ident">new</span>(<span class="number">0</span>, <span class="number">0</span>))
-        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GasCost</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+        .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">GasCost</span><span class="op">&gt;&gt;</span>();
     <span class="ident">new_from_instructions</span>(<span class="ident">instrs</span>, <span class="ident">native_table</span>)
 }
 
@@ -600,8 +601,8 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">calculate_intrinsic_gas</span>(
     <span class="ident">transaction_size</span>: <span class="ident">AbstractMemorySize</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span>,
     <span class="ident">gas_constants</span>: <span class="kw-2">&amp;</span><span class="ident">GasConstants</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
-    <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">transaction_size</span>.<span class="ident">get</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">MAX_TRANSACTION_SIZE_IN_BYTES</span> <span class="kw">as</span> <span class="ident">GasCarrier</span>);
+) <span class="op">-&gt;</span> <span class="ident">GasUnits</span><span class="op">&lt;</span><span class="ident">GasCarrier</span><span class="op">&gt;</span> {
+    <span class="macro">precondition</span><span class="macro">!</span>(<span class="ident">transaction_size</span>.<span class="ident">get</span>() <span class="op">&lt;=</span> <span class="ident">MAX_TRANSACTION_SIZE_IN_BYTES</span> <span class="kw">as</span> <span class="ident">GasCarrier</span>);
     <span class="kw">let</span> <span class="ident">min_transaction_fee</span> <span class="op">=</span> <span class="ident">gas_constants</span>.<span class="ident">min_transaction_gas_units</span>;
 
     <span class="kw">if</span> <span class="ident">transaction_size</span>.<span class="ident">get</span>() <span class="op">&gt;</span> <span class="ident">gas_constants</span>.<span class="ident">large_transaction_cutoff</span>.<span class="ident">get</span>() {

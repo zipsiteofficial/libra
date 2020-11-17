@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/bytecode-verifier/src/control_flow.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>control_flow.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode_verifier/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/bytecode-verifier/src/control_flow.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>control_flow.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode_verifier/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -248,17 +249,17 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify</span>(
     <span class="ident">current_function_opt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FunctionDefinitionIndex</span><span class="op">&gt;</span>,
     <span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="ident">CodeUnit</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">current_function</span> <span class="op">=</span> <span class="ident">current_function_opt</span>.<span class="ident">unwrap_or</span>(<span class="ident">FunctionDefinitionIndex</span>(<span class="number">0</span>));
     <span class="comment">// check fall through</span>
     <span class="comment">// Check to make sure that the bytecode vector ends with a branching instruction.</span>
     <span class="kw">match</span> <span class="ident">code</span>.<span class="ident">code</span>.<span class="ident">last</span>() {
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EMPTY_CODE_UNIT</span>)),
-        <span class="prelude-val">Some</span>(<span class="ident">last</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">last</span>.<span class="ident">is_unconditional_branch</span>() <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">EMPTY_CODE_UNIT</span>)),
+        <span class="prelude-val">Some</span>(<span class="ident">last</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">last</span>.<span class="ident">is_unconditional_branch</span>() <span class="op">=&gt;</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_FALL_THROUGH</span>)
                 .<span class="ident">at_code_offset</span>(<span class="ident">current_function</span>, (<span class="ident">code</span>.<span class="ident">code</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">CodeOffset</span>))
         }
-        <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+        <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> (),
     }
 
     <span class="comment">// check jumps</span>
@@ -282,7 +283,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ControlFlowVerifier</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Bytecode</span>)<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">code</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Bytecode</span>)<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">code</span>
             .<span class="ident">iter</span>()
             .<span class="ident">enumerate</span>()
@@ -292,18 +293,18 @@
     <span class="kw">fn</span> <span class="ident">labeled_code</span><span class="op">&lt;</span><span class="lifetime">&#39;b</span>: <span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">labels</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> [<span class="ident">Label</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Bytecode</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> <span class="ident">Label</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Bytecode</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> <span class="ident">Label</span>)<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">code</span>()
             .<span class="ident">zip</span>(<span class="ident">labels</span>)
             .<span class="ident">map</span>(<span class="op">|</span>((<span class="ident">i</span>, <span class="ident">instr</span>), <span class="ident">lbl</span>)<span class="op">|</span> (<span class="ident">i</span>, <span class="ident">instr</span>, <span class="ident">lbl</span>))
     }
 
-    <span class="kw">fn</span> <span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">status</span>: <span class="ident">StatusCode</span>, <span class="ident">offset</span>: <span class="ident">CodeOffset</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMError</span> {
+    <span class="kw">fn</span> <span class="ident">error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">status</span>: <span class="ident">StatusCode</span>, <span class="ident">offset</span>: <span class="ident">CodeOffset</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMError</span> {
         <span class="ident">PartialVMError</span>::<span class="ident">new</span>(<span class="ident">status</span>).<span class="ident">at_code_offset</span>(<span class="self">self</span>.<span class="ident">current_function</span>, <span class="ident">offset</span>)
     }
 }
 
-<span class="kw">fn</span> <span class="ident">instruction_labels</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">instruction_labels</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">labels</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">context</span>.<span class="ident">code</span>.<span class="ident">len</span>()).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Label</span>::<span class="ident">Code</span>).<span class="ident">collect</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">loop_continue</span> <span class="op">=</span> <span class="op">|</span><span class="ident">loop_idx</span>: <span class="ident">CodeOffset</span>, <span class="ident">last_continue</span>: <span class="ident">CodeOffset</span><span class="op">|</span> {
         <span class="ident">labels</span>[<span class="ident">loop_idx</span> <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">=</span> <span class="ident">Label</span>::<span class="ident">Loop</span> { <span class="ident">last_continue</span> }
@@ -312,11 +313,11 @@
         <span class="kw">match</span> <span class="ident">instr</span> {
             <span class="comment">// Back jump/&quot;continue&quot;</span>
             <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">prev</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">prev</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">prev</span>)
-                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">prev</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span>
+                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">prev</span> <span class="op">&lt;=</span> <span class="ident">i</span> <span class="op">=&gt;</span>
             {
                 <span class="ident">loop_continue</span>(<span class="kw-2">*</span><span class="ident">prev</span>, <span class="ident">i</span>)
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+            <span class="kw">_</span> <span class="op">=&gt;</span> (),
         }
     }
     <span class="ident">labels</span>
@@ -326,7 +327,7 @@
 <span class="comment">//   - All forward jumps do not enter into the middle of a loop</span>
 <span class="comment">//   - All &quot;breaks&quot; go to the &quot;end&quot; of the loop</span>
 <span class="comment">//   - All back jumps are only to the current loop</span>
-<span class="kw">fn</span> <span class="ident">check_jumps</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">check_jumps</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="comment">// All back jumps are only to the current loop</span>
     <span class="ident">check_continues</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="ident">labels</span>)<span class="question-mark">?</span>;
     <span class="comment">// All &quot;breaks&quot; go to the &quot;end&quot; of the loop</span>
@@ -336,12 +337,12 @@
 }
 
 <span class="kw">fn</span> <span class="ident">check_code</span><span class="op">&lt;</span>
-    <span class="ident">F</span>: <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">CodeOffset</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>, <span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
+    <span class="ident">F</span>: <span class="ident">FnMut</span>(<span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">CodeOffset</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>, <span class="ident">CodeOffset</span>, <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
 <span class="op">&gt;</span>(
     <span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>,
     <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>],
     <span class="kw-2">mut</span> <span class="ident">check</span>: <span class="ident">F</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">loop_stack</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">CodeOffset</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">instr</span>, <span class="ident">label</span>) <span class="kw">in</span> <span class="ident">context</span>.<span class="ident">labeled_code</span>(<span class="ident">labels</span>) {
         <span class="comment">// Add loop to stack</span>
@@ -354,64 +355,64 @@
         <span class="comment">// Pop if last continue</span>
         <span class="kw">match</span> <span class="ident">instr</span> {
             <span class="comment">// Back jump/&quot;continue&quot;</span>
-            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;=</span> <span class="ident">i</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> (<span class="ident">_cur_loop</span>, <span class="ident">last_continue</span>) <span class="op">=</span> <span class="ident">loop_stack</span>.<span class="ident">last</span>().<span class="ident">unwrap</span>();
-                <span class="kw">if</span> <span class="ident">i</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">last_continue</span> {
+                <span class="kw">if</span> <span class="ident">i</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">last_continue</span> {
                     <span class="ident">loop_stack</span>.<span class="ident">pop</span>();
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+            <span class="kw">_</span> <span class="op">=&gt;</span> (),
         }
     }
     <span class="prelude-val">Ok</span>(())
 }
 
 <span class="comment">// All back jumps are only to the current loop</span>
-<span class="kw">fn</span> <span class="ident">check_continues</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">check_continues</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">check_code</span>(<span class="ident">context</span>, <span class="ident">labels</span>, <span class="op">|</span><span class="ident">loop_stack</span>, <span class="ident">i</span>, <span class="ident">instr</span><span class="op">|</span> {
         <span class="kw">match</span> <span class="ident">instr</span> {
             <span class="comment">// Back jump/&quot;continue&quot;</span>
-            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;=</span> <span class="ident">i</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> (<span class="ident">cur_loop</span>, <span class="ident">_last_continue</span>) <span class="op">=</span> <span class="ident">loop_stack</span>.<span class="ident">last</span>().<span class="ident">unwrap</span>();
-                <span class="kw">let</span> <span class="ident">is_continue</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">i</span>;
-                <span class="kw">if</span> <span class="ident">is_continue</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">j</span> <span class="op">!</span><span class="op">=</span> <span class="ident">cur_loop</span> {
+                <span class="kw">let</span> <span class="ident">is_continue</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&lt;=</span> <span class="ident">i</span>;
+                <span class="kw">if</span> <span class="ident">is_continue</span> <span class="op">&amp;&amp;</span> <span class="ident">j</span> <span class="op">!=</span> <span class="ident">cur_loop</span> {
                     <span class="comment">// Invalid back jump. Cannot back jump outside of the current loop</span>
                     <span class="prelude-val">Err</span>(<span class="ident">context</span>.<span class="ident">error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_LOOP_CONTINUE</span>, <span class="ident">i</span>))
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Ok</span>(())
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     })
 }
 
-<span class="kw">fn</span> <span class="ident">check_breaks</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">check_breaks</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">check_code</span>(<span class="ident">context</span>, <span class="ident">labels</span>, <span class="op">|</span><span class="ident">loop_stack</span>, <span class="ident">i</span>, <span class="ident">instr</span><span class="op">|</span> {
         <span class="kw">match</span> <span class="ident">instr</span> {
             <span class="comment">// Forward jump/&quot;break&quot;</span>
-            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">i</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>) <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">i</span> <span class="op">=&gt;</span> {
                 <span class="kw">match</span> <span class="ident">loop_stack</span>.<span class="ident">last</span>() {
                     <span class="prelude-val">Some</span>((<span class="ident">_cur_loop</span>, <span class="ident">last_continue</span>))
-                        <span class="kw">if</span> <span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">last_continue</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">!</span><span class="op">=</span> <span class="ident">last_continue</span> <span class="op">+</span> <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span>
+                        <span class="kw">if</span> <span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">last_continue</span> <span class="op">&amp;&amp;</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">!=</span> <span class="ident">last_continue</span> <span class="op">+</span> <span class="number">1</span> <span class="op">=&gt;</span>
                     {
                         <span class="comment">// Invalid loop break. Must break immediately to the instruction after</span>
                         <span class="comment">// the last continue</span>
                         <span class="prelude-val">Err</span>(<span class="ident">context</span>.<span class="ident">error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_LOOP_BREAK</span>, <span class="ident">i</span>))
                     }
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+                    <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     })
 }
 
-<span class="kw">fn</span> <span class="ident">check_no_loop_splits</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">is_break</span> <span class="op">=</span> <span class="op">|</span><span class="ident">loop_stack</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">CodeOffset</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>, <span class="ident">jump_target</span>: <span class="ident">CodeOffset</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+<span class="kw">fn</span> <span class="ident">check_no_loop_splits</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="ident">ControlFlowVerifier</span>, <span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">is_break</span> <span class="op">=</span> <span class="op">|</span><span class="ident">loop_stack</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">CodeOffset</span>, <span class="ident">CodeOffset</span>)<span class="op">&gt;</span>, <span class="ident">jump_target</span>: <span class="ident">CodeOffset</span><span class="op">|</span> <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="ident">loop_stack</span>.<span class="ident">last</span>() {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
-            <span class="prelude-val">Some</span>((<span class="ident">_cur_loop</span>, <span class="ident">last_continue</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">jump_target</span> <span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">last_continue</span>,
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
+            <span class="prelude-val">Some</span>((<span class="ident">_cur_loop</span>, <span class="ident">last_continue</span>)) <span class="op">=&gt;</span> <span class="ident">jump_target</span> <span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">last_continue</span>,
         }
     };
     <span class="kw">let</span> <span class="ident">loop_depth</span> <span class="op">=</span> <span class="ident">count_loop_depth</span>(<span class="kw-2">&amp;</span><span class="ident">labels</span>);
@@ -419,44 +420,44 @@
         <span class="kw">match</span> <span class="ident">instr</span> {
             <span class="comment">// Forward jump/&quot;break&quot;</span>
             <span class="ident">Bytecode</span>::<span class="ident">Branch</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrTrue</span>(<span class="ident">j</span>) <span class="op">|</span> <span class="ident">Bytecode</span>::<span class="ident">BrFalse</span>(<span class="ident">j</span>)
-                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">i</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">is_break</span>(<span class="ident">loop_stack</span>, <span class="kw-2">*</span><span class="ident">j</span>) <span class="op">=</span><span class="op">&gt;</span>
+                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">j</span> <span class="op">&gt;</span> <span class="ident">i</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">is_break</span>(<span class="ident">loop_stack</span>, <span class="kw-2">*</span><span class="ident">j</span>) <span class="op">=&gt;</span>
             {
                 <span class="kw">let</span> <span class="ident">j</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">j</span>;
                 <span class="kw">let</span> <span class="ident">before_depth</span> <span class="op">=</span> <span class="ident">loop_depth</span>[<span class="ident">i</span> <span class="kw">as</span> <span class="ident">usize</span>];
                 <span class="kw">let</span> <span class="ident">after_depth</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">labels</span>[<span class="ident">j</span> <span class="kw">as</span> <span class="ident">usize</span>] {
-                    <span class="ident">Label</span>::<span class="ident">Loop</span> { .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">loop_depth</span>[<span class="ident">j</span> <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">-</span> <span class="number">1</span>,
-                    <span class="ident">Label</span>::<span class="ident">Code</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">loop_depth</span>[<span class="ident">j</span> <span class="kw">as</span> <span class="ident">usize</span>],
+                    <span class="ident">Label</span>::<span class="ident">Loop</span> { .. } <span class="op">=&gt;</span> <span class="ident">loop_depth</span>[<span class="ident">j</span> <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">-</span> <span class="number">1</span>,
+                    <span class="ident">Label</span>::<span class="ident">Code</span> <span class="op">=&gt;</span> <span class="ident">loop_depth</span>[<span class="ident">j</span> <span class="kw">as</span> <span class="ident">usize</span>],
                 };
-                <span class="kw">if</span> <span class="ident">before_depth</span> <span class="op">!</span><span class="op">=</span> <span class="ident">after_depth</span> {
+                <span class="kw">if</span> <span class="ident">before_depth</span> <span class="op">!=</span> <span class="ident">after_depth</span> {
                     <span class="comment">// Invalid forward jump. Entered the middle of a loop</span>
                     <span class="prelude-val">Err</span>(<span class="ident">context</span>.<span class="ident">error</span>(<span class="ident">StatusCode</span>::<span class="ident">INVALID_LOOP_SPLIT</span>, <span class="ident">i</span>))
                 } <span class="kw">else</span> {
                     <span class="prelude-val">Ok</span>(())
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     })
 }
 
 <span class="comment">// Only called after continues are verified, so we can assume that loops are well nested</span>
-<span class="kw">fn</span> <span class="ident">count_loop_depth</span>(<span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">count_loop_depth</span>(<span class="ident">labels</span>: <span class="kw-2">&amp;</span>[<span class="ident">Label</span>]) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">last_continues</span>: <span class="ident">HashSet</span><span class="op">&lt;</span><span class="ident">CodeOffset</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">labels</span>
         .<span class="ident">iter</span>()
         .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">label</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">label</span> {
-            <span class="ident">Label</span>::<span class="ident">Loop</span> { <span class="ident">last_continue</span> } <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">last_continue</span>),
-            <span class="ident">Label</span>::<span class="ident">Code</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            <span class="ident">Label</span>::<span class="ident">Loop</span> { <span class="ident">last_continue</span> } <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">last_continue</span>),
+            <span class="ident">Label</span>::<span class="ident">Code</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         })
         .<span class="ident">collect</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counts</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">label</span>) <span class="kw">in</span> <span class="ident">labels</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Label</span>::<span class="ident">Loop</span> { .. } <span class="op">=</span> <span class="ident">label</span> {
-            <span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
+            <span class="ident">count</span> <span class="op">+=</span> <span class="number">1</span>
         }
         <span class="ident">counts</span>.<span class="ident">push</span>(<span class="ident">count</span>);
         <span class="kw">if</span> <span class="ident">last_continues</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">idx</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>()) {
-            <span class="ident">count</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="ident">count</span> <span class="op">-=</span> <span class="number">1</span>;
         }
     }
     <span class="ident">counts</span>

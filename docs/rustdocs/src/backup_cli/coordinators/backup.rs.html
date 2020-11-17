@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/backup/backup-cli/src/coordinators/backup.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>backup.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../backup_cli/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/backup/backup-cli/src/coordinators/backup.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>backup.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../backup_cli/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -404,9 +405,9 @@
 }
 
 <span class="kw">impl</span> <span class="ident">BackupCoordinatorOpt</span> {
-    <span class="kw">fn</span> <span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="self">self</span>.<span class="ident">state_snapshot_interval</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">transaction_batch_size</span> <span class="op">&gt;</span> <span class="number">0</span>,
+            <span class="self">self</span>.<span class="ident">state_snapshot_interval</span> <span class="op">&gt;</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">transaction_batch_size</span> <span class="op">&gt;</span> <span class="number">0</span>,
             <span class="string">&quot;Backup interval and batch size must be greater than 0.&quot;</span>
         );
         <span class="prelude-val">Ok</span>(())
@@ -428,7 +429,7 @@
         <span class="ident">global_opt</span>: <span class="ident">GlobalBackupOpt</span>,
         <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">BackupServiceClient</span><span class="op">&gt;</span>,
         <span class="ident">storage</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BackupStorage</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">opt</span>.<span class="ident">validate</span>().<span class="ident">unwrap</span>();
         <span class="self">Self</span> {
             <span class="ident">client</span>,
@@ -439,7 +440,7 @@
             <span class="ident">transaction_batch_size</span>: <span class="ident">opt</span>.<span class="ident">transaction_batch_size</span>,
         }
     }
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// Connect to both the local Libra node and the backup storage.</span>
         <span class="kw">let</span> <span class="ident">backup_state</span> <span class="op">=</span>
             <span class="ident">metadata</span>::<span class="ident">cache</span>::<span class="ident">sync_and_load</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metadata_cache_opt</span>, <span class="ident">Arc</span>::<span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">storage</span>))
@@ -451,8 +452,8 @@
         <span class="comment">// and the the latter informs the other backup type workers via channel 2, after epoch</span>
         <span class="comment">// ending is properly backed up, if necessary. This way, the epoch ending LedgerInfo needed</span>
         <span class="comment">// for proof verification is always available in the same backup storage.</span>
-        <span class="kw">let</span> (<span class="ident">tx1</span>, <span class="ident">rx1</span>) <span class="op">=</span> <span class="ident">watch</span>::<span class="ident">channel</span>::<span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
-        <span class="kw">let</span> (<span class="ident">tx2</span>, <span class="ident">rx2</span>) <span class="op">=</span> <span class="ident">watch</span>::<span class="ident">channel</span>::<span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>);
+        <span class="kw">let</span> (<span class="ident">tx1</span>, <span class="ident">rx1</span>) <span class="op">=</span> <span class="ident">watch</span>::<span class="ident">channel</span>::<span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;&gt;</span>(<span class="prelude-val">None</span>);
+        <span class="kw">let</span> (<span class="ident">tx2</span>, <span class="ident">rx2</span>) <span class="op">=</span> <span class="ident">watch</span>::<span class="ident">channel</span>::<span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;&gt;</span>(<span class="prelude-val">None</span>);
 
         <span class="comment">// Schedule work streams.</span>
         <span class="kw">let</span> <span class="ident">watch_db_state</span> <span class="op">=</span> <span class="ident">interval</span>(<span class="ident">Duration</span>::<span class="ident">from_secs</span>(<span class="number">1</span>))
@@ -495,15 +496,15 @@
             <span class="ident">all_work</span>
                 .<span class="ident">next</span>()
                 .<span class="kw">await</span>
-                .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Must be a bug: we never returned None.&quot;</span>))<span class="question-mark">?</span>
+                .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;Must be a bug: we never returned None.&quot;</span>))<span class="question-mark">?</span>
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">BackupCoordinator</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">try_refresh_db_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">db_state_broadcast</span>: <span class="kw-2">&amp;</span><span class="ident">watch</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">try_refresh_db_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">db_state_broadcast</span>: <span class="kw-2">&amp;</span><span class="ident">watch</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;&gt;</span>) {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">get_db_state</span>().<span class="kw">await</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="ident">s</span>.<span class="ident">is_none</span>() {
                     <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;DB not bootstrapped.&quot;</span>);
                 } <span class="kw">else</span> {
@@ -513,7 +514,7 @@
                         .<span class="ident">unwrap</span>()
                 }
             }
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> <span class="macro">warn</span><span class="macro">!</span>(
                 <span class="string">&quot;Failed pulling DbState from local Libra node: {}. Will keep trying.&quot;</span>,
                 <span class="ident">e</span>
             ),
@@ -524,12 +525,12 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="kw-2">mut</span> <span class="ident">last_epoch_ending_epoch_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
         <span class="ident">db_state</span>: <span class="ident">DbState</span>,
-        <span class="ident">downstream_db_state_broadcaster</span>: <span class="kw-2">&amp;</span><span class="ident">watch</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">downstream_db_state_broadcaster</span>: <span class="kw-2">&amp;</span><span class="ident">watch</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;&gt;</span> {
         <span class="kw">loop</span> {
             <span class="kw">let</span> (<span class="ident">first</span>, <span class="ident">last</span>) <span class="op">=</span> <span class="ident">get_batch_range</span>(<span class="ident">last_epoch_ending_epoch_in_backup</span>, <span class="number">1</span>);
 
-            <span class="kw">if</span> <span class="ident">db_state</span>.<span class="ident">epoch</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">last</span> {
+            <span class="kw">if</span> <span class="ident">db_state</span>.<span class="ident">epoch</span> <span class="op">&lt;=</span> <span class="ident">last</span> {
                 <span class="comment">// &quot;&lt;=&quot; because `db_state.epoch` hasn&#39;t ended yet, wait for the next db_state update</span>
                 <span class="kw">break</span>;
             }
@@ -559,7 +560,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">last_snapshot_version_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span>,
         <span class="ident">db_state</span>: <span class="ident">DbState</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">next_snapshot_version</span> <span class="op">=</span> <span class="ident">get_next_snapshot</span>(
             <span class="ident">last_snapshot_version_in_backup</span>,
             <span class="ident">db_state</span>,
@@ -589,7 +590,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="kw-2">mut</span> <span class="ident">last_transaction_version_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Version</span><span class="op">&gt;</span>,
         <span class="ident">db_state</span>: <span class="ident">DbState</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;&gt;</span> {
         <span class="kw">loop</span> {
             <span class="kw">let</span> (<span class="ident">first</span>, <span class="ident">last</span>) <span class="op">=</span> <span class="ident">get_batch_range</span>(
                 <span class="ident">last_transaction_version_in_backup</span>,
@@ -620,13 +621,13 @@
     <span class="kw">fn</span> <span class="ident">backup_work_stream</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>, <span class="ident">W</span>, <span class="ident">Fut</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>,
         <span class="ident">initial_state</span>: <span class="ident">S</span>,
-        <span class="ident">db_state_rx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">watch</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">db_state_rx</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">watch</span>::<span class="ident">Receiver</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">DbState</span><span class="op">&gt;&gt;</span>,
         <span class="ident">worker</span>: <span class="ident">W</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">StreamExt</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>
+    ) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">StreamExt</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> ()<span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>
     <span class="kw">where</span>
         <span class="ident">S</span>: <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">Debug</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
         <span class="ident">W</span>: <span class="ident">Worker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>, <span class="ident">Fut</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Copy</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
-        <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
+        <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
     {
         <span class="ident">stream</span>::<span class="ident">unfold</span>(
             (<span class="ident">initial_state</span>, <span class="ident">db_state_rx</span>.<span class="ident">clone</span>()),
@@ -634,7 +635,7 @@
                 <span class="kw">let</span> <span class="ident">db_state</span> <span class="op">=</span> <span class="ident">rx</span>
                     .<span class="ident">recv</span>()
                     .<span class="kw">await</span>
-                    .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;The broadcaster has been dropped.&quot;</span>))
+                    .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">anyhow</span><span class="macro">!</span>(<span class="string">&quot;The broadcaster has been dropped.&quot;</span>))
                     .<span class="ident">unwrap</span>();
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">db_state</span>) <span class="op">=</span> <span class="ident">db_state</span> {
                     <span class="kw">let</span> <span class="ident">next_state</span> <span class="op">=</span> <span class="ident">worker</span>(<span class="self">self</span>, <span class="ident">s</span>, <span class="ident">db_state</span>).<span class="kw">await</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
@@ -651,19 +652,19 @@
     }
 }
 
-<span class="kw">trait</span> <span class="ident">Worker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>, <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span><span class="op">&gt;</span>:
-    <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BackupCoordinator</span>, <span class="ident">S</span>, <span class="ident">DbState</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fut</span>
+<span class="kw">trait</span> <span class="ident">Worker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>, <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span><span class="op">&gt;</span>:
+    <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BackupCoordinator</span>, <span class="ident">S</span>, <span class="ident">DbState</span>) <span class="op">-&gt;</span> <span class="ident">Fut</span>
 {
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">T</span>, <span class="ident">S</span>, <span class="ident">Fut</span><span class="op">&gt;</span> <span class="ident">Worker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">S</span>, <span class="ident">Fut</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">T</span>
 <span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BackupCoordinator</span>, <span class="ident">S</span>, <span class="ident">DbState</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fut</span>,
-    <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
+    <span class="ident">T</span>: <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">BackupCoordinator</span>, <span class="ident">S</span>, <span class="ident">DbState</span>) <span class="op">-&gt;</span> <span class="ident">Fut</span>,
+    <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;a</span>,
 {
 }
 
-<span class="kw">fn</span> <span class="ident">get_batch_range</span>(<span class="ident">last_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">batch_size</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">u64</span>, <span class="ident">u64</span>) {
+<span class="kw">fn</span> <span class="ident">get_batch_range</span>(<span class="ident">last_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">batch_size</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> (<span class="ident">u64</span>, <span class="ident">u64</span>) {
     <span class="comment">// say, 7 is already in backup, and we target batches of size 10, we will return (8, 10) in this</span>
     <span class="comment">// case, so 8, 9, 10 will be in this batch, and next time the backup worker will pass in 10,</span>
     <span class="comment">// and we will return (11, 20). The transaction 0 will be in it&#39;s own batch.</span>
@@ -675,15 +676,15 @@
     })
 }
 
-<span class="kw">fn</span> <span class="ident">get_next_snapshot</span>(<span class="ident">last_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">db_state</span>: <span class="ident">DbState</span>, <span class="ident">interval</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+<span class="kw">fn</span> <span class="ident">get_next_snapshot</span>(<span class="ident">last_in_backup</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">db_state</span>: <span class="ident">DbState</span>, <span class="ident">interval</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
     <span class="comment">// We don&#39;t try to guarantee snapshots are taken at each applicable interval: when the backup</span>
     <span class="comment">// progress can&#39;t keep up with the ledger growth, we favor timeliness over completeness.</span>
     <span class="comment">// For example, with interval 100, when we finished taking a snapshot at version 700, if we</span>
     <span class="comment">// found the latest version is already 1250, the next snapshot we take will be at 1200, not 800.</span>
 
     <span class="kw">let</span> <span class="ident">next_for_storage</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">last_in_backup</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">last</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">last</span> <span class="op">/</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span>,
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+        <span class="prelude-val">Some</span>(<span class="ident">last</span>) <span class="op">=&gt;</span> (<span class="ident">last</span> <span class="op">/</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span>,
+        <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="number">0</span>,
     };
 
     <span class="kw">let</span> <span class="ident">last_for_db</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">db_state</span>.<span class="ident">committed_version</span> <span class="op">/</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="ident">interval</span> <span class="kw">as</span> <span class="ident">u64</span>;

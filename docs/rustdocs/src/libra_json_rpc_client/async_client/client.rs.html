@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `client/json-rpc/src/async_client/client.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>client.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_json_rpc_client/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `client/json-rpc/src/async_client/client.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>client.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_json_rpc_client/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -561,11 +562,11 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Request</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>, <span class="ident">params</span>: <span class="ident">serde_json</span>::<span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">method</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>, <span class="ident">params</span>: <span class="ident">serde_json</span>::<span class="ident">Value</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">Request</span> { <span class="ident">method</span>, <span class="ident">params</span> }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">submit</span>(<span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">lcs</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">submit</span>(<span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">lcs</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">txn_payload</span> <span class="op">=</span> <span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">lcs</span>::<span class="ident">to_bytes</span>(<span class="ident">txn</span>)<span class="question-mark">?</span>);
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;submit&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([<span class="ident">txn_payload</span>])))
     }
@@ -574,26 +575,26 @@
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">from_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
         <span class="ident">to_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(
             <span class="string">&quot;get_account_state_with_proof&quot;</span>,
             <span class="macro">json</span><span class="macro">!</span>([<span class="ident">address</span>, <span class="ident">from_version</span>, <span class="ident">to_version</span>]),
         )
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_state_proof</span>(<span class="ident">from_version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_state_proof</span>(<span class="ident">from_version</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_state_proof&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([<span class="ident">from_version</span>]))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_currencies</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_currencies</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_currencies&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([]))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_events</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">start_seq</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_events</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">start_seq</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_events&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([<span class="ident">key</span>, <span class="ident">start_seq</span>, <span class="ident">limit</span>]))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transactions</span>(<span class="ident">start_seq</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>, <span class="ident">include_events</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_transactions</span>(<span class="ident">start_seq</span>: <span class="ident">u64</span>, <span class="ident">limit</span>: <span class="ident">u64</span>, <span class="ident">include_events</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(
             <span class="string">&quot;get_transactions&quot;</span>,
             <span class="macro">json</span><span class="macro">!</span>([<span class="ident">start_seq</span>, <span class="ident">limit</span>, <span class="ident">include_events</span>]),
@@ -605,7 +606,7 @@
         <span class="ident">start_seq</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
         <span class="ident">include_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(
             <span class="string">&quot;get_account_transactions&quot;</span>,
             <span class="macro">json</span><span class="macro">!</span>([<span class="ident">address</span>, <span class="ident">start_seq</span>, <span class="ident">limit</span>, <span class="ident">include_events</span>]),
@@ -616,25 +617,25 @@
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">seq</span>: <span class="ident">u64</span>,
         <span class="ident">include_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(
             <span class="string">&quot;get_account_transaction&quot;</span>,
             <span class="macro">json</span><span class="macro">!</span>([<span class="ident">address</span>, <span class="ident">seq</span>, <span class="ident">include_events</span>]),
         )
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account</span>(<span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_account&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([<span class="ident">address</span>]))
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata_by_version</span>(<span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata_by_version</span>(<span class="ident">version</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_metadata&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([<span class="ident">version</span>]))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span>::<span class="ident">new</span>(<span class="string">&quot;get_metadata&quot;</span>, <span class="macro">json</span><span class="macro">!</span>([]))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_json</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">serde_json</span>::<span class="ident">Value</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_json</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">id</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">serde_json</span>::<span class="ident">Value</span> {
         <span class="macro">json</span><span class="macro">!</span>({<span class="string">&quot;jsonrpc&quot;</span>: <span class="string">&quot;2.0&quot;</span>, <span class="string">&quot;id&quot;</span>: <span class="ident">id</span>, <span class="string">&quot;method&quot;</span>: <span class="self">self</span>.<span class="ident">method</span>, <span class="string">&quot;params&quot;</span>: <span class="self">self</span>.<span class="ident">params</span>})
     }
 }
@@ -648,23 +649,23 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">ops</span>::<span class="ident">Deref</span> <span class="kw">for</span> <span class="ident">Response</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Target</span> <span class="op">=</span> <span class="ident">R</span>;
 
-    <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Target</span> {
+    <span class="kw">fn</span> <span class="ident">deref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Target</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">result</span>
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Response</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;&gt;</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Response</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span>;
 
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">resp</span>: <span class="ident">JsonRpcResponse</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">resp</span>: <span class="ident">JsonRpcResponse</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">State</span>::<span class="ident">from_response</span>(<span class="kw-2">&amp;</span><span class="ident">resp</span>);
         <span class="kw">match</span> <span class="ident">resp</span>.<span class="ident">result</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
                 <span class="ident">result</span>: <span class="ident">serde_json</span>::<span class="ident">from_value</span>::<span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">ret</span>)
                     .<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">DeserializeResponseJsonError</span>)<span class="question-mark">?</span>,
                 <span class="ident">state</span>,
             }),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ResultNotFound</span>(<span class="ident">resp</span>)),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ResultNotFound</span>(<span class="ident">resp</span>)),
         }
     }
 }
@@ -673,12 +674,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Client</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
     <span class="kw">pub</span> <span class="ident">http_client</span>: <span class="ident">reqwest</span>::<span class="ident">Client</span>,
     <span class="kw">pub</span> <span class="ident">server_url</span>: <span class="ident">reqwest</span>::<span class="ident">Url</span>,
-    <span class="kw">pub</span> <span class="ident">last_known_state</span>: <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">State</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">last_known_state</span>: <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">State</span><span class="op">&gt;&gt;</span>,
     <span class="kw">pub</span> <span class="ident">retry</span>: <span class="ident">R</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RetryStrategy</span><span class="op">&gt;</span> <span class="ident">Client</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_url</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">reqwest</span>::<span class="ident">IntoUrl</span><span class="op">&gt;</span>(<span class="ident">server_url</span>: <span class="ident">T</span>, <span class="ident">retry</span>: <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">reqwest</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_url</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">reqwest</span>::<span class="ident">IntoUrl</span><span class="op">&gt;</span>(<span class="ident">server_url</span>: <span class="ident">T</span>, <span class="ident">retry</span>: <span class="ident">R</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">reqwest</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">http_client</span>: <span class="ident">reqwest</span>::<span class="ident">ClientBuilder</span>::<span class="ident">new</span>()
                 .<span class="ident">use_native_tls</span>()
@@ -696,7 +697,7 @@
         <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>,
         <span class="ident">timeout</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
         <span class="ident">delay</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">WaitForTransactionError</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">WaitForTransactionError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">wait_for_transaction</span>(
             <span class="kw-2">&amp;</span><span class="ident">txn</span>.<span class="ident">sender</span>(),
             <span class="ident">txn</span>.<span class="ident">sequence_number</span>(),
@@ -716,7 +717,7 @@
         <span class="ident">txn_hash</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">timeout</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
         <span class="ident">delay</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Duration</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">WaitForTransactionError</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span>, <span class="ident">WaitForTransactionError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">start</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">time</span>::<span class="ident">Instant</span>::<span class="ident">now</span>();
         <span class="kw">while</span> <span class="ident">start</span>.<span class="ident">elapsed</span>() <span class="op">&lt;</span> <span class="ident">timeout</span>.<span class="ident">unwrap_or</span>(<span class="ident">defaults</span>::<span class="ident">TIMEOUT</span>) {
             <span class="kw">let</span> <span class="ident">txn_resp</span> <span class="op">=</span> <span class="self">self</span>
@@ -724,11 +725,11 @@
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">GetTransactionError</span>)<span class="question-mark">?</span>;
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">txn</span>) <span class="op">=</span> <span class="ident">txn_resp</span>.<span class="ident">result</span> {
-                <span class="kw">if</span> <span class="ident">txn</span>.<span class="ident">hash</span> <span class="op">!</span><span class="op">=</span> <span class="ident">txn_hash</span> {
+                <span class="kw">if</span> <span class="ident">txn</span>.<span class="ident">hash</span> <span class="op">!=</span> <span class="ident">txn_hash</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">TransactionHashMismatchError</span>(<span class="ident">txn</span>));
                 }
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">vm_status</span>) <span class="op">=</span> <span class="ident">txn</span>.<span class="ident">vm_status</span> {
-                    <span class="kw">if</span> <span class="ident">vm_status</span>.<span class="ident">r#type</span> <span class="op">!</span><span class="op">=</span> <span class="ident">jsonrpc</span>::<span class="ident">VM_STATUS_EXECUTED</span> {
+                    <span class="kw">if</span> <span class="ident">vm_status</span>.<span class="ident">r#type</span> <span class="op">!=</span> <span class="ident">jsonrpc</span>::<span class="ident">VM_STATUS_EXECUTED</span> {
                         <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">TransactionExecutionFailed</span>(<span class="ident">txn</span>));
                     }
                 }
@@ -738,7 +739,7 @@
                 });
             }
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">last_known_state</span>() {
-                <span class="kw">if</span> <span class="ident">expiration_time_secs</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">state</span>.<span class="ident">timestamp_usecs</span> <span class="op">/</span> <span class="number">1_000_000</span> {
+                <span class="kw">if</span> <span class="ident">expiration_time_secs</span> <span class="op">&lt;=</span> <span class="ident">state</span>.<span class="ident">timestamp_usecs</span> <span class="op">/</span> <span class="number">1_000_000</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">TransactionExpired</span>(
                         <span class="ident">state</span>.<span class="ident">timestamp_usecs</span>,
                     ));
@@ -749,12 +750,12 @@
         <span class="prelude-val">Err</span>(<span class="ident">WaitForTransactionError</span>::<span class="ident">Timeout</span>(<span class="ident">start</span>.<span class="ident">elapsed</span>()))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_known_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">State</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_known_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">State</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">last_known_state</span>.<span class="ident">read</span>().<span class="ident">unwrap</span>();
         <span class="ident">data</span>.<span class="ident">clone</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">resp_state</span>: <span class="ident">State</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">resp_state</span>: <span class="ident">State</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state_writer</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">last_known_state</span>.<span class="ident">write</span>().<span class="ident">unwrap</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">state_writer</span> {
             <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">resp_state</span> <span class="op">&lt;</span> <span class="ident">state</span> {
@@ -765,21 +766,21 @@
         <span class="bool-val">true</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_metadata</span>()).<span class="kw">await</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_metadata_by_version</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">version</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_metadata_by_version</span>(<span class="ident">version</span>)).<span class="kw">await</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_account</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Account</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send_opt</span>(<span class="ident">Request</span>::<span class="ident">get_account</span>(<span class="ident">address</span>)).<span class="kw">await</span>
     }
 
@@ -788,7 +789,7 @@
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">seq</span>: <span class="ident">u64</span>,
         <span class="ident">include_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send_opt</span>(<span class="ident">Request</span>::<span class="ident">get_account_transaction</span>(
             <span class="ident">address</span>,
             <span class="ident">seq</span>,
@@ -803,7 +804,7 @@
         <span class="ident">start_seq</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
         <span class="ident">include_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_account_transactions</span>(
             <span class="ident">address</span>,
             <span class="ident">start_seq</span>,
@@ -818,7 +819,7 @@
         <span class="ident">start_seq</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
         <span class="ident">include_events</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Transaction</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_transactions</span>(<span class="ident">start_seq</span>, <span class="ident">limit</span>, <span class="ident">include_events</span>))
             .<span class="kw">await</span>
     }
@@ -828,18 +829,18 @@
         <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
         <span class="ident">start_seq</span>: <span class="ident">u64</span>,
         <span class="ident">limit</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Event</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">Event</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_events</span>(<span class="ident">key</span>, <span class="ident">start_seq</span>, <span class="ident">limit</span>)).<span class="kw">await</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_currencies</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">CurrencyInfo</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_currencies</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">CurrencyInfo</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_currencies</span>()).<span class="kw">await</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_state_proof</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">from_version</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">StateProof</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">StateProof</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_state_proof</span>(<span class="ident">from_version</span>)).<span class="kw">await</span>
     }
 
@@ -848,7 +849,7 @@
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">from_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
         <span class="ident">to_version</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">AccountStateWithProof</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">jsonrpc</span>::<span class="ident">AccountStateWithProof</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send</span>(<span class="ident">Request</span>::<span class="ident">get_account_state_with_proof</span>(
             <span class="ident">address</span>,
             <span class="ident">from_version</span>,
@@ -857,7 +858,7 @@
         .<span class="kw">await</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">submit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span>()<span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">submit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">SignedTransaction</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span>()<span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">Request</span>::<span class="ident">submit</span>(<span class="ident">txn</span>).<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">unexpected_lcs_error</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_without_retry</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Response</span> {
@@ -866,37 +867,37 @@
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">Request</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="ident">Request</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">send_with_retry</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>).<span class="kw">await</span><span class="question-mark">?</span>.<span class="ident">try_into</span>()
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_opt</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">DeserializeOwned</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">request</span>: <span class="ident">Request</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Response</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_with_retry</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">State</span>::<span class="ident">from_response</span>(<span class="kw-2">&amp;</span><span class="ident">resp</span>);
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">resp</span>.<span class="ident">result</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=&gt;</span> {
                 <span class="prelude-val">Some</span>(<span class="ident">serde_json</span>::<span class="ident">from_value</span>(<span class="ident">ret</span>).<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">DeserializeResponseJsonError</span>)<span class="question-mark">?</span>)
             }
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         };
         <span class="prelude-val">Ok</span>(<span class="ident">Response</span> { <span class="ident">result</span>, <span class="ident">state</span> })
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_with_retry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">Request</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_with_retry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">Request</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retries</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_without_retry</span>(<span class="ident">request</span>).<span class="kw">await</span>;
             <span class="kw">match</span> <span class="ident">ret</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">r</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">retries</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_retry_error</span>(<span class="ident">retries</span>, <span class="ident">err</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">r</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="ident">retries</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_retry_error</span>(<span class="ident">retries</span>, <span class="ident">err</span>).<span class="kw">await</span><span class="question-mark">?</span>,
             }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_without_retry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">Request</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_without_retry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">Request</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="number">1</span>;
         <span class="kw">let</span> <span class="ident">rpc_resp</span>: <span class="ident">JsonRpcResponse</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_json_request</span>(<span class="ident">request</span>.<span class="ident">to_json</span>(<span class="ident">id</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">validate</span>(<span class="kw-2">&amp;</span><span class="ident">rpc_resp</span>, <span class="ident">id</span>, <span class="ident">id</span>)<span class="question-mark">?</span>;
@@ -940,20 +941,20 @@
     <span class="doccomment">/// This function calls to batch_send_with_retry, when you batch submit transactions,</span>
     <span class="doccomment">/// to avoid re-submit errors, it is better to use batch_send_without_retry and handle errors</span>
     <span class="doccomment">/// by yourself.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">batch_send</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">requests</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">batch_send</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">requests</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">batch_send_with_retry</span>(<span class="kw-2">&amp;</span><span class="ident">requests</span>).<span class="kw">await</span>
     }
 
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">batch_send_with_retry</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">requests</span>: <span class="kw-2">&amp;</span>[<span class="ident">Request</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">retries</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">loop</span> {
             <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">batch_send_without_retry</span>(<span class="ident">requests</span>).<span class="kw">await</span>;
             <span class="kw">match</span> <span class="ident">ret</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">r</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">retries</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_retry_error</span>(<span class="ident">retries</span>, <span class="ident">err</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+                <span class="prelude-val">Ok</span>(<span class="ident">r</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">r</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="ident">retries</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">handle_retry_error</span>(<span class="ident">retries</span>, <span class="ident">err</span>).<span class="kw">await</span><span class="question-mark">?</span>,
             }
         }
     }
@@ -961,7 +962,7 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">batch_send_without_retry</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">requests</span>: <span class="kw-2">&amp;</span>[<span class="ident">Request</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">json_requests</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">serde_json</span>::<span class="ident">Value</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">requests</span>
             .<span class="ident">iter</span>()
             .<span class="ident">enumerate</span>()
@@ -969,7 +970,7 @@
             .<span class="ident">collect</span>();
 
         <span class="kw">let</span> <span class="ident">rpc_resps</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">JsonRpcResponse</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">send_json_request</span>(<span class="macro">json</span><span class="macro">!</span>[<span class="kw-2">&amp;</span><span class="ident">json_requests</span>]).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">rpc_resps</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">requests</span>.<span class="ident">len</span>() {
+        <span class="kw">if</span> <span class="ident">rpc_resps</span>.<span class="ident">len</span>() <span class="op">!=</span> <span class="ident">requests</span>.<span class="ident">len</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">unexpected_invalid_batch_response</span>(<span class="ident">rpc_resps</span>));
         }
 
@@ -989,15 +990,15 @@
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">req</span>)<span class="op">|</span> {
                 <span class="ident">resp_maps</span>
                     .<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>)
-                    .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="ident">unexpected_no_response</span>(<span class="ident">req</span>.<span class="ident">clone</span>()))
+                    .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="ident">Error</span>::<span class="ident">unexpected_no_response</span>(<span class="ident">req</span>.<span class="ident">clone</span>()))
             })
             .<span class="ident">collect</span>()
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_json_request</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">send_json_request</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="kw">for</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">serde</span>::<span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">req</span>: <span class="ident">serde_json</span>::<span class="ident">Value</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">http_client</span>
             .<span class="ident">post</span>(<span class="self">self</span>.<span class="ident">server_url</span>.<span class="ident">clone</span>())
@@ -1005,7 +1006,7 @@
             .<span class="ident">send</span>()
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">NetworkError</span>)<span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">status</span>() <span class="op">!</span><span class="op">=</span> <span class="number">200</span> {
+        <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">status</span>() <span class="op">!=</span> <span class="number">200</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidHTTPStatus</span>(<span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:#?}&quot;</span>, <span class="ident">resp</span>)));
         }
         <span class="ident">resp</span>.<span class="ident">json</span>().<span class="kw">await</span>.<span class="ident">map_err</span>(<span class="ident">Error</span>::<span class="ident">InvalidHTTPResponse</span>)
@@ -1016,14 +1017,14 @@
         <span class="ident">resp</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcResponse</span>,
         <span class="ident">min_id</span>: <span class="ident">usize</span>,
         <span class="ident">max_id</span>: <span class="ident">usize</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">jsonrpc</span> <span class="op">!</span><span class="op">=</span> <span class="string">&quot;2.0&quot;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">jsonrpc</span> <span class="op">!=</span> <span class="string">&quot;2.0&quot;</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">InvalidRpcResponse</span>(<span class="ident">resp</span>.<span class="ident">clone</span>()));
         }
 
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="ident">id</span>) <span class="op">=</span> <span class="ident">resp</span>.<span class="ident">id</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">index</span>) <span class="op">=</span> <span class="ident">serde_json</span>::<span class="ident">from_value</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>(<span class="ident">id</span>.<span class="ident">clone</span>()) {
-                <span class="kw">if</span> <span class="ident">index</span> <span class="op">&gt;</span> <span class="ident">max_id</span> <span class="op">|</span><span class="op">|</span> <span class="ident">index</span> <span class="op">&lt;</span> <span class="ident">min_id</span> {
+                <span class="kw">if</span> <span class="ident">index</span> <span class="op">&gt;</span> <span class="ident">max_id</span> <span class="op">||</span> <span class="ident">index</span> <span class="op">&lt;</span> <span class="ident">min_id</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">unexpected_invalid_response_id</span>(<span class="ident">resp</span>.<span class="ident">clone</span>()));
                 }
                 <span class="ident">index</span>
@@ -1035,7 +1036,7 @@
         };
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">last_known_state</span>() {
-            <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">libra_chain_id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">state</span>.<span class="ident">chain_id</span> {
+            <span class="kw">if</span> <span class="ident">resp</span>.<span class="ident">libra_chain_id</span> <span class="op">!=</span> <span class="ident">state</span>.<span class="ident">chain_id</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">ChainIdMismatch</span>(<span class="ident">resp</span>.<span class="ident">clone</span>()));
             }
         }
@@ -1051,16 +1052,16 @@
         <span class="prelude-val">Ok</span>(<span class="ident">id</span>)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_retry_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">retries</span>: <span class="ident">u32</span>, <span class="ident">err</span>: <span class="ident">Error</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">handle_retry_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">retries</span>: <span class="ident">u32</span>, <span class="ident">err</span>: <span class="ident">Error</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">retry</span>.<span class="ident">is_retriable</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>);
         }
         <span class="kw">if</span> <span class="ident">retries</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">retry</span>.<span class="ident">max_retries</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>) {
             <span class="kw">match</span> <span class="ident">retries</span>.<span class="ident">checked_add</span>(<span class="number">1</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="kw">if</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">retry</span>.<span class="ident">max_retries</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="kw">if</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">retry</span>.<span class="ident">max_retries</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>) <span class="op">=&gt;</span> {
                     <span class="ident">retries</span> <span class="op">=</span> <span class="ident">i</span>;
                 }
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
+                <span class="kw">_</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
             };
             <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="self">self</span>.<span class="ident">retry</span>.<span class="ident">delay</span>(<span class="kw-2">&amp;</span><span class="ident">err</span>, <span class="ident">retries</span>)).<span class="kw">await</span>;
             <span class="prelude-val">Ok</span>(<span class="ident">retries</span>)

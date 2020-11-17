@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/channel/src/libra_channel.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>libra_channel.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../channel/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/channel/src/libra_channel.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>libra_channel.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../channel/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -244,7 +245,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">struct</span> <span class="ident">SharedState</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The internal queue of messages in this channel.</span>
-    <span class="ident">internal_queue</span>: <span class="ident">PerKeyQueue</span><span class="op">&lt;</span><span class="ident">K</span>, (<span class="ident">M</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
+    <span class="ident">internal_queue</span>: <span class="ident">PerKeyQueue</span><span class="op">&lt;</span><span class="ident">K</span>, (<span class="ident">M</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
     <span class="doccomment">/// The `Receiver` registers its `Waker` in this slot when the queue is empty.</span>
     <span class="doccomment">/// `Sender`s will try to wake the `Receiver` (if any) when they push a new</span>
     <span class="doccomment">/// item onto the queue. The last live `Sender` will also wake the `Receiver`</span>
@@ -265,7 +266,7 @@
 <span class="doccomment">/// The sending end of the libra_channel.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="ident">shared_state</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">SharedState</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">shared_state</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">SharedState</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// The status of an element inserted into a libra_channel. If the element is successfully</span>
@@ -277,20 +278,20 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">PartialEq</span><span class="op">&gt;</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> (<span class="self">self</span>, <span class="ident">other</span>) {
-            (<span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span>, <span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            (<span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">a</span>), <span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">b</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">a</span>.<span class="ident">eq</span>(<span class="ident">b</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            (<span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span>, <span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span>) <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            (<span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">a</span>), <span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">b</span>)) <span class="op">=&gt;</span> <span class="ident">a</span>.<span class="ident">eq</span>(<span class="ident">b</span>),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
         }
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Debug</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Dequeued&quot;</span>),
-            <span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Dropped({:?})&quot;</span>, <span class="ident">v</span>),
+            <span class="ident">ElementStatus</span>::<span class="ident">Dequeued</span> <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Dequeued&quot;</span>),
+            <span class="ident">ElementStatus</span>::<span class="ident">Dropped</span>(<span class="ident">v</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;Dropped({:?})&quot;</span>, <span class="ident">v</span>),
         }
     }
 }
@@ -298,7 +299,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
     <span class="doccomment">/// This adds the message into the internal queue data structure. This is a</span>
     <span class="doccomment">/// synchronous call.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">K</span>, <span class="ident">message</span>: <span class="ident">M</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">K</span>, <span class="ident">message</span>: <span class="ident">M</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">push_with_feedback</span>(<span class="ident">key</span>, <span class="ident">message</span>, <span class="prelude-val">None</span>)
     }
 
@@ -308,8 +309,8 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">key</span>: <span class="ident">K</span>,
         <span class="ident">message</span>: <span class="ident">M</span>,
-        <span class="ident">status_ch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="ident">status_ch</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">oneshot</span>::<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ElementStatus</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="macro">ensure</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">shared_state</span>.<span class="ident">receiver_dropped</span>, <span class="string">&quot;Channel is closed&quot;</span>);
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
@@ -329,12 +330,12 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">Clone</span> <span class="kw">for</span> <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">clone</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">clone</span>();
         {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state_lock</span> <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">lock</span>();
             <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state_lock</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
-            <span class="ident">shared_state_lock</span>.<span class="ident">num_senders</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="ident">shared_state_lock</span>.<span class="ident">num_senders</span> <span class="op">+=</span> <span class="number">1</span>;
         }
         <span class="ident">Sender</span> { <span class="ident">shared_state</span> }
     }
@@ -345,9 +346,9 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
 
         <span class="macro">debug_assert</span><span class="macro">!</span>(<span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">&gt;</span> <span class="number">0</span>);
-        <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">-=</span> <span class="number">1</span>;
 
-        <span class="kw">if</span> <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+        <span class="kw">if</span> <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">waker</span>) <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">waker</span>.<span class="ident">take</span>() {
                 <span class="ident">waker</span>.<span class="ident">wake</span>();
             }
@@ -357,7 +358,7 @@
 
 <span class="doccomment">/// The receiving end of the libra_channel.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="ident">shared_state</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">SharedState</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">shared_state</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">SharedState</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
@@ -382,7 +383,7 @@
     <span class="doccomment">/// poll_next checks whether there is something ready for consumption from the internal</span>
     <span class="doccomment">/// queue. If there is, then it returns immediately. If the internal_queue is empty,</span>
     <span class="doccomment">/// it sets the waker passed to it by the scheduler/executor and returns Pending</span>
-    <span class="kw">fn</span> <span class="ident">poll_next</span>(<span class="self">self</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">cx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">poll_next</span>(<span class="self">self</span>: <span class="ident">Pin</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span><span class="op">&gt;</span>, <span class="ident">cx</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">Poll</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="ident">val</span>, <span class="ident">status_ch</span>)) <span class="op">=</span> <span class="ident">shared_state</span>.<span class="ident">internal_queue</span>.<span class="ident">pop</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">status_ch</span>) <span class="op">=</span> <span class="ident">status_ch</span> {
@@ -390,7 +391,7 @@
             }
             <span class="ident">Poll</span>::<span class="ident">Ready</span>(<span class="prelude-val">Some</span>(<span class="ident">val</span>))
         <span class="comment">// all senders have been dropped (and so the stream is terminated)</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">shared_state</span>.<span class="ident">num_senders</span> <span class="op">==</span> <span class="number">0</span> {
             <span class="ident">shared_state</span>.<span class="ident">stream_terminated</span> <span class="op">=</span> <span class="bool-val">true</span>;
             <span class="ident">Poll</span>::<span class="ident">Ready</span>(<span class="prelude-val">None</span>)
         } <span class="kw">else</span> {
@@ -401,7 +402,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">M</span><span class="op">&gt;</span> <span class="ident">FusedStream</span> <span class="kw">for</span> <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">is_terminated</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_terminated</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">shared_state</span>.<span class="ident">lock</span>().<span class="ident">stream_terminated</span>
     }
 }
@@ -411,7 +412,7 @@
     <span class="ident">queue_style</span>: <span class="ident">QueueStyle</span>,
     <span class="ident">max_queue_size_per_key</span>: <span class="ident">NonZeroUsize</span>,
     <span class="ident">counters</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">IntCounterVec</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span>, <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span>) {
+) <span class="op">-&gt;</span> (<span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span>, <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">M</span><span class="op">&gt;</span>) {
     <span class="kw">let</span> <span class="ident">shared_state</span> <span class="op">=</span> <span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">SharedState</span> {
         <span class="ident">internal_queue</span>: <span class="ident">PerKeyQueue</span>::<span class="ident">new</span>(<span class="ident">queue_style</span>, <span class="ident">max_queue_size_per_key</span>, <span class="ident">counters</span>),
         <span class="ident">waker</span>: <span class="prelude-val">None</span>,

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/compiler/ir-to-bytecode/src/parser.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>parser.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../ir_to_bytecode/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/compiler/ir-to-bytecode/src/parser.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>parser.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../ir_to_bytecode/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -234,31 +235,31 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// The only allowed printable characters are the printable ascii characters (SPACE through ~) and</span>
 <span class="doccomment">/// tabs. All other characters are invalid and we return false.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_printable_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_printable_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
     <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">c</span> <span class="kw">as</span> <span class="ident">u32</span>;
-    <span class="kw">let</span> <span class="ident">is_above_space</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">0x20</span>; <span class="comment">// Don&#39;t allow meta characters</span>
-    <span class="kw">let</span> <span class="ident">is_below_tilde</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">&lt;</span><span class="op">=</span> <span class="number">0x7E</span>; <span class="comment">// Don&#39;t allow DEL meta character</span>
-    <span class="kw">let</span> <span class="ident">is_tab</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="number">0x09</span>; <span class="comment">// Allow tabs</span>
-    (<span class="ident">is_above_space</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">is_below_tilde</span>) <span class="op">|</span><span class="op">|</span> <span class="ident">is_tab</span>
+    <span class="kw">let</span> <span class="ident">is_above_space</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">&gt;=</span> <span class="number">0x20</span>; <span class="comment">// Don&#39;t allow meta characters</span>
+    <span class="kw">let</span> <span class="ident">is_below_tilde</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">&lt;=</span> <span class="number">0x7E</span>; <span class="comment">// Don&#39;t allow DEL meta character</span>
+    <span class="kw">let</span> <span class="ident">is_tab</span> <span class="op">=</span> <span class="ident">x</span> <span class="op">==</span> <span class="number">0x09</span>; <span class="comment">// Allow tabs</span>
+    (<span class="ident">is_above_space</span> <span class="op">&amp;&amp;</span> <span class="ident">is_below_tilde</span>) <span class="op">||</span> <span class="ident">is_tab</span>
 }
 
 <span class="doccomment">/// Determine if a character is a permitted newline character.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The only permitted newline character is \n. All others are invalid.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_newline_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_newline_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
     <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">c</span> <span class="kw">as</span> <span class="ident">u32</span>;
-    <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="number">0x0A</span>
+    <span class="ident">x</span> <span class="op">==</span> <span class="number">0x0A</span>
 }
 
 <span class="doccomment">/// Determine if a character is permitted character.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// A permitted character is either a permitted printable character, or a permitted</span>
 <span class="doccomment">/// newline. Any other characters are disallowed from appearing in the file.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-    <span class="ident">is_permitted_printable_char</span>(<span class="ident">c</span>) <span class="op">|</span><span class="op">|</span> <span class="ident">is_permitted_newline_char</span>(<span class="ident">c</span>)
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_permitted_char</span>(<span class="ident">c</span>: <span class="ident">char</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+    <span class="ident">is_permitted_printable_char</span>(<span class="ident">c</span>) <span class="op">||</span> <span class="ident">is_permitted_newline_char</span>(<span class="ident">c</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">verify_string</span>(<span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">verify_string</span>(<span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="ident">string</span>
         .<span class="ident">chars</span>()
         .<span class="ident">find</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="op">!</span><span class="ident">is_permitted_char</span>(<span class="kw-2">*</span><span class="ident">c</span>))
@@ -271,7 +272,7 @@
         })
 }
 
-<span class="kw">fn</span> <span class="ident">strip_comments</span>(<span class="ident">source</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+<span class="kw">fn</span> <span class="ident">strip_comments</span>(<span class="ident">source</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
     <span class="kw">const</span> <span class="ident">SLASH</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39;/&#39;</span>;
     <span class="kw">const</span> <span class="ident">SPACE</span>: <span class="ident">char</span> <span class="op">=</span> <span class="string">&#39; &#39;</span>;
 
@@ -282,8 +283,8 @@
     <span class="kw">while</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">chr</span>) <span class="op">=</span> <span class="ident">char_iter</span>.<span class="ident">next</span>() {
         <span class="kw">let</span> <span class="ident">at_newline</span> <span class="op">=</span> <span class="ident">is_permitted_newline_char</span>(<span class="ident">chr</span>);
         <span class="kw">let</span> <span class="ident">at_or_after_slash_slash</span> <span class="op">=</span>
-            <span class="ident">in_comment</span> <span class="op">|</span><span class="op">|</span> (<span class="ident">chr</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SLASH</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">char_iter</span>.<span class="ident">peek</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">c</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SLASH</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>));
-        <span class="ident">in_comment</span> <span class="op">=</span> <span class="op">!</span><span class="ident">at_newline</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">at_or_after_slash_slash</span>;
+            <span class="ident">in_comment</span> <span class="op">||</span> (<span class="ident">chr</span> <span class="op">==</span> <span class="ident">SLASH</span> <span class="op">&amp;&amp;</span> <span class="ident">char_iter</span>.<span class="ident">peek</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">c</span> <span class="op">==</span> <span class="ident">SLASH</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>));
+        <span class="ident">in_comment</span> <span class="op">=</span> <span class="op">!</span><span class="ident">at_newline</span> <span class="op">&amp;&amp;</span> <span class="ident">at_or_after_slash_slash</span>;
         <span class="ident">acc</span>.<span class="ident">push</span>(<span class="kw">if</span> <span class="ident">in_comment</span> { <span class="ident">SPACE</span> } <span class="kw">else</span> { <span class="ident">chr</span> });
     }
 
@@ -292,14 +293,14 @@
 
 <span class="comment">// We restrict strings to only ascii visual characters (0x20 &lt;= c &lt;= 0x7E) or a permitted newline</span>
 <span class="comment">// character--\n--or a tab--\t.</span>
-<span class="kw">fn</span> <span class="ident">strip_comments_and_verify</span>(<span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">strip_comments_and_verify</span>(<span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="ident">verify_string</span>(<span class="ident">string</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">strip_comments</span>(<span class="ident">string</span>))
 }
 
 <span class="doccomment">/// Given the raw input of a file, creates a `ScriptOrModule` enum</span>
 <span class="doccomment">/// Fails with `Err(_)` if the text cannot be parsed`</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_script_or_module</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">ScriptOrModule</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_script_or_module</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">ScriptOrModule</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">stripped_string</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">strip_comments_and_verify</span>(<span class="ident">s</span>)<span class="question-mark">?</span>;
     <span class="ident">syntax</span>::<span class="ident">parse_script_or_module_string</span>(<span class="ident">file_name</span>, <span class="ident">stripped_string</span>)
         .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">handle_error</span>(<span class="ident">e</span>, <span class="ident">s</span>))
@@ -307,7 +308,7 @@
 
 <span class="doccomment">/// Given the raw input of a file, creates a `Script` struct</span>
 <span class="doccomment">/// Fails with `Err(_)` if the text cannot be parsed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_script</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">script_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">Script</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_script</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">script_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">Script</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">stripped_string</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">strip_comments_and_verify</span>(<span class="ident">script_str</span>)<span class="question-mark">?</span>;
     <span class="ident">syntax</span>::<span class="ident">parse_script_string</span>(<span class="ident">file_name</span>, <span class="ident">stripped_string</span>)
         .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">handle_error</span>(<span class="ident">e</span>, <span class="ident">stripped_string</span>))
@@ -315,7 +316,7 @@
 
 <span class="doccomment">/// Given the raw input of a file, creates a single `ModuleDefinition` struct</span>
 <span class="doccomment">/// Fails with `Err(_)` if the text cannot be parsed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_module</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">modules_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">ModuleDefinition</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">parse_module</span>(<span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">modules_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">ModuleDefinition</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">stripped_string</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">strip_comments_and_verify</span>(<span class="ident">modules_str</span>)<span class="question-mark">?</span>;
     <span class="ident">syntax</span>::<span class="ident">parse_module_string</span>(<span class="ident">file_name</span>, <span class="ident">stripped_string</span>)
         .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">handle_error</span>(<span class="ident">e</span>, <span class="ident">stripped_string</span>))
@@ -327,15 +328,15 @@
     <span class="ident">file_name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">cmd_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
     <span class="ident">_sender_address</span>: <span class="ident">AccountAddress</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">Cmd_</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">ast</span>::<span class="ident">Cmd_</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">stripped_string</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">strip_comments_and_verify</span>(<span class="ident">cmd_str</span>)<span class="question-mark">?</span>;
     <span class="ident">syntax</span>::<span class="ident">parse_cmd_string</span>(<span class="ident">file_name</span>, <span class="ident">stripped_string</span>)
         .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">handle_error</span>(<span class="ident">e</span>, <span class="ident">stripped_string</span>))
 }
 
-<span class="kw">fn</span> <span class="ident">handle_error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">e</span>: <span class="ident">syntax</span>::<span class="ident">ParseError</span><span class="op">&lt;</span><span class="ident">Loc</span>, <span class="ident">anyhow</span>::<span class="ident">Error</span><span class="op">&gt;</span>, <span class="ident">code_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">handle_error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">e</span>: <span class="ident">syntax</span>::<span class="ident">ParseError</span><span class="op">&lt;</span><span class="ident">Loc</span>, <span class="ident">anyhow</span>::<span class="ident">Error</span><span class="op">&gt;</span>, <span class="ident">code_str</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">e</span> {
-        <span class="ident">ParseError</span>::<span class="ident">InvalidToken</span> { <span class="ident">location</span> } <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">ParseError</span>::<span class="ident">InvalidToken</span> { <span class="ident">location</span> } <span class="op">=&gt;</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">files</span> <span class="op">=</span> <span class="ident">Files</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">files</span>.<span class="ident">add</span>(<span class="ident">location</span>.<span class="ident">file</span>(), <span class="ident">code_str</span>.<span class="ident">to_string</span>());
             <span class="kw">let</span> <span class="ident">lbl</span> <span class="op">=</span> <span class="ident">Label</span>::<span class="ident">new</span>(<span class="ident">id</span>, <span class="ident">location</span>.<span class="ident">span</span>(), <span class="string">&quot;Invalid Token&quot;</span>);
@@ -344,7 +345,7 @@
             <span class="ident">emit</span>(<span class="ident">writer</span>, <span class="kw-2">&amp;</span><span class="ident">Config</span>::<span class="ident">default</span>(), <span class="kw-2">&amp;</span><span class="ident">files</span>, <span class="kw-2">&amp;</span><span class="ident">error</span>).<span class="ident">unwrap</span>();
             <span class="string">&quot;Invalid Token&quot;</span>.<span class="ident">to_string</span>()
         }
-        <span class="ident">ParseError</span>::<span class="ident">User</span> { <span class="ident">error</span> } <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">ParseError</span>::<span class="ident">User</span> { <span class="ident">error</span> } <span class="op">=&gt;</span> {
             <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">error</span>);
             <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">error</span>)
         }
@@ -356,12 +357,12 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">verify_character_allowlist</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">good_chars</span> <span class="op">=</span> (<span class="number">0x20</span>..<span class="op">=</span><span class="number">0x7E</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">good_chars</span> <span class="op">=</span> (<span class="number">0x20</span>..<span class="op">=</span><span class="number">0x7E</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>();
         <span class="ident">good_chars</span>.<span class="ident">push</span>(<span class="number">0x0A</span>);
         <span class="ident">good_chars</span>.<span class="ident">push</span>(<span class="number">0x09</span>);
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bad_chars</span> <span class="op">=</span> (<span class="number">0x0</span>..<span class="number">0x09</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
-        <span class="ident">bad_chars</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> (<span class="number">0x0B</span>..<span class="op">=</span><span class="number">0x1F</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>());
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bad_chars</span> <span class="op">=</span> (<span class="number">0x0</span>..<span class="number">0x09</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>();
+        <span class="ident">bad_chars</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> (<span class="number">0x0B</span>..<span class="op">=</span><span class="number">0x1F</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>());
         <span class="ident">bad_chars</span>.<span class="ident">push</span>(<span class="number">0x7F</span>);
 
         <span class="comment">// Test to make sure that all the characters that are in the allowlist pass.</span>
@@ -391,7 +392,7 @@
 
         {
             <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="kw">super</span>::<span class="ident">strip_comments</span>(<span class="kw-2">&amp;</span><span class="ident">good_chars</span>);
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">x</span>.<span class="ident">chars</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39; &#39;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39;\t&#39;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">x</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39;\n&#39;</span>));
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">x</span>.<span class="ident">chars</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span> <span class="op">==</span> <span class="string">&#39; &#39;</span> <span class="op">||</span> <span class="ident">x</span> <span class="op">==</span> <span class="string">&#39;\t&#39;</span> <span class="op">||</span> <span class="ident">x</span> <span class="op">==</span> <span class="string">&#39;\n&#39;</span>));
         }
 
         <span class="comment">// Remove the \n at the end of the line</span>
@@ -420,7 +421,7 @@
             <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="kw">super</span>::<span class="ident">strip_comments</span>(<span class="kw-2">&amp;</span><span class="ident">good_chars</span>);
             <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">x</span>
                 .<span class="ident">chars</span>()
-                .<span class="ident">all</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39; &#39;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">c</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39;\t&#39;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">c</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39;\n&#39;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">c</span> <span class="op">=</span><span class="op">=</span> <span class="string">&#39;a&#39;</span>));
+                .<span class="ident">all</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span> <span class="op">==</span> <span class="string">&#39; &#39;</span> <span class="op">||</span> <span class="ident">c</span> <span class="op">==</span> <span class="string">&#39;\t&#39;</span> <span class="op">||</span> <span class="ident">c</span> <span class="op">==</span> <span class="string">&#39;\n&#39;</span> <span class="op">||</span> <span class="ident">c</span> <span class="op">==</span> <span class="string">&#39;a&#39;</span>));
             <span class="ident">good_chars</span>.<span class="ident">pop</span>();
             <span class="ident">good_chars</span>.<span class="ident">pop</span>();
             <span class="ident">good_chars</span>.<span class="ident">pop</span>();

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/liveness/leader_reputation.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>leader_reputation.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `consensus/src/liveness/leader_reputation.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>leader_reputation.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../consensus/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -242,17 +243,17 @@
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">MetadataBackend</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> {
     <span class="doccomment">/// Return a contiguous BlockMetadata window in which last one is at target_round or</span>
     <span class="doccomment">/// latest committed, return all previous one if not enough.</span>
-    <span class="kw">fn</span> <span class="ident">get_block_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NewBlockEvent</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">get_block_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NewBlockEvent</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LibraDBBackend</span> {
     <span class="ident">window_size</span>: <span class="ident">usize</span>,
     <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>,
-    <span class="ident">window</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">NewBlockEvent</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">window</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">u64</span>, <span class="ident">NewBlockEvent</span>)<span class="op">&gt;&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">LibraDBBackend</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">window_size</span>: <span class="ident">usize</span>, <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">window_size</span>: <span class="ident">usize</span>, <span class="ident">libra_db</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">DbReader</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">window_size</span>,
             <span class="ident">libra_db</span>,
@@ -260,7 +261,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">refresh_window</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">refresh_window</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-&gt;</span> <span class="ident">anyhow</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// assumes target round is not too far from latest commit</span>
         <span class="kw">let</span> <span class="ident">buffer</span> <span class="op">=</span> <span class="number">10</span>;
         <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">libra_db</span>.<span class="ident">get_events</span>(
@@ -272,7 +273,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> (<span class="ident">v</span>, <span class="ident">e</span>) <span class="kw">in</span> <span class="ident">events</span> {
             <span class="kw">let</span> <span class="ident">e</span> <span class="op">=</span> <span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">NewBlockEvent</span><span class="op">&gt;</span>(<span class="ident">e</span>.<span class="ident">event_data</span>())<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">round</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">target_round</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">result</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">window_size</span> {
+            <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">round</span>() <span class="op">&lt;=</span> <span class="ident">target_round</span> <span class="op">&amp;&amp;</span> <span class="ident">result</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">window_size</span> {
                 <span class="ident">result</span>.<span class="ident">push</span>((<span class="ident">v</span>, <span class="ident">e</span>));
             }
         }
@@ -283,15 +284,15 @@
 
 <span class="kw">impl</span> <span class="ident">MetadataBackend</span> <span class="kw">for</span> <span class="ident">LibraDBBackend</span> {
     <span class="comment">// assume the target_round only increases</span>
-    <span class="kw">fn</span> <span class="ident">get_block_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NewBlockEvent</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_block_metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">target_round</span>: <span class="ident">Round</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NewBlockEvent</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">known_version</span>, <span class="ident">known_round</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">window</span>
             .<span class="ident">lock</span>()
             .<span class="ident">first</span>()
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">v</span>, <span class="ident">e</span>)<span class="op">|</span> (<span class="kw-2">*</span><span class="ident">v</span>, <span class="ident">e</span>.<span class="ident">round</span>()))
             .<span class="ident">unwrap_or</span>((<span class="number">0</span>, <span class="number">0</span>));
-        <span class="kw">if</span> <span class="op">!</span>(<span class="ident">known_round</span> <span class="op">=</span><span class="op">=</span> <span class="ident">target_round</span>
-            <span class="op">|</span><span class="op">|</span> <span class="ident">known_version</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">libra_db</span>.<span class="ident">get_latest_version</span>().<span class="ident">unwrap_or</span>(<span class="number">0</span>))
+        <span class="kw">if</span> <span class="op">!</span>(<span class="ident">known_round</span> <span class="op">==</span> <span class="ident">target_round</span>
+            <span class="op">||</span> <span class="ident">known_version</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">libra_db</span>.<span class="ident">get_latest_version</span>().<span class="ident">unwrap_or</span>(<span class="number">0</span>))
         {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">refresh_window</span>(<span class="ident">target_round</span>) {
                 <span class="macro">error</span><span class="macro">!</span>(
@@ -312,7 +313,7 @@
 <span class="doccomment">/// Interface to calculate weights for proposers based on history.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ReputationHeuristic</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> {
     <span class="doccomment">/// Return the weights of all candidates based on the history.</span>
-    <span class="kw">fn</span> <span class="ident">get_weights</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">candidates</span>: <span class="kw-2">&amp;</span>[<span class="ident">Author</span>], <span class="ident">history</span>: <span class="kw-2">&amp;</span>[<span class="ident">NewBlockEvent</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">get_weights</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">candidates</span>: <span class="kw-2">&amp;</span>[<span class="ident">Author</span>], <span class="ident">history</span>: <span class="kw-2">&amp;</span>[<span class="ident">NewBlockEvent</span>]) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// If candidate appear in the history, it&#39;s assigned active_weight otherwise inactive weight.</span>
@@ -322,7 +323,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ActiveInactiveHeuristic</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">active_weight</span>: <span class="ident">u64</span>, <span class="ident">inactive_weight</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">active_weight</span>: <span class="ident">u64</span>, <span class="ident">inactive_weight</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">active_weight</span>,
             <span class="ident">inactive_weight</span>,
@@ -331,7 +332,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ReputationHeuristic</span> <span class="kw">for</span> <span class="ident">ActiveInactiveHeuristic</span> {
-    <span class="kw">fn</span> <span class="ident">get_weights</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">candidates</span>: <span class="kw-2">&amp;</span>[<span class="ident">Author</span>], <span class="ident">history</span>: <span class="kw-2">&amp;</span>[<span class="ident">NewBlockEvent</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_weights</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">candidates</span>: <span class="kw-2">&amp;</span>[<span class="ident">Author</span>], <span class="ident">history</span>: <span class="kw-2">&amp;</span>[<span class="ident">NewBlockEvent</span>]) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">set</span> <span class="op">=</span> <span class="ident">history</span>.<span class="ident">iter</span>().<span class="ident">fold</span>(<span class="ident">HashSet</span>::<span class="ident">new</span>(), <span class="op">|</span><span class="kw-2">mut</span> <span class="ident">set</span>, <span class="ident">meta</span><span class="op">|</span> {
             <span class="ident">set</span>.<span class="ident">insert</span>(<span class="ident">meta</span>.<span class="ident">proposer</span>());
             <span class="ident">set</span>.<span class="ident">extend</span>(<span class="ident">meta</span>.<span class="ident">votes</span>().<span class="ident">into_iter</span>());
@@ -364,7 +365,7 @@
         <span class="ident">proposers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Author</span><span class="op">&gt;</span>,
         <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">MetadataBackend</span><span class="op">&gt;</span>,
         <span class="ident">heuristic</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ReputationHeuristic</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">proposers</span>,
             <span class="ident">backend</span>,
@@ -375,22 +376,22 @@
 }
 
 <span class="kw">impl</span> <span class="ident">ProposerElection</span> <span class="kw">for</span> <span class="ident">LeaderReputation</span> {
-    <span class="kw">fn</span> <span class="ident">get_valid_proposer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">round</span>: <span class="ident">Round</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Author</span> {
+    <span class="kw">fn</span> <span class="ident">get_valid_proposer</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">round</span>: <span class="ident">Round</span>) <span class="op">-&gt;</span> <span class="ident">Author</span> {
         <span class="comment">// TODO: configure the round gap</span>
-        <span class="kw">let</span> <span class="ident">target_round</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">round</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">4</span> { <span class="ident">round</span> <span class="op">-</span> <span class="number">4</span> } <span class="kw">else</span> { <span class="number">0</span> };
+        <span class="kw">let</span> <span class="ident">target_round</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">round</span> <span class="op">&gt;=</span> <span class="number">4</span> { <span class="ident">round</span> <span class="op">-</span> <span class="number">4</span> } <span class="kw">else</span> { <span class="number">0</span> };
         <span class="kw">let</span> <span class="ident">sliding_window</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">backend</span>.<span class="ident">get_block_metadata</span>(<span class="ident">target_round</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">weights</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">heuristic</span>.<span class="ident">get_weights</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">proposers</span>, <span class="kw-2">&amp;</span><span class="ident">sliding_window</span>);
         <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">weights</span>.<span class="ident">len</span>(), <span class="self">self</span>.<span class="ident">proposers</span>.<span class="ident">len</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total_weight</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">for</span> <span class="ident">w</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">weights</span> {
-            <span class="ident">total_weight</span> <span class="op">+</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">w</span>;
+            <span class="ident">total_weight</span> <span class="op">+=</span> <span class="kw-2">*</span><span class="ident">w</span>;
             <span class="kw-2">*</span><span class="ident">w</span> <span class="op">=</span> <span class="ident">total_weight</span>;
         }
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">round</span>.<span class="ident">to_le_bytes</span>().<span class="ident">to_vec</span>();
         <span class="kw">let</span> <span class="ident">chosen_weight</span> <span class="op">=</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">state</span>) <span class="op">%</span> <span class="ident">total_weight</span>;
         <span class="kw">let</span> <span class="ident">chosen_index</span> <span class="op">=</span> <span class="ident">weights</span>
             .<span class="ident">binary_search_by</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">w</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">chosen_weight</span> {
+                <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">w</span> <span class="op">&lt;=</span> <span class="ident">chosen_weight</span> {
                     <span class="ident">Ordering</span>::<span class="ident">Less</span>
                 } <span class="kw">else</span> {
                     <span class="ident">Ordering</span>::<span class="ident">Greater</span>
@@ -401,7 +402,7 @@
     }
 
     <span class="doccomment">/// This function will return true for at most one proposal per valid proposer for a given round.</span>
-    <span class="kw">fn</span> <span class="ident">is_valid_proposal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_valid_proposal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="ident">block</span>.<span class="ident">author</span>().<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">author</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">valid</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">is_valid_proposer</span>(<span class="ident">author</span>, <span class="ident">block</span>.<span class="ident">round</span>());
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">already_proposed</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">already_proposed</span>.<span class="ident">lock</span>();
@@ -410,17 +411,17 @@
             }
             <span class="comment">// detect if the leader proposes more than once in this round</span>
             <span class="kw">match</span> <span class="ident">block</span>.<span class="ident">round</span>().<span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="ident">already_proposed</span>.<span class="number">0</span>) {
-                <span class="ident">Ordering</span>::<span class="ident">Greater</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Ordering</span>::<span class="ident">Greater</span> <span class="op">=&gt;</span> {
                     <span class="ident">already_proposed</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">round</span>();
                     <span class="ident">already_proposed</span>.<span class="number">1</span>.<span class="ident">clear</span>();
                     <span class="ident">already_proposed</span>.<span class="number">1</span>.<span class="ident">insert</span>(<span class="ident">author</span>, <span class="ident">block</span>.<span class="ident">id</span>());
                     <span class="bool-val">true</span>
                 }
-                <span class="ident">Ordering</span>::<span class="ident">Equal</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Ordering</span>::<span class="ident">Equal</span> <span class="op">=&gt;</span> {
                     <span class="kw">if</span> <span class="ident">already_proposed</span>
                         .<span class="number">1</span>
                         .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">author</span>)
-                        .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">id</span> <span class="op">!</span><span class="op">=</span> <span class="ident">block</span>.<span class="ident">id</span>())
+                        .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">id</span> <span class="op">!=</span> <span class="ident">block</span>.<span class="ident">id</span>())
                     {
                         <span class="macro">error</span><span class="macro">!</span>(
                             <span class="ident">SecurityEvent</span>::<span class="ident">InvalidConsensusProposal</span>,
@@ -434,7 +435,7 @@
                         <span class="bool-val">true</span>
                     }
                 }
-                <span class="ident">Ordering</span>::<span class="ident">Less</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+                <span class="ident">Ordering</span>::<span class="ident">Less</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
             }
         })
     }

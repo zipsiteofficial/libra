@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/jellyfish-merkle/src/iterator/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_jellyfish_merkle/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `storage/jellyfish-merkle/src/iterator/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../libra_jellyfish_merkle/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -302,13 +303,13 @@
 <span class="kw">impl</span> <span class="ident">NodeVisitInfo</span> {
     <span class="doccomment">/// Constructs a new `NodeVisitInfo` with given node key and node. `next_child_to_visit` will</span>
     <span class="doccomment">/// be set to the leftmost child.</span>
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">node_key</span>: <span class="ident">NodeKey</span>, <span class="ident">node</span>: <span class="ident">InternalNode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">node_key</span>: <span class="ident">NodeKey</span>, <span class="ident">node</span>: <span class="ident">InternalNode</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">children_bitmap</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">node</span>.<span class="ident">generate_bitmaps</span>();
         <span class="self">Self</span> {
             <span class="ident">node_key</span>,
             <span class="ident">node</span>,
             <span class="ident">children_bitmap</span>,
-            <span class="ident">next_child_to_visit</span>: <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">children_bitmap</span>.<span class="ident">trailing_zeros</span>(),
+            <span class="ident">next_child_to_visit</span>: <span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="ident">children_bitmap</span>.<span class="ident">trailing_zeros</span>(),
         }
     }
 
@@ -319,11 +320,11 @@
         <span class="ident">node_key</span>: <span class="ident">NodeKey</span>,
         <span class="ident">node</span>: <span class="ident">InternalNode</span>,
         <span class="ident">next_child_to_visit</span>: <span class="ident">Nibble</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">children_bitmap</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">node</span>.<span class="ident">generate_bitmaps</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_child_to_visit</span> <span class="op">=</span> <span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">u8</span>::<span class="ident">from</span>(<span class="ident">next_child_to_visit</span>);
-        <span class="kw">while</span> <span class="ident">next_child_to_visit</span> <span class="op">&amp;</span> <span class="ident">children_bitmap</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="ident">next_child_to_visit</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next_child_to_visit</span> <span class="op">=</span> <span class="number">1</span> <span class="op">&lt;&lt;</span> <span class="ident">u8</span>::<span class="ident">from</span>(<span class="ident">next_child_to_visit</span>);
+        <span class="kw">while</span> <span class="ident">next_child_to_visit</span> <span class="op">&amp;</span> <span class="ident">children_bitmap</span> <span class="op">==</span> <span class="number">0</span> {
+            <span class="ident">next_child_to_visit</span> <span class="op">&lt;&lt;</span><span class="op">=</span> <span class="number">1</span>;
         }
         <span class="self">Self</span> {
             <span class="ident">node_key</span>,
@@ -334,17 +335,17 @@
     }
 
     <span class="doccomment">/// Whether the next child to visit is the rightmost one.</span>
-    <span class="kw">fn</span> <span class="ident">is_rightmost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">next_child_to_visit</span>.<span class="ident">leading_zeros</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">children_bitmap</span>.<span class="ident">leading_zeros</span>());
-        <span class="self">self</span>.<span class="ident">next_child_to_visit</span>.<span class="ident">leading_zeros</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">children_bitmap</span>.<span class="ident">leading_zeros</span>()
+    <span class="kw">fn</span> <span class="ident">is_rightmost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">next_child_to_visit</span>.<span class="ident">leading_zeros</span>() <span class="op">&gt;=</span> <span class="self">self</span>.<span class="ident">children_bitmap</span>.<span class="ident">leading_zeros</span>());
+        <span class="self">self</span>.<span class="ident">next_child_to_visit</span>.<span class="ident">leading_zeros</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">children_bitmap</span>.<span class="ident">leading_zeros</span>()
     }
 
     <span class="doccomment">/// Advances `next_child_to_visit` to the next child on the right.</span>
     <span class="kw">fn</span> <span class="ident">advance</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="op">!</span><span class="self">self</span>.<span class="ident">is_rightmost</span>(), <span class="string">&quot;Advancing past rightmost child.&quot;</span>);
-        <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="op">=</span> <span class="number">1</span>;
-        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">children_bitmap</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-            <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&lt;&lt;</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">children_bitmap</span> <span class="op">==</span> <span class="number">0</span> {
+            <span class="self">self</span>.<span class="ident">next_child_to_visit</span> <span class="op">&lt;&lt;</span><span class="op">=</span> <span class="number">1</span>;
         }
     }
 }
@@ -373,7 +374,7 @@
     <span class="doccomment">/// Constructs a new iterator. This puts the internal state in the correct position, so the</span>
     <span class="doccomment">/// following `next` call will yield the smallest key that is greater or equal to</span>
     <span class="doccomment">/// `starting_key`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">reader</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">version</span>: <span class="ident">Version</span>, <span class="ident">starting_key</span>: <span class="ident">HashValue</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">reader</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>, <span class="ident">version</span>: <span class="ident">Version</span>, <span class="ident">starting_key</span>: <span class="ident">HashValue</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parent_stack</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">done</span> <span class="op">=</span> <span class="bool-val">false</span>;
 
@@ -384,7 +385,7 @@
         <span class="kw">while</span> <span class="kw">let</span> <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">internal_node</span>) <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">get_node</span>(<span class="kw-2">&amp;</span><span class="ident">current_node_key</span>)<span class="question-mark">?</span> {
             <span class="kw">let</span> <span class="ident">child_index</span> <span class="op">=</span> <span class="ident">nibble_iter</span>.<span class="ident">next</span>().<span class="ident">expect</span>(<span class="string">&quot;Should have enough nibbles.&quot;</span>);
             <span class="kw">match</span> <span class="ident">internal_node</span>.<span class="ident">child</span>(<span class="ident">child_index</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">child</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">child</span>) <span class="op">=&gt;</span> {
                     <span class="comment">// If this child exists, we just push the node onto stack and repeat.</span>
                     <span class="ident">parent_stack</span>.<span class="ident">push</span>(<span class="ident">NodeVisitInfo</span>::<span class="ident">new_next_child_to_visit</span>(
                         <span class="ident">current_node_key</span>.<span class="ident">clone</span>(),
@@ -394,7 +395,7 @@
                     <span class="ident">current_node_key</span> <span class="op">=</span>
                         <span class="ident">current_node_key</span>.<span class="ident">gen_child_node_key</span>(<span class="ident">child</span>.<span class="ident">version</span>, <span class="ident">child_index</span>);
                 }
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="kw">let</span> (<span class="ident">bitmap</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">internal_node</span>.<span class="ident">generate_bitmaps</span>();
                     <span class="kw">if</span> <span class="ident">u32</span>::<span class="ident">from</span>(<span class="ident">u8</span>::<span class="ident">from</span>(<span class="ident">child_index</span>)) <span class="op">&lt;</span> <span class="number">15</span> <span class="op">-</span> <span class="ident">bitmap</span>.<span class="ident">leading_zeros</span>() {
                         <span class="comment">// If this child does not exist and there&#39;s another child on the right, we</span>
@@ -420,8 +421,8 @@
         }
 
         <span class="kw">match</span> <span class="ident">reader</span>.<span class="ident">get_node</span>(<span class="kw-2">&amp;</span><span class="ident">current_node_key</span>)<span class="question-mark">?</span> {
-            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Should have reached the bottom of the tree.&quot;</span>),
-            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;Should have reached the bottom of the tree.&quot;</span>),
+            <span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="ident">leaf_node</span>.<span class="ident">account_key</span>() <span class="op">&lt;</span> <span class="ident">starting_key</span> {
                     <span class="self">Self</span>::<span class="ident">cleanup_stack</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">parent_stack</span>);
                     <span class="kw">if</span> <span class="ident">parent_stack</span>.<span class="ident">is_empty</span>() {
@@ -429,7 +430,7 @@
                     }
                 }
             }
-            <span class="ident">Node</span>::<span class="ident">Null</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">done</span> <span class="op">=</span> <span class="bool-val">true</span>,
+            <span class="ident">Node</span>::<span class="ident">Null</span> <span class="op">=&gt;</span> <span class="ident">done</span> <span class="op">=</span> <span class="bool-val">true</span>,
         }
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
@@ -458,7 +459,7 @@
 {
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">HashValue</span>, <span class="ident">AccountStateBlob</span>)<span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Item</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">done</span> {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
         }
@@ -466,7 +467,7 @@
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">parent_stack</span>.<span class="ident">is_empty</span>() {
             <span class="kw">let</span> <span class="ident">root_node_key</span> <span class="op">=</span> <span class="ident">NodeKey</span>::<span class="ident">new_empty_path</span>(<span class="self">self</span>.<span class="ident">version</span>);
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">reader</span>.<span class="ident">get_node</span>(<span class="kw-2">&amp;</span><span class="ident">root_node_key</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>)) <span class="op">=&gt;</span> {
                     <span class="comment">// This means the entire tree has a single leaf node. The key of this leaf node</span>
                     <span class="comment">// is greater or equal to `starting_key` (otherwise we would have set `done` to</span>
                     <span class="comment">// true in `new`). Return the node and mark `self.done` so next time we return</span>
@@ -474,13 +475,13 @@
                     <span class="self">self</span>.<span class="ident">done</span> <span class="op">=</span> <span class="bool-val">true</span>;
                     <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Ok</span>((<span class="ident">leaf_node</span>.<span class="ident">account_key</span>(), <span class="ident">leaf_node</span>.<span class="ident">blob</span>().<span class="ident">clone</span>())));
                 }
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="kw">_</span>)) <span class="op">=&gt;</span> {
                     <span class="comment">// This means `starting_key` is bigger than every key in this tree, or we have</span>
                     <span class="comment">// iterated past the last key.</span>
                     <span class="kw">return</span> <span class="prelude-val">None</span>;
                 }
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Null</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;We would have set done to true in new.&quot;</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)),
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Null</span>) <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(<span class="string">&quot;We would have set done to true in new.&quot;</span>),
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)),
             }
         }
 
@@ -500,17 +501,17 @@
                 <span class="ident">child_index</span>,
             );
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">reader</span>.<span class="ident">get_node</span>(<span class="kw-2">&amp;</span><span class="ident">node_key</span>) {
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">internal_node</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Internal</span>(<span class="ident">internal_node</span>)) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">visit_info</span> <span class="op">=</span> <span class="ident">NodeVisitInfo</span>::<span class="ident">new</span>(<span class="ident">node_key</span>, <span class="ident">internal_node</span>);
                     <span class="self">self</span>.<span class="ident">parent_stack</span>.<span class="ident">push</span>(<span class="ident">visit_info</span>);
                 }
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Leaf</span>(<span class="ident">leaf_node</span>)) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> (<span class="ident">leaf_node</span>.<span class="ident">account_key</span>(), <span class="ident">leaf_node</span>.<span class="ident">blob</span>().<span class="ident">clone</span>());
                     <span class="self">Self</span>::<span class="ident">cleanup_stack</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">parent_stack</span>);
                     <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Ok</span>(<span class="ident">ret</span>));
                 }
-                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Null</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Should not reach a null node.&quot;</span>))),
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)),
+                <span class="prelude-val">Ok</span>(<span class="ident">Node</span>::<span class="ident">Null</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;Should not reach a null node.&quot;</span>))),
+                <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)),
             }
         }
     }

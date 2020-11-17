@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/channel/src/message_queues.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>message_queues.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../channel/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/channel/src/message_queues.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>message_queues.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../channel/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -250,7 +251,7 @@
     <span class="doccomment">/// per_key_queue maintains a map from a Key to a queue</span>
     <span class="doccomment">/// of all the messages from that Key. A Key is usually</span>
     <span class="doccomment">/// represented by AccountAddress</span>
-    <span class="ident">per_key_queue</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">per_key_queue</span>: <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     <span class="doccomment">/// This is a (round-robin)queue of Keys which have pending messages</span>
     <span class="doccomment">/// This queue will be used for performing round robin among</span>
     <span class="doccomment">/// Keys for choosing the next message</span>
@@ -265,7 +266,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">K</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span> <span class="op">+</span> <span class="ident">Clone</span>, <span class="ident">T</span><span class="op">&gt;</span> <span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">PerKeyQueue</span><span class="op">&lt;</span><span class="ident">K</span>, <span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Formatter</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span> {
         <span class="ident">f</span>.<span class="ident">debug_struct</span>(<span class="string">&quot;PerKeyQueue&quot;</span>)
             .<span class="ident">field</span>(<span class="string">&quot;queue_style&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">queue_style</span>)
             .<span class="ident">field</span>(<span class="string">&quot;max_queue_size&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">max_queue_size</span>)
@@ -281,7 +282,7 @@
         <span class="ident">queue_style</span>: <span class="ident">QueueStyle</span>,
         <span class="ident">max_queue_size_per_key</span>: <span class="ident">NonZeroUsize</span>,
         <span class="ident">counters</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">IntCounterVec</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">queue_style</span>,
             <span class="ident">max_queue_size</span>: <span class="ident">max_queue_size_per_key</span>,
@@ -295,12 +296,12 @@
     <span class="doccomment">/// Given a key, pops the message from its queue and returns the message</span>
     <span class="doccomment">/// It also returns a boolean indicating whether the keys queue is empty</span>
     <span class="doccomment">/// after popping the message</span>
-    <span class="kw">fn</span> <span class="ident">pop_from_key_queue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">K</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">bool</span>) {
+    <span class="kw">fn</span> <span class="ident">pop_from_key_queue</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">K</span>) <span class="op">-&gt;</span> (<span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">bool</span>) {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">q</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">per_key_queue</span>.<span class="ident">get_mut</span>(<span class="ident">key</span>) {
             <span class="comment">// Extract message from the key&#39;s queue</span>
             <span class="kw">let</span> <span class="ident">retval</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">queue_style</span> {
-                <span class="ident">QueueStyle</span>::<span class="ident">FIFO</span> <span class="op">|</span> <span class="ident">QueueStyle</span>::<span class="ident">KLAST</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">q</span>.<span class="ident">pop_front</span>(),
-                <span class="ident">QueueStyle</span>::<span class="ident">LIFO</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">q</span>.<span class="ident">pop_back</span>(),
+                <span class="ident">QueueStyle</span>::<span class="ident">FIFO</span> <span class="op">|</span> <span class="ident">QueueStyle</span>::<span class="ident">KLAST</span> <span class="op">=&gt;</span> <span class="ident">q</span>.<span class="ident">pop_front</span>(),
+                <span class="ident">QueueStyle</span>::<span class="ident">LIFO</span> <span class="op">=&gt;</span> <span class="ident">q</span>.<span class="ident">pop_back</span>(),
             };
             (<span class="ident">retval</span>, <span class="ident">q</span>.<span class="ident">is_empty</span>())
         } <span class="kw">else</span> {
@@ -311,7 +312,7 @@
     <span class="doccomment">/// push a message to the appropriate queue in per_key_queue</span>
     <span class="doccomment">/// add the key to round_robin_queue if it didnt already exist.</span>
     <span class="doccomment">/// Returns Some(T) if the new or an existing element was dropped. Returns None otherwise.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">K</span>, <span class="ident">message</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">key</span>: <span class="ident">K</span>, <span class="ident">message</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">c</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">counters</span>.<span class="ident">as_ref</span>() {
             <span class="ident">c</span>.<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;enqueued&quot;</span>]).<span class="ident">inc</span>();
         }
@@ -325,7 +326,7 @@
             <span class="comment">// For example, many of our queues have a max capacity of 1024. To</span>
             <span class="comment">// handle a single rpc from a transient peer, we would end up</span>
             <span class="comment">// allocating ~ 96 b * 1024 ~ 64 Kib per queue.</span>
-            .<span class="ident">or_insert_with</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">VecDeque</span>::<span class="ident">with_capacity</span>(<span class="number">1</span>));
+            .<span class="ident">or_insert_with</span>(<span class="op">||</span> <span class="ident">VecDeque</span>::<span class="ident">with_capacity</span>(<span class="number">1</span>));
 
         <span class="comment">// Add the key to our round-robin queue if it&#39;s not already there</span>
         <span class="kw">if</span> <span class="ident">key_message_queue</span>.<span class="ident">is_empty</span>() {
@@ -333,15 +334,15 @@
         }
 
         <span class="comment">// Push the message to the actual key message queue</span>
-        <span class="kw">if</span> <span class="ident">key_message_queue</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">max_queue_size</span>.<span class="ident">get</span>() {
+        <span class="kw">if</span> <span class="ident">key_message_queue</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="self">self</span>.<span class="ident">max_queue_size</span>.<span class="ident">get</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">c</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">counters</span>.<span class="ident">as_ref</span>() {
                 <span class="ident">c</span>.<span class="ident">with_label_values</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;dropped&quot;</span>]).<span class="ident">inc</span>();
             }
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">queue_style</span> {
                 <span class="comment">// Drop the newest message for FIFO</span>
-                <span class="ident">QueueStyle</span>::<span class="ident">FIFO</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>),
+                <span class="ident">QueueStyle</span>::<span class="ident">FIFO</span> <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>),
                 <span class="comment">// Drop the oldest message for LIFO</span>
-                <span class="ident">QueueStyle</span>::<span class="ident">LIFO</span> <span class="op">|</span> <span class="ident">QueueStyle</span>::<span class="ident">KLAST</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">QueueStyle</span>::<span class="ident">LIFO</span> <span class="op">|</span> <span class="ident">QueueStyle</span>::<span class="ident">KLAST</span> <span class="op">=&gt;</span> {
                     <span class="kw">let</span> <span class="ident">oldest</span> <span class="op">=</span> <span class="ident">key_message_queue</span>.<span class="ident">pop_front</span>();
                     <span class="ident">key_message_queue</span>.<span class="ident">push_back</span>(<span class="ident">message</span>);
                     <span class="ident">oldest</span>
@@ -355,10 +356,10 @@
 
     <span class="doccomment">/// pop a message from the appropriate queue in per_key_queue</span>
     <span class="doccomment">/// remove the key from the round_robin_queue if it has no more messages</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">pop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">pop</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">round_robin_queue</span>.<span class="ident">pop_front</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">v</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=&gt;</span> <span class="ident">v</span>,
+            <span class="kw">_</span> <span class="op">=&gt;</span> {
                 <span class="kw">return</span> <span class="prelude-val">None</span>;
             }
         };
@@ -392,8 +393,8 @@
             <span class="comment">// See: common/channel/src/bin/many_keys_stress_test.rs</span>
             <span class="comment">//</span>
             <span class="comment">// For more context, see: https://github.com/libra/libra/issues/5543</span>
-            <span class="self">self</span>.<span class="ident">num_popped_since_gc</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">num_popped_since_gc</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">POPS_PER_GC</span> {
+            <span class="self">self</span>.<span class="ident">num_popped_since_gc</span> <span class="op">+=</span> <span class="number">1</span>;
+            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">num_popped_since_gc</span> <span class="op">&gt;=</span> <span class="ident">POPS_PER_GC</span> {
                 <span class="self">self</span>.<span class="ident">num_popped_since_gc</span> <span class="op">=</span> <span class="number">0</span>;
                 <span class="self">self</span>.<span class="ident">remove_empty_queues</span>();
             }

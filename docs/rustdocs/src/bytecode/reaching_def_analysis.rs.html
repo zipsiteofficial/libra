@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-prover/bytecode/src/reaching_def_analysis.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>reaching_def_analysis.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-prover/bytecode/src/reaching_def_analysis.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>reaching_def_analysis.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -286,20 +287,20 @@
 <span class="doccomment">/// The annotation for reaching definitions. For each code position, we have a map of local</span>
 <span class="doccomment">/// indices to the set of definitions reaching the code position.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ReachingDefAnnotation</span>(<span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">CodeOffset</span>, <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ReachingDefAnnotation</span>(<span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">CodeOffset</span>, <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>);
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ReachingDefProcessor</span> {}
 
-<span class="kw">type</span> <span class="ident">DefMap</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">type</span> <span class="ident">DefMap</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;&gt;</span>;
 
 <span class="kw">impl</span> <span class="ident">ReachingDefProcessor</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-&gt;</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ReachingDefProcessor</span> {})
     }
 
     <span class="doccomment">/// Returns Some(temp, def) if temp has a unique reaching definition and None otherwise.</span>
-    <span class="kw">fn</span> <span class="ident">get_unique_def</span>(<span class="ident">temp</span>: <span class="ident">TempIndex</span>, <span class="ident">defs</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">TempIndex</span>, <span class="ident">TempIndex</span>)<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">defs</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">1</span> {
+    <span class="kw">fn</span> <span class="ident">get_unique_def</span>(<span class="ident">temp</span>: <span class="ident">TempIndex</span>, <span class="ident">defs</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">TempIndex</span>, <span class="ident">TempIndex</span>)<span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">defs</span>.<span class="ident">len</span>() <span class="op">!=</span> <span class="number">1</span> {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
         }
         <span class="kw">let</span> <span class="ident">Def</span>::<span class="ident">Alias</span>(<span class="ident">def</span>) <span class="op">=</span> <span class="ident">defs</span>.<span class="ident">iter</span>().<span class="ident">next</span>().<span class="ident">unwrap</span>();
@@ -307,14 +308,14 @@
     }
 
     <span class="doccomment">/// Gets the propagated local resolving aliases using the reaching definitions.</span>
-    <span class="kw">fn</span> <span class="ident">get_propagated_local</span>(<span class="ident">temp</span>: <span class="ident">TempIndex</span>, <span class="ident">reaching_defs</span>: <span class="kw-2">&amp;</span><span class="ident">DefMap</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TempIndex</span> {
+    <span class="kw">fn</span> <span class="ident">get_propagated_local</span>(<span class="ident">temp</span>: <span class="ident">TempIndex</span>, <span class="ident">reaching_defs</span>: <span class="kw-2">&amp;</span><span class="ident">DefMap</span>) <span class="op">-&gt;</span> <span class="ident">TempIndex</span> {
         <span class="comment">// For being robust, we protect this function against cycles in alias definitions. If</span>
         <span class="comment">// a cycle is detected, alias resolution stops.</span>
         <span class="kw">fn</span> <span class="ident">get</span>(
             <span class="ident">temp</span>: <span class="ident">TempIndex</span>,
             <span class="ident">reaching_defs</span>: <span class="kw-2">&amp;</span><span class="ident">DefMap</span>,
             <span class="ident">visited</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">TempIndex</span><span class="op">&gt;</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TempIndex</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">TempIndex</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">defs</span>) <span class="op">=</span> <span class="ident">reaching_defs</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">temp</span>) {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="ident">def_temp</span>)) <span class="op">=</span> <span class="ident">ReachingDefProcessor</span>::<span class="ident">get_unique_def</span>(<span class="ident">temp</span>, <span class="ident">defs</span>) {
                     <span class="kw">if</span> <span class="ident">visited</span>.<span class="ident">insert</span>(<span class="ident">def_temp</span>) {
@@ -329,7 +330,7 @@
     }
 
     <span class="doccomment">/// Perform copy propagation based on reaching definitions analysis results.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_propagation</span>(<span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytecode</span><span class="op">&gt;</span>, <span class="ident">defs</span>: <span class="kw-2">&amp;</span><span class="ident">ReachingDefAnnotation</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytecode</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_propagation</span>(<span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytecode</span><span class="op">&gt;</span>, <span class="ident">defs</span>: <span class="kw-2">&amp;</span><span class="ident">ReachingDefAnnotation</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Bytecode</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="kw">for</span> (<span class="ident">pc</span>, <span class="ident">bytecode</span>) <span class="kw">in</span> <span class="ident">code</span>.<span class="ident">into_iter</span>().<span class="ident">enumerate</span>() {
@@ -337,12 +338,12 @@
             <span class="kw">let</span> <span class="ident">reaching_defs</span> <span class="op">=</span> <span class="ident">defs</span>.<span class="number">0</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="ident">pc</span> <span class="kw">as</span> <span class="ident">CodeOffset</span>)).<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">no_defs</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">propagate</span> <span class="op">=</span> <span class="op">|</span><span class="ident">local</span><span class="op">|</span> <span class="self">Self</span>::<span class="ident">get_propagated_local</span>(<span class="ident">local</span>, <span class="ident">reaching_defs</span>);
             <span class="kw">match</span> <span class="ident">bytecode</span> {
-                <span class="ident">Assign</span>(<span class="ident">attr</span>, <span class="ident">dest</span>, <span class="ident">src</span>, <span class="ident">kind</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Assign</span>(<span class="ident">attr</span>, <span class="ident">dest</span>, <span class="ident">src</span>, <span class="ident">kind</span>) <span class="op">=&gt;</span> {
                     <span class="comment">// For assign, override the generic treatment, as we do not want to</span>
                     <span class="comment">// propagate to the destination.</span>
                     <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">Assign</span>(<span class="ident">attr</span>, <span class="ident">dest</span>, <span class="ident">propagate</span>(<span class="ident">src</span>), <span class="ident">kind</span>));
                 }
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">bytecode</span>.<span class="ident">remap_vars</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">propagate</span>)),
+                <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">res</span>.<span class="ident">push</span>(<span class="ident">bytecode</span>.<span class="ident">remap_vars</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">propagate</span>)),
             }
         }
         <span class="ident">res</span>
@@ -354,7 +355,7 @@
     <span class="doccomment">/// TODO(wrwg): verify that spec blocks are the actual cause, it could be also a bug elsewhere.</span>
     <span class="doccomment">///     Currently functional/verify_vector fails without this and it uses spec blocks all</span>
     <span class="doccomment">///     over the place.</span>
-    <span class="kw">fn</span> <span class="ident">suitable_for_copy_propagation</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span>[<span class="ident">Bytecode</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">suitable_for_copy_propagation</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">code</span>: <span class="kw-2">&amp;</span>[<span class="ident">Bytecode</span>]) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="op">!</span><span class="ident">code</span>.<span class="ident">iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">bc</span><span class="op">|</span> <span class="macro">matches</span><span class="macro">!</span>(<span class="ident">bc</span>, <span class="ident">Bytecode</span>::<span class="ident">SpecBlock</span>(..)))
     }
 }
@@ -365,8 +366,8 @@
         <span class="ident">_targets</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">FunctionTargetsHolder</span>,
         <span class="ident">func_env</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionEnv</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
         <span class="kw-2">mut</span> <span class="ident">data</span>: <span class="ident">FunctionTargetData</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FunctionTargetData</span> {
-        <span class="kw">if</span> <span class="ident">func_env</span>.<span class="ident">is_native</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">suitable_for_copy_propagation</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="ident">code</span>) {
+    ) <span class="op">-&gt;</span> <span class="ident">FunctionTargetData</span> {
+        <span class="kw">if</span> <span class="ident">func_env</span>.<span class="ident">is_native</span>() <span class="op">||</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">suitable_for_copy_propagation</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="ident">code</span>) {
             <span class="comment">// Nothing to do</span>
             <span class="ident">data</span>
         } <span class="kw">else</span> {
@@ -397,7 +398,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
+    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">String</span> {
         <span class="string">&quot;reaching_def_analysis&quot;</span>.<span class="ident">to_string</span>()
     }
 }
@@ -408,7 +409,7 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">struct</span> <span class="ident">ReachingDefState</span> {
-    <span class="ident">map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">map</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">TempIndex</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Def</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">ReachingDefAnalysis</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {}
@@ -420,18 +421,18 @@
     <span class="kw">fn</span> <span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ReachingDefState</span>, <span class="ident">instr</span>: <span class="kw-2">&amp;</span><span class="ident">Bytecode</span>, <span class="ident">_offset</span>: <span class="ident">CodeOffset</span>) {
         <span class="kw">use</span> <span class="ident">Bytecode</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="ident">instr</span> {
-            <span class="ident">Assign</span>(<span class="kw">_</span>, <span class="ident">dst</span>, <span class="ident">src</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Assign</span>(<span class="kw">_</span>, <span class="ident">dst</span>, <span class="ident">src</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="comment">// Only define aliases for temporaries. We want to keep names for user</span>
                 <span class="comment">// declared variables for better debugging. Also don&#39;t skip assigns</span>
                 <span class="comment">// from proxied parameters. The later is currently needed because the</span>
                 <span class="comment">// Boogie backend does not allow to write to such values, which happens via</span>
                 <span class="comment">// WriteBack instructions.</span>
                 <span class="comment">// TODO(remove): this restriction should be handled in the backend instead of here.</span>
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">is_temporary</span>(<span class="kw-2">*</span><span class="ident">dst</span>) <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">get_proxy_index</span>(<span class="kw-2">*</span><span class="ident">src</span>).<span class="ident">is_none</span>() {
+                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">is_temporary</span>(<span class="kw-2">*</span><span class="ident">dst</span>) <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">target</span>.<span class="ident">get_proxy_index</span>(<span class="kw-2">*</span><span class="ident">src</span>).<span class="ident">is_none</span>() {
                     <span class="ident">state</span>.<span class="ident">def_alias</span>(<span class="kw-2">*</span><span class="ident">dst</span>, <span class="kw-2">*</span><span class="ident">src</span>);
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="kw">_</span> <span class="op">=&gt;</span> {
                 <span class="kw">for</span> <span class="ident">dst</span> <span class="kw">in</span> <span class="ident">instr</span>.<span class="ident">modifies</span>() {
                     <span class="ident">state</span>.<span class="ident">kill</span>(<span class="ident">dst</span>);
                 }
@@ -443,7 +444,7 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">DataflowAnalysis</span> <span class="kw">for</span> <span class="ident">ReachingDefAnalysis</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {}
 
 <span class="kw">impl</span> <span class="ident">AbstractDomain</span> <span class="kw">for</span> <span class="ident">ReachingDefState</span> {
-    <span class="kw">fn</span> <span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinResult</span> {
+    <span class="kw">fn</span> <span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">JoinResult</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">JoinResult</span>::<span class="ident">Unchanged</span>;
         <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">other_defs</span>) <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">map</span> {
             <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">map</span>.<span class="ident">contains_key</span>(<span class="ident">idx</span>) {
@@ -482,7 +483,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_reaching_def_annotation</span>(
     <span class="ident">target</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionTarget</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
     <span class="ident">code_offset</span>: <span class="ident">CodeOffset</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ReachingDefAnnotation</span>(<span class="ident">map</span>)) <span class="op">=</span>
         <span class="ident">target</span>.<span class="ident">get_annotations</span>().<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">ReachingDefAnnotation</span><span class="op">&gt;</span>()
     {
@@ -497,7 +498,7 @@
                         <span class="ident">defs</span>.<span class="ident">iter</span>()
                             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">def</span><span class="op">|</span> {
                                 <span class="kw">match</span> <span class="ident">def</span> {
-                                    <span class="ident">Def</span>::<span class="ident">Alias</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">format</span><span class="macro">!</span>(
+                                    <span class="ident">Def</span>::<span class="ident">Alias</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> <span class="macro">format</span><span class="macro">!</span>(
                                         <span class="string">&quot;{}&quot;</span>,
                                         <span class="ident">target</span>.<span class="ident">get_local_name</span>(<span class="kw-2">*</span><span class="ident">a</span>).<span class="ident">display</span>(<span class="ident">target</span>.<span class="ident">symbol_pool</span>())
                                     ),

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/bitvec/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_bitvec/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `common/bitvec/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../libra_bitvec/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -369,44 +370,44 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">pos</span>: <span class="ident">u8</span>) {
         <span class="comment">// This is optimised to: let bucket = pos &gt;&gt; 3;</span>
         <span class="kw">let</span> <span class="ident">bucket</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">pos</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">/</span> <span class="ident">BUCKET_SIZE</span>;
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">bucket</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>() <span class="op">&lt;=</span> <span class="ident">bucket</span> {
             <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">resize</span>(<span class="ident">bucket</span> <span class="op">+</span> <span class="number">1</span>, <span class="number">0</span>);
         }
         <span class="comment">// This is optimized to: let bucket_pos = pos | 0x07;</span>
         <span class="kw">let</span> <span class="ident">bucket_pos</span> <span class="op">=</span> <span class="ident">pos</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> (<span class="ident">bucket</span> <span class="op">*</span> <span class="ident">BUCKET_SIZE</span>);
-        <span class="self">self</span>.<span class="ident">inner</span>[<span class="ident">bucket</span>] <span class="op">|</span><span class="op">=</span> <span class="number">0b1000_0000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">bucket_pos</span> <span class="kw">as</span> <span class="ident">u8</span>;
+        <span class="self">self</span>.<span class="ident">inner</span>[<span class="ident">bucket</span>] <span class="op">|=</span> <span class="number">0b1000_0000</span> <span class="op">&gt;&gt;</span> <span class="ident">bucket_pos</span> <span class="kw">as</span> <span class="ident">u8</span>;
     }
 
     <span class="comment">// TODO(abhayb): Remove after migration to new wire format.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="doccomment">/// Checks if the bit at position @pos is set.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">pos</span>: <span class="ident">u8</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">pos</span>: <span class="ident">u8</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="comment">// This is optimised to: let bucket = pos &gt;&gt; 3;</span>
         <span class="kw">let</span> <span class="ident">bucket</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">pos</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">/</span> <span class="ident">BUCKET_SIZE</span>;
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">bucket</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>() <span class="op">&lt;=</span> <span class="ident">bucket</span> {
             <span class="kw">return</span> <span class="bool-val">false</span>;
         }
         <span class="comment">// This is optimized to: let bucket_pos = pos | 0x07;</span>
         <span class="kw">let</span> <span class="ident">bucket_pos</span> <span class="op">=</span> <span class="ident">pos</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> (<span class="ident">bucket</span> <span class="op">*</span> <span class="ident">BUCKET_SIZE</span>);
-        (<span class="self">self</span>.<span class="ident">inner</span>[<span class="ident">bucket</span>] <span class="op">&amp;</span> (<span class="number">0b1000_0000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">bucket_pos</span> <span class="kw">as</span> <span class="ident">u8</span>)) <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
+        (<span class="self">self</span>.<span class="ident">inner</span>[<span class="ident">bucket</span>] <span class="op">&amp;</span> (<span class="number">0b1000_0000</span> <span class="op">&gt;&gt;</span> <span class="ident">bucket_pos</span> <span class="kw">as</span> <span class="ident">u8</span>)) <span class="op">!=</span> <span class="number">0</span>
     }
 
     <span class="comment">// TODO(kostas): Remove after applying it to multi-sig.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="doccomment">/// Returns the number of set bits.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">count_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">count_ones</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u32</span> {
         <span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">count_ones</span>()).<span class="ident">sum</span>()
     }
 
     <span class="comment">// TODO(kostas): Remove after applying it to multi-sig.</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="doccomment">/// Returns the index of the last set bit.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_set_bit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">last_set_bit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inner</span>
             .<span class="ident">iter</span>()
             .<span class="ident">rev</span>()
             .<span class="ident">enumerate</span>()
-            .<span class="ident">find</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">byte</span>)<span class="op">|</span> <span class="ident">byte</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">&amp;</span><span class="number">0u8</span>)
+            .<span class="ident">find</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">byte</span>)<span class="op">|</span> <span class="ident">byte</span> <span class="op">!=</span> <span class="op">&amp;&amp;</span><span class="number">0u8</span>)
             .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">i</span>, <span class="ident">byte</span>)<span class="op">|</span> {
                 (<span class="number">8</span> <span class="op">*</span> (<span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">i</span>) <span class="op">-</span> <span class="ident">byte</span>.<span class="ident">trailing_zeros</span>() <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">u8</span>
             })
@@ -417,7 +418,7 @@
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">BitVec</span>;
 
     <span class="doccomment">/// Returns a new BitVec that is a bitwise AND of two BitVecs.</span>
-    <span class="kw">fn</span> <span class="ident">bitand</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">bitand</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="self">Self</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>(<span class="self">self</span>.<span class="ident">inner</span>.<span class="ident">len</span>(), <span class="ident">other</span>.<span class="ident">inner</span>.<span class="ident">len</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident">BitVec</span> {
             <span class="ident">inner</span>: <span class="ident">Vec</span>::<span class="ident">with_capacity</span>(<span class="ident">len</span>),
@@ -432,7 +433,7 @@
 <span class="comment">// We impl custom deserialization to ensure that the length of inner vector does not exceed</span>
 <span class="comment">// 32 (= 256 / 8).</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BitVec</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D</span>::<span class="ident">Error</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D</span>::<span class="ident">Error</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
     {
@@ -546,7 +547,7 @@
         <span class="comment">// (see comments in LCS crate)</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">47</span>];
         <span class="ident">bytes</span>[<span class="number">0</span>] <span class="op">=</span> <span class="number">46</span>;
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">is_ok</span>());
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">is_ok</span>());
         <span class="comment">// However, 46 &gt; MAX_BUCKET:</span>
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">lcs</span>::<span class="ident">from_bytes</span>::<span class="op">&lt;</span><span class="ident">BitVec</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">is_err</span>());
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">33</span>];
@@ -559,7 +560,7 @@
 
     <span class="comment">// Constructs a bit vector by setting the positions specified in the argument vector. The</span>
     <span class="comment">// vector can have duplicates and need not be sorted.</span>
-    <span class="kw">fn</span> <span class="ident">construct_bitvec</span>(<span class="ident">posns</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BitVec</span> {
+    <span class="kw">fn</span> <span class="ident">construct_bitvec</span>(<span class="ident">posns</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="ident">BitVec</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bv</span> <span class="op">=</span> <span class="ident">BitVec</span>::<span class="ident">default</span>();
         <span class="ident">posns</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">bv</span>.<span class="ident">set</span>(<span class="kw-2">*</span><span class="ident">x</span>));
         <span class="ident">bv</span>
@@ -576,7 +577,7 @@
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">viter</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">into_iter</span>().<span class="ident">peekable</span>();
             <span class="comment">// Positions in bv should be set iff they are in v.</span>
             <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">std</span>::<span class="ident">u8</span>::<span class="ident">MAX</span> {
-                <span class="kw">if</span> <span class="ident">viter</span>.<span class="ident">peek</span>() <span class="op">=</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>) {
+                <span class="kw">if</span> <span class="ident">viter</span>.<span class="ident">peek</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">i</span>) {
                     <span class="macro">prop_assert</span><span class="macro">!</span>(<span class="ident">bv</span>.<span class="ident">is_set</span>(<span class="ident">i</span>));
                     <span class="ident">viter</span>.<span class="ident">next</span>();
                 } <span class="kw">else</span> {
@@ -595,7 +596,7 @@
             <span class="kw">let</span> <span class="ident">bv2</span> <span class="op">=</span> <span class="ident">construct_bitvec</span>(<span class="kw-2">&amp;</span><span class="ident">v2</span>);
             <span class="kw">let</span> <span class="ident">intersection</span> <span class="op">=</span> <span class="ident">bv1</span>.<span class="ident">clone</span>() <span class="op">&amp;</span> <span class="ident">bv2</span>.<span class="ident">clone</span>();
             <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">std</span>::<span class="ident">u8</span>::<span class="ident">MAX</span> {
-                <span class="kw">if</span> <span class="ident">bv1</span>.<span class="ident">is_set</span>(<span class="ident">i</span>) <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">bv2</span>.<span class="ident">is_set</span>(<span class="ident">i</span>) {
+                <span class="kw">if</span> <span class="ident">bv1</span>.<span class="ident">is_set</span>(<span class="ident">i</span>) <span class="op">&amp;&amp;</span> <span class="ident">bv2</span>.<span class="ident">is_set</span>(<span class="ident">i</span>) {
                     <span class="macro">prop_assert</span><span class="macro">!</span>(<span class="ident">intersection</span>.<span class="ident">is_set</span>(<span class="ident">i</span>));
                 } <span class="kw">else</span> {
                     <span class="macro">prop_assert_eq</span><span class="macro">!</span>(<span class="bool-val">false</span>, <span class="ident">intersection</span>.<span class="ident">is_set</span>(<span class="ident">i</span>));

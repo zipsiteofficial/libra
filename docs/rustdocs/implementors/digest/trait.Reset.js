@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["libra_crypto"] = [{"text":"impl Reset for <a class=\"struct\" href=\"libra_crypto/compat/struct.Sha3_256.html\" title=\"struct libra_crypto::compat::Sha3_256\">Sha3_256</a>","synthetic":false,"types":["libra_crypto::compat::Sha3_256"]}];
+implementors["libra_crypto"] = [{"text":"impl Reset for Sha3_256","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

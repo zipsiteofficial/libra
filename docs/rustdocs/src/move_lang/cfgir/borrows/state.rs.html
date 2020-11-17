@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-lang/src/cfgir/borrows/state.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>state.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../move_lang/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-lang/src/cfgir/borrows/state.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>state.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled ><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../move_lang/index.html'><div class='logo-container rust-logo'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -852,30 +853,30 @@
 <span class="comment">// impls</span>
 <span class="comment">//**************************************************************************************************</span>
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assert_single_value</span>(<span class="kw-2">mut</span> <span class="ident">values</span>: <span class="ident">Values</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Value</span> {
-    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">values</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span>);
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assert_single_value</span>(<span class="kw-2">mut</span> <span class="ident">values</span>: <span class="ident">Values</span>) <span class="op">-&gt;</span> <span class="ident">Value</span> {
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">values</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span>);
     <span class="ident">values</span>.<span class="ident">pop</span>().<span class="ident">unwrap</span>()
 }
 
 <span class="kw">impl</span> <span class="ident">Value</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> <span class="bool-val">false</span>,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_vref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RefID</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">as_vref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">RefID</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">id</span>),
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">id</span>),
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
         }
     }
 
     <span class="kw">fn</span> <span class="ident">remap_refs</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">id_map</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">RefID</span><span class="op">&gt;</span>) {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="kw">if</span> <span class="ident">id_map</span>.<span class="ident">contains_key</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">*</span><span class="ident">id</span> <span class="op">=</span> <span class="ident">id_map</span>[<span class="ident">id</span>],
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="kw">if</span> <span class="ident">id_map</span>.<span class="ident">contains_key</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="kw-2">*</span><span class="ident">id</span> <span class="op">=</span> <span class="ident">id_map</span>[<span class="ident">id</span>],
+            <span class="kw">_</span> <span class="op">=&gt;</span> (),
         }
     }
 }
@@ -885,7 +886,7 @@
         <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="ident">UniqueMap</span><span class="op">&lt;</span><span class="ident">Var</span>, <span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">acquired_resources</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">StructName</span>, <span class="ident">Loc</span><span class="op">&gt;</span>,
         <span class="ident">prev_errors</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_state</span> <span class="op">=</span> <span class="ident">BorrowState</span> {
             <span class="ident">locals</span>: <span class="ident">locals</span>.<span class="ident">ref_map</span>(<span class="op">|</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">|</span> <span class="ident">Value</span>::<span class="ident">NonRef</span>),
             <span class="ident">borrows</span>: <span class="ident">BorrowGraph</span>::<span class="ident">new</span>(),
@@ -897,14 +898,14 @@
         <span class="ident">new_state</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">borrow_error</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">borrow_error</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
         <span class="ident">borrows</span>: <span class="kw-2">&amp;</span><span class="ident">BorrowGraph</span>,
         <span class="ident">loc</span>: <span class="ident">Loc</span>,
         <span class="ident">full_borrows</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span>,
-        <span class="ident">field_borrows</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">field_borrows</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;&gt;</span>,
         <span class="ident">msg</span>: <span class="ident">F</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
-        <span class="kw">if</span> <span class="ident">full_borrows</span>.<span class="ident">is_empty</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">field_borrows</span>.<span class="ident">is_empty</span>() {
+    ) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
+        <span class="kw">if</span> <span class="ident">full_borrows</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">field_borrows</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="ident">Errors</span>::<span class="ident">new</span>();
         }
 
@@ -927,8 +928,8 @@
             <span class="kw">for</span> (<span class="ident">borrower</span>, <span class="ident">rloc</span>) <span class="kw">in</span> <span class="ident">borrowers</span> {
                 <span class="kw">let</span> <span class="ident">adj</span> <span class="op">=</span> <span class="ident">mut_adj</span>(<span class="kw-2">*</span><span class="ident">borrower</span>);
                 <span class="kw">let</span> <span class="ident">field</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">field_lbl</span> {
-                    <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">f</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">f</span>,
-                    <span class="ident">Label</span>::<span class="ident">Local</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Label</span>::<span class="ident">Resource</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(
+                    <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">f</span>) <span class="op">=&gt;</span> <span class="ident">f</span>,
+                    <span class="ident">Label</span>::<span class="ident">Local</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">Label</span>::<span class="ident">Resource</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(
                         <span class="string">&quot;ICE local/resource should not be field borrows as they only exist from \
                          the virtual &#39;root&#39; reference&quot;</span>
                     ),
@@ -942,21 +943,21 @@
                 ))
             }
         }
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">error</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="number">2</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">error</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="number">2</span>);
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">error</span>]
     }
 
     <span class="kw">const</span> <span class="ident">LOCAL_ROOT</span>: <span class="ident">RefID</span> <span class="op">=</span> <span class="ident">RefID</span>::<span class="ident">new</span>(<span class="number">0</span>);
 
-    <span class="kw">fn</span> <span class="ident">field_label</span>(<span class="ident">field</span>: <span class="kw-2">&amp;</span><span class="ident">Field</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Label</span> {
+    <span class="kw">fn</span> <span class="ident">field_label</span>(<span class="ident">field</span>: <span class="kw-2">&amp;</span><span class="ident">Field</span>) <span class="op">-&gt;</span> <span class="ident">Label</span> {
         <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">field</span>.<span class="ident">value</span>().<span class="ident">to_owned</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">local_label</span>(<span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Label</span> {
+    <span class="kw">fn</span> <span class="ident">local_label</span>(<span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> <span class="ident">Label</span> {
         <span class="ident">Label</span>::<span class="ident">Local</span>(<span class="ident">local</span>.<span class="ident">value</span>().<span class="ident">to_owned</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">resource_label</span>(<span class="ident">resource</span>: <span class="kw-2">&amp;</span><span class="ident">StructName</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Label</span> {
+    <span class="kw">fn</span> <span class="ident">resource_label</span>(<span class="ident">resource</span>: <span class="kw-2">&amp;</span><span class="ident">StructName</span>) <span class="op">-&gt;</span> <span class="ident">Label</span> {
         <span class="ident">Label</span>::<span class="ident">Resource</span>(<span class="ident">resource</span>.<span class="ident">value</span>().<span class="ident">to_owned</span>())
     }
 
@@ -964,16 +965,16 @@
     <span class="comment">// Core API</span>
     <span class="comment">//**********************************************************************************************</span>
 
-    <span class="kw">fn</span> <span class="ident">single_type_value</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">SingleType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Value</span> {
+    <span class="kw">fn</span> <span class="ident">single_type_value</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">SingleType</span>) <span class="op">-&gt;</span> <span class="ident">Value</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">s</span>.<span class="ident">value</span> {
-            <span class="ident">SingleType_</span>::<span class="ident">Base</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">NonRef</span>,
-            <span class="ident">SingleType_</span>::<span class="ident">Ref</span>(<span class="ident">mut_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="kw-2">*</span><span class="ident">mut_</span>)),
+            <span class="ident">SingleType_</span>::<span class="ident">Base</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">Value</span>::<span class="ident">NonRef</span>,
+            <span class="ident">SingleType_</span>::<span class="ident">Ref</span>(<span class="ident">mut_</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="kw-2">*</span><span class="ident">mut_</span>)),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">declare_new_ref</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RefID</span> {
-        <span class="kw">fn</span> <span class="ident">new_id</span>(<span class="ident">next</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RefID</span> {
-            <span class="kw-2">*</span><span class="ident">next</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+    <span class="kw">fn</span> <span class="ident">declare_new_ref</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="ident">RefID</span> {
+        <span class="kw">fn</span> <span class="ident">new_id</span>(<span class="ident">next</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">RefID</span> {
+            <span class="kw-2">*</span><span class="ident">next</span> <span class="op">+=</span> <span class="number">1</span>;
             <span class="ident">RefID</span>::<span class="ident">new</span>(<span class="kw-2">*</span><span class="ident">next</span>)
         }
 
@@ -1009,25 +1010,25 @@
         )
     }
 
-    <span class="kw">fn</span> <span class="ident">writable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">msg</span>: <span class="ident">F</span>, <span class="ident">id</span>: <span class="ident">RefID</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    <span class="kw">fn</span> <span class="ident">writable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">msg</span>: <span class="ident">F</span>, <span class="ident">id</span>: <span class="ident">RefID</span>) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>), <span class="string">&quot;ICE type checking failed&quot;</span>);
         <span class="kw">let</span> (<span class="ident">full_borrows</span>, <span class="ident">field_borrows</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="ident">id</span>);
         <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">full_borrows</span>, <span class="kw-2">&amp;</span><span class="ident">field_borrows</span>, <span class="ident">msg</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">freezable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">freezable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">loc</span>: <span class="ident">Loc</span>,
         <span class="ident">msg</span>: <span class="ident">F</span>,
         <span class="ident">id</span>: <span class="ident">RefID</span>,
         <span class="ident">at_field_opt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Field</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>), <span class="string">&quot;ICE type checking failed&quot;</span>);
         <span class="kw">let</span> (<span class="ident">full_borrows</span>, <span class="ident">field_borrows</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="ident">id</span>);
         <span class="kw">let</span> <span class="ident">mut_filter_set</span> <span class="op">=</span> <span class="op">|</span><span class="ident">s</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span><span class="op">|</span> {
             <span class="ident">s</span>.<span class="ident">into_iter</span>()
                 .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">id</span>, <span class="ident">_loc</span>)<span class="op">|</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="kw-2">*</span><span class="ident">id</span>))
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()
         };
         <span class="kw">let</span> <span class="ident">mut_full_borrows</span> <span class="op">=</span> <span class="ident">mut_filter_set</span>(<span class="ident">full_borrows</span>);
         <span class="kw">let</span> <span class="ident">mut_field_borrows</span> <span class="op">=</span> <span class="ident">field_borrows</span>
@@ -1035,11 +1036,11 @@
             .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">f</span>, <span class="ident">borrowers</span>)<span class="op">|</span> {
                 <span class="kw">match</span> (<span class="ident">at_field_opt</span>, <span class="kw-2">&amp;</span><span class="ident">f</span>) {
                     <span class="comment">// Borrow at the same field, so keep</span>
-                    (<span class="prelude-val">Some</span>(<span class="ident">at_field</span>), <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">f_</span>)) <span class="kw">if</span> <span class="ident">f_</span> <span class="op">=</span><span class="op">=</span> <span class="ident">at_field</span>.<span class="ident">value</span>() <span class="op">=</span><span class="op">&gt;</span> (),
+                    (<span class="prelude-val">Some</span>(<span class="ident">at_field</span>), <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">f_</span>)) <span class="kw">if</span> <span class="ident">f_</span> <span class="op">==</span> <span class="ident">at_field</span>.<span class="ident">value</span>() <span class="op">=&gt;</span> (),
                     <span class="comment">// Borrow not at the same field, so skip</span>
-                    (<span class="prelude-val">Some</span>(<span class="ident">_at_field</span>), <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
+                    (<span class="prelude-val">Some</span>(<span class="ident">_at_field</span>), <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
                     <span class="comment">// Not freezing at a field, so consider any field borrows</span>
-                    (<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
+                    (<span class="prelude-val">None</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> (),
                 }
                 <span class="kw">let</span> <span class="ident">borrowers</span> <span class="op">=</span> <span class="ident">mut_filter_set</span>(<span class="ident">borrowers</span>);
                 <span class="kw">if</span> <span class="ident">borrowers</span>.<span class="ident">is_empty</span>() {
@@ -1058,13 +1059,13 @@
         )
     }
 
-    <span class="kw">fn</span> <span class="ident">readable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">readable</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-&gt;</span> <span class="ident">String</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">loc</span>: <span class="ident">Loc</span>,
         <span class="ident">msg</span>: <span class="ident">F</span>,
         <span class="ident">id</span>: <span class="ident">RefID</span>,
         <span class="ident">at_field_opt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Field</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="kw">let</span> <span class="ident">is_mutable</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>);
         <span class="kw">if</span> <span class="ident">is_mutable</span> {
             <span class="self">self</span>.<span class="ident">freezable</span>(<span class="ident">loc</span>, <span class="ident">msg</span>, <span class="ident">id</span>, <span class="ident">at_field_opt</span>)
@@ -1086,7 +1087,7 @@
         );
     }
 
-    <span class="kw">fn</span> <span class="ident">local_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">local_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">full_borrows</span>, <span class="kw-2">mut</span> <span class="ident">field_borrows</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="self">Self</span>::<span class="ident">LOCAL_ROOT</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">full_borrows</span>.<span class="ident">is_empty</span>());
         <span class="ident">field_borrows</span>
@@ -1094,7 +1095,7 @@
             .<span class="ident">unwrap_or_else</span>(<span class="ident">BTreeMap</span>::<span class="ident">new</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">resource_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">resource</span>: <span class="kw-2">&amp;</span><span class="ident">StructName</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">resource_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">resource</span>: <span class="kw-2">&amp;</span><span class="ident">StructName</span>) <span class="op">-&gt;</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">full_borrows</span>, <span class="kw-2">mut</span> <span class="ident">field_borrows</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="self">Self</span>::<span class="ident">LOCAL_ROOT</span>);
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">full_borrows</span>.<span class="ident">is_empty</span>());
         <span class="ident">field_borrows</span>
@@ -1110,11 +1111,11 @@
         <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>,
         <span class="ident">full_borrows</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">RefID</span>, <span class="ident">Loc</span><span class="op">&gt;</span>,
         <span class="ident">verb</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
-        <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="ident">full_borrows</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
+        <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="ident">full_borrows</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="ident">local_str</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">display_var</span>(<span class="ident">local</span>.<span class="ident">value</span>()) {
-                <span class="ident">DisplayVar</span>::<span class="ident">Tmp</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE invalid use of tmp local {}&quot;</span>, <span class="ident">local</span>.<span class="ident">value</span>()),
-                <span class="ident">DisplayVar</span>::<span class="ident">Orig</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">s</span>,
+                <span class="ident">DisplayVar</span>::<span class="ident">Tmp</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE invalid use of tmp local {}&quot;</span>, <span class="ident">local</span>.<span class="ident">value</span>()),
+                <span class="ident">DisplayVar</span>::<span class="ident">Orig</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="ident">s</span>,
             };
             <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid {} of local &#39;{}&#39;&quot;</span>, <span class="ident">verb</span>, <span class="ident">local_str</span>)
         })
@@ -1144,36 +1145,36 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assign_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>, <span class="ident">new_value</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assign_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>, <span class="ident">new_value</span>: <span class="ident">Value</span>) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="kw">let</span> <span class="ident">old_value</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">remove</span>(<span class="ident">local</span>).<span class="ident">unwrap</span>();
         <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">add</span>(<span class="ident">local</span>.<span class="ident">clone</span>(), <span class="ident">new_value</span>).<span class="ident">unwrap</span>();
         <span class="kw">match</span> <span class="ident">old_value</span> {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> {
                 <span class="self">self</span>.<span class="ident">release</span>(<span class="ident">id</span>);
                 <span class="ident">Errors</span>::<span class="ident">new</span>()
             }
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_borrowed_by</span>(<span class="ident">local</span>);
                 <span class="self">Self</span>::<span class="ident">check_use_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="ident">local</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="string">&quot;assignment&quot;</span>)
             }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">rvalue</span> {
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">prev_errors</span>, <span class="string">&quot;ICE borrow checking failed {:#?}&quot;</span>, <span class="ident">loc</span>);
                 <span class="kw">return</span> <span class="ident">Errors</span>::<span class="ident">new</span>();
             }
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="ident">id</span>,
         };
 
-        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">writable</span>(<span class="ident">loc</span>, <span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid mutation of reference.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>);
+        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">writable</span>(<span class="ident">loc</span>, <span class="op">||</span> <span class="string">&quot;Invalid mutation of reference.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>);
         <span class="self">self</span>.<span class="ident">release</span>(<span class="ident">id</span>);
         <span class="ident">errors</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">return_</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalues</span>: <span class="ident">Values</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">return_</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalues</span>: <span class="ident">Values</span>) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">released</span> <span class="op">=</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>();
         <span class="kw">for</span> (<span class="ident">_local</span>, <span class="ident">stored_value</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">iter</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span> <span class="ident">stored_value</span> {
@@ -1188,7 +1189,7 @@
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span> <span class="ident">stored_value</span> {
                 <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="ident">local</span>);
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">local_errors</span> <span class="op">=</span>
-                    <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="op">|</span><span class="op">|</span> {
+                    <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="op">||</span> {
                         <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid return. Local &#39;{}&#39; is still being borrowed.&quot;</span>, <span class="ident">local</span>)
                     });
                 <span class="ident">errors</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">local_errors</span>)
@@ -1199,7 +1200,7 @@
         <span class="kw">for</span> <span class="ident">resource</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">acquired_resources</span>.<span class="ident">keys</span>() {
             <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resource_borrowed_by</span>(<span class="ident">resource</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">resource_errors</span> <span class="op">=</span>
-                <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="op">|</span><span class="op">|</span> {
+                <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="op">||</span> {
                     <span class="macro">format</span><span class="macro">!</span>(
                         <span class="string">&quot;Invalid return. Resource &#39;{}&#39; is still being borrowed.&quot;</span>,
                         <span class="ident">resource</span>
@@ -1211,9 +1212,9 @@
         <span class="comment">// check any returned reference is not borrowed</span>
         <span class="kw">for</span> <span class="ident">rvalue</span> <span class="kw">in</span> <span class="ident">rvalues</span> {
             <span class="kw">match</span> <span class="ident">rvalue</span> {
-                <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="kw">if</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="kw">if</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> {
                     <span class="kw">let</span> (<span class="ident">fulls</span>, <span class="ident">fields</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="ident">id</span>);
-                    <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> {
+                    <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> {
                         <span class="string">&quot;Invalid return of reference. Cannot transfer a mutable reference that is \
                          being borrowed&quot;</span>
                             .<span class="ident">into</span>()
@@ -1221,7 +1222,7 @@
                     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">es</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">fulls</span>, <span class="kw-2">&amp;</span><span class="ident">fields</span>, <span class="ident">msg</span>);
                     <span class="ident">errors</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">es</span>);
                 }
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+                <span class="kw">_</span> <span class="op">=&gt;</span> (),
             }
         }
 
@@ -1237,12 +1238,12 @@
     <span class="comment">// Expression Entry Points</span>
     <span class="comment">//**********************************************************************************************</span>
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">move_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">move_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">old_value</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">remove</span>(<span class="ident">local</span>).<span class="ident">unwrap</span>();
         <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">add</span>(<span class="ident">local</span>.<span class="ident">clone</span>(), <span class="ident">Value</span>::<span class="ident">NonRef</span>).<span class="ident">unwrap</span>();
         <span class="kw">match</span> <span class="ident">old_value</span> {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> (<span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>)),
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> (<span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>)),
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_borrowed_by</span>(<span class="ident">local</span>);
                 <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span>
                     <span class="self">Self</span>::<span class="ident">check_use_borrowed_by</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="ident">local</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="string">&quot;move&quot;</span>);
@@ -1251,15 +1252,15 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">get</span>(<span class="ident">local</span>).<span class="ident">unwrap</span>() {
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">id</span>;
                 <span class="kw">let</span> <span class="ident">new_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="ident">id</span>));
                 <span class="self">self</span>.<span class="ident">add_copy</span>(<span class="ident">loc</span>, <span class="ident">id</span>, <span class="ident">new_id</span>);
                 (<span class="macro">vec</span><span class="macro">!</span>[], <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">new_id</span>))
             }
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">local_borrowed_by</span>(<span class="ident">local</span>);
                 <span class="kw">let</span> <span class="ident">borrows</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>;
                 <span class="comment">// check that it is &#39;readable&#39;</span>
@@ -1274,7 +1275,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">borrow_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">borrow_local</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="macro">assert</span><span class="macro">!</span>(
             <span class="op">!</span><span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">get</span>(<span class="ident">local</span>).<span class="ident">unwrap</span>().<span class="ident">is_ref</span>(),
             <span class="string">&quot;ICE borrow ref {:#?}. Should have been caught in typing&quot;</span>,
@@ -1298,32 +1299,32 @@
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">new_id</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freeze</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">rvalue</span> {
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">prev_errors</span>, <span class="string">&quot;ICE borrow checking failed {:#?}&quot;</span>, <span class="ident">loc</span>);
                 <span class="kw">return</span> (<span class="ident">Errors</span>::<span class="ident">new</span>(), <span class="ident">Value</span>::<span class="ident">NonRef</span>);
             }
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="ident">id</span>,
         };
 
-        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">freezable</span>(<span class="ident">loc</span>, <span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid freeze.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>, <span class="prelude-val">None</span>);
+        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">freezable</span>(<span class="ident">loc</span>, <span class="op">||</span> <span class="string">&quot;Invalid freeze.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>, <span class="prelude-val">None</span>);
         <span class="kw">let</span> <span class="ident">frozen_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="bool-val">false</span>);
         <span class="self">self</span>.<span class="ident">add_copy</span>(<span class="ident">loc</span>, <span class="ident">id</span>, <span class="ident">frozen_id</span>);
         <span class="self">self</span>.<span class="ident">release</span>(<span class="ident">id</span>);
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">frozen_id</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dereference</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dereference</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">rvalue</span>: <span class="ident">Value</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">rvalue</span> {
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">prev_errors</span>, <span class="string">&quot;ICE borrow checking failed {:#?}&quot;</span>, <span class="ident">loc</span>);
                 <span class="kw">return</span> (<span class="ident">Errors</span>::<span class="ident">new</span>(), <span class="ident">Value</span>::<span class="ident">NonRef</span>);
             }
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="ident">id</span>,
         };
 
-        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">readable</span>(<span class="ident">loc</span>, <span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid dereference.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>, <span class="prelude-val">None</span>);
+        <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">readable</span>(<span class="ident">loc</span>, <span class="op">||</span> <span class="string">&quot;Invalid dereference.&quot;</span>.<span class="ident">into</span>(), <span class="ident">id</span>, <span class="prelude-val">None</span>);
         <span class="self">self</span>.<span class="ident">release</span>(<span class="ident">id</span>);
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">NonRef</span>)
     }
@@ -1334,22 +1335,22 @@
         <span class="ident">mut_</span>: <span class="ident">bool</span>,
         <span class="ident">rvalue</span>: <span class="ident">Value</span>,
         <span class="ident">field</span>: <span class="kw-2">&amp;</span><span class="ident">Field</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    ) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">rvalue</span> {
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> {
                 <span class="macro">assert</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">prev_errors</span>, <span class="string">&quot;ICE borrow checking failed {:#?}&quot;</span>, <span class="ident">loc</span>);
                 <span class="kw">return</span> (<span class="ident">Errors</span>::<span class="ident">new</span>(), <span class="ident">Value</span>::<span class="ident">NonRef</span>);
             }
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">id</span>,
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="ident">id</span>,
         };
 
         <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">mut_</span> {
-            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid mutable borrow at field &#39;{}&#39;.&quot;</span>, <span class="ident">field</span>);
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid mutable borrow at field &#39;{}&#39;.&quot;</span>, <span class="ident">field</span>);
             <span class="kw">let</span> (<span class="ident">full_borrows</span>, <span class="ident">_field_borrows</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="ident">id</span>);
             <span class="comment">// Any field borrows will be factored out</span>
             <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">full_borrows</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="ident">msg</span>)
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid immutable borrow at field &#39;{}&#39;.&quot;</span>, <span class="ident">field</span>);
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid immutable borrow at field &#39;{}&#39;.&quot;</span>, <span class="ident">field</span>);
             <span class="self">self</span>.<span class="ident">readable</span>(<span class="ident">loc</span>, <span class="ident">msg</span>, <span class="ident">id</span>, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">field</span>))
         };
         <span class="kw">let</span> <span class="ident">field_borrow_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="ident">mut_</span>);
@@ -1358,15 +1359,15 @@
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">field_borrow_id</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">borrow_global</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>, <span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">BaseType</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">borrow_global</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">mut_</span>: <span class="ident">bool</span>, <span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">BaseType</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">new_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">declare_new_ref</span>(<span class="ident">mut_</span>);
         <span class="kw">let</span> <span class="ident">resource</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">value</span> {
-            <span class="ident">BaseType_</span>::<span class="ident">Apply</span>(<span class="kw">_</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">TypeName_</span>::<span class="ident">ModuleType</span>(<span class="kw">_</span>, <span class="ident">s</span>)), <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">s</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE type checking failed&quot;</span>),
+            <span class="ident">BaseType_</span>::<span class="ident">Apply</span>(<span class="kw">_</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">TypeName_</span>::<span class="ident">ModuleType</span>(<span class="kw">_</span>, <span class="ident">s</span>)), <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">s</span>,
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE type checking failed&quot;</span>),
         };
         <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resource_borrowed_by</span>(<span class="ident">resource</span>);
         <span class="kw">let</span> <span class="ident">borrows</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>;
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid borrowing of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
+        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid borrowing of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
         <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">mut_</span> {
             <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="ident">msg</span>)
         } <span class="kw">else</span> {
@@ -1380,14 +1381,14 @@
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">new_id</span>))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">move_from</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">BaseType</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">move_from</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">t</span>: <span class="kw-2">&amp;</span><span class="ident">BaseType</span>) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Value</span>) {
         <span class="kw">let</span> <span class="ident">resource</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">t</span>.<span class="ident">value</span> {
-            <span class="ident">BaseType_</span>::<span class="ident">Apply</span>(<span class="kw">_</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">TypeName_</span>::<span class="ident">ModuleType</span>(<span class="kw">_</span>, <span class="ident">s</span>)), <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">s</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE type checking failed&quot;</span>),
+            <span class="ident">BaseType_</span>::<span class="ident">Apply</span>(<span class="kw">_</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">TypeName_</span>::<span class="ident">ModuleType</span>(<span class="kw">_</span>, <span class="ident">s</span>)), <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">s</span>,
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE type checking failed&quot;</span>),
         };
         <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resource_borrowed_by</span>(<span class="ident">resource</span>);
         <span class="kw">let</span> <span class="ident">borrows</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>;
-        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid extraction of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
+        <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid extraction of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
         <span class="kw">let</span> <span class="ident">errors</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="ident">msg</span>);
         (<span class="ident">errors</span>, <span class="ident">Value</span>::<span class="ident">NonRef</span>)
     }
@@ -1398,14 +1399,14 @@
         <span class="ident">args</span>: <span class="ident">Values</span>,
         <span class="ident">resources</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">StructName</span>, <span class="ident">Loc</span><span class="op">&gt;</span>,
         <span class="ident">return_ty</span>: <span class="kw-2">&amp;</span><span class="ident">Type</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Values</span>) {
+    ) <span class="op">-&gt;</span> (<span class="ident">Errors</span>, <span class="ident">Values</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">errors</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
         <span class="comment">// Check acquires</span>
         <span class="kw">for</span> <span class="ident">resource</span> <span class="kw">in</span> <span class="ident">resources</span>.<span class="ident">keys</span>() {
             <span class="kw">let</span> <span class="ident">borrowed_by</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resource_borrowed_by</span>(<span class="ident">resource</span>);
             <span class="kw">let</span> <span class="ident">borrows</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">borrows</span>;
             <span class="comment">// TODO point to location of acquire</span>
-            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid acquiring of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
+            <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;Invalid acquiring of resource &#39;{}&#39;&quot;</span>, <span class="ident">resource</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">es</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">borrow_error</span>(<span class="ident">borrows</span>, <span class="ident">loc</span>, <span class="kw-2">&amp;</span><span class="ident">borrowed_by</span>, <span class="kw-2">&amp;</span><span class="ident">BTreeMap</span>::<span class="ident">new</span>(), <span class="ident">msg</span>);
             <span class="ident">errors</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">es</span>);
         }
@@ -1415,7 +1416,7 @@
             .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">arg</span><span class="op">|</span> <span class="ident">arg</span>.<span class="ident">as_vref</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">is_mutable</span>(<span class="kw-2">*</span><span class="ident">id</span>)))
             .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">mut_id</span><span class="op">|</span> {
                 <span class="kw">let</span> (<span class="ident">fulls</span>, <span class="ident">fields</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">borrows</span>.<span class="ident">borrowed_by</span>(<span class="ident">mut_id</span>);
-                <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="op">||</span> {
                     <span class="string">&quot;Invalid usage of reference as function argument. Cannot transfer a mutable \
                      reference that is being borrowed&quot;</span>
                         .<span class="ident">into</span>()
@@ -1436,9 +1437,9 @@
             });
 
         <span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">return_ty</span>.<span class="ident">value</span> {
-            <span class="ident">Type_</span>::<span class="ident">Unit</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[],
-            <span class="ident">Type_</span>::<span class="ident">Single</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="self">self</span>.<span class="ident">single_type_value</span>(<span class="ident">s</span>)],
-            <span class="ident">Type_</span>::<span class="ident">Multiple</span>(<span class="ident">ss</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ss</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">single_type_value</span>(<span class="ident">s</span>)).<span class="ident">collect</span>(),
+            <span class="ident">Type_</span>::<span class="ident">Unit</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="ident">Type_</span>::<span class="ident">Single</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="self">self</span>.<span class="ident">single_type_value</span>(<span class="ident">s</span>)],
+            <span class="ident">Type_</span>::<span class="ident">Multiple</span>(<span class="ident">ss</span>) <span class="op">=&gt;</span> <span class="ident">ss</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">single_type_value</span>(<span class="ident">s</span>)).<span class="ident">collect</span>(),
         };
         <span class="kw">for</span> <span class="ident">value</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">values</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span> <span class="ident">value</span> {
@@ -1478,21 +1479,21 @@
         <span class="self">self</span>.<span class="ident">next_id</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="number">1</span>;
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">join_</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">other</span>: <span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">join_</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">other</span>: <span class="self">Self</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">released</span> <span class="op">=</span> <span class="ident">BTreeSet</span>::<span class="ident">new</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">locals</span> <span class="op">=</span> <span class="ident">UniqueMap</span>::<span class="ident">new</span>();
         <span class="kw">for</span> (<span class="ident">local</span>, <span class="ident">self_value</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">iter</span>() {
             <span class="kw">let</span> <span class="ident">joined_value</span> <span class="op">=</span> <span class="kw">match</span> (<span class="ident">self_value</span>, <span class="ident">other</span>.<span class="ident">locals</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">local</span>).<span class="ident">unwrap</span>()) {
-                (<span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id1</span>), <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id2</span>)) <span class="op">=</span><span class="op">&gt;</span> {
-                    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">id1</span> <span class="op">=</span><span class="op">=</span> <span class="ident">id2</span>);
+                (<span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id1</span>), <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id2</span>)) <span class="op">=&gt;</span> {
+                    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">id1</span> <span class="op">==</span> <span class="ident">id2</span>);
                     <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="kw-2">*</span><span class="ident">id1</span>)
                 }
                 (<span class="ident">Value</span>::<span class="ident">NonRef</span>, <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">released_id</span>))
-                <span class="op">|</span> (<span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">released_id</span>), <span class="ident">Value</span>::<span class="ident">NonRef</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="op">|</span> (<span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">released_id</span>), <span class="ident">Value</span>::<span class="ident">NonRef</span>) <span class="op">=&gt;</span> {
                     <span class="ident">released</span>.<span class="ident">insert</span>(<span class="kw-2">*</span><span class="ident">released_id</span>);
                     <span class="ident">Value</span>::<span class="ident">NonRef</span>
                 }
-                (<span class="ident">Value</span>::<span class="ident">NonRef</span>, <span class="ident">Value</span>::<span class="ident">NonRef</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Value</span>::<span class="ident">NonRef</span>,
+                (<span class="ident">Value</span>::<span class="ident">NonRef</span>, <span class="ident">Value</span>::<span class="ident">NonRef</span>) <span class="op">=&gt;</span> <span class="ident">Value</span>::<span class="ident">NonRef</span>,
             };
             <span class="ident">locals</span>.<span class="ident">add</span>(<span class="ident">local</span>, <span class="ident">joined_value</span>).<span class="ident">unwrap</span>();
         }
@@ -1509,10 +1510,10 @@
         <span class="kw">let</span> <span class="ident">next_id</span> <span class="op">=</span> <span class="ident">locals</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="number">1</span>;
         <span class="kw">let</span> <span class="ident">acquired_resources</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">acquired_resources</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">prev_errors</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">prev_errors</span>;
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next_id</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">next_id</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next_id</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">next_id</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">acquired_resources</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">acquired_resources</span>);
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">prev_errors</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">prev_errors</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next_id</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">next_id</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next_id</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">next_id</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">acquired_resources</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">acquired_resources</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">prev_errors</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">prev_errors</span>);
 
         <span class="self">Self</span> {
             <span class="ident">locals</span>,
@@ -1523,7 +1524,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">leq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">leq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">BorrowState</span> {
             <span class="ident">locals</span>: <span class="ident">self_locals</span>,
             <span class="ident">borrows</span>: <span class="ident">self_borrows</span>,
@@ -1538,21 +1539,21 @@
             <span class="ident">acquired_resources</span>: <span class="ident">other_resources</span>,
             <span class="ident">prev_errors</span>: <span class="ident">other_prev_errors</span>,
         } <span class="op">=</span> <span class="ident">other</span>;
-        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">self_next</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other_next</span>, <span class="string">&quot;ICE canonicalization failed&quot;</span>);
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">self_next</span> <span class="op">==</span> <span class="ident">other_next</span>, <span class="string">&quot;ICE canonicalization failed&quot;</span>);
         <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="ident">self_resources</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other_resources</span>,
+            <span class="ident">self_resources</span> <span class="op">==</span> <span class="ident">other_resources</span>,
             <span class="string">&quot;ICE acquired resources static for the function&quot;</span>
         );
         <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="ident">self_prev_errors</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other_prev_errors</span>,
+            <span class="ident">self_prev_errors</span> <span class="op">==</span> <span class="ident">other_prev_errors</span>,
             <span class="string">&quot;ICE previous errors flag changed&quot;</span>
         );
-        <span class="ident">self_locals</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other_locals</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">self_borrows</span>.<span class="ident">leq</span>(<span class="ident">other_borrows</span>)
+        <span class="ident">self_locals</span> <span class="op">==</span> <span class="ident">other_locals</span> <span class="op">&amp;&amp;</span> <span class="ident">self_borrows</span>.<span class="ident">leq</span>(<span class="ident">other_borrows</span>)
     }
 }
 
 <span class="kw">impl</span> <span class="ident">AbstractDomain</span> <span class="kw">for</span> <span class="ident">BorrowState</span> {
-    <span class="kw">fn</span> <span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JoinResult</span> {
+    <span class="kw">fn</span> <span class="ident">join</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">JoinResult</span> {
         <span class="kw">let</span> <span class="ident">joined</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">clone</span>().<span class="ident">join_</span>(<span class="ident">other</span>.<span class="ident">clone</span>());
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">leq</span>(<span class="kw-2">&amp;</span><span class="ident">joined</span>) {
             <span class="kw-2">*</span><span class="self">self</span> <span class="op">=</span> <span class="ident">joined</span>;
@@ -1568,20 +1569,20 @@
 <span class="comment">//**************************************************************************************************</span>
 
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">Label</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Label</span>::<span class="ident">Local</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;local%{}&quot;</span>, <span class="ident">s</span>),
-            <span class="ident">Label</span>::<span class="ident">Resource</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;resource%{}&quot;</span>, <span class="ident">s</span>),
-            <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
+            <span class="ident">Label</span>::<span class="ident">Local</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;local%{}&quot;</span>, <span class="ident">s</span>),
+            <span class="ident">Label</span>::<span class="ident">Resource</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;resource%{}&quot;</span>, <span class="ident">s</span>),
+            <span class="ident">Label</span>::<span class="ident">Field</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{}&quot;</span>, <span class="ident">s</span>),
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">Value</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;_&quot;</span>),
-            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:?}&quot;</span>, <span class="ident">id</span>),
+            <span class="ident">Value</span>::<span class="ident">NonRef</span> <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;_&quot;</span>),
+            <span class="ident">Value</span>::<span class="ident">Ref</span>(<span class="ident">id</span>) <span class="op">=&gt;</span> <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;{:?}&quot;</span>, <span class="ident">id</span>),
         }
     }
 }

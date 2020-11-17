@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/vm/src/normalized.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>normalized.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../vm/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/vm/src/normalized.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>normalized.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../vm/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -347,7 +348,7 @@
     <span class="doccomment">/// Extract a normalized module from a `CompiledModule`. The module `m` should be verified.</span>
     <span class="doccomment">/// Nothing will break here if that is not the case, but there is little point in computing a</span>
     <span class="doccomment">/// normalized representation of a module that won&#39;t verify (since it can&#39;t be published).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">structs</span> <span class="op">=</span> <span class="ident">m</span>.<span class="ident">struct_defs</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">Struct</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">d</span>)).<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">public_functions</span> <span class="op">=</span> <span class="ident">m</span>
             .<span class="ident">function_defs</span>()
@@ -371,10 +372,10 @@
 
 <span class="kw">impl</span> <span class="ident">Type</span> {
     <span class="doccomment">/// Create a normalized `Type` for `SignatureToken` `s` in module `m`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">SignatureToken</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">use</span> <span class="ident">SignatureToken</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="ident">s</span> {
-            <span class="ident">Struct</span>(<span class="ident">shi</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Struct</span>(<span class="ident">shi</span>) <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">m</span>.<span class="ident">struct_handle_at</span>(<span class="kw-2">*</span><span class="ident">shi</span>);
                 <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">handle</span>.<span class="ident">type_parameters</span>.<span class="ident">is_empty</span>(), <span class="string">&quot;A struct with N type parameters should be encoded as StructModuleInstantiation with type_arguments = [TypeParameter(1), ..., TypeParameter(N)]&quot;</span>);
                 <span class="ident">Type</span>::<span class="ident">Struct</span> {
@@ -384,53 +385,53 @@
                     <span class="ident">type_arguments</span>: <span class="ident">Vec</span>::<span class="ident">new</span>(),
                 }
             }
-            <span class="ident">StructInstantiation</span>(<span class="ident">shi</span>, <span class="ident">type_actuals</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Struct</span> {
+            <span class="ident">StructInstantiation</span>(<span class="ident">shi</span>, <span class="ident">type_actuals</span>) <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Struct</span> {
                 <span class="ident">address</span>: <span class="kw-2">*</span><span class="ident">m</span>.<span class="ident">address</span>(),
                 <span class="ident">module</span>: <span class="ident">m</span>.<span class="ident">name</span>().<span class="ident">to_owned</span>(),
                 <span class="ident">name</span>: <span class="ident">m</span>.<span class="ident">identifier_at</span>(<span class="ident">m</span>.<span class="ident">struct_handle_at</span>(<span class="kw-2">*</span><span class="ident">shi</span>).<span class="ident">name</span>).<span class="ident">to_owned</span>(),
                 <span class="ident">type_arguments</span>: <span class="ident">type_actuals</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>)).<span class="ident">collect</span>(),
             },
-            <span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Bool</span>,
-            <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U8</span>,
-            <span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U64</span>,
-            <span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">U128</span>,
-            <span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Address</span>,
-            <span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Signer</span>,
-            <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
-            <span class="ident">TypeParameter</span>(<span class="ident">i</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">TypeParameter</span>(<span class="kw-2">*</span><span class="ident">i</span>),
-            <span class="ident">Reference</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
-            <span class="ident">MutableReference</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
+            <span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Bool</span>,
+            <span class="ident">U8</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">U8</span>,
+            <span class="ident">U64</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">U64</span>,
+            <span class="ident">U128</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">U128</span>,
+            <span class="ident">Address</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Address</span>,
+            <span class="ident">Signer</span> <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Signer</span>,
+            <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
+            <span class="ident">TypeParameter</span>(<span class="ident">i</span>) <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">TypeParameter</span>(<span class="kw-2">*</span><span class="ident">i</span>),
+            <span class="ident">Reference</span>(<span class="ident">t</span>) <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">Reference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
+            <span class="ident">MutableReference</span>(<span class="ident">t</span>) <span class="op">=&gt;</span> <span class="ident">Type</span>::<span class="ident">MutableReference</span>(<span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">t</span>))),
         }
     }
 
     <span class="doccomment">/// Return true if `self` is a closed type with no free type variables</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_closed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_closed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">use</span> <span class="ident">Type</span>::<span class="kw-2">*</span>;
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">TypeParameter</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
-            <span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-            <span class="ident">Struct</span> { <span class="ident">type_arguments</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">type_arguments</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">t</span>.<span class="ident">is_closed</span>()),
-            <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">|</span> <span class="ident">Reference</span>(<span class="ident">t</span>) <span class="op">|</span> <span class="ident">MutableReference</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">t</span>.<span class="ident">is_closed</span>(),
+            <span class="ident">TypeParameter</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="bool-val">false</span>,
+            <span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">U8</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">U64</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">U128</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">Address</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">Signer</span> <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">Struct</span> { <span class="ident">type_arguments</span>, .. } <span class="op">=&gt;</span> <span class="ident">type_arguments</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">t</span>.<span class="ident">is_closed</span>()),
+            <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">|</span> <span class="ident">Reference</span>(<span class="ident">t</span>) <span class="op">|</span> <span class="ident">MutableReference</span>(<span class="ident">t</span>) <span class="op">=&gt;</span> <span class="ident">t</span>.<span class="ident">is_closed</span>(),
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_type_tag</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TypeTag</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">into_type_tag</span>(<span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TypeTag</span><span class="op">&gt;</span> {
         <span class="kw">use</span> <span class="ident">Type</span>::<span class="kw-2">*</span>;
         <span class="prelude-val">Some</span>(<span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_closed</span>() {
             <span class="kw">match</span> <span class="self">self</span> {
-                <span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
-                <span class="ident">Bool</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Bool</span>,
-                <span class="ident">U8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U8</span>,
-                <span class="ident">U64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U64</span>,
-                <span class="ident">U128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U128</span>,
-                <span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Address</span>,
-                <span class="ident">Signer</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Signer</span>,
-                <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(
+                <span class="ident">Reference</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">MutableReference</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">None</span>,
+                <span class="ident">Bool</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Bool</span>,
+                <span class="ident">U8</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U8</span>,
+                <span class="ident">U64</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U64</span>,
+                <span class="ident">U128</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">U128</span>,
+                <span class="ident">Address</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Address</span>,
+                <span class="ident">Signer</span> <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Signer</span>,
+                <span class="ident">Vector</span>(<span class="ident">t</span>) <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Vector</span>(<span class="ident">Box</span>::<span class="ident">new</span>(
                     <span class="ident">t</span>.<span class="ident">into_type_tag</span>()
                         .<span class="ident">expect</span>(<span class="string">&quot;Invariant violation: vector type argument contains reference&quot;</span>),
                 )),
@@ -439,7 +440,7 @@
                     <span class="ident">module</span>,
                     <span class="ident">name</span>,
                     <span class="ident">type_arguments</span>,
-                } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">StructTag</span> {
+                } <span class="op">=&gt;</span> <span class="ident">TypeTag</span>::<span class="ident">Struct</span>(<span class="ident">StructTag</span> {
                     <span class="ident">address</span>,
                     <span class="ident">module</span>,
                     <span class="ident">name</span>,
@@ -452,7 +453,7 @@
                         })
                         .<span class="ident">collect</span>(),
                 }),
-                <span class="ident">TypeParameter</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
+                <span class="ident">TypeParameter</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="macro">unreachable</span><span class="macro">!</span>(),
             }
         } <span class="kw">else</span> {
             <span class="kw">return</span> <span class="prelude-val">None</span>;
@@ -462,7 +463,7 @@
 
 <span class="kw">impl</span> <span class="ident">Field</span> {
     <span class="doccomment">/// Create a `Field` for `FieldDefinition` `f` in module `m`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="ident">FieldDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="ident">FieldDefinition</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">Field</span> {
             <span class="ident">name</span>: <span class="ident">m</span>.<span class="ident">identifier_at</span>(<span class="ident">f</span>.<span class="ident">name</span>).<span class="ident">to_owned</span>(),
             <span class="ident">type_</span>: <span class="ident">Type</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="kw-2">&amp;</span><span class="ident">f</span>.<span class="ident">signature</span>.<span class="number">0</span>),
@@ -473,11 +474,11 @@
 <span class="kw">impl</span> <span class="ident">Struct</span> {
     <span class="doccomment">/// Create a `Struct` for `StructDefinition` `def` in module `m`. Panics if `def` is a</span>
     <span class="doccomment">/// a native struct definition.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">def</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">def</span>: <span class="kw-2">&amp;</span><span class="ident">StructDefinition</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">handle</span> <span class="op">=</span> <span class="ident">m</span>.<span class="ident">struct_handle_at</span>(<span class="ident">def</span>.<span class="ident">struct_handle</span>);
         <span class="kw">let</span> <span class="ident">fields</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">def</span>.<span class="ident">field_information</span> {
-            <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Can&#39;t extract  for native struct&quot;</span>),
-            <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Can&#39;t extract  for native struct&quot;</span>),
+            <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=&gt;</span> {
                 <span class="ident">fields</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="ident">Field</span>::<span class="ident">new</span>(<span class="ident">m</span>, <span class="ident">f</span>)).<span class="ident">collect</span>()
             }
         };
@@ -496,7 +497,7 @@
 
 <span class="kw">impl</span> <span class="ident">FunctionSignature</span> {
     <span class="doccomment">/// Create a `FunctionSignature` for `FunctionHandle` `f` in module `m`.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">m</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledModule</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="ident">FunctionHandle</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">FunctionSignature</span> {
             <span class="ident">name</span>: <span class="ident">m</span>.<span class="ident">identifier_at</span>(<span class="ident">f</span>.<span class="ident">name</span>).<span class="ident">to_owned</span>(),
             <span class="ident">type_parameters</span>: <span class="ident">f</span>.<span class="ident">type_parameters</span>.<span class="ident">clone</span>(),

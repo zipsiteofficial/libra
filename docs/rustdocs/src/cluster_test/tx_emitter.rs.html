@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `testsuite/cluster-test/src/tx_emitter.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tx_emitter.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../cluster_test/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `testsuite/cluster-test/src/tx_emitter.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>tx_emitter.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../cluster_test/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1345,7 +1346,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">EmitThreadParams</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">wait_millis</span>: <span class="number">0</span>,
             <span class="ident">wait_committed</span>: <span class="bool-val">true</span>,
@@ -1362,23 +1363,23 @@
     <span class="kw">pub</span> <span class="ident">gas_price</span>: <span class="ident">u64</span>,
 }
 
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REUSE_ACC</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;REUSE_ACC&quot;</span>).<span class="ident">is_ok</span>());
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">REUSE_ACC</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;REUSE_ACC&quot;</span>).<span class="ident">is_ok</span>());
 
 <span class="kw">impl</span> <span class="ident">EmitJobRequest</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">for_instances</span>(
         <span class="ident">instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>,
         <span class="ident">global_emit_job_request</span>: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EmitJobRequest</span><span class="op">&gt;</span>,
         <span class="ident">gas_price</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">global_emit_job_request</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">global_emit_job_request</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EmitJobRequest</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">global_emit_job_request</span>) <span class="op">=&gt;</span> <span class="ident">EmitJobRequest</span> {
                 <span class="ident">instances</span>,
                 <span class="ident">accounts_per_client</span>: <span class="ident">global_emit_job_request</span>.<span class="ident">accounts_per_client</span>,
                 <span class="ident">workers_per_ac</span>: <span class="ident">global_emit_job_request</span>.<span class="ident">workers_per_ac</span>,
                 <span class="ident">thread_params</span>: <span class="ident">global_emit_job_request</span>.<span class="ident">thread_params</span>.<span class="ident">clone</span>(),
                 <span class="ident">gas_price</span>,
             },
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span> {
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="self">Self</span> {
                 <span class="ident">instances</span>,
                 <span class="ident">accounts_per_client</span>: <span class="number">15</span>,
                 <span class="ident">workers_per_ac</span>: <span class="prelude-val">None</span>,
@@ -1388,7 +1389,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fixed_tps_params</span>(<span class="ident">instance_count</span>: <span class="ident">usize</span>, <span class="ident">tps</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">usize</span>, <span class="ident">u64</span>) {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fixed_tps_params</span>(<span class="ident">instance_count</span>: <span class="ident">usize</span>, <span class="ident">tps</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> (<span class="ident">usize</span>, <span class="ident">u64</span>) {
         <span class="kw">if</span> <span class="ident">tps</span> <span class="op">&lt;</span> <span class="number">1</span> {
             <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;Target tps {} can not less than 1&quot;</span>, <span class="ident">tps</span>)
         }
@@ -1397,7 +1398,7 @@
         (<span class="ident">num_workers</span>, <span class="ident">wait_time</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fixed_tps</span>(<span class="ident">instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">tps</span>: <span class="ident">u64</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">fixed_tps</span>(<span class="ident">instances</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Instance</span><span class="op">&gt;</span>, <span class="ident">tps</span>: <span class="ident">u64</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> (<span class="ident">num_workers</span>, <span class="ident">wait_time</span>) <span class="op">=</span> <span class="ident">EmitJobRequest</span>::<span class="ident">fixed_tps_params</span>(<span class="ident">instances</span>.<span class="ident">len</span>(), <span class="ident">tps</span>);
         <span class="self">Self</span> {
             <span class="ident">instances</span>,
@@ -1413,7 +1414,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">TxEmitter</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">cluster</span>: <span class="kw-2">&amp;</span><span class="ident">Cluster</span>, <span class="ident">premainnet</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">cluster</span>: <span class="kw-2">&amp;</span><span class="ident">Cluster</span>, <span class="ident">premainnet</span>: <span class="ident">bool</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">accounts</span>: <span class="macro">vec</span><span class="macro">!</span>[],
             <span class="ident">mint_key_pair</span>: <span class="ident">cluster</span>.<span class="ident">mint_key_pair</span>().<span class="ident">clone</span>(),
@@ -1422,7 +1423,7 @@
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">take_account</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountData</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">take_account</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">AccountData</span> {
         <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">remove</span>(<span class="number">0</span>)
     }
 
@@ -1430,14 +1431,14 @@
         <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">clear</span>();
     }
 
-    <span class="kw">fn</span> <span class="ident">pick_mint_instance</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="lifetime">&#39;b</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>, <span class="ident">instances</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> [<span class="ident">Instance</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> <span class="ident">Instance</span> {
+    <span class="kw">fn</span> <span class="ident">pick_mint_instance</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="lifetime">&#39;b</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="self">self</span>, <span class="ident">instances</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> [<span class="ident">Instance</span>]) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> <span class="ident">Instance</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ThreadRng</span>::<span class="ident">default</span>();
         <span class="ident">instances</span>
             .<span class="ident">choose</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>)
             .<span class="ident">expect</span>(<span class="string">&quot;Instances can not be empty&quot;</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">pick_mint_client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instances</span>: <span class="kw-2">&amp;</span>[<span class="ident">Instance</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">JsonRpcAsyncClient</span> {
+    <span class="kw">fn</span> <span class="ident">pick_mint_client</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">instances</span>: <span class="kw-2">&amp;</span>[<span class="ident">Instance</span>]) <span class="op">-&gt;</span> <span class="ident">JsonRpcAsyncClient</span> {
         <span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="ident">instances</span>).<span class="ident">json_rpc_client</span>()
     }
 
@@ -1447,7 +1448,7 @@
         <span class="ident">sender</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
         <span class="ident">receiver</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
         <span class="ident">num_coins</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Instant</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Instant</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">instance</span>.<span class="ident">json_rpc_client</span>();
         <span class="ident">client</span>
             .<span class="ident">submit_transaction</span>(<span class="ident">gen_transfer_txn_request</span>(
@@ -1462,10 +1463,10 @@
         <span class="prelude-val">Ok</span>(<span class="ident">deadline</span>)
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_job</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">req</span>: <span class="ident">EmitJobRequest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EmitJob</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">start_job</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">req</span>: <span class="ident">EmitJobRequest</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">EmitJob</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">workers_per_ac</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">req</span>.<span class="ident">workers_per_ac</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">x</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">x</span>) <span class="op">=&gt;</span> <span class="ident">x</span>,
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">target_threads</span> <span class="op">=</span> <span class="number">300</span>;
                 <span class="comment">// Trying to create somewhere between target_threads/2..target_threads threads</span>
                 <span class="comment">// We want to have equal numbers of threads for each AC, so that they are equally loaded</span>
@@ -1482,7 +1483,7 @@
         <span class="kw">let</span> <span class="ident">num_accounts</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">accounts_per_client</span> <span class="op">*</span> <span class="ident">num_clients</span>;
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">premainnet</span> {
             <span class="macro">assert</span><span class="macro">!</span>(
-                <span class="ident">num_accounts</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">MAX_VASP_ACCOUNT_NUM</span> <span class="op">*</span> <span class="ident">MAX_CHILD_VASP_NUM</span>,
+                <span class="ident">num_accounts</span> <span class="op">&lt;=</span> <span class="ident">MAX_VASP_ACCOUNT_NUM</span> <span class="op">*</span> <span class="ident">MAX_CHILD_VASP_NUM</span>,
                 <span class="string">&quot;VASP only supports to create max {} child accounts, but try to create {} accounts&quot;</span>,
                 <span class="ident">MAX_VASP_ACCOUNT_NUM</span> <span class="op">*</span> <span class="ident">MAX_CHILD_VASP_NUM</span>,
                 <span class="ident">num_accounts</span>
@@ -1534,7 +1535,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
         <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">query_sequence_numbers</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span>[<span class="ident">address</span>])
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
@@ -1555,22 +1556,22 @@
     <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_libra_root_account</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">load_account_with_mint_key</span>(<span class="ident">client</span>, <span class="ident">libra_root_address</span>())
             .<span class="kw">await</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_faucet_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_faucet_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">load_account_with_mint_key</span>(<span class="ident">client</span>, <span class="ident">testnet_dd_account_address</span>())
             .<span class="kw">await</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_tc_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_tc_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">load_account_with_mint_key</span>(<span class="ident">client</span>, <span class="ident">treasury_compliance_account_address</span>())
             .<span class="kw">await</span>
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_dd_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">load_dd_account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">mint_key</span>: <span class="ident">Ed25519PrivateKey</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">DD_KEY</span>);
         <span class="kw">let</span> <span class="ident">mint_key_pair</span>: <span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">mint_key</span>);
         <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">mint_key_pair</span>.<span class="ident">public_key</span>);
@@ -1594,7 +1595,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
         <span class="ident">index</span>: <span class="ident">usize</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="string">&quot;vasp&quot;</span>.<span class="ident">to_owned</span>() <span class="op">+</span> <span class="ident">index</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>() <span class="op">+</span> <span class="string">&quot;.key&quot;</span>;
         <span class="kw">let</span> <span class="ident">mint_key</span>: <span class="ident">Ed25519PrivateKey</span> <span class="op">=</span> <span class="ident">generate_key</span>::<span class="ident">load_key</span>(<span class="ident">file</span>);
         <span class="kw">let</span> <span class="ident">mint_key_pair</span>: <span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">Ed25519PrivateKey</span>, <span class="ident">Ed25519PublicKey</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">from</span>(<span class="ident">mint_key</span>);
@@ -1619,7 +1620,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">instances</span>: <span class="kw-2">&amp;</span>[<span class="ident">Instance</span>],
         <span class="ident">coins_total</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="ident">instances</span>).<span class="ident">json_rpc_client</span>();
         <span class="kw">let</span> <span class="ident">faucet_account</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">premainnet</span> {
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Creating and minting faucet account&quot;</span>);
@@ -1654,7 +1655,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">instances</span>: <span class="kw-2">&amp;</span>[<span class="ident">Instance</span>],
         <span class="ident">seed_account_num</span>: <span class="ident">usize</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">pick_mint_instance</span>(<span class="ident">instances</span>).<span class="ident">json_rpc_client</span>();
         <span class="kw">let</span> <span class="ident">seed_accounts</span> <span class="op">=</span> <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">premainnet</span> {
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Creating and minting seeds accounts&quot;</span>);
@@ -1688,8 +1689,8 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">req</span>: <span class="kw-2">&amp;</span><span class="ident">EmitJobRequest</span>,
         <span class="ident">requested_accounts</span>: <span class="ident">usize</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">requested_accounts</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="ident">requested_accounts</span> {
             <span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Not minting accounts&quot;</span>);
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(()); <span class="comment">// Early return to skip printing &#39;Minting ...&#39; logs</span>
         }
@@ -1742,7 +1743,7 @@
                     <span class="number">20</span>,
                     <span class="ident">client</span>,
                     <span class="self">self</span>.<span class="ident">chain_id</span>,
-                    <span class="self">self</span>.<span class="ident">premainnet</span> <span class="op">|</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">REUSE_ACC</span>,
+                    <span class="self">self</span>.<span class="ident">premainnet</span> <span class="op">||</span> <span class="kw-2">*</span><span class="ident">REUSE_ACC</span>,
                     <span class="ident">seed_rngs</span>[<span class="ident">i</span>].<span class="ident">clone</span>(),
                 )
             });
@@ -1755,7 +1756,7 @@
 
         <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">minted_accounts</span>);
         <span class="macro">assert</span><span class="macro">!</span>(
-            <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">num_accounts</span>,
+            <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="ident">num_accounts</span>,
             <span class="string">&quot;Something wrong in mint_account, wanted to mint {}, only have {}&quot;</span>,
             <span class="ident">requested_accounts</span>,
             <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>()
@@ -1764,11 +1765,11 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peek_job_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">job</span>: <span class="kw-2">&amp;</span><span class="ident">EmitJob</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TxStats</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peek_job_stats</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">job</span>: <span class="kw-2">&amp;</span><span class="ident">EmitJob</span>) <span class="op">-&gt;</span> <span class="ident">TxStats</span> {
         <span class="ident">job</span>.<span class="ident">stats</span>.<span class="ident">accumulate</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">stop_job</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">job</span>: <span class="ident">EmitJob</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TxStats</span> {
+    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">stop_job</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">job</span>: <span class="ident">EmitJob</span>) <span class="op">-&gt;</span> <span class="ident">TxStats</span> {
         <span class="ident">job</span>.<span class="ident">stop</span>.<span class="ident">store</span>(<span class="bool-val">true</span>, <span class="ident">Ordering</span>::<span class="ident">Relaxed</span>);
         <span class="kw">for</span> <span class="ident">worker</span> <span class="kw">in</span> <span class="ident">job</span>.<span class="ident">workers</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="ident">worker</span>
@@ -1797,7 +1798,7 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">duration</span>: <span class="ident">Duration</span>,
         <span class="ident">emit_job_request</span>: <span class="ident">EmitJobRequest</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TxStats</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TxStats</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">job</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">start_job</span>(<span class="ident">emit_job_request</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="ident">tokio</span>::<span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">duration</span>).<span class="kw">await</span>;
         <span class="kw">let</span> <span class="ident">stats</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">stop_job</span>(<span class="ident">job</span>).<span class="kw">await</span>;
@@ -1809,7 +1810,7 @@
         <span class="ident">duration</span>: <span class="ident">Duration</span>,
         <span class="ident">emit_job_request</span>: <span class="ident">EmitJobRequest</span>,
         <span class="ident">interval_secs</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TxStats</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TxStats</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">job</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">start_job</span>(<span class="ident">emit_job_request</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">periodic_stat</span>(<span class="kw-2">&amp;</span><span class="ident">job</span>, <span class="ident">duration</span>, <span class="ident">interval_secs</span>).<span class="kw">await</span>;
         <span class="kw">let</span> <span class="ident">stats</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">stop_job</span>(<span class="ident">job</span>).<span class="kw">await</span>;
@@ -1820,7 +1821,7 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">instance</span>: <span class="kw-2">&amp;</span><span class="ident">Instance</span>,
         <span class="ident">address</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">instance</span>.<span class="ident">json_rpc_client</span>();
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">client</span>
             .<span class="ident">get_accounts</span>(<span class="ident">slice</span>::<span class="ident">from_ref</span>(<span class="ident">address</span>))
@@ -1828,19 +1829,19 @@
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[{:?}] get_accounts failed: {:?} &quot;</span>, <span class="ident">client</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">resp</span>[<span class="number">0</span>]
             .<span class="ident">as_ref</span>()
-            .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
+            .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
             .<span class="ident">sequence_number</span>)
     }
 }
 
 <span class="kw">struct</span> <span class="ident">Worker</span> {
-    <span class="ident">join_handle</span>: <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">join_handle</span>: <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="kw">struct</span> <span class="ident">SubmissionWorker</span> {
     <span class="ident">accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span>,
     <span class="ident">client</span>: <span class="ident">JsonRpcAsyncClient</span>,
-    <span class="ident">all_addresses</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">all_addresses</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountAddress</span><span class="op">&gt;&gt;</span>,
     <span class="ident">stop</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">AtomicBool</span><span class="op">&gt;</span>,
     <span class="ident">params</span>: <span class="ident">EmitThreadParams</span>,
     <span class="ident">stats</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">StatsAccumulator</span><span class="op">&gt;</span>,
@@ -1849,7 +1850,7 @@
 
 <span class="kw">impl</span> <span class="ident">SubmissionWorker</span> {
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy</span>::<span class="ident">collapsible_if</span>)]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">wait</span> <span class="op">=</span> <span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="self">self</span>.<span class="ident">params</span>.<span class="ident">wait_millis</span>);
         <span class="kw">while</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">stop</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>) {
             <span class="kw">let</span> <span class="ident">requests</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">gen_requests</span>(<span class="ident">gas_price</span>);
@@ -1859,7 +1860,7 @@
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tx_offset_time</span> <span class="op">=</span> <span class="number">0u64</span>;
             <span class="kw">for</span> <span class="ident">request</span> <span class="kw">in</span> <span class="ident">requests</span> {
                 <span class="kw">let</span> <span class="ident">cur_time</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>();
-                <span class="ident">tx_offset_time</span> <span class="op">+</span><span class="op">=</span> (<span class="ident">cur_time</span> <span class="op">-</span> <span class="ident">start_time</span>).<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>;
+                <span class="ident">tx_offset_time</span> <span class="op">+=</span> (<span class="ident">cur_time</span> <span class="op">-</span> <span class="ident">start_time</span>).<span class="ident">as_millis</span>() <span class="kw">as</span> <span class="ident">u64</span>;
                 <span class="self">self</span>.<span class="ident">stats</span>.<span class="ident">submitted</span>.<span class="ident">fetch_add</span>(<span class="number">1</span>, <span class="ident">Ordering</span>::<span class="ident">Relaxed</span>);
                 <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">client</span>.<span class="ident">submit_transaction</span>(<span class="ident">request</span>).<span class="kw">await</span>;
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">resp</span> {
@@ -1917,7 +1918,7 @@
         <span class="self">self</span>.<span class="ident">accounts</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">gen_requests</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">gen_requests</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">gas_price</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ThreadRng</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="ident">batch_size</span> <span class="op">=</span> <span class="ident">max</span>(<span class="ident">MAX_TXN_BATCH_SIZE</span>, <span class="self">self</span>.<span class="ident">accounts</span>.<span class="ident">len</span>());
         <span class="kw">let</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="self">self</span>
@@ -1941,26 +1942,26 @@
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_accounts_sequence</span>(
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">accounts</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">AccountData</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountAddress</span>, <span class="ident">u64</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountAddress</span>, <span class="ident">u64</span>)<span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="ident">deadline</span> <span class="op">=</span> <span class="ident">Instant</span>::<span class="ident">now</span>() <span class="op">+</span> <span class="ident">TXN_MAX_WAIT</span>;
     <span class="kw">let</span> <span class="ident">addresses</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">accounts</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">address</span>).<span class="ident">collect</span>();
     <span class="kw">loop</span> {
         <span class="kw">match</span> <span class="ident">query_sequence_numbers</span>(<span class="ident">client</span>, <span class="kw-2">&amp;</span><span class="ident">addresses</span>).<span class="kw">await</span> {
-            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=&gt;</span> {
                 <span class="macro">info</span><span class="macro">!</span>(
                     <span class="string">&quot;Failed to query ledger info on accounts {:?} for instance {:?} : {:?}&quot;</span>,
                     <span class="ident">addresses</span>, <span class="ident">client</span>, <span class="ident">e</span>
                 );
                 <span class="ident">time</span>::<span class="ident">delay_for</span>(<span class="ident">Duration</span>::<span class="ident">from_millis</span>(<span class="number">300</span>)).<span class="kw">await</span>;
             }
-            <span class="prelude-val">Ok</span>(<span class="ident">sequence_numbers</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">sequence_numbers</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="ident">is_sequence_equal</span>(<span class="ident">accounts</span>, <span class="kw-2">&amp;</span><span class="ident">sequence_numbers</span>) {
                     <span class="kw">break</span>;
                 }
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">uncommitted</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
                 <span class="kw">if</span> <span class="ident">Instant</span>::<span class="ident">now</span>() <span class="op">&gt;</span> <span class="ident">deadline</span> {
                     <span class="kw">for</span> (<span class="ident">account</span>, <span class="ident">sequence_number</span>) <span class="kw">in</span> <span class="ident">zip</span>(<span class="ident">accounts</span>, <span class="kw-2">&amp;</span><span class="ident">sequence_numbers</span>) {
-                        <span class="kw">if</span> <span class="ident">account</span>.<span class="ident">sequence_number</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">sequence_number</span> {
+                        <span class="kw">if</span> <span class="ident">account</span>.<span class="ident">sequence_number</span> <span class="op">!=</span> <span class="kw-2">*</span><span class="ident">sequence_number</span> {
                             <span class="macro">warn</span><span class="macro">!</span>(<span class="string">&quot;Wait deadline exceeded for account {}, expected sequence {}, got from server: {}&quot;</span>, <span class="ident">account</span>.<span class="ident">address</span>, <span class="ident">account</span>.<span class="ident">sequence_number</span>, <span class="ident">sequence_number</span>);
                             <span class="ident">uncommitted</span>.<span class="ident">push</span>((<span class="ident">account</span>.<span class="ident">address</span>, <span class="kw-2">*</span><span class="ident">sequence_number</span>));
                             <span class="ident">account</span>.<span class="ident">sequence_number</span> <span class="op">=</span> <span class="kw-2">*</span><span class="ident">sequence_number</span>;
@@ -1975,9 +1976,9 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">is_sequence_equal</span>(<span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountData</span>], <span class="ident">sequence_numbers</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+<span class="kw">fn</span> <span class="ident">is_sequence_equal</span>(<span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountData</span>], <span class="ident">sequence_numbers</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) <span class="op">-&gt;</span> <span class="ident">bool</span> {
     <span class="kw">for</span> (<span class="ident">account</span>, <span class="ident">sequence_number</span>) <span class="kw">in</span> <span class="ident">zip</span>(<span class="ident">accounts</span>, <span class="ident">sequence_numbers</span>) {
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">sequence_number</span> <span class="op">!</span><span class="op">=</span> <span class="ident">account</span>.<span class="ident">sequence_number</span> {
+        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">sequence_number</span> <span class="op">!=</span> <span class="ident">account</span>.<span class="ident">sequence_number</span> {
             <span class="kw">return</span> <span class="bool-val">false</span>;
         }
     }
@@ -1987,7 +1988,7 @@
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">query_sequence_numbers</span>(
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">addresses</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>],
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">for</span> <span class="ident">addresses_batch</span> <span class="kw">in</span> <span class="ident">addresses</span>.<span class="ident">chunks</span>(<span class="number">20</span>) {
         <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">client</span>
@@ -1997,7 +1998,7 @@
 
         <span class="kw">for</span> <span class="ident">item</span> <span class="kw">in</span> <span class="ident">resp</span>.<span class="ident">into_iter</span>() {
             <span class="ident">result</span>.<span class="ident">push</span>(
-                <span class="ident">item</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
+                <span class="ident">item</span>.<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
                     .<span class="ident">sequence_number</span>,
             );
         }
@@ -2015,14 +2016,14 @@
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">retrieve_account_balance</span>(
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">address</span>: <span class="ident">AccountAddress</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AmountView</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AmountView</span><span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="ident">resp</span> <span class="op">=</span> <span class="ident">client</span>
         .<span class="ident">get_accounts</span>(<span class="kw-2">&amp;</span>[<span class="ident">address</span>])
         .<span class="kw">await</span>
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;[{:?}] get_accounts failed: {:?} &quot;</span>, <span class="ident">client</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(<span class="ident">resp</span>[<span class="number">0</span>]
         .<span class="ident">clone</span>()
-        .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
+        .<span class="ident">ok_or_else</span>(<span class="op">||</span> <span class="macro">format_err</span><span class="macro">!</span>(<span class="string">&quot;account does not exist&quot;</span>))<span class="question-mark">?</span>
         .<span class="ident">balances</span>)
 }
 
@@ -2031,7 +2032,7 @@
     <span class="ident">sender_account</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="ident">gas_price</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="kw">let</span> <span class="ident">transaction</span> <span class="op">=</span> <span class="ident">create_user_txn</span>(
         <span class="kw-2">&amp;</span><span class="ident">sender_account</span>.<span class="ident">key_pair</span>,
         <span class="ident">TransactionPayload</span>::<span class="ident">Script</span>(<span class="ident">script</span>),
@@ -2044,7 +2045,7 @@
         <span class="ident">chain_id</span>,
     )
     .<span class="ident">expect</span>(<span class="string">&quot;Failed to create signed transaction&quot;</span>);
-    <span class="ident">sender_account</span>.<span class="ident">sequence_number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+    <span class="ident">sender_account</span>.<span class="ident">sequence_number</span> <span class="op">+=</span> <span class="number">1</span>;
     <span class="ident">transaction</span>
 }
 
@@ -2052,7 +2053,7 @@
     <span class="ident">faucet_account</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="kw">let</span> <span class="ident">receiver</span> <span class="op">=</span> <span class="ident">faucet_account</span>.<span class="ident">address</span>;
     <span class="ident">gen_submit_transaction_request</span>(
         <span class="ident">transaction_builder</span>::<span class="ident">encode_peer_to_peer_with_metadata_script</span>(
@@ -2074,7 +2075,7 @@
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="ident">gas_price</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="ident">gen_submit_transaction_request</span>(
         <span class="ident">transaction_builder</span>::<span class="ident">encode_peer_to_peer_with_metadata_script</span>(
             <span class="ident">account_config</span>::<span class="ident">coin1_tmp_tag</span>(),
@@ -2095,7 +2096,7 @@
     <span class="ident">receiver_auth_key_prefix</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="kw">let</span> <span class="ident">add_all_currencies</span> <span class="op">=</span> <span class="bool-val">false</span>;
     <span class="ident">gen_submit_transaction_request</span>(
         <span class="ident">transaction_builder</span>::<span class="ident">encode_create_child_vasp_account_script</span>(
@@ -2116,7 +2117,7 @@
     <span class="ident">receiver</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
     <span class="ident">auth_key_prefix</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="ident">gen_submit_transaction_request</span>(
         <span class="ident">transaction_builder</span>::<span class="ident">encode_create_parent_vasp_account_script</span>(
             <span class="ident">account_config</span>::<span class="ident">coin1_tmp_tag</span>(),
@@ -2137,7 +2138,7 @@
     <span class="ident">receiver</span>: <span class="kw-2">&amp;</span><span class="ident">AccountAddress</span>,
     <span class="ident">num_coins</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SignedTransaction</span> {
+) <span class="op">-&gt;</span> <span class="ident">SignedTransaction</span> {
     <span class="ident">gen_submit_transaction_request</span>(
         <span class="ident">transaction_builder</span>::<span class="ident">encode_peer_to_peer_with_metadata_script</span>(
             <span class="ident">account_config</span>::<span class="ident">coin1_tmp_tag</span>(),
@@ -2152,7 +2153,7 @@
     )
 }
 
-<span class="kw">fn</span> <span class="ident">gen_random_account</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountData</span> {
+<span class="kw">fn</span> <span class="ident">gen_random_account</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>) <span class="op">-&gt;</span> <span class="ident">AccountData</span> {
     <span class="kw">let</span> <span class="ident">key_pair</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">generate</span>(<span class="ident">rng</span>);
     <span class="ident">AccountData</span> {
         <span class="ident">address</span>: <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">key_pair</span>.<span class="ident">public_key</span>),
@@ -2161,7 +2162,7 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">gen_random_accounts</span>(<span class="ident">num_accounts</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">gen_random_accounts</span>(<span class="ident">num_accounts</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">seed</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> <span class="ident">OsRng</span>.<span class="ident">gen</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">StdRng</span>::<span class="ident">from_seed</span>(<span class="ident">seed</span>);
     (<span class="number">0</span>..<span class="ident">num_accounts</span>)
@@ -2169,7 +2170,7 @@
         .<span class="ident">collect</span>()
 }
 
-<span class="kw">fn</span> <span class="ident">gen_rng_for_reusable_account</span>(<span class="ident">count</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdRng</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">gen_rng_for_reusable_account</span>(<span class="ident">count</span>: <span class="ident">usize</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">StdRng</span><span class="op">&gt;</span> {
     <span class="comment">// use same seed for reuse account creation and reuse</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> [
         <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">2</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>,
@@ -2186,12 +2187,12 @@
 <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">gen_reusable_account</span>(
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">mint_key_pair</span> <span class="op">=</span> <span class="ident">KeyPair</span>::<span class="ident">generate</span>(<span class="ident">rng</span>);
     <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">libra_types</span>::<span class="ident">account_address</span>::<span class="ident">from_public_key</span>(<span class="kw-2">&amp;</span><span class="ident">mint_key_pair</span>.<span class="ident">public_key</span>);
     <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">query_sequence_numbers</span>(<span class="kw-2">&amp;</span><span class="ident">client</span>, <span class="kw-2">&amp;</span>[<span class="ident">address</span>]).<span class="kw">await</span> {
-        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">v</span>[<span class="number">0</span>],
-        <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=&gt;</span> <span class="ident">v</span>[<span class="number">0</span>],
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="number">0</span>,
     };
     <span class="prelude-val">Ok</span>(<span class="ident">AccountData</span> {
         <span class="ident">address</span>,
@@ -2204,12 +2205,12 @@
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">num_accounts</span>: <span class="ident">usize</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">StdRng</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vasp_accounts</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">num_accounts</span> {
         <span class="ident">vasp_accounts</span>.<span class="ident">push</span>(<span class="ident">gen_reusable_account</span>(<span class="ident">client</span>, <span class="ident">rng</span>).<span class="kw">await</span><span class="question-mark">?</span>);
-        <span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="ident">i</span> <span class="op">+=</span> <span class="number">1</span>;
     }
     <span class="prelude-val">Ok</span>(<span class="ident">vasp_accounts</span>)
 }
@@ -2219,7 +2220,7 @@
     <span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountData</span>],
     <span class="ident">amount</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
     <span class="ident">accounts</span>
         .<span class="ident">iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">account</span><span class="op">|</span> {
@@ -2238,7 +2239,7 @@
     <span class="ident">sending_account</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
     <span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountData</span>],
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
     <span class="ident">accounts</span>
         .<span class="ident">iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">account</span><span class="op">|</span> {
@@ -2257,7 +2258,7 @@
     <span class="ident">accounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountData</span>],
     <span class="ident">amount</span>: <span class="ident">u64</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span> {
     <span class="ident">accounts</span>
         .<span class="ident">iter</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">account</span><span class="op">|</span> <span class="ident">gen_mint_txn_request</span>(<span class="ident">sending_account</span>, <span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">address</span>, <span class="ident">amount</span>, <span class="ident">chain_id</span>))
@@ -2268,7 +2269,7 @@
     <span class="ident">client</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">account</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountData</span>,
     <span class="ident">txn</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">SignedTransaction</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="macro">debug</span><span class="macro">!</span>(
         <span class="string">&quot;[{:?}] Submitting transactions {} - {} for {}&quot;</span>,
         <span class="ident">client</span>,
@@ -2277,7 +2278,7 @@
         <span class="ident">account</span>.<span class="ident">address</span>
     );
     <span class="kw">for</span> <span class="ident">request</span> <span class="kw">in</span> <span class="ident">txn</span> {
-        <span class="ident">libra_retrier</span>::<span class="ident">retry_async</span>(<span class="ident">libra_retrier</span>::<span class="ident">fixed_retry_strategy</span>(<span class="number">5_000</span>, <span class="number">20</span>), <span class="op">|</span><span class="op">|</span> {
+        <span class="ident">libra_retrier</span>::<span class="ident">retry_async</span>(<span class="ident">libra_retrier</span>::<span class="ident">fixed_retry_strategy</span>(<span class="number">5_000</span>, <span class="number">20</span>), <span class="op">||</span> {
             <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">clone</span>();
             <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">clone</span>();
             <span class="kw">let</span> <span class="ident">client_name</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">client</span>);
@@ -2313,7 +2314,7 @@
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
     <span class="ident">reuse_account</span>: <span class="ident">bool</span>,
     <span class="kw-2">mut</span> <span class="ident">rng</span>: <span class="ident">StdRng</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">num_new_accounts</span> {
@@ -2334,7 +2335,7 @@
             <span class="ident">chain_id</span>,
         );
         <span class="ident">execute_and_wait_transactions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">source_account</span>, <span class="ident">requests</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">batch</span>.<span class="ident">len</span>();
+        <span class="ident">i</span> <span class="op">+=</span> <span class="ident">batch</span>.<span class="ident">len</span>();
         <span class="ident">accounts</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">batch</span>);
     }
     <span class="prelude-val">Ok</span>(<span class="ident">accounts</span>)
@@ -2347,7 +2348,7 @@
     <span class="ident">max_num_accounts_per_batch</span>: <span class="ident">u64</span>,
     <span class="kw-2">mut</span> <span class="ident">client</span>: <span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountData</span><span class="op">&gt;&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">accounts</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">num_new_accounts</span> {
@@ -2357,7 +2358,7 @@
         ));
         <span class="kw">let</span> <span class="ident">create_requests</span> <span class="op">=</span> <span class="ident">gen_account_creation_txn_requests</span>(<span class="ident">creation_account</span>, <span class="kw-2">&amp;</span><span class="ident">batch</span>, <span class="ident">chain_id</span>);
         <span class="ident">execute_and_wait_transactions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>, <span class="ident">creation_account</span>, <span class="ident">create_requests</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">batch</span>.<span class="ident">len</span>();
+        <span class="ident">i</span> <span class="op">+=</span> <span class="ident">batch</span>.<span class="ident">len</span>();
         <span class="ident">accounts</span>.<span class="ident">append</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">batch</span>);
     }
     <span class="prelude-val">Ok</span>(<span class="ident">accounts</span>)
@@ -2371,7 +2372,7 @@
     <span class="ident">max_num_accounts_per_batch</span>: <span class="ident">u64</span>,
     <span class="kw-2">mut</span> <span class="ident">client</span>: <span class="ident">JsonRpcAsyncClient</span>,
     <span class="ident">chain_id</span>: <span class="ident">ChainId</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">accounts</span>;
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
     <span class="kw">let</span> <span class="ident">num_accounts</span> <span class="op">=</span> <span class="ident">accounts</span>.<span class="ident">len</span>();
@@ -2385,7 +2386,7 @@
         <span class="kw">let</span> <span class="ident">mint_requests</span> <span class="op">=</span>
             <span class="ident">gen_mint_txn_requests</span>(<span class="ident">minting_account</span>, <span class="ident">to_batch</span>, <span class="ident">libra_per_new_account</span>, <span class="ident">chain_id</span>);
         <span class="ident">execute_and_wait_transactions</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">client</span>, <span class="ident">minting_account</span>, <span class="ident">mint_requests</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="ident">to_batch</span>.<span class="ident">len</span>();
+        <span class="ident">i</span> <span class="op">+=</span> <span class="ident">to_batch</span>.<span class="ident">len</span>();
         <span class="ident">left</span> <span class="op">=</span> <span class="ident">rest</span>;
     }
     <span class="prelude-val">Ok</span>(())
@@ -2399,7 +2400,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">AccountData</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auth_key_prefix</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auth_key_prefix</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="ident">AuthenticationKey</span>::<span class="ident">ed25519</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">key_pair</span>.<span class="ident">public_key</span>)
             .<span class="ident">prefix</span>()
             .<span class="ident">to_vec</span>()
@@ -2407,7 +2408,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">StatsAccumulator</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">accumulate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TxStats</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">accumulate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">TxStats</span> {
         <span class="ident">TxStats</span> {
             <span class="ident">submitted</span>: <span class="self">self</span>.<span class="ident">submitted</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>),
             <span class="ident">committed</span>: <span class="self">self</span>.<span class="ident">committed</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>),
@@ -2419,12 +2420,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">TxStats</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">window</span>: <span class="ident">Duration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TxStatsRate</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">window</span>: <span class="ident">Duration</span>) <span class="op">-&gt;</span> <span class="ident">TxStatsRate</span> {
         <span class="ident">TxStatsRate</span> {
             <span class="ident">submitted</span>: <span class="self">self</span>.<span class="ident">submitted</span> <span class="op">/</span> <span class="ident">window</span>.<span class="ident">as_secs</span>(),
             <span class="ident">committed</span>: <span class="self">self</span>.<span class="ident">committed</span> <span class="op">/</span> <span class="ident">window</span>.<span class="ident">as_secs</span>(),
             <span class="ident">expired</span>: <span class="self">self</span>.<span class="ident">expired</span> <span class="op">/</span> <span class="ident">window</span>.<span class="ident">as_secs</span>(),
-            <span class="ident">latency</span>: <span class="kw">if</span> <span class="self">self</span>.<span class="ident">committed</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="ident">latency</span>: <span class="kw">if</span> <span class="self">self</span>.<span class="ident">committed</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="number">0u64</span>
             } <span class="kw">else</span> {
                 <span class="self">self</span>.<span class="ident">latency</span> <span class="op">/</span> <span class="self">self</span>.<span class="ident">committed</span>
@@ -2437,7 +2438,7 @@
 <span class="kw">impl</span> <span class="ident">Sub</span> <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">TxStats</span> {
     <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">TxStats</span>;
 
-    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">TxStats</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TxStats</span> {
+    <span class="kw">fn</span> <span class="ident">sub</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="ident">TxStats</span>) <span class="op">-&gt;</span> <span class="ident">TxStats</span> {
         <span class="ident">TxStats</span> {
             <span class="ident">submitted</span>: <span class="self">self</span>.<span class="ident">submitted</span> <span class="op">-</span> <span class="ident">other</span>.<span class="ident">submitted</span>,
             <span class="ident">committed</span>: <span class="self">self</span>.<span class="ident">committed</span> <span class="op">-</span> <span class="ident">other</span>.<span class="ident">committed</span>,
@@ -2449,7 +2450,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">TxStats</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(
             <span class="ident">f</span>,
             <span class="string">&quot;submitted: {}, committed: {}, expired: {}&quot;</span>,
@@ -2459,7 +2460,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">fmt</span>::<span class="ident">Display</span> <span class="kw">for</span> <span class="ident">TxStatsRate</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(
             <span class="ident">f</span>,
             <span class="string">&quot;submitted: {} txn/s, committed: {} txn/s, expired: {} txn/s, latency: {} ms, p99 latency: {} ms&quot;</span>,

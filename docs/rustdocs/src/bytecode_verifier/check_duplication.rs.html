@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/bytecode-verifier/src/check_duplication.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>check_duplication.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode_verifier/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/bytecode-verifier/src/check_duplication.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>check_duplication.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../bytecode_verifier/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -353,11 +354,11 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">DuplicationChecker</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_module</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">verify_module_impl</span>(<span class="ident">module</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Module</span>(<span class="ident">module</span>.<span class="ident">self_id</span>())))
     }
 
-    <span class="kw">fn</span> <span class="ident">verify_module_impl</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">verify_module_impl</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledModule</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">check_identifiers</span>(<span class="ident">module</span>.<span class="ident">identifiers</span>())<span class="question-mark">?</span>;
         <span class="self">Self</span>::<span class="ident">check_address_identifiers</span>(<span class="ident">module</span>.<span class="ident">address_identifiers</span>())<span class="question-mark">?</span>;
         <span class="self">Self</span>::<span class="ident">check_constants</span>(<span class="ident">module</span>.<span class="ident">constant_pool</span>())<span class="question-mark">?</span>;
@@ -375,11 +376,11 @@
         <span class="ident">checker</span>.<span class="ident">check_struct_instantiations</span>()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_script</span>(<span class="ident">module</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>) <span class="op">-&gt;</span> <span class="ident">VMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">verify_script_impl</span>(<span class="ident">module</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">finish</span>(<span class="ident">Location</span>::<span class="ident">Script</span>))
     }
 
-    <span class="kw">fn</span> <span class="ident">verify_script_impl</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">verify_script_impl</span>(<span class="ident">script</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">CompiledScript</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">check_identifiers</span>(<span class="ident">script</span>.<span class="ident">identifiers</span>())<span class="question-mark">?</span>;
         <span class="self">Self</span>::<span class="ident">check_address_identifiers</span>(<span class="ident">script</span>.<span class="ident">address_identifiers</span>())<span class="question-mark">?</span>;
         <span class="self">Self</span>::<span class="ident">check_constants</span>(<span class="ident">script</span>.<span class="ident">constant_pool</span>())<span class="question-mark">?</span>;
@@ -390,95 +391,95 @@
         <span class="self">Self</span>::<span class="ident">check_function_instantiations</span>(<span class="ident">script</span>.<span class="ident">function_instantiations</span>())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_identifiers</span>(<span class="ident">identifiers</span>: <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_identifiers</span>(<span class="ident">identifiers</span>: <span class="kw-2">&amp;</span>[<span class="ident">Identifier</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">identifiers</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">Identifier</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_address_identifiers</span>(<span class="ident">address_identifiers</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_address_identifiers</span>(<span class="ident">address_identifiers</span>: <span class="kw-2">&amp;</span>[<span class="ident">AccountAddress</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">address_identifiers</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">AddressIdentifier</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_constants</span>(<span class="ident">constant_pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_constants</span>(<span class="ident">constant_pool</span>: <span class="kw-2">&amp;</span>[<span class="ident">Constant</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">constant_pool</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">ConstantPool</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_signatures</span>(<span class="ident">signatures</span>: <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_signatures</span>(<span class="ident">signatures</span>: <span class="kw-2">&amp;</span>[<span class="ident">Signature</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">signatures</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">Signature</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_module_handles</span>(<span class="ident">module_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_module_handles</span>(<span class="ident">module_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">ModuleHandle</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">module_handles</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">ModuleHandle</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
     <span class="comment">// StructHandles - module and name define uniqueness</span>
-    <span class="kw">fn</span> <span class="ident">check_struct_handles</span>(<span class="ident">struct_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_struct_handles</span>(<span class="ident">struct_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">StructHandle</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">struct_handles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="ident">module</span>, <span class="ident">x</span>.<span class="ident">name</span>))) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">StructHandle</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
     <span class="kw">fn</span> <span class="ident">check_function_instantiations</span>(
         <span class="ident">function_instantiations</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionInstantiation</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">function_instantiations</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">FunctionInstantiation</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
     <span class="comment">// FunctionHandles - module and name define uniqueness</span>
-    <span class="kw">fn</span> <span class="ident">check_function_handles</span>(<span class="ident">function_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_function_handles</span>(<span class="ident">function_handles</span>: <span class="kw-2">&amp;</span>[<span class="ident">FunctionHandle</span>]) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="ident">function_handles</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="ident">module</span>, <span class="ident">x</span>.<span class="ident">name</span>))) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">FunctionHandle</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
@@ -486,29 +487,29 @@
     <span class="comment">// Module only code</span>
     <span class="comment">//</span>
 
-    <span class="kw">fn</span> <span class="ident">check_field_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_field_handles</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_handles</span>()) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">FieldHandle</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_struct_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_struct_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_instantiations</span>()) {
-            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
+            <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
                 <span class="ident">IndexKind</span>::<span class="ident">StructDefInstantiation</span>,
                 <span class="ident">idx</span>,
             )),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(()),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">check_field_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_field_instantiations</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">field_instantiations</span>()) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">DUPLICATE_ELEMENT</span>,
@@ -519,7 +520,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_struct_definitions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_struct_definitions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// StructDefinition - contained StructHandle defines uniqueness</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span>
             <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">struct_handle</span>))
@@ -533,8 +534,8 @@
         <span class="comment">// Field names in structs must be unique</span>
         <span class="kw">for</span> (<span class="ident">struct_idx</span>, <span class="ident">struct_def</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">fields</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">struct_def</span>.<span class="ident">field_information</span> {
-                <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">continue</span>,
-                <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">fields</span>,
+                <span class="ident">StructFieldInformation</span>::<span class="ident">Native</span> <span class="op">=&gt;</span> <span class="kw">continue</span>,
+                <span class="ident">StructFieldInformation</span>::<span class="ident">Declared</span>(<span class="ident">fields</span>) <span class="op">=&gt;</span> <span class="ident">fields</span>,
             };
             <span class="kw">if</span> <span class="ident">fields</span>.<span class="ident">is_empty</span>() {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
@@ -553,7 +554,7 @@
         }
         <span class="comment">// Check that each struct definition is pointing to the self module</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_defs</span>().<span class="ident">iter</span>().<span class="ident">position</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
-            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handle_at</span>(<span class="ident">x</span>.<span class="ident">struct_handle</span>).<span class="ident">module</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
+            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handle_at</span>(<span class="ident">x</span>.<span class="ident">struct_handle</span>).<span class="ident">module</span> <span class="op">!=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
         }) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_HANDLE</span>,
@@ -570,8 +571,8 @@
             .<span class="ident">collect</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span> (<span class="number">0</span>..<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handles</span>().<span class="ident">len</span>()).<span class="ident">position</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">StructHandleIndex</span>::<span class="ident">new</span>(<span class="ident">x</span> <span class="kw">as</span> <span class="ident">u16</span>);
-            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handle_at</span>(<span class="ident">y</span>).<span class="ident">module</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
-                <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">implemented_struct_handles</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">y</span>)
+            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">struct_handle_at</span>(<span class="ident">y</span>).<span class="ident">module</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
+                <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">implemented_struct_handles</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">y</span>)
         }) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">UNIMPLEMENTED_HANDLE</span>,
@@ -582,7 +583,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_function_defintions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_function_defintions</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">PartialVMResult</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="comment">// FunctionDefinition - contained FunctionHandle defines uniqueness</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span>
             <span class="self">Self</span>::<span class="ident">first_duplicate_element</span>(<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>().<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">function</span>))
@@ -606,7 +607,7 @@
         }
         <span class="comment">// Check that each function definition is pointing to the self module</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_defs</span>().<span class="ident">iter</span>().<span class="ident">position</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
-            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">x</span>.<span class="ident">function</span>).<span class="ident">module</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
+            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">x</span>.<span class="ident">function</span>).<span class="ident">module</span> <span class="op">!=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
         }) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">INVALID_MODULE_HANDLE</span>,
@@ -623,8 +624,8 @@
             .<span class="ident">collect</span>();
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">idx</span>) <span class="op">=</span> (<span class="number">0</span>..<span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handles</span>().<span class="ident">len</span>()).<span class="ident">position</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">FunctionHandleIndex</span>::<span class="ident">new</span>(<span class="ident">x</span> <span class="kw">as</span> <span class="ident">u16</span>);
-            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">y</span>).<span class="ident">module</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
-                <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="ident">implemented_function_handles</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">y</span>)
+            <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">function_handle_at</span>(<span class="ident">y</span>).<span class="ident">module</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">module</span>.<span class="ident">self_handle_idx</span>()
+                <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">implemented_function_handles</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">y</span>)
         }) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">verification_error</span>(
                 <span class="ident">StatusCode</span>::<span class="ident">UNIMPLEMENTED_HANDLE</span>,
@@ -635,7 +636,7 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">first_duplicate_element</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">iter</span>: <span class="ident">T</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TableIndex</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">first_duplicate_element</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">iter</span>: <span class="ident">T</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TableIndex</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">T</span>: <span class="ident">IntoIterator</span>,
         <span class="ident">T</span>::<span class="ident">Item</span>: <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Hash</span>,

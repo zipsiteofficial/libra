@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-lang/src/cfgir/liveness/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../move_lang/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/move-lang/src/cfgir/liveness/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled ><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../move_lang/index.html'><div class='logo-container rust-logo'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -522,8 +523,8 @@
 <span class="comment">// Entry and trait bindings</span>
 <span class="comment">//**************************************************************************************************</span>
 
-<span class="kw">type</span> <span class="ident">PerCommandStates</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">LivenessState</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-<span class="kw">type</span> <span class="ident">ForwardIntersections</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Var</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">type</span> <span class="ident">PerCommandStates</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">VecDeque</span><span class="op">&lt;</span><span class="ident">LivenessState</span><span class="op">&gt;&gt;</span>;
+<span class="kw">type</span> <span class="ident">ForwardIntersections</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Var</span><span class="op">&gt;&gt;</span>;
 <span class="kw">type</span> <span class="ident">FinalInvariants</span> <span class="op">=</span> <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Label</span>, <span class="ident">LivenessState</span><span class="op">&gt;</span>;
 
 <span class="kw">struct</span> <span class="ident">Liveness</span> {
@@ -531,7 +532,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Liveness</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw">super</span>::<span class="ident">cfg</span>::<span class="ident">ReverseBlockCFG</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw">super</span>::<span class="ident">cfg</span>::<span class="ident">ReverseBlockCFG</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">states</span> <span class="op">=</span> <span class="ident">cfg</span>
             .<span class="ident">blocks</span>()
             .<span class="ident">iter</span>()
@@ -553,7 +554,7 @@
         <span class="ident">label</span>: <span class="ident">Label</span>,
         <span class="ident">idx</span>: <span class="ident">usize</span>,
         <span class="ident">cmd</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Errors</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">Errors</span> {
         <span class="ident">command</span>(<span class="ident">state</span>, <span class="ident">cmd</span>);
         <span class="comment">// set current [label][command_idx] data with the new liveness data</span>
         <span class="kw">let</span> <span class="ident">cur_label_states</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">states</span>.<span class="ident">get_mut</span>(<span class="kw-2">&amp;</span><span class="ident">label</span>).<span class="ident">unwrap</span>();
@@ -571,7 +572,7 @@
 <span class="kw">fn</span> <span class="ident">analyze</span>(
     <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">BlockCFG</span>,
     <span class="ident">infinite_loop_starts</span>: <span class="kw-2">&amp;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Label</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">FinalInvariants</span>, <span class="ident">PerCommandStates</span>) {
+) <span class="op">-&gt;</span> (<span class="ident">FinalInvariants</span>, <span class="ident">PerCommandStates</span>) {
     <span class="kw">let</span> <span class="ident">reverse</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ReverseBlockCFG</span>::<span class="ident">new</span>(<span class="ident">cfg</span>, <span class="ident">infinite_loop_starts</span>);
     <span class="kw">let</span> <span class="ident">initial_state</span> <span class="op">=</span> <span class="ident">LivenessState</span>::<span class="ident">initial</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">liveness</span> <span class="op">=</span> <span class="ident">Liveness</span>::<span class="ident">new</span>(<span class="ident">reverse</span>);
@@ -583,20 +584,20 @@
 <span class="kw">fn</span> <span class="ident">command</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LivenessState</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">cmd_</span>): <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
     <span class="kw">use</span> <span class="ident">Command_</span> <span class="kw">as</span> <span class="ident">C</span>;
     <span class="kw">match</span> <span class="ident">cmd_</span> {
-        <span class="ident">C</span>::<span class="ident">Assign</span>(<span class="ident">ls</span>, <span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">C</span>::<span class="ident">Assign</span>(<span class="ident">ls</span>, <span class="ident">e</span>) <span class="op">=&gt;</span> {
             <span class="ident">lvalues</span>(<span class="ident">state</span>, <span class="ident">ls</span>);
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>);
         }
-        <span class="ident">C</span>::<span class="ident">Mutate</span>(<span class="ident">el</span>, <span class="ident">er</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">C</span>::<span class="ident">Mutate</span>(<span class="ident">el</span>, <span class="ident">er</span>) <span class="op">=&gt;</span> {
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">er</span>);
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">el</span>)
         }
-        <span class="ident">C</span>::<span class="ident">Return</span>(<span class="ident">e</span>) <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Abort</span>(<span class="ident">e</span>) <span class="op">|</span> <span class="ident">C</span>::<span class="ident">IgnoreAndPop</span> { <span class="ident">exp</span>: <span class="ident">e</span>, .. } <span class="op">|</span> <span class="ident">C</span>::<span class="ident">JumpIf</span> { <span class="ident">cond</span>: <span class="ident">e</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">C</span>::<span class="ident">Return</span>(<span class="ident">e</span>) <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Abort</span>(<span class="ident">e</span>) <span class="op">|</span> <span class="ident">C</span>::<span class="ident">IgnoreAndPop</span> { <span class="ident">exp</span>: <span class="ident">e</span>, .. } <span class="op">|</span> <span class="ident">C</span>::<span class="ident">JumpIf</span> { <span class="ident">cond</span>: <span class="ident">e</span>, .. } <span class="op">=&gt;</span> {
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>)
         }
 
-        <span class="ident">C</span>::<span class="ident">Jump</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
-        <span class="ident">C</span>::<span class="ident">Break</span> <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Continue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE break/continue not translated to jumps&quot;</span>),
+        <span class="ident">C</span>::<span class="ident">Jump</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> (),
+        <span class="ident">C</span>::<span class="ident">Break</span> <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Continue</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE break/continue not translated to jumps&quot;</span>),
     }
 }
 
@@ -607,51 +608,51 @@
 <span class="kw">fn</span> <span class="ident">lvalue</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LivenessState</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">l_</span>): <span class="kw-2">&amp;</span><span class="ident">LValue</span>) {
     <span class="kw">use</span> <span class="ident">LValue_</span> <span class="kw">as</span> <span class="ident">L</span>;
     <span class="kw">match</span> <span class="ident">l_</span> {
-        <span class="ident">L</span>::<span class="ident">Ignore</span> <span class="op">=</span><span class="op">&gt;</span> (),
-        <span class="ident">L</span>::<span class="ident">Var</span>(<span class="ident">v</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">L</span>::<span class="ident">Ignore</span> <span class="op">=&gt;</span> (),
+        <span class="ident">L</span>::<span class="ident">Var</span>(<span class="ident">v</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">remove</span>(<span class="ident">v</span>);
         }
-        <span class="ident">L</span>::<span class="ident">Unpack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">fields</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">l</span>)<span class="op">|</span> <span class="ident">lvalue</span>(<span class="ident">state</span>, <span class="ident">l</span>)),
+        <span class="ident">L</span>::<span class="ident">Unpack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=&gt;</span> <span class="ident">fields</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">l</span>)<span class="op">|</span> <span class="ident">lvalue</span>(<span class="ident">state</span>, <span class="ident">l</span>)),
     }
 }
 
 <span class="kw">fn</span> <span class="ident">exp</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LivenessState</span>, <span class="ident">parent_e</span>: <span class="kw-2">&amp;</span><span class="ident">Exp</span>) {
     <span class="kw">use</span> <span class="ident">UnannotatedExp_</span> <span class="kw">as</span> <span class="ident">E</span>;
     <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">parent_e</span>.<span class="ident">exp</span>.<span class="ident">value</span> {
-        <span class="ident">E</span>::<span class="ident">Unit</span> { .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Value</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Constant</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnresolvedError</span> <span class="op">=</span><span class="op">&gt;</span> (),
+        <span class="ident">E</span>::<span class="ident">Unit</span> { .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Value</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Constant</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnresolvedError</span> <span class="op">=&gt;</span> (),
 
-        <span class="ident">E</span>::<span class="ident">BorrowLocal</span>(<span class="kw">_</span>, <span class="ident">var</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Copy</span> { <span class="ident">var</span>, .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Move</span> { <span class="ident">var</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">E</span>::<span class="ident">BorrowLocal</span>(<span class="kw">_</span>, <span class="ident">var</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Copy</span> { <span class="ident">var</span>, .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Move</span> { <span class="ident">var</span>, .. } <span class="op">=&gt;</span> {
             <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">insert</span>(<span class="ident">var</span>.<span class="ident">clone</span>());
         }
 
-        <span class="ident">E</span>::<span class="ident">Spec</span>(<span class="kw">_</span>, <span class="ident">used_locals</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">used_locals</span>.<span class="ident">keys</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
+        <span class="ident">E</span>::<span class="ident">Spec</span>(<span class="kw">_</span>, <span class="ident">used_locals</span>) <span class="op">=&gt;</span> <span class="ident">used_locals</span>.<span class="ident">keys</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> {
             <span class="ident">state</span>.<span class="number">0</span>.<span class="ident">insert</span>(<span class="ident">v</span>.<span class="ident">clone</span>());
         }),
 
-        <span class="ident">E</span>::<span class="ident">ModuleCall</span>(<span class="ident">mcall</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="kw-2">&amp;</span><span class="ident">mcall</span>.<span class="ident">arguments</span>),
+        <span class="ident">E</span>::<span class="ident">ModuleCall</span>(<span class="ident">mcall</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="kw-2">&amp;</span><span class="ident">mcall</span>.<span class="ident">arguments</span>),
         <span class="ident">E</span>::<span class="ident">Builtin</span>(<span class="kw">_</span>, <span class="ident">e</span>)
         <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Freeze</span>(<span class="ident">e</span>)
         <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Dereference</span>(<span class="ident">e</span>)
         <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnaryExp</span>(<span class="kw">_</span>, <span class="ident">e</span>)
         <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Borrow</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>)
-        <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Cast</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>),
+        <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Cast</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>),
 
-        <span class="ident">E</span>::<span class="ident">BinopExp</span>(<span class="ident">e1</span>, <span class="kw">_</span>, <span class="ident">e2</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="ident">E</span>::<span class="ident">BinopExp</span>(<span class="ident">e1</span>, <span class="kw">_</span>, <span class="ident">e2</span>) <span class="op">=&gt;</span> {
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e1</span>);
             <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e2</span>)
         }
 
-        <span class="ident">E</span>::<span class="ident">Pack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">fields</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">e</span>)<span class="op">|</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>)),
+        <span class="ident">E</span>::<span class="ident">Pack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=&gt;</span> <span class="ident">fields</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">e</span>)<span class="op">|</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>)),
 
-        <span class="ident">E</span>::<span class="ident">ExpList</span>(<span class="ident">es</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">es</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">exp_list_item</span>(<span class="ident">state</span>, <span class="ident">item</span>)),
+        <span class="ident">E</span>::<span class="ident">ExpList</span>(<span class="ident">es</span>) <span class="op">=&gt;</span> <span class="ident">es</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">exp_list_item</span>(<span class="ident">state</span>, <span class="ident">item</span>)),
 
-        <span class="ident">E</span>::<span class="ident">Unreachable</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE should not analyze dead code&quot;</span>),
+        <span class="ident">E</span>::<span class="ident">Unreachable</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE should not analyze dead code&quot;</span>),
     }
 }
 
 <span class="kw">fn</span> <span class="ident">exp_list_item</span>(<span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LivenessState</span>, <span class="ident">item</span>: <span class="kw-2">&amp;</span><span class="ident">ExpListItem</span>) {
     <span class="kw">match</span> <span class="ident">item</span> {
-        <span class="ident">ExpListItem</span>::<span class="ident">Single</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExpListItem</span>::<span class="ident">Splat</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>),
+        <span class="ident">ExpListItem</span>::<span class="ident">Single</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExpListItem</span>::<span class="ident">Splat</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">state</span>, <span class="ident">e</span>),
     }
 }
 
@@ -706,7 +707,7 @@
             <span class="ident">locals</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UniqueMap</span><span class="op">&lt;</span><span class="ident">Var</span>, <span class="ident">SingleType</span><span class="op">&gt;</span>,
             <span class="ident">next_live</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;b</span> <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Var</span><span class="op">&gt;</span>,
             <span class="ident">dropped_live</span>: <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Var</span><span class="op">&gt;</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+        ) <span class="op">-&gt;</span> <span class="self">Self</span> {
             <span class="ident">Context</span> {
                 <span class="ident">errors</span>,
                 <span class="ident">locals</span>,
@@ -715,7 +716,7 @@
             }
         }
 
-        <span class="kw">fn</span> <span class="ident">is_resourceful</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+        <span class="kw">fn</span> <span class="ident">is_resourceful</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">local</span>: <span class="kw-2">&amp;</span><span class="ident">Var</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
             <span class="kw">let</span> <span class="ident">ty</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">locals</span>.<span class="ident">get</span>(<span class="ident">local</span>).<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">k</span> <span class="op">=</span> <span class="ident">ty</span>.<span class="ident">value</span>.<span class="ident">kind</span>(<span class="ident">ty</span>.<span class="ident">loc</span>);
             <span class="ident">k</span>.<span class="ident">value</span>.<span class="ident">is_resourceful</span>()
@@ -744,14 +745,14 @@
             <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">get_mut</span>(<span class="ident">idx</span>).<span class="ident">unwrap</span>();
             <span class="kw">let</span> <span class="ident">cur_data</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command_states</span>.<span class="ident">get</span>(<span class="ident">idx</span>).<span class="ident">unwrap</span>().<span class="number">0</span>;
             <span class="kw">let</span> <span class="ident">next_data</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">command_states</span>.<span class="ident">get</span>(<span class="ident">idx</span> <span class="op">+</span> <span class="number">1</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">s</span>.<span class="number">0</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">final_invariant</span>.<span class="number">0</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="kw-2">&amp;</span><span class="ident">s</span>.<span class="number">0</span>,
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="kw-2">&amp;</span><span class="ident">final_invariant</span>.<span class="number">0</span>,
             };
 
             <span class="kw">let</span> <span class="ident">dropped_live</span> <span class="op">=</span> <span class="ident">cur_data</span>
                 .<span class="ident">difference</span>(<span class="ident">next_data</span>)
                 .<span class="ident">cloned</span>()
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>();
             <span class="ident">command</span>(
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>::<span class="ident">new</span>(<span class="ident">errors</span>, <span class="ident">locals</span>, <span class="ident">next_data</span>, <span class="ident">dropped_live</span>),
                 <span class="ident">cmd</span>,
@@ -762,21 +763,21 @@
     <span class="kw">fn</span> <span class="ident">command</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">cmd_</span>): <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Command</span>) {
         <span class="kw">use</span> <span class="ident">Command_</span> <span class="kw">as</span> <span class="ident">C</span>;
         <span class="kw">match</span> <span class="ident">cmd_</span> {
-            <span class="ident">C</span>::<span class="ident">Assign</span>(<span class="ident">ls</span>, <span class="ident">e</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">C</span>::<span class="ident">Assign</span>(<span class="ident">ls</span>, <span class="ident">e</span>) <span class="op">=&gt;</span> {
                 <span class="ident">lvalues</span>(<span class="ident">context</span>, <span class="ident">ls</span>);
                 <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>);
             }
-            <span class="ident">C</span>::<span class="ident">Mutate</span>(<span class="ident">el</span>, <span class="ident">er</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">C</span>::<span class="ident">Mutate</span>(<span class="ident">el</span>, <span class="ident">er</span>) <span class="op">=&gt;</span> {
                 <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">el</span>);
                 <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">er</span>)
             }
             <span class="ident">C</span>::<span class="ident">Return</span>(<span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Abort</span>(<span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">C</span>::<span class="ident">IgnoreAndPop</span> { <span class="ident">exp</span>: <span class="ident">e</span>, .. }
-            <span class="op">|</span> <span class="ident">C</span>::<span class="ident">JumpIf</span> { <span class="ident">cond</span>: <span class="ident">e</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
+            <span class="op">|</span> <span class="ident">C</span>::<span class="ident">JumpIf</span> { <span class="ident">cond</span>: <span class="ident">e</span>, .. } <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
 
-            <span class="ident">C</span>::<span class="ident">Jump</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> (),
-            <span class="ident">C</span>::<span class="ident">Break</span> <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Continue</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE break/continue not translated to jumps&quot;</span>),
+            <span class="ident">C</span>::<span class="ident">Jump</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> (),
+            <span class="ident">C</span>::<span class="ident">Break</span> <span class="op">|</span> <span class="ident">C</span>::<span class="ident">Continue</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE break/continue not translated to jumps&quot;</span>),
         }
     }
 
@@ -787,13 +788,13 @@
     <span class="kw">fn</span> <span class="ident">lvalue</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">l</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">LValue</span>) {
         <span class="kw">use</span> <span class="ident">LValue_</span> <span class="kw">as</span> <span class="ident">L</span>;
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">l</span>.<span class="ident">value</span> {
-            <span class="ident">L</span>::<span class="ident">Ignore</span> <span class="op">=</span><span class="op">&gt;</span> (),
-            <span class="ident">L</span>::<span class="ident">Var</span>(<span class="ident">v</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">L</span>::<span class="ident">Ignore</span> <span class="op">=&gt;</span> (),
+            <span class="ident">L</span>::<span class="ident">Var</span>(<span class="ident">v</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> {
                 <span class="ident">context</span>.<span class="ident">dropped_live</span>.<span class="ident">insert</span>(<span class="ident">v</span>.<span class="ident">clone</span>());
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">context</span>.<span class="ident">next_live</span>.<span class="ident">contains</span>(<span class="ident">v</span>) {
                     <span class="kw">match</span> <span class="ident">display_var</span>(<span class="ident">v</span>.<span class="ident">value</span>()) {
-                        <span class="ident">DisplayVar</span>::<span class="ident">Tmp</span> <span class="op">=</span><span class="op">&gt;</span> (),
-                        <span class="ident">DisplayVar</span>::<span class="ident">Orig</span>(<span class="ident">v_str</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                        <span class="ident">DisplayVar</span>::<span class="ident">Tmp</span> <span class="op">=&gt;</span> (),
+                        <span class="ident">DisplayVar</span>::<span class="ident">Orig</span>(<span class="ident">v_str</span>) <span class="op">=&gt;</span> {
                             <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="macro">format</span><span class="macro">!</span>(
                                 <span class="string">&quot;Unused assignment or binding for local &#39;{}&#39;. Consider removing \
                                  or replacing it with &#39;_&#39;&quot;</span>,
@@ -807,28 +808,28 @@
                     }
                 }
             }
-            <span class="ident">L</span>::<span class="ident">Unpack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">fields</span>.<span class="ident">iter_mut</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">l</span>)<span class="op">|</span> <span class="ident">lvalue</span>(<span class="ident">context</span>, <span class="ident">l</span>)),
+            <span class="ident">L</span>::<span class="ident">Unpack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=&gt;</span> <span class="ident">fields</span>.<span class="ident">iter_mut</span>().<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">l</span>)<span class="op">|</span> <span class="ident">lvalue</span>(<span class="ident">context</span>, <span class="ident">l</span>)),
         }
     }
 
     <span class="kw">fn</span> <span class="ident">exp</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">parent_e</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Exp</span>) {
         <span class="kw">use</span> <span class="ident">UnannotatedExp_</span> <span class="kw">as</span> <span class="ident">E</span>;
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">parent_e</span>.<span class="ident">exp</span>.<span class="ident">value</span> {
-            <span class="ident">E</span>::<span class="ident">Unit</span> { .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Value</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Constant</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnresolvedError</span> <span class="op">=</span><span class="op">&gt;</span> (),
+            <span class="ident">E</span>::<span class="ident">Unit</span> { .. } <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Value</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Constant</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnresolvedError</span> <span class="op">=&gt;</span> (),
 
-            <span class="ident">E</span>::<span class="ident">BorrowLocal</span>(<span class="kw">_</span>, <span class="ident">var</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Move</span> { <span class="ident">var</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">E</span>::<span class="ident">BorrowLocal</span>(<span class="kw">_</span>, <span class="ident">var</span>) <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Move</span> { <span class="ident">var</span>, .. } <span class="op">=&gt;</span> {
                 <span class="comment">// remove it from context to prevent accidental dropping in previous usages</span>
                 <span class="ident">context</span>.<span class="ident">dropped_live</span>.<span class="ident">remove</span>(<span class="ident">var</span>);
             }
 
-            <span class="ident">E</span>::<span class="ident">Spec</span>(<span class="kw">_</span>, <span class="ident">used_locals</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">E</span>::<span class="ident">Spec</span>(<span class="kw">_</span>, <span class="ident">used_locals</span>) <span class="op">=&gt;</span> {
                 <span class="comment">// remove it from context to prevent accidental dropping in previous usages</span>
                 <span class="ident">used_locals</span>.<span class="ident">keys</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">var</span><span class="op">|</span> {
                     <span class="ident">context</span>.<span class="ident">dropped_live</span>.<span class="ident">remove</span>(<span class="ident">var</span>);
                 })
             }
 
-            <span class="ident">E</span>::<span class="ident">Copy</span> { <span class="ident">var</span>, <span class="ident">from_user</span> } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">E</span>::<span class="ident">Copy</span> { <span class="ident">var</span>, <span class="ident">from_user</span> } <span class="op">=&gt;</span> {
                 <span class="comment">// Even if not switched to a move:</span>
                 <span class="comment">// remove it from dropped_live to prevent accidental dropping in previous usages</span>
                 <span class="kw">let</span> <span class="ident">var_is_dead</span> <span class="op">=</span> <span class="ident">context</span>.<span class="ident">dropped_live</span>.<span class="ident">remove</span>(<span class="ident">var</span>);
@@ -839,7 +840,7 @@
                     <span class="kw-2">&amp;</span><span class="ident">parent_e</span>.<span class="ident">ty</span>.<span class="ident">value</span>,
                     <span class="ident">Type_</span>::<span class="ident">Single</span>(<span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">SingleType_</span>::<span class="ident">Ref</span>(<span class="kw">_</span>, <span class="kw">_</span>)))
                 );
-                <span class="kw">if</span> <span class="ident">var_is_dead</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">is_reference</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="kw-2">*</span><span class="ident">from_user</span> {
+                <span class="kw">if</span> <span class="ident">var_is_dead</span> <span class="op">&amp;&amp;</span> <span class="ident">is_reference</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="kw-2">*</span><span class="ident">from_user</span> {
                     <span class="ident">parent_e</span>.<span class="ident">exp</span>.<span class="ident">value</span> <span class="op">=</span> <span class="ident">E</span>::<span class="ident">Move</span> {
                         <span class="ident">var</span>: <span class="ident">var</span>.<span class="ident">clone</span>(),
                         <span class="ident">from_user</span>: <span class="kw-2">*</span><span class="ident">from_user</span>,
@@ -847,36 +848,36 @@
                 }
             }
 
-            <span class="ident">E</span>::<span class="ident">ModuleCall</span>(<span class="ident">mcall</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">mcall</span>.<span class="ident">arguments</span>),
+            <span class="ident">E</span>::<span class="ident">ModuleCall</span>(<span class="ident">mcall</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">mcall</span>.<span class="ident">arguments</span>),
             <span class="ident">E</span>::<span class="ident">Builtin</span>(<span class="kw">_</span>, <span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Freeze</span>(<span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Dereference</span>(<span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">E</span>::<span class="ident">UnaryExp</span>(<span class="kw">_</span>, <span class="ident">e</span>)
             <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Borrow</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>)
-            <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Cast</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
+            <span class="op">|</span> <span class="ident">E</span>::<span class="ident">Cast</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
 
-            <span class="ident">E</span>::<span class="ident">BinopExp</span>(<span class="ident">e1</span>, <span class="kw">_</span>, <span class="ident">e2</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">E</span>::<span class="ident">BinopExp</span>(<span class="ident">e1</span>, <span class="kw">_</span>, <span class="ident">e2</span>) <span class="op">=&gt;</span> {
                 <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e2</span>);
                 <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e1</span>)
             }
 
-            <span class="ident">E</span>::<span class="ident">Pack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">fields</span>
+            <span class="ident">E</span>::<span class="ident">Pack</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">fields</span>) <span class="op">=&gt;</span> <span class="ident">fields</span>
                 .<span class="ident">iter_mut</span>()
                 .<span class="ident">rev</span>()
                 .<span class="ident">for_each</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">e</span>)<span class="op">|</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>)),
 
-            <span class="ident">E</span>::<span class="ident">ExpList</span>(<span class="ident">es</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">es</span>
+            <span class="ident">E</span>::<span class="ident">ExpList</span>(<span class="ident">es</span>) <span class="op">=&gt;</span> <span class="ident">es</span>
                 .<span class="ident">iter_mut</span>()
                 .<span class="ident">rev</span>()
                 .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">exp_list_item</span>(<span class="ident">context</span>, <span class="ident">item</span>)),
 
-            <span class="ident">E</span>::<span class="ident">Unreachable</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE should not analyze dead code&quot;</span>),
+            <span class="ident">E</span>::<span class="ident">Unreachable</span> <span class="op">=&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="string">&quot;ICE should not analyze dead code&quot;</span>),
         }
     }
 
     <span class="kw">fn</span> <span class="ident">exp_list_item</span>(<span class="ident">context</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Context</span>, <span class="ident">item</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ExpListItem</span>) {
         <span class="kw">match</span> <span class="ident">item</span> {
-            <span class="ident">ExpListItem</span>::<span class="ident">Single</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExpListItem</span>::<span class="ident">Splat</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
+            <span class="ident">ExpListItem</span>::<span class="ident">Single</span>(<span class="ident">e</span>, <span class="kw">_</span>) <span class="op">|</span> <span class="ident">ExpListItem</span>::<span class="ident">Splat</span>(<span class="kw">_</span>, <span class="ident">e</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">exp</span>(<span class="ident">context</span>, <span class="ident">e</span>),
         }
     }
 }
@@ -928,7 +929,7 @@
 <span class="kw">fn</span> <span class="ident">build_forward_intersections</span>(
     <span class="ident">cfg</span>: <span class="kw-2">&amp;</span><span class="ident">BlockCFG</span>,
     <span class="ident">final_invariants</span>: <span class="kw-2">&amp;</span><span class="ident">FinalInvariants</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ForwardIntersections</span> {
+) <span class="op">-&gt;</span> <span class="ident">ForwardIntersections</span> {
     <span class="ident">cfg</span>.<span class="ident">blocks</span>()
         .<span class="ident">keys</span>()
         .<span class="ident">map</span>(<span class="op">|</span><span class="ident">lbl</span><span class="op">|</span> {
@@ -976,14 +977,14 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">is_ref</span>((<span class="ident">_local</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">local_ty_</span>)): <span class="kw-2">&amp;</span>(<span class="kw-2">&amp;</span><span class="ident">Var</span>, <span class="kw-2">&amp;</span><span class="ident">SingleType</span>)) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+<span class="kw">fn</span> <span class="ident">is_ref</span>((<span class="ident">_local</span>, <span class="macro">sp</span><span class="macro">!</span>(<span class="kw">_</span>, <span class="ident">local_ty_</span>)): <span class="kw-2">&amp;</span>(<span class="kw-2">&amp;</span><span class="ident">Var</span>, <span class="kw-2">&amp;</span><span class="ident">SingleType</span>)) <span class="op">-&gt;</span> <span class="ident">bool</span> {
     <span class="kw">match</span> <span class="ident">local_ty_</span> {
-        <span class="ident">SingleType_</span>::<span class="ident">Ref</span>(<span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-        <span class="ident">SingleType_</span>::<span class="ident">Base</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
+        <span class="ident">SingleType_</span>::<span class="ident">Ref</span>(<span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> <span class="bool-val">true</span>,
+        <span class="ident">SingleType_</span>::<span class="ident">Base</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="bool-val">false</span>,
     }
 }
 
-<span class="kw">fn</span> <span class="ident">pop_ref</span>(<span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">var</span>: <span class="ident">Var</span>, <span class="ident">ty</span>: <span class="ident">SingleType</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Command</span> {
+<span class="kw">fn</span> <span class="ident">pop_ref</span>(<span class="ident">loc</span>: <span class="ident">Loc</span>, <span class="ident">var</span>: <span class="ident">Var</span>, <span class="ident">ty</span>: <span class="ident">SingleType</span>) <span class="op">-&gt;</span> <span class="ident">Command</span> {
     <span class="kw">use</span> <span class="ident">Command_</span> <span class="kw">as</span> <span class="ident">C</span>;
     <span class="kw">use</span> <span class="ident">UnannotatedExp_</span> <span class="kw">as</span> <span class="ident">E</span>;
     <span class="kw">let</span> <span class="ident">move_e_</span> <span class="op">=</span> <span class="ident">E</span>::<span class="ident">Move</span> {

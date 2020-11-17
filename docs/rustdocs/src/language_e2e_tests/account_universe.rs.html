@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/testing-infra/e2e-tests/src/account_universe.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>account_universe.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../language_e2e_tests/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `language/testing-infra/e2e-tests/src/account_universe.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>account_universe.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../language_e2e_tests/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -484,21 +485,21 @@
 <span class="kw">use</span> <span class="ident">proptest</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">strategy</span>::<span class="ident">Union</span>};
 <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 
-<span class="kw">static</span> <span class="ident">UNIVERSE_SIZE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">|</span><span class="op">|</span> {
+<span class="kw">static</span> <span class="ident">UNIVERSE_SIZE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
     <span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">env</span>, <span class="ident">process</span>::<span class="ident">abort</span>};
 
     <span class="kw">match</span> <span class="ident">env</span>::<span class="ident">var</span>(<span class="string">&quot;UNIVERSE_SIZE&quot;</span>) {
-        <span class="prelude-val">Ok</span>(<span class="ident">s</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">s</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() {
-            <span class="prelude-val">Ok</span>(<span class="ident">val</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">val</span>,
-            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Ok</span>(<span class="ident">s</span>) <span class="op">=&gt;</span> <span class="kw">match</span> <span class="ident">s</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() {
+            <span class="prelude-val">Ok</span>(<span class="ident">val</span>) <span class="op">=&gt;</span> <span class="ident">val</span>,
+            <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> {
                 <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Could not parse universe size, aborting: {:?}&quot;</span>, <span class="ident">err</span>);
                 <span class="comment">// Abort because Lazy with panics causes poisoning and isn&#39;t very</span>
                 <span class="comment">// helpful overall.</span>
                 <span class="ident">abort</span>();
             }
         },
-        <span class="prelude-val">Err</span>(<span class="ident">env</span>::<span class="ident">VarError</span>::<span class="ident">NotPresent</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="number">20</span>,
-        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="prelude-val">Err</span>(<span class="ident">env</span>::<span class="ident">VarError</span>::<span class="ident">NotPresent</span>) <span class="op">=&gt;</span> <span class="number">20</span>,
+        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> {
             <span class="macro">println</span><span class="macro">!</span>(
                 <span class="string">&quot;Could not read universe size from the environment, aborting: {:?}&quot;</span>,
                 <span class="ident">err</span>
@@ -519,7 +520,7 @@
 <span class="comment">//   1. pub(crate) -&gt; pub</span>
 <span class="comment">//   2. Move this into e2e-testsuite</span>
 <span class="comment">//   3. Move certain tests back (because they are unit tests)</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_num_accounts</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_num_accounts</span>() <span class="op">-&gt;</span> <span class="ident">usize</span> {
     <span class="kw-2">*</span><span class="ident">UNIVERSE_SIZE</span>
 }
 
@@ -530,7 +531,7 @@
 <span class="doccomment">/// is recommended for values above 100.</span>
 <span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="comment">// REVIEW: same as above.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_num_transactions</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_num_transactions</span>() <span class="op">-&gt;</span> <span class="ident">usize</span> {
     <span class="kw-2">*</span><span class="ident">UNIVERSE_SIZE</span> <span class="op">*</span> <span class="number">2</span>
 }
 
@@ -542,10 +543,10 @@
     <span class="kw">fn</span> <span class="ident">apply</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">universe</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountUniverse</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">SignedTransaction</span>, (<span class="ident">TransactionStatus</span>, <span class="ident">u64</span>));
+    ) <span class="op">-&gt;</span> (<span class="ident">SignedTransaction</span>, (<span class="ident">TransactionStatus</span>, <span class="ident">u64</span>));
 
     <span class="doccomment">/// Creates an arced version of this transaction, suitable for dynamic dispatch.</span>
-    <span class="kw">fn</span> <span class="ident">arced</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">AUTransactionGen</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">arced</span>(<span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">AUTransactionGen</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="self">Self</span>: <span class="lifetime">&#39;static</span> <span class="op">+</span> <span class="ident">Sized</span>,
     {
@@ -557,7 +558,7 @@
     <span class="kw">fn</span> <span class="ident">apply</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">universe</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">AccountUniverse</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">SignedTransaction</span>, (<span class="ident">TransactionStatus</span>, <span class="ident">u64</span>)) {
+    ) <span class="op">-&gt;</span> (<span class="ident">SignedTransaction</span>, (<span class="ident">TransactionStatus</span>, <span class="ident">u64</span>)) {
         (<span class="kw-2">*</span><span class="kw-2">*</span><span class="self">self</span>).<span class="ident">apply</span>(<span class="ident">universe</span>)
     }
 }
@@ -576,7 +577,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">AccountCurrent</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">initial_data</span>: <span class="ident">AccountData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">initial_data</span>: <span class="ident">AccountData</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">initial_data</span>.<span class="ident">balance</span>(<span class="kw-2">&amp;</span><span class="ident">coin1_tmp_currency_code</span>());
         <span class="kw">let</span> <span class="ident">sequence_number</span> <span class="op">=</span> <span class="ident">initial_data</span>.<span class="ident">sequence_number</span>();
         <span class="kw">let</span> <span class="ident">sent_events_count</span> <span class="op">=</span> <span class="ident">initial_data</span>.<span class="ident">sent_events_count</span>();
@@ -592,7 +593,7 @@
     }
 
     <span class="doccomment">/// Returns the underlying account.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Account</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">account</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="ident">Account</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">initial_data</span>.<span class="ident">account</span>()
     }
 
@@ -603,30 +604,30 @@
 
     <span class="doccomment">/// Returns the current balance for this account, assuming all transactions seen so far are</span>
     <span class="doccomment">/// applied.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">balance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">balance</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">balance</span>
     }
 
     <span class="doccomment">/// Returns the current sequence number for this account, assuming all transactions seen so far</span>
     <span class="doccomment">/// are applied.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sequence_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sequence_number</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">sequence_number</span>
     }
 
     <span class="doccomment">/// Returns the current sent events count for this account, assuming all transactions seen so</span>
     <span class="doccomment">/// far are applied.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sent_events_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sent_events_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">sent_events_count</span>
     }
 
     <span class="doccomment">/// Returns the current received events count for this account, assuming all transactions seen</span>
     <span class="doccomment">/// so far are applied.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">received_events_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">received_events_count</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">received_events_count</span>
     }
 
     <span class="doccomment">/// Returns the gas cost of a create-account transaction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">event_counter_created</span> {
             <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">CREATE_ACCOUNT_NEXT</span>
         } <span class="kw">else</span> {
@@ -636,7 +637,7 @@
 
     <span class="doccomment">/// Returns the gas cost of a create-account transaction where the sender has an</span>
     <span class="doccomment">/// insufficient balance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account_low_balance_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account_low_balance_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">event_counter_created</span> {
             <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">CREATE_ACCOUNT_TOO_LOW_NEXT</span>
         } <span class="kw">else</span> {
@@ -645,7 +646,7 @@
     }
 
     <span class="doccomment">/// Returns the gas cost of a create-account transaction where the account exists already.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_existing_account_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_existing_account_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">event_counter_created</span> {
             <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">CREATE_EXISTING_ACCOUNT_NEXT</span>
         } <span class="kw">else</span> {
@@ -654,17 +655,17 @@
     }
 
     <span class="doccomment">/// Returns the gas cost of a peer-to-peer transaction.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">PEER_TO_PEER</span>
     }
 
     <span class="doccomment">/// Returns the gas cost of a peer-to-peer transaction with an insufficient balance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_too_low_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_too_low_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">PEER_TO_PEER_TOO_LOW</span>
     }
 
     <span class="doccomment">/// Returns the gas cost of a create-account transaction where the account exists already.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_new_receiver_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_new_receiver_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">event_counter_created</span> {
             <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">PEER_TO_PEER_NEW_RECEIVER_NEXT</span>
         } <span class="kw">else</span> {
@@ -673,7 +674,7 @@
     }
 
     <span class="doccomment">/// Returns the gas cost of a create-account transaction where the account exists already.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_new_receiver_too_low_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">peer_to_peer_new_receiver_too_low_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">event_counter_created</span> {
             <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">PEER_TO_PEER_NEW_RECEIVER_TOO_LOW_NEXT</span>
         } <span class="kw">else</span> {
@@ -682,7 +683,7 @@
     }
 
     <span class="doccomment">/// Returns the gas cost of a peer-to-peer transaction with an insufficient balance.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_key_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rotate_key_gas_cost</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">u64</span> {
         <span class="kw-2">*</span><span class="ident">gas_costs</span>::<span class="ident">ROTATE_KEY</span>
     }
 }
@@ -697,30 +698,30 @@
     <span class="ident">gas_price</span>: <span class="ident">u64</span>,
     <span class="ident">gas_used</span>: <span class="ident">u64</span>,
     <span class="ident">low_gas_used</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">TransactionStatus</span>, <span class="ident">bool</span>) {
+) <span class="op">-&gt;</span> (<span class="ident">TransactionStatus</span>, <span class="ident">bool</span>) {
     <span class="comment">// The transactions set the gas cost to 1 microlibra.</span>
-    <span class="kw">let</span> <span class="ident">enough_max_gas</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">gas_costs</span>::<span class="ident">TXN_RESERVED</span> <span class="op">*</span> <span class="ident">gas_price</span>;
+    <span class="kw">let</span> <span class="ident">enough_max_gas</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;=</span> <span class="ident">gas_costs</span>::<span class="ident">TXN_RESERVED</span> <span class="op">*</span> <span class="ident">gas_price</span>;
     <span class="comment">// This means that we&#39;ll get through the main part of the transaction.</span>
-    <span class="kw">let</span> <span class="ident">enough_to_transfer</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">amount</span>;
+    <span class="kw">let</span> <span class="ident">enough_to_transfer</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;=</span> <span class="ident">amount</span>;
     <span class="kw">let</span> <span class="ident">to_deduct</span> <span class="op">=</span> <span class="ident">amount</span> <span class="op">+</span> <span class="ident">gas_used</span> <span class="op">*</span> <span class="ident">gas_price</span>;
     <span class="comment">// This means that we&#39;ll get through the entire transaction, including the epilogue</span>
     <span class="comment">// (where gas costs are deducted).</span>
-    <span class="kw">let</span> <span class="ident">enough_to_succeed</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">to_deduct</span>;
+    <span class="kw">let</span> <span class="ident">enough_to_succeed</span> <span class="op">=</span> <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">&gt;=</span> <span class="ident">to_deduct</span>;
 
     <span class="kw">match</span> (<span class="ident">enough_max_gas</span>, <span class="ident">enough_to_transfer</span>, <span class="ident">enough_to_succeed</span>) {
-        (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">true</span>) <span class="op">=&gt;</span> {
             <span class="comment">// Success!</span>
-            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="ident">sender</span>.<span class="ident">sent_events_count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-</span><span class="op">=</span> <span class="ident">to_deduct</span>;
+            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+=</span> <span class="number">1</span>;
+            <span class="ident">sender</span>.<span class="ident">sent_events_count</span> <span class="op">+=</span> <span class="number">1</span>;
+            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-=</span> <span class="ident">to_deduct</span>;
             (<span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">Executed</span>), <span class="bool-val">true</span>)
         }
-        (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        (<span class="bool-val">true</span>, <span class="bool-val">true</span>, <span class="bool-val">false</span>) <span class="op">=&gt;</span> {
             <span class="comment">// Enough gas to pass validation and to do the transfer, but not enough to succeed</span>
             <span class="comment">// in the epilogue. The transaction will be run and gas will be deducted from the</span>
             <span class="comment">// sender, but no other changes will happen.</span>
-            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-</span><span class="op">=</span> <span class="ident">gas_used</span> <span class="op">*</span> <span class="ident">gas_price</span>;
+            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+=</span> <span class="number">1</span>;
+            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-=</span> <span class="ident">gas_used</span> <span class="op">*</span> <span class="ident">gas_price</span>;
             (
                 <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">MoveAbort</span>(
                     <span class="ident">known_locations</span>::<span class="ident">account_module_abort</span>(),
@@ -729,12 +730,12 @@
                 <span class="bool-val">false</span>,
             )
         }
-        (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        (<span class="bool-val">true</span>, <span class="bool-val">false</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="comment">// Enough gas to pass validation but not enough to succeed. The transaction will</span>
             <span class="comment">// be run and gas will be deducted from the sender, but no other changes will</span>
             <span class="comment">// happen.</span>
-            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-</span><span class="op">=</span> <span class="ident">low_gas_used</span> <span class="op">*</span> <span class="ident">gas_price</span>;
+            <span class="ident">sender</span>.<span class="ident">sequence_number</span> <span class="op">+=</span> <span class="number">1</span>;
+            <span class="ident">sender</span>.<span class="ident">balance</span> <span class="op">-=</span> <span class="ident">low_gas_used</span> <span class="op">*</span> <span class="ident">gas_price</span>;
             (
                 <span class="ident">TransactionStatus</span>::<span class="ident">Keep</span>(<span class="ident">KeptVMStatus</span>::<span class="ident">MoveAbort</span>(
                     <span class="ident">known_locations</span>::<span class="ident">account_module_abort</span>(),
@@ -743,7 +744,7 @@
                 <span class="bool-val">false</span>,
             )
         }
-        (<span class="bool-val">false</span>, <span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        (<span class="bool-val">false</span>, <span class="kw">_</span>, <span class="kw">_</span>) <span class="op">=&gt;</span> {
             <span class="comment">// Not enough gas to pass validation. Nothing will happen.</span>
             (
                 <span class="ident">TransactionStatus</span>::<span class="ident">Discard</span>(<span class="ident">StatusCode</span>::<span class="ident">INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE</span>),
@@ -755,10 +756,10 @@
 
 <span class="doccomment">/// Returns a [`Strategy`] that provides a variety of balances (or transfer amounts) over a roughly</span>
 <span class="doccomment">/// logarithmic distribution.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log_balance_strategy</span>(<span class="ident">max_balance</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">u64</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">log_balance_strategy</span>(<span class="ident">max_balance</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">u64</span><span class="op">&gt;</span> {
     <span class="comment">// The logarithmic distribution is modeled by uniformly picking from ranges of powers of 2.</span>
     <span class="kw">let</span> <span class="ident">minimum</span> <span class="op">=</span> <span class="ident">gas_costs</span>::<span class="ident">TXN_RESERVED</span>.<span class="ident">next_power_of_two</span>();
-    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">max_balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">minimum</span>, <span class="string">&quot;minimum to make sense&quot;</span>);
+    <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">max_balance</span> <span class="op">&gt;=</span> <span class="ident">minimum</span>, <span class="string">&quot;minimum to make sense&quot;</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">strategies</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
     <span class="comment">// Balances below and around the minimum are interesting but don&#39;t cover *every* power of 2,</span>
     <span class="comment">// just those starting from the minimum.</span>
@@ -766,7 +767,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">upper_bound</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">minimum</span>;
     <span class="kw">loop</span> {
         <span class="ident">strategies</span>.<span class="ident">push</span>(<span class="ident">lower_bound</span>..<span class="ident">upper_bound</span>);
-        <span class="kw">if</span> <span class="ident">upper_bound</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">max_balance</span> {
+        <span class="kw">if</span> <span class="ident">upper_bound</span> <span class="op">&gt;=</span> <span class="ident">max_balance</span> {
             <span class="kw">break</span>;
         }
         <span class="ident">lower_bound</span> <span class="op">=</span> <span class="ident">upper_bound</span>;
@@ -779,14 +780,14 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">all_transactions_strategy</span>(
     <span class="ident">min</span>: <span class="ident">u64</span>,
     <span class="ident">max</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">AUTransactionGen</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="kw">impl</span> <span class="ident">Strategy</span><span class="op">&lt;</span><span class="ident">Value</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">AUTransactionGen</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;&gt;</span> {
     <span class="macro">prop_oneof</span><span class="macro">!</span>[
         <span class="comment">// Most transactions should be p2p payments.</span>
-        <span class="number">8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p2p_strategy</span>(<span class="ident">min</span>, <span class="ident">max</span>),
+        <span class="number">8</span> <span class="op">=&gt;</span> <span class="ident">p2p_strategy</span>(<span class="ident">min</span>, <span class="ident">max</span>),
         <span class="comment">// TODO: resurrecte once we have unhosted wallets</span>
         <span class="comment">//1 =&gt; create_account_strategy(min, max),</span>
-        <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">RotateKeyGen</span><span class="op">&gt;</span>().<span class="ident">prop_map</span>(<span class="ident">RotateKeyGen</span>::<span class="ident">arced</span>),
-        <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">bad_txn_strategy</span>(),
+        <span class="number">1</span> <span class="op">=&gt;</span> <span class="ident">any</span>::<span class="op">&lt;</span><span class="ident">RotateKeyGen</span><span class="op">&gt;</span>().<span class="ident">prop_map</span>(<span class="ident">RotateKeyGen</span>::<span class="ident">arced</span>),
+        <span class="number">1</span> <span class="op">=&gt;</span> <span class="ident">bad_txn_strategy</span>(),
     ]
 }
 
@@ -794,7 +795,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_and_assert_gas_cost_stability</span>(
     <span class="ident">universe</span>: <span class="ident">AccountUniverseGen</span>,
     <span class="ident">transaction_gens</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">AUTransactionGen</span> <span class="op">+</span> <span class="ident">Clone</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">FakeExecutor</span>::<span class="ident">from_genesis_file</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">universe</span> <span class="op">=</span> <span class="ident">universe</span>.<span class="ident">setup_gas_cost_stability</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">executor</span>);
     <span class="kw">let</span> (<span class="ident">transactions</span>, <span class="ident">expected_values</span>): (<span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>) <span class="op">=</span> <span class="ident">transaction_gens</span>
@@ -823,7 +824,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run_and_assert_universe</span>(
     <span class="ident">universe</span>: <span class="ident">AccountUniverseGen</span>,
     <span class="ident">transaction_gens</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">AUTransactionGen</span> <span class="op">+</span> <span class="ident">Clone</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">executor</span> <span class="op">=</span> <span class="ident">FakeExecutor</span>::<span class="ident">from_genesis_file</span>();
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">universe</span> <span class="op">=</span> <span class="ident">universe</span>.<span class="ident">setup</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">executor</span>);
     <span class="kw">let</span> (<span class="ident">transactions</span>, <span class="ident">expected_values</span>): (<span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>) <span class="op">=</span> <span class="ident">transaction_gens</span>
@@ -850,7 +851,7 @@
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">assert_accounts_match</span>(
     <span class="ident">universe</span>: <span class="kw-2">&amp;</span><span class="ident">AccountUniverse</span>,
     <span class="ident">executor</span>: <span class="kw-2">&amp;</span><span class="ident">FakeExecutor</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
+) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TestCaseError</span><span class="op">&gt;</span> {
     <span class="kw">for</span> (<span class="ident">idx</span>, <span class="ident">account</span>) <span class="kw">in</span> <span class="ident">universe</span>.<span class="ident">accounts</span>().<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
         <span class="kw">let</span> <span class="ident">resource</span> <span class="op">=</span> <span class="ident">executor</span>
             .<span class="ident">read_account_resource</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>.<span class="ident">account</span>())
