@@ -56,7 +56,11 @@ import typing
 from urllib import parse
 from typing import List
 
-from . import libra_types, utils, chain_ids
+from . import bech32
+from .. import libra_types, utils, chain_ids
+
+from .bech32 import bech32_address_encode, bech32_address_decode, Bech32Error
+from .subaddress import LIBRA_SUBADDRESS_SIZE, LIBRA_ZERO_SUBADDRESS, gen_subaddress
 
 LBR = &#34;lbr&#34;  # lbr for mainnet
 TLB = &#34;tlb&#34;  # tlb for testnet
@@ -69,20 +73,6 @@ HRPS: typing.Dict[int, str] = {
     chain_ids.TESTING.to_int(): TLB,
     chain_ids.PREMAINNET.to_int(): PLB,
 }
-
-LIBRA_SUBADDRESS_SIZE = 8  # in bytes (for V1)
-LIBRA_ZERO_SUBADDRESS: bytes = b&#34;\0&#34; * LIBRA_SUBADDRESS_SIZE
-
-# Bech32 constants
-_BECH32_CHARSET = &#34;qpzry9x8gf2tvdw0s3jn54khce6mua7l&#34;
-_BECH32_SEPARATOR = &#34;1&#34;
-_BECH32_CHECKSUM_CHAR_SIZE = 6
-
-# LIBRA constants
-_LIBRA_HRP: List[str] = [LBR, TLB, PLB]
-_LIBRA_ADDRESS_SIZE = 16  # in bytes
-_LIBRA_BECH32_VERSION = 1
-_LIBRA_BECH32_SIZE = 50  # in characters
 
 
 class InvalidIntentIdentifierError(Exception):
@@ -200,7 +190,7 @@ def encode_account(
 def decode_account(encoded_address: str, hrp: str) -&gt; typing.Tuple[libra_types.AccountAddress, typing.Optional[bytes]]:
     &#34;&#34;&#34;Return (addrees_str, subaddress_str) given a bech32 encoded str &amp; human readable prefix(hrp)&#34;&#34;&#34;
     try:
-        (_version, onchain_address_bytes, subaddress_bytes) = bech32_address_decode(hrp, encoded_address)
+        (_version, onchain_address_bytes, subaddress_bytes) = bech32.bech32_address_decode(hrp, encoded_address)
     except Bech32Error as e:
         raise ValueError(f&#34;Can&#39;t decode from encoded str {encoded_address}, &#34; f&#34;got error: {e}&#34;)
 
@@ -208,323 +198,29 @@ def decode_account(encoded_address: str, hrp: str) -&gt; typing.Tuple[libra_type
     # If subaddress is absent, subaddress_bytes is a list of 0
     if subaddress_bytes != LIBRA_ZERO_SUBADDRESS:
         return (address, subaddress_bytes)
-    return (address, None)
-
-
-######################################################################################
-
-# Bech32 implementation for Libra human readable addresses based on
-# Bitcoin&#39;s segwit python lib https://github.com/fiatjaf/bech32 modified to support the
-# requirements of Libra (sub)address and versioning specs.
-
-
-class Bech32Error(Exception):
-    &#34;&#34;&#34; Represents an error when creating a Libra address. &#34;&#34;&#34;
-
-    pass
-
-
-def bech32_address_encode(hrp: str, address_bytes: bytes, subaddress_bytes: typing.Optional[bytes]) -&gt; str:
-    &#34;&#34;&#34;Encode a Libra address (and sub-address if provided).
-    Args:
-        hrp: Bech32 human readable part
-        address_bytes: on-chain account address (16 bytes)
-        subaddress_bytes: subaddress (8 bytes). If not provided, it is set to 8 zero bytes
-    Returns:
-        Bech32 encoded address
-    &#34;&#34;&#34;
-
-    # only accept correct size for Libra address
-    if len(address_bytes) != _LIBRA_ADDRESS_SIZE:
-        raise Bech32Error(f&#34;Address size should be {_LIBRA_ADDRESS_SIZE}, but got: {len(address_bytes)}&#34;)
-
-    # only accept correct size for Libra subaddress (if set)
-    if subaddress_bytes is not None and len(subaddress_bytes) != LIBRA_SUBADDRESS_SIZE:
-        raise Bech32Error(f&#34;Subaddress size should be {LIBRA_SUBADDRESS_SIZE}, but got: {len(subaddress_bytes)}&#34;)
-
-    encoding_version = _LIBRA_BECH32_VERSION
-
-    # if subaddress has not been provided it&#39;s set to 8 zero bytes.
-    subaddress_final_bytes = subaddress_bytes if subaddress_bytes is not None else LIBRA_ZERO_SUBADDRESS
-    total_bytes = address_bytes + subaddress_final_bytes
-
-    five_bit_data = _convertbits(total_bytes, 8, 5, True)
-    # check base conversion
-    if five_bit_data is None:
-        raise Bech32Error(&#34;Error converting bytes to base32&#34;)
-    return _bech32_encode(hrp, [encoding_version] + five_bit_data)
-
-
-def bech32_address_decode(expected_hrp: str, bech32: str) -&gt; typing.Tuple[int, bytes, bytes]:
-    &#34;&#34;&#34;Validate a Bech32 Libra address Bech32 string, and split between version, address and sub-address.
-    Args:
-        expected_hrp: expected Bech32 human readable part (lbr or tlb)
-        bech32: Bech32 encoded address
-    Returns:
-        A tuple consisiting of the Bech32 version (int), address (16 bytes), subaddress (8 bytes)
-    &#34;&#34;&#34;
-    len_bech32 = len(bech32)
-    # check expected length
-    if len_bech32 != _LIBRA_BECH32_SIZE:
-        raise Bech32Error(f&#34;Bech32 size should be {_LIBRA_BECH32_SIZE}, but it is: {len_bech32}&#34;)
-
-    # do not allow mixed case per BIP 173
-    if bech32 != bech32.lower() and bech32 != bech32.upper():
-        raise Bech32Error(f&#34;Mixed case Bech32 addresses are not allowed, got: {bech32}&#34;)
-    bech32 = bech32.lower()
-
-    if bech32[:3] != expected_hrp:
-        raise Bech32Error(
-            f&#39;Wrong Libra address Bech32 human readable part (prefix): requested &#34;{expected_hrp}&#34; but &#39;
-            f&#39;got &#34;{bech32[:3]}&#34;&#39;
-        )
-
-    # check separator
-    if bech32[3] != _BECH32_SEPARATOR:
-        raise Bech32Error(f&#34;Non-expected Bech32 separator: {bech32[3]}&#34;)
-
-    # check characters after separator in Bech32 alphabet
-    if not all(x in _BECH32_CHARSET for x in bech32[4:]):
-        raise Bech32Error(f&#34;Invalid Bech32 characters detected: {bech32}&#34;)
-    hrp = bech32[:3]
-
-    # version is defined by the index of the Bech32 character after separator
-    address_version = _BECH32_CHARSET.find(bech32[4])
-    # check valid version
-    if address_version != _LIBRA_BECH32_VERSION:
-        raise Bech32Error(f&#34;Version mismatch. Expected {_LIBRA_BECH32_VERSION}, &#34; f&#34;but received {address_version}&#34;)
-
-    # we&#39;ve already checked that all characters are in the correct alphabet,
-    # thus, this will always succeed
-    data = [_BECH32_CHARSET.find(x) for x in bech32[5:]]
-
-    # check Bech32 checksum
-    if not _bech32_verify_checksum(hrp, [address_version] + data):
-        raise Bech32Error(f&#34;Bech32 checksum validation failed: {bech32}&#34;)
-
-    decoded_data = _convertbits(data[:-_BECH32_CHECKSUM_CHAR_SIZE], 5, 8, False)
-    # check base conversion
-    if decoded_data is None:
-        raise Bech32Error(&#34;Error converting bytes from base32&#34;)
-
-    length_data = len(decoded_data)
-    # extra check about the expected output (sub)address size in bytes
-    if length_data != _LIBRA_ADDRESS_SIZE + LIBRA_SUBADDRESS_SIZE:
-        raise Bech32Error(
-            f&#34;Expected {_LIBRA_ADDRESS_SIZE + LIBRA_SUBADDRESS_SIZE} bytes after decoding, but got: {length_data}&#34;
-        )
-
-    return (
-        address_version,
-        bytes(decoded_data[:_LIBRA_ADDRESS_SIZE]),
-        bytes(decoded_data[-LIBRA_SUBADDRESS_SIZE:]),
-    )
-
-
-def _bech32_polymod(values: typing.Iterable[int]) -&gt; int:
-    &#34;&#34;&#34;Internal function that computes the Bech32 checksum.&#34;&#34;&#34;
-    generator = [0x3B6A57B2, 0x26508E6D, 0x1EA119FA, 0x3D4233DD, 0x2A1462B3]
-    chk = 1
-    for value in values:
-        top = chk &gt;&gt; 25
-        chk = (chk &amp; 0x1FFFFFF) &lt;&lt; 5 ^ value
-        for i in range(5):
-            chk ^= generator[i] if ((top &gt;&gt; i) &amp; 1) else 0
-    return chk
-
-
-def _bech32_hrp_expand(hrp: str) -&gt; typing.List[int]:
-    &#34;&#34;&#34;Expand the HRP into values for checksum computation.&#34;&#34;&#34;
-    return [ord(x) &gt;&gt; 5 for x in hrp] + [0] + [ord(x) &amp; 31 for x in hrp]
-
-
-def _bech32_verify_checksum(hrp: str, data: typing.Iterable[int]) -&gt; bool:
-    &#34;&#34;&#34;Verify a checksum given HRP and converted data characters.&#34;&#34;&#34;
-    return _bech32_polymod(_bech32_hrp_expand(hrp) + list(data)) == 1
-
-
-def _bech32_create_checksum(hrp: str, data: typing.Iterable[int]) -&gt; typing.List[int]:
-    &#34;&#34;&#34;Compute the checksum values given HRP and data.&#34;&#34;&#34;
-    values = _bech32_hrp_expand(hrp) + list(data)
-    polymod = _bech32_polymod(values + [0, 0, 0, 0, 0, 0]) ^ 1
-    return [(polymod &gt;&gt; 5 * (5 - i)) &amp; 31 for i in range(6)]
-
-
-def _bech32_encode(hrp: str, data: typing.Iterable[int]) -&gt; str:
-    &#34;&#34;&#34;Compute a Bech32 string given HRP and data values.&#34;&#34;&#34;
-    combined = list(data) + _bech32_create_checksum(hrp, data)
-    return hrp + _BECH32_SEPARATOR + &#34;&#34;.join([_BECH32_CHARSET[d] for d in combined])
-
-
-def _convertbits(
-    data: typing.Iterable[int], from_bits: int, to_bits: int, pad: bool
-) -&gt; typing.Optional[typing.List[int]]:
-    &#34;&#34;&#34;General power-of-2 base conversion.&#34;&#34;&#34;
-    acc = 0
-    bits = 0
-    ret = []
-    maxv = (1 &lt;&lt; to_bits) - 1
-    max_acc = (1 &lt;&lt; (from_bits + to_bits - 1)) - 1
-    for value in data:
-        if value &lt; 0 or (value &gt;&gt; from_bits):
-            return None
-        acc = ((acc &lt;&lt; from_bits) | value) &amp; max_acc
-        bits += from_bits
-        while bits &gt;= to_bits:
-            bits -= to_bits
-            ret.append((acc &gt;&gt; bits) &amp; maxv)
-    if pad:
-        if bits:
-            ret.append((acc &lt;&lt; (to_bits - bits)) &amp; maxv)
-    elif bits &gt;= from_bits or ((acc &lt;&lt; (to_bits - bits)) &amp; maxv):
-        return None
-    return ret</code></pre>
+    return (address, None)</code></pre>
 </details>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="libra.identifier.bech32" href="bech32.html">libra.identifier.bech32</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt><code class="name"><a title="libra.identifier.subaddress" href="subaddress.html">libra.identifier.subaddress</a></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="libra.identifier.bech32_address_decode"><code class="name flex">
-<span>def <span class="ident">bech32_address_decode</span></span>(<span>expected_hrp: str, bech32: str) ‑> Tuple[int, bytes, bytes]</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Validate a Bech32 Libra address Bech32 string, and split between version, address and sub-address.</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>expected_hrp</code></strong></dt>
-<dd>expected Bech32 human readable part (lbr or tlb)</dd>
-<dt><strong><code>bech32</code></strong></dt>
-<dd>Bech32 encoded address</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>A tuple consisiting of the Bech32 version (int), address (16 bytes), subaddress (8 bytes)</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bech32_address_decode(expected_hrp: str, bech32: str) -&gt; typing.Tuple[int, bytes, bytes]:
-    &#34;&#34;&#34;Validate a Bech32 Libra address Bech32 string, and split between version, address and sub-address.
-    Args:
-        expected_hrp: expected Bech32 human readable part (lbr or tlb)
-        bech32: Bech32 encoded address
-    Returns:
-        A tuple consisiting of the Bech32 version (int), address (16 bytes), subaddress (8 bytes)
-    &#34;&#34;&#34;
-    len_bech32 = len(bech32)
-    # check expected length
-    if len_bech32 != _LIBRA_BECH32_SIZE:
-        raise Bech32Error(f&#34;Bech32 size should be {_LIBRA_BECH32_SIZE}, but it is: {len_bech32}&#34;)
-
-    # do not allow mixed case per BIP 173
-    if bech32 != bech32.lower() and bech32 != bech32.upper():
-        raise Bech32Error(f&#34;Mixed case Bech32 addresses are not allowed, got: {bech32}&#34;)
-    bech32 = bech32.lower()
-
-    if bech32[:3] != expected_hrp:
-        raise Bech32Error(
-            f&#39;Wrong Libra address Bech32 human readable part (prefix): requested &#34;{expected_hrp}&#34; but &#39;
-            f&#39;got &#34;{bech32[:3]}&#34;&#39;
-        )
-
-    # check separator
-    if bech32[3] != _BECH32_SEPARATOR:
-        raise Bech32Error(f&#34;Non-expected Bech32 separator: {bech32[3]}&#34;)
-
-    # check characters after separator in Bech32 alphabet
-    if not all(x in _BECH32_CHARSET for x in bech32[4:]):
-        raise Bech32Error(f&#34;Invalid Bech32 characters detected: {bech32}&#34;)
-    hrp = bech32[:3]
-
-    # version is defined by the index of the Bech32 character after separator
-    address_version = _BECH32_CHARSET.find(bech32[4])
-    # check valid version
-    if address_version != _LIBRA_BECH32_VERSION:
-        raise Bech32Error(f&#34;Version mismatch. Expected {_LIBRA_BECH32_VERSION}, &#34; f&#34;but received {address_version}&#34;)
-
-    # we&#39;ve already checked that all characters are in the correct alphabet,
-    # thus, this will always succeed
-    data = [_BECH32_CHARSET.find(x) for x in bech32[5:]]
-
-    # check Bech32 checksum
-    if not _bech32_verify_checksum(hrp, [address_version] + data):
-        raise Bech32Error(f&#34;Bech32 checksum validation failed: {bech32}&#34;)
-
-    decoded_data = _convertbits(data[:-_BECH32_CHECKSUM_CHAR_SIZE], 5, 8, False)
-    # check base conversion
-    if decoded_data is None:
-        raise Bech32Error(&#34;Error converting bytes from base32&#34;)
-
-    length_data = len(decoded_data)
-    # extra check about the expected output (sub)address size in bytes
-    if length_data != _LIBRA_ADDRESS_SIZE + LIBRA_SUBADDRESS_SIZE:
-        raise Bech32Error(
-            f&#34;Expected {_LIBRA_ADDRESS_SIZE + LIBRA_SUBADDRESS_SIZE} bytes after decoding, but got: {length_data}&#34;
-        )
-
-    return (
-        address_version,
-        bytes(decoded_data[:_LIBRA_ADDRESS_SIZE]),
-        bytes(decoded_data[-LIBRA_SUBADDRESS_SIZE:]),
-    )</code></pre>
-</details>
-</dd>
-<dt id="libra.identifier.bech32_address_encode"><code class="name flex">
-<span>def <span class="ident">bech32_address_encode</span></span>(<span>hrp: str, address_bytes: bytes, subaddress_bytes: Union[bytes, NoneType]) ‑> str</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Encode a Libra address (and sub-address if provided).</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>hrp</code></strong></dt>
-<dd>Bech32 human readable part</dd>
-<dt><strong><code>address_bytes</code></strong></dt>
-<dd>on-chain account address (16 bytes)</dd>
-<dt><strong><code>subaddress_bytes</code></strong></dt>
-<dd>subaddress (8 bytes). If not provided, it is set to 8 zero bytes</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Bech32 encoded address</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def bech32_address_encode(hrp: str, address_bytes: bytes, subaddress_bytes: typing.Optional[bytes]) -&gt; str:
-    &#34;&#34;&#34;Encode a Libra address (and sub-address if provided).
-    Args:
-        hrp: Bech32 human readable part
-        address_bytes: on-chain account address (16 bytes)
-        subaddress_bytes: subaddress (8 bytes). If not provided, it is set to 8 zero bytes
-    Returns:
-        Bech32 encoded address
-    &#34;&#34;&#34;
-
-    # only accept correct size for Libra address
-    if len(address_bytes) != _LIBRA_ADDRESS_SIZE:
-        raise Bech32Error(f&#34;Address size should be {_LIBRA_ADDRESS_SIZE}, but got: {len(address_bytes)}&#34;)
-
-    # only accept correct size for Libra subaddress (if set)
-    if subaddress_bytes is not None and len(subaddress_bytes) != LIBRA_SUBADDRESS_SIZE:
-        raise Bech32Error(f&#34;Subaddress size should be {LIBRA_SUBADDRESS_SIZE}, but got: {len(subaddress_bytes)}&#34;)
-
-    encoding_version = _LIBRA_BECH32_VERSION
-
-    # if subaddress has not been provided it&#39;s set to 8 zero bytes.
-    subaddress_final_bytes = subaddress_bytes if subaddress_bytes is not None else LIBRA_ZERO_SUBADDRESS
-    total_bytes = address_bytes + subaddress_final_bytes
-
-    five_bit_data = _convertbits(total_bytes, 8, 5, True)
-    # check base conversion
-    if five_bit_data is None:
-        raise Bech32Error(&#34;Error converting bytes to base32&#34;)
-    return _bech32_encode(hrp, [encoding_version] + five_bit_data)</code></pre>
-</details>
-</dd>
 <dt id="libra.identifier.decode_account"><code class="name flex">
-<span>def <span class="ident">decode_account</span></span>(<span>encoded_address: str, hrp: str) ‑> Tuple[<a title="libra.libra_types.AccountAddress" href="libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, Union[bytes, NoneType]]</span>
+<span>def <span class="ident">decode_account</span></span>(<span>encoded_address: str, hrp: str) ‑> Tuple[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, Union[bytes, NoneType]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return (addrees_str, subaddress_str) given a bech32 encoded str &amp; human readable prefix(hrp)</p></div>
@@ -535,7 +231,7 @@ def _convertbits(
 <pre><code class="python">def decode_account(encoded_address: str, hrp: str) -&gt; typing.Tuple[libra_types.AccountAddress, typing.Optional[bytes]]:
     &#34;&#34;&#34;Return (addrees_str, subaddress_str) given a bech32 encoded str &amp; human readable prefix(hrp)&#34;&#34;&#34;
     try:
-        (_version, onchain_address_bytes, subaddress_bytes) = bech32_address_decode(hrp, encoded_address)
+        (_version, onchain_address_bytes, subaddress_bytes) = bech32.bech32_address_decode(hrp, encoded_address)
     except Bech32Error as e:
         raise ValueError(f&#34;Can&#39;t decode from encoded str {encoded_address}, &#34; f&#34;got error: {e}&#34;)
 
@@ -595,7 +291,7 @@ def _convertbits(
 </details>
 </dd>
 <dt id="libra.identifier.encode_account"><code class="name flex">
-<span>def <span class="ident">encode_account</span></span>(<span>onchain_addr: Union[<a title="libra.libra_types.AccountAddress" href="libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], subaddr: Union[str, bytes, NoneType], hrp: str) ‑> str</span>
+<span>def <span class="ident">encode_account</span></span>(<span>onchain_addr: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], subaddr: Union[str, bytes, NoneType], hrp: str) ‑> str</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Encode onchain address and (optional) subaddress with human readable prefix(hrp) into bech32 format</p></div>
@@ -649,30 +345,9 @@ Libra intent identifier (<a href="https://lip.libra.org/lip-5/">https://lip.libr
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="libra.identifier.Bech32Error"><code class="flex name class">
-<span>class <span class="ident">Bech32Error</span></span>
-<span>(</span><span>*args, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Represents an error when creating a Libra address.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">class Bech32Error(Exception):
-    &#34;&#34;&#34; Represents an error when creating a Libra address. &#34;&#34;&#34;
-
-    pass</code></pre>
-</details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>builtins.Exception</li>
-<li>builtins.BaseException</li>
-</ul>
-</dd>
 <dt id="libra.identifier.Intent"><code class="flex name class">
 <span>class <span class="ident">Intent</span></span>
-<span>(</span><span>account_address: <a title="libra.libra_types.AccountAddress" href="libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, sub_address: Union[bytes, NoneType], currency_code: str, amount: int)</span>
+<span>(</span><span>account_address: <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, sub_address: Union[bytes, NoneType], currency_code: str, amount: int)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Intent is a struct hold data decoded from Libra Intent Identifier string</p></div>
@@ -706,7 +381,7 @@ Libra intent identifier (<a href="https://lip.libra.org/lip-5/">https://lip.libr
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="libra.identifier.Intent.account_address"><code class="name">var <span class="ident">account_address</span> : <a title="libra.libra_types.AccountAddress" href="libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a></code></dt>
+<dt id="libra.identifier.Intent.account_address"><code class="name">var <span class="ident">account_address</span> : <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -769,13 +444,17 @@ def account_address_bytes(self) -&gt; bytes:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="libra" href="index.html">libra</a></code></li>
+<li><code><a title="libra" href="../index.html">libra</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="libra.identifier.bech32" href="bech32.html">libra.identifier.bech32</a></code></li>
+<li><code><a title="libra.identifier.subaddress" href="subaddress.html">libra.identifier.subaddress</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="libra.identifier.bech32_address_decode" href="#libra.identifier.bech32_address_decode">bech32_address_decode</a></code></li>
-<li><code><a title="libra.identifier.bech32_address_encode" href="#libra.identifier.bech32_address_encode">bech32_address_encode</a></code></li>
 <li><code><a title="libra.identifier.decode_account" href="#libra.identifier.decode_account">decode_account</a></code></li>
 <li><code><a title="libra.identifier.decode_intent" href="#libra.identifier.decode_intent">decode_intent</a></code></li>
 <li><code><a title="libra.identifier.encode_account" href="#libra.identifier.encode_account">encode_account</a></code></li>
@@ -784,9 +463,6 @@ def account_address_bytes(self) -&gt; bytes:
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
-<li>
-<h4><code><a title="libra.identifier.Bech32Error" href="#libra.identifier.Bech32Error">Bech32Error</a></code></h4>
-</li>
 <li>
 <h4><code><a title="libra.identifier.Intent" href="#libra.identifier.Intent">Intent</a></code></h4>
 <ul class="">

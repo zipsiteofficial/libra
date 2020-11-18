@@ -65,7 +65,7 @@ account: LocalAccount = faucet.gen_account()
 import requests
 import typing
 
-from . import libra_types, jsonrpc, utils, local_account, serde_types, auth_key, chain_ids
+from . import libra_types, jsonrpc, utils, local_account, serde_types, auth_key, chain_ids, lcs
 
 
 JSON_RPC_URL: str = &#34;https://testnet.libra.org/v1&#34;
@@ -101,44 +101,30 @@ class Faucet:
 
     def gen_account(self, currency_code: str = TEST_CURRENCY_CODE) -&gt; local_account.LocalAccount:
         account = local_account.LocalAccount.generate()
-
         self.mint(account.auth_key.hex(), 5_000_000_000, currency_code)
-
         return account
 
     def mint(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        self._retry.execute(lambda: self._mint_with_validation(authkey, amount, currency_code))
+        self._retry.execute(lambda: self._mint_without_retry(authkey, amount, currency_code))
 
-    def _mint_with_validation(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        seq = self._retry.execute(lambda: self._mint_without_retry(authkey, amount, currency_code))
-        self._retry.execute(lambda: self._wait_for_account_seq(seq))
-        self._validate_mint_result(authkey, amount, currency_code)
-
-    def _validate_mint_result(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        account_address = auth_key.AuthKey(bytes.fromhex(authkey)).account_address()
-        account = self._client.get_account(account_address)
-        if account is not None:
-            balance = next(iter([b for b in account.balances if b.currency == currency_code]), None)
-
-        if balance is None or balance.amount &lt; amount:
-            raise Exception(&#34;mint failed, please retry&#34;)
-
-    def _wait_for_account_seq(self, seq: int) -&gt; None:
-        seq_num = self._client.get_account_sequence(DESIGNATED_DEALER_ADDRESS)
-        if seq_num &lt; seq:
-            raise Exception(f&#34;sequence number {seq_num} &lt; {seq}&#34;)
-
-    def _mint_without_retry(self, authkey: str, amount: int, currency_code: str) -&gt; int:
+    def _mint_without_retry(self, authkey: str, amount: int, currency_code: str) -&gt; None:
         response = self._session.post(
             FAUCET_URL,
             params={
                 &#34;amount&#34;: amount,
                 &#34;auth_key&#34;: authkey,
                 &#34;currency_code&#34;: currency_code,
+                &#34;return_txns&#34;: &#34;true&#34;,
             },
         )
         response.raise_for_status()
-        return int(response.text)</code></pre>
+
+        de = lcs.LcsDeserializer(bytes.fromhex(response.text))
+        length = de.deserialize_len()
+
+        for i in range(length):
+            txn = de.deserialize_any(libra_types.SignedTransaction)
+            self._client.wait_for_transaction(txn)</code></pre>
 </details>
 </section>
 <section>
@@ -198,44 +184,30 @@ class Faucet:
 
     def gen_account(self, currency_code: str = TEST_CURRENCY_CODE) -&gt; local_account.LocalAccount:
         account = local_account.LocalAccount.generate()
-
         self.mint(account.auth_key.hex(), 5_000_000_000, currency_code)
-
         return account
 
     def mint(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        self._retry.execute(lambda: self._mint_with_validation(authkey, amount, currency_code))
+        self._retry.execute(lambda: self._mint_without_retry(authkey, amount, currency_code))
 
-    def _mint_with_validation(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        seq = self._retry.execute(lambda: self._mint_without_retry(authkey, amount, currency_code))
-        self._retry.execute(lambda: self._wait_for_account_seq(seq))
-        self._validate_mint_result(authkey, amount, currency_code)
-
-    def _validate_mint_result(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-        account_address = auth_key.AuthKey(bytes.fromhex(authkey)).account_address()
-        account = self._client.get_account(account_address)
-        if account is not None:
-            balance = next(iter([b for b in account.balances if b.currency == currency_code]), None)
-
-        if balance is None or balance.amount &lt; amount:
-            raise Exception(&#34;mint failed, please retry&#34;)
-
-    def _wait_for_account_seq(self, seq: int) -&gt; None:
-        seq_num = self._client.get_account_sequence(DESIGNATED_DEALER_ADDRESS)
-        if seq_num &lt; seq:
-            raise Exception(f&#34;sequence number {seq_num} &lt; {seq}&#34;)
-
-    def _mint_without_retry(self, authkey: str, amount: int, currency_code: str) -&gt; int:
+    def _mint_without_retry(self, authkey: str, amount: int, currency_code: str) -&gt; None:
         response = self._session.post(
             FAUCET_URL,
             params={
                 &#34;amount&#34;: amount,
                 &#34;auth_key&#34;: authkey,
                 &#34;currency_code&#34;: currency_code,
+                &#34;return_txns&#34;: &#34;true&#34;,
             },
         )
         response.raise_for_status()
-        return int(response.text)</code></pre>
+
+        de = lcs.LcsDeserializer(bytes.fromhex(response.text))
+        length = de.deserialize_len()
+
+        for i in range(length):
+            txn = de.deserialize_any(libra_types.SignedTransaction)
+            self._client.wait_for_transaction(txn)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -250,9 +222,7 @@ class Faucet:
 </summary>
 <pre><code class="python">def gen_account(self, currency_code: str = TEST_CURRENCY_CODE) -&gt; local_account.LocalAccount:
     account = local_account.LocalAccount.generate()
-
     self.mint(account.auth_key.hex(), 5_000_000_000, currency_code)
-
     return account</code></pre>
 </details>
 </dd>
@@ -266,7 +236,7 @@ class Faucet:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def mint(self, authkey: str, amount: int, currency_code: str) -&gt; None:
-    self._retry.execute(lambda: self._mint_with_validation(authkey, amount, currency_code))</code></pre>
+    self._retry.execute(lambda: self._mint_without_retry(authkey, amount, currency_code))</code></pre>
 </details>
 </dd>
 </dl>

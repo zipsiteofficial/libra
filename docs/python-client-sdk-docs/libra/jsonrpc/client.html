@@ -37,9 +37,11 @@ import google.protobuf.json_format as parser
 import requests
 import threading
 import typing
+import random, queue
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 from .. import libra_types, utils
-from . import libra_jsonrpc_types_pb2 as rpc
+from . import jsonrpc_pb2 as rpc
 from . import constants
 
 
@@ -112,6 +114,88 @@ class Retry:
                     raise e
 
 
+class RequestStrategy:
+    &#34;&#34;&#34;RequestStrategy base class
+
+    It implements the simplest strategy: direct send http request
+    &#34;&#34;&#34;
+
+    def send_request(
+        self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+    ) -&gt; typing.Dict[str, typing.Any]:
+        return client._send_http_request(client._url, request, ignore_stale_response)
+
+
+class RequestWithBackups(RequestStrategy):
+    &#34;&#34;&#34;RequestWithBackups implements strategies for primary-backup model.
+
+    First we send same request to primary and one of random picked backup urls in parallel.
+    Then we have 2 different strategies for how we handle responses:
+
+    1. first success: return first completed success response.
+    2. fallback: wait for primary response completed, if it failed, fallback to backup response.
+
+    Default is first success strategy, passing fallback=True in constructor to enable fallback strategy.
+
+    Errors cause failures:
+
+    1. http request error
+    2. http response error
+    3. response body is not json
+    4. StaleResponseError: this is included for making sure we always prefer to pick non-stale response.
+
+    Initialize Client:
+
+    ```python
+    from concurrent.futures import ThreadPoolExecutor
+    from libra import jsonrpc
+
+    # This controls how many concurrent requests we can sent. It is shared for all jsonrpc.Client requests.
+    executor = ThreadPoolExecutor(5)
+    jsonrpc.Client(
+        &lt;primary-json-rpc-server-url&gt;
+        rs=jsonrpc.RequestWithBackups(backups=[&lt;backup-json-rpc-server-url&gt;...], executor=executor),
+    )
+    ```
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        backups: typing.List[str],
+        executor: ThreadPoolExecutor,
+        fallback: bool = False,
+    ) -&gt; None:
+        self._backups = backups
+        self._executor = executor
+        self._fallback = fallback
+
+    def send_request(
+        self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+    ) -&gt; typing.Dict[str, typing.Any]:
+        primary = self._executor.submit(client._send_http_request, client._url, request, ignore_stale_response)
+        backup = self._executor.submit(
+            client._send_http_request, random.choice(self._backups), request, ignore_stale_response
+        )
+
+        if self._fallback:
+            return self._fallback_to_backup(primary, backup)
+        return self._first_success(primary, backup)
+
+    def _fallback_to_backup(self, primary: Future, backup: Future) -&gt; typing.Dict[str, typing.Any]:
+        try:
+            return primary.result()
+        except Exception as e:
+            return backup.result()
+
+    def _first_success(self, primary: Future, backup: Future) -&gt; typing.Dict[str, typing.Any]:
+        futures = as_completed({primary, backup})
+        first = next(futures)
+        try:
+            return first.result()
+        except Exception:
+            return next(futures).result()
+
+
 class Client:
     &#34;&#34;&#34;Libra JSON-RPC API client
 
@@ -124,6 +208,7 @@ class Client:
         session: typing.Optional[requests.Session] = None,
         timeout: typing.Optional[typing.Tuple[float, float]] = None,
         retry: typing.Optional[Retry] = None,
+        rs: typing.Optional[RequestStrategy] = None,
     ) -&gt; None:
         self._url: str = server_url
         self._session: requests.Session = session or requests.Session()
@@ -131,6 +216,7 @@ class Client:
         self._last_known_server_state: State = State(chain_id=-1, version=-1, timestamp_usecs=-1)
         self._lock = threading.Lock()
         self._retry: Retry = retry or Retry(5, 0.2, StaleResponseError)
+        self._rs: RequestStrategy = rs or RequestStrategy()
 
     # high level functions
 
@@ -462,21 +548,7 @@ class Client:
             &#34;params&#34;: params or [],
         }
         try:
-            response = self._session.post(self._url, json=request, timeout=self._timeout)
-            response.raise_for_status()
-            json = response.json()
-
-            # check stable response before check jsonrpc error
-            try:
-                self.update_last_known_state(
-                    json.get(&#34;libra_chain_id&#34;),
-                    json.get(&#34;libra_ledger_version&#34;),
-                    json.get(&#34;libra_ledger_timestampusec&#34;),
-                )
-            except StaleResponseError as e:
-                if not ignore_stale_response:
-                    raise e
-
+            json = self._rs.send_request(self, request, ignore_stale_response or False)
             if &#34;error&#34; in json:
                 err = json[&#34;error&#34;]
                 raise JsonRpcError(f&#34;{err}&#34;)
@@ -486,13 +558,37 @@ class Client:
                     return result_parser(json[&#34;result&#34;])
                 return
 
-            raise InvalidServerResponse(f&#34;No error or result in response: {response.text}&#34;)
+            raise InvalidServerResponse(f&#34;No error or result in response: {json}&#34;)
         except requests.RequestException as e:
             raise NetworkError(f&#34;Error in connecting to server: {e}\nPlease retry...&#34;)
+        except parser.ParseError as e:
+            raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {json}&#34;)
+
+    def _send_http_request(
+        self,
+        url: str,
+        request: typing.Dict[str, typing.Any],
+        ignore_stale_response: bool,
+    ) -&gt; typing.Dict[str, typing.Any]:
+        response = self._session.post(url, json=request, timeout=self._timeout)
+        response.raise_for_status()
+        try:
+            json = response.json()
         except ValueError as e:
             raise InvalidServerResponse(f&#34;Parse response as json failed: {e}, response: {response.text}&#34;)
-        except parser.ParseError as e:
-            raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {response.text}&#34;)
+
+        # check stable response before check jsonrpc error
+        try:
+            self.update_last_known_state(
+                json.get(&#34;libra_chain_id&#34;),
+                json.get(&#34;libra_ledger_version&#34;),
+                json.get(&#34;libra_ledger_timestampusec&#34;),
+            )
+        except StaleResponseError as e:
+            if not ignore_stale_response:
+                raise e
+
+        return json
 
 
 def _parse_obj(factory):  # pyre-ignore
@@ -534,7 +630,7 @@ def _parse_list(factory):  # pyre-ignore
 </dd>
 <dt id="libra.jsonrpc.client.Client"><code class="flex name class">
 <span>class <span class="ident">Client</span></span>
-<span>(</span><span>server_url: str, session: Union[requests.sessions.Session, NoneType] = None, timeout: Union[Tuple[float, float], NoneType] = None, retry: Union[<a title="libra.jsonrpc.client.Retry" href="#libra.jsonrpc.client.Retry">Retry</a>, NoneType] = None)</span>
+<span>(</span><span>server_url: str, session: Union[requests.sessions.Session, NoneType] = None, timeout: Union[Tuple[float, float], NoneType] = None, retry: Union[<a title="libra.jsonrpc.client.Retry" href="#libra.jsonrpc.client.Retry">Retry</a>, NoneType] = None, rs: Union[<a title="libra.jsonrpc.client.RequestStrategy" href="#libra.jsonrpc.client.RequestStrategy">RequestStrategy</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Libra JSON-RPC API client</p>
@@ -555,6 +651,7 @@ def _parse_list(factory):  # pyre-ignore
         session: typing.Optional[requests.Session] = None,
         timeout: typing.Optional[typing.Tuple[float, float]] = None,
         retry: typing.Optional[Retry] = None,
+        rs: typing.Optional[RequestStrategy] = None,
     ) -&gt; None:
         self._url: str = server_url
         self._session: requests.Session = session or requests.Session()
@@ -562,6 +659,7 @@ def _parse_list(factory):  # pyre-ignore
         self._last_known_server_state: State = State(chain_id=-1, version=-1, timestamp_usecs=-1)
         self._lock = threading.Lock()
         self._retry: Retry = retry or Retry(5, 0.2, StaleResponseError)
+        self._rs: RequestStrategy = rs or RequestStrategy()
 
     # high level functions
 
@@ -893,21 +991,7 @@ def _parse_list(factory):  # pyre-ignore
             &#34;params&#34;: params or [],
         }
         try:
-            response = self._session.post(self._url, json=request, timeout=self._timeout)
-            response.raise_for_status()
-            json = response.json()
-
-            # check stable response before check jsonrpc error
-            try:
-                self.update_last_known_state(
-                    json.get(&#34;libra_chain_id&#34;),
-                    json.get(&#34;libra_ledger_version&#34;),
-                    json.get(&#34;libra_ledger_timestampusec&#34;),
-                )
-            except StaleResponseError as e:
-                if not ignore_stale_response:
-                    raise e
-
+            json = self._rs.send_request(self, request, ignore_stale_response or False)
             if &#34;error&#34; in json:
                 err = json[&#34;error&#34;]
                 raise JsonRpcError(f&#34;{err}&#34;)
@@ -917,13 +1001,37 @@ def _parse_list(factory):  # pyre-ignore
                     return result_parser(json[&#34;result&#34;])
                 return
 
-            raise InvalidServerResponse(f&#34;No error or result in response: {response.text}&#34;)
+            raise InvalidServerResponse(f&#34;No error or result in response: {json}&#34;)
         except requests.RequestException as e:
             raise NetworkError(f&#34;Error in connecting to server: {e}\nPlease retry...&#34;)
+        except parser.ParseError as e:
+            raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {json}&#34;)
+
+    def _send_http_request(
+        self,
+        url: str,
+        request: typing.Dict[str, typing.Any],
+        ignore_stale_response: bool,
+    ) -&gt; typing.Dict[str, typing.Any]:
+        response = self._session.post(url, json=request, timeout=self._timeout)
+        response.raise_for_status()
+        try:
+            json = response.json()
         except ValueError as e:
             raise InvalidServerResponse(f&#34;Parse response as json failed: {e}, response: {response.text}&#34;)
-        except parser.ParseError as e:
-            raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {response.text}&#34;)</code></pre>
+
+        # check stable response before check jsonrpc error
+        try:
+            self.update_last_known_state(
+                json.get(&#34;libra_chain_id&#34;),
+                json.get(&#34;libra_ledger_version&#34;),
+                json.get(&#34;libra_ledger_timestampusec&#34;),
+            )
+        except StaleResponseError as e:
+            if not ignore_stale_response:
+                raise e
+
+        return json</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -997,21 +1105,7 @@ Should only be called by get methods.</p></div>
         &#34;params&#34;: params or [],
     }
     try:
-        response = self._session.post(self._url, json=request, timeout=self._timeout)
-        response.raise_for_status()
-        json = response.json()
-
-        # check stable response before check jsonrpc error
-        try:
-            self.update_last_known_state(
-                json.get(&#34;libra_chain_id&#34;),
-                json.get(&#34;libra_ledger_version&#34;),
-                json.get(&#34;libra_ledger_timestampusec&#34;),
-            )
-        except StaleResponseError as e:
-            if not ignore_stale_response:
-                raise e
-
+        json = self._rs.send_request(self, request, ignore_stale_response or False)
         if &#34;error&#34; in json:
             err = json[&#34;error&#34;]
             raise JsonRpcError(f&#34;{err}&#34;)
@@ -1021,17 +1115,15 @@ Should only be called by get methods.</p></div>
                 return result_parser(json[&#34;result&#34;])
             return
 
-        raise InvalidServerResponse(f&#34;No error or result in response: {response.text}&#34;)
+        raise InvalidServerResponse(f&#34;No error or result in response: {json}&#34;)
     except requests.RequestException as e:
         raise NetworkError(f&#34;Error in connecting to server: {e}\nPlease retry...&#34;)
-    except ValueError as e:
-        raise InvalidServerResponse(f&#34;Parse response as json failed: {e}, response: {response.text}&#34;)
     except parser.ParseError as e:
-        raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {response.text}&#34;)</code></pre>
+        raise InvalidServerResponse(f&#34;Parse result failed: {e}, response: {json}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_account"><code class="name flex">
-<span>def <span class="ident">get_account</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str]) ‑> Union[libra_jsonrpc_types_pb2.Account, NoneType]</span>
+<span>def <span class="ident">get_account</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str]) ‑> Union[jsonrpc_pb2.Account, NoneType]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get on-chain account information</p>
@@ -1081,7 +1173,7 @@ Raises AccountNotFoundError if get_account returns None</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_account_state_with_proof"><code class="name flex">
-<span>def <span class="ident">get_account_state_with_proof</span></span>(<span>self, account_address: <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, version: Union[int, NoneType] = None, ledger_version: Union[int, NoneType] = None) ‑> libra_jsonrpc_types_pb2.AccountStateWithProof</span>
+<span>def <span class="ident">get_account_state_with_proof</span></span>(<span>self, account_address: <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, version: Union[int, NoneType] = None, ledger_version: Union[int, NoneType] = None) ‑> jsonrpc_pb2.AccountStateWithProof</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1101,7 +1193,7 @@ Raises AccountNotFoundError if get_account returns None</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_account_transaction"><code class="name flex">
-<span>def <span class="ident">get_account_transaction</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], sequence: int, include_events: Union[bool, NoneType] = None) ‑> Union[libra_jsonrpc_types_pb2.Transaction, NoneType]</span>
+<span>def <span class="ident">get_account_transaction</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], sequence: int, include_events: Union[bool, NoneType] = None) ‑> Union[jsonrpc_pb2.Transaction, NoneType]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get on-chain account transaction by sequence number</p>
@@ -1130,7 +1222,7 @@ Raises AccountNotFoundError if get_account returns None</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_account_transactions"><code class="name flex">
-<span>def <span class="ident">get_account_transactions</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], sequence: int, limit: int, include_events: Union[bool, NoneType] = None) ‑> List[libra_jsonrpc_types_pb2.Transaction]</span>
+<span>def <span class="ident">get_account_transactions</span></span>(<span>self, account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str], sequence: int, limit: int, include_events: Union[bool, NoneType] = None) ‑> List[jsonrpc_pb2.Transaction]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get on-chain account transactions by start sequence number and limit size</p>
@@ -1160,7 +1252,7 @@ Raises AccountNotFoundError if get_account returns None</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_currencies"><code class="name flex">
-<span>def <span class="ident">get_currencies</span></span>(<span>self) ‑> List[libra_jsonrpc_types_pb2.CurrencyInfo]</span>
+<span>def <span class="ident">get_currencies</span></span>(<span>self) ‑> List[jsonrpc_pb2.CurrencyInfo]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get currencies</p>
@@ -1179,7 +1271,7 @@ Raises AccountNotFoundError if get_account returns None</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_events"><code class="name flex">
-<span>def <span class="ident">get_events</span></span>(<span>self, event_stream_key: str, start: int, limit: int) ‑> List[libra_jsonrpc_types_pb2.Event]</span>
+<span>def <span class="ident">get_events</span></span>(<span>self, event_stream_key: str, start: int, limit: int) ‑> List[jsonrpc_pb2.Event]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get events</p>
@@ -1230,7 +1322,7 @@ server.</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_metadata"><code class="name flex">
-<span>def <span class="ident">get_metadata</span></span>(<span>self, version: Union[int, NoneType] = None) ‑> Union[libra_jsonrpc_types_pb2.Metadata, NoneType]</span>
+<span>def <span class="ident">get_metadata</span></span>(<span>self, version: Union[int, NoneType] = None) ‑> Union[jsonrpc_pb2.Metadata, NoneType]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get block metadata</p>
@@ -1253,7 +1345,7 @@ server.</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_parent_vasp_account"><code class="name flex">
-<span>def <span class="ident">get_parent_vasp_account</span></span>(<span>self, vasp_account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str]) ‑> libra_jsonrpc_types_pb2.Account</span>
+<span>def <span class="ident">get_parent_vasp_account</span></span>(<span>self, vasp_account_address: Union[<a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, str]) ‑> jsonrpc_pb2.Account</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get parent_vasp account</p>
@@ -1294,7 +1386,7 @@ could not find the account by the parent_vasp_address found in ChildVASP account
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_state_proof"><code class="name flex">
-<span>def <span class="ident">get_state_proof</span></span>(<span>self, version: int) ‑> libra_jsonrpc_types_pb2.StateProof</span>
+<span>def <span class="ident">get_state_proof</span></span>(<span>self, version: int) ‑> jsonrpc_pb2.StateProof</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -1308,7 +1400,7 @@ could not find the account by the parent_vasp_address found in ChildVASP account
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.get_transactions"><code class="name flex">
-<span>def <span class="ident">get_transactions</span></span>(<span>self, start_version: int, limit: int, include_events: Union[bool, NoneType] = None) ‑> List[libra_jsonrpc_types_pb2.Transaction]</span>
+<span>def <span class="ident">get_transactions</span></span>(<span>self, start_version: int, limit: int, include_events: Union[bool, NoneType] = None) ‑> List[jsonrpc_pb2.Transaction]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>get transactions</p>
@@ -1407,7 +1499,7 @@ Retry submit may end with an error.</p>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.wait_for_transaction"><code class="name flex">
-<span>def <span class="ident">wait_for_transaction</span></span>(<span>self, txn: Union[<a title="libra.libra_types.SignedTransaction" href="../libra_types/index.html#libra.libra_types.SignedTransaction">SignedTransaction</a>, str], timeout_secs: Union[float, NoneType] = None) ‑> libra_jsonrpc_types_pb2.Transaction</span>
+<span>def <span class="ident">wait_for_transaction</span></span>(<span>self, txn: Union[<a title="libra.libra_types.SignedTransaction" href="../libra_types/index.html#libra.libra_types.SignedTransaction">SignedTransaction</a>, str], timeout_secs: Union[float, NoneType] = None) ‑> jsonrpc_pb2.Transaction</span>
 </code></dt>
 <dd>
 <div class="desc"><p>wait for transaction executed</p>
@@ -1457,7 +1549,7 @@ with same account address and sequence).</p></div>
 </details>
 </dd>
 <dt id="libra.jsonrpc.client.Client.wait_for_transaction2"><code class="name flex">
-<span>def <span class="ident">wait_for_transaction2</span></span>(<span>self, address: <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, seq: int, expiration_time_secs: int, txn_hash: str, timeout_secs: Union[float, NoneType] = None, wait_duration_secs: Union[float, NoneType] = None) ‑> libra_jsonrpc_types_pb2.Transaction</span>
+<span>def <span class="ident">wait_for_transaction2</span></span>(<span>self, address: <a title="libra.libra_types.AccountAddress" href="../libra_types/index.html#libra.libra_types.AccountAddress">AccountAddress</a>, seq: int, expiration_time_secs: int, txn_hash: str, timeout_secs: Union[float, NoneType] = None, wait_duration_secs: Union[float, NoneType] = None) ‑> jsonrpc_pb2.Transaction</span>
 </code></dt>
 <dd>
 <div class="desc"><p>wait for transaction executed</p>
@@ -1577,6 +1669,184 @@ with same account address and sequence).</p></div>
 <li>builtins.Exception</li>
 <li>builtins.BaseException</li>
 </ul>
+</dd>
+<dt id="libra.jsonrpc.client.RequestStrategy"><code class="flex name class">
+<span>class <span class="ident">RequestStrategy</span></span>
+</code></dt>
+<dd>
+<div class="desc"><p>RequestStrategy base class</p>
+<p>It implements the simplest strategy: direct send http request</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RequestStrategy:
+    &#34;&#34;&#34;RequestStrategy base class
+
+    It implements the simplest strategy: direct send http request
+    &#34;&#34;&#34;
+
+    def send_request(
+        self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+    ) -&gt; typing.Dict[str, typing.Any]:
+        return client._send_http_request(client._url, request, ignore_stale_response)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="libra.jsonrpc.client.RequestWithBackups" href="#libra.jsonrpc.client.RequestWithBackups">RequestWithBackups</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="libra.jsonrpc.client.RequestStrategy.send_request"><code class="name flex">
+<span>def <span class="ident">send_request</span></span>(<span>self, client: <a title="libra.jsonrpc.client.Client" href="#libra.jsonrpc.client.Client">Client</a>, request: Dict[str, Any], ignore_stale_response: bool) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send_request(
+    self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+) -&gt; typing.Dict[str, typing.Any]:
+    return client._send_http_request(client._url, request, ignore_stale_response)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="libra.jsonrpc.client.RequestWithBackups"><code class="flex name class">
+<span>class <span class="ident">RequestWithBackups</span></span>
+<span>(</span><span>backups: List[str], executor: concurrent.futures.thread.ThreadPoolExecutor, fallback: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>RequestWithBackups implements strategies for primary-backup model.</p>
+<p>First we send same request to primary and one of random picked backup urls in parallel.
+Then we have 2 different strategies for how we handle responses:</p>
+<ol>
+<li>first success: return first completed success response.</li>
+<li>fallback: wait for primary response completed, if it failed, fallback to backup response.</li>
+</ol>
+<p>Default is first success strategy, passing fallback=True in constructor to enable fallback strategy.</p>
+<p>Errors cause failures:</p>
+<ol>
+<li>http request error</li>
+<li>http response error</li>
+<li>response body is not json</li>
+<li>StaleResponseError: this is included for making sure we always prefer to pick non-stale response.</li>
+</ol>
+<p>Initialize Client:</p>
+<pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor
+from libra import jsonrpc
+
+# This controls how many concurrent requests we can sent. It is shared for all jsonrpc.Client requests.
+executor = ThreadPoolExecutor(5)
+jsonrpc.Client(
+    &lt;primary-json-rpc-server-url&gt;
+    rs=jsonrpc.RequestWithBackups(backups=[&lt;backup-json-rpc-server-url&gt;...], executor=executor),
+)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RequestWithBackups(RequestStrategy):
+    &#34;&#34;&#34;RequestWithBackups implements strategies for primary-backup model.
+
+    First we send same request to primary and one of random picked backup urls in parallel.
+    Then we have 2 different strategies for how we handle responses:
+
+    1. first success: return first completed success response.
+    2. fallback: wait for primary response completed, if it failed, fallback to backup response.
+
+    Default is first success strategy, passing fallback=True in constructor to enable fallback strategy.
+
+    Errors cause failures:
+
+    1. http request error
+    2. http response error
+    3. response body is not json
+    4. StaleResponseError: this is included for making sure we always prefer to pick non-stale response.
+
+    Initialize Client:
+
+    ```python
+    from concurrent.futures import ThreadPoolExecutor
+    from libra import jsonrpc
+
+    # This controls how many concurrent requests we can sent. It is shared for all jsonrpc.Client requests.
+    executor = ThreadPoolExecutor(5)
+    jsonrpc.Client(
+        &lt;primary-json-rpc-server-url&gt;
+        rs=jsonrpc.RequestWithBackups(backups=[&lt;backup-json-rpc-server-url&gt;...], executor=executor),
+    )
+    ```
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        backups: typing.List[str],
+        executor: ThreadPoolExecutor,
+        fallback: bool = False,
+    ) -&gt; None:
+        self._backups = backups
+        self._executor = executor
+        self._fallback = fallback
+
+    def send_request(
+        self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+    ) -&gt; typing.Dict[str, typing.Any]:
+        primary = self._executor.submit(client._send_http_request, client._url, request, ignore_stale_response)
+        backup = self._executor.submit(
+            client._send_http_request, random.choice(self._backups), request, ignore_stale_response
+        )
+
+        if self._fallback:
+            return self._fallback_to_backup(primary, backup)
+        return self._first_success(primary, backup)
+
+    def _fallback_to_backup(self, primary: Future, backup: Future) -&gt; typing.Dict[str, typing.Any]:
+        try:
+            return primary.result()
+        except Exception as e:
+            return backup.result()
+
+    def _first_success(self, primary: Future, backup: Future) -&gt; typing.Dict[str, typing.Any]:
+        futures = as_completed({primary, backup})
+        first = next(futures)
+        try:
+            return first.result()
+        except Exception:
+            return next(futures).result()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="libra.jsonrpc.client.RequestStrategy" href="#libra.jsonrpc.client.RequestStrategy">RequestStrategy</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="libra.jsonrpc.client.RequestWithBackups.send_request"><code class="name flex">
+<span>def <span class="ident">send_request</span></span>(<span>self, client: <a title="libra.jsonrpc.client.Client" href="#libra.jsonrpc.client.Client">Client</a>, request: Dict[str, Any], ignore_stale_response: bool) ‑> Dict[str, Any]</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def send_request(
+    self, client: &#34;Client&#34;, request: typing.Dict[str, typing.Any], ignore_stale_response: bool
+) -&gt; typing.Dict[str, typing.Any]:
+    primary = self._executor.submit(client._send_http_request, client._url, request, ignore_stale_response)
+    backup = self._executor.submit(
+        client._send_http_request, random.choice(self._backups), request, ignore_stale_response
+    )
+
+    if self._fallback:
+        return self._fallback_to_backup(primary, backup)
+    return self._first_success(primary, backup)</code></pre>
+</details>
+</dd>
+</dl>
 </dd>
 <dt id="libra.jsonrpc.client.Retry"><code class="flex name class">
 <span>class <span class="ident">Retry</span></span>
@@ -1824,6 +2094,18 @@ with same account address and sequence).</p></div>
 </li>
 <li>
 <h4><code><a title="libra.jsonrpc.client.NetworkError" href="#libra.jsonrpc.client.NetworkError">NetworkError</a></code></h4>
+</li>
+<li>
+<h4><code><a title="libra.jsonrpc.client.RequestStrategy" href="#libra.jsonrpc.client.RequestStrategy">RequestStrategy</a></code></h4>
+<ul class="">
+<li><code><a title="libra.jsonrpc.client.RequestStrategy.send_request" href="#libra.jsonrpc.client.RequestStrategy.send_request">send_request</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="libra.jsonrpc.client.RequestWithBackups" href="#libra.jsonrpc.client.RequestWithBackups">RequestWithBackups</a></code></h4>
+<ul class="">
+<li><code><a title="libra.jsonrpc.client.RequestWithBackups.send_request" href="#libra.jsonrpc.client.RequestWithBackups.send_request">send_request</a></code></li>
+</ul>
 </li>
 <li>
 <h4><code><a title="libra.jsonrpc.client.Retry" href="#libra.jsonrpc.client.Retry">Retry</a></code></h4>
