@@ -3,7 +3,6 @@ implementors["executor_types"] = [{"text":"impl Error for Error","synthetic":fal
 implementors["functional_tests"] = [{"text":"impl Error for ErrorKind","synthetic":false,"types":[]}];
 implementors["ir_to_bytecode"] = [{"text":"impl Error for InternalCompilerError","synthetic":false,"types":[]}];
 implementors["language_e2e_tests"] = [{"text":"impl&lt;E:&nbsp;Error&gt; Error for MultiResult&lt;E&gt;","synthetic":false,"types":[]}];
-implementors["libra_canonical_serialization"] = [{"text":"impl Error for Error","synthetic":false,"types":[]}];
 implementors["libra_config"] = [{"text":"impl Error for Error","synthetic":false,"types":[]},{"text":"impl Error for ParseRoleError","synthetic":false,"types":[]}];
 implementors["libra_crypto"] = [{"text":"impl Error for HkdfError","synthetic":false,"types":[]},{"text":"impl Error for NoiseError","synthetic":false,"types":[]},{"text":"impl Error for CryptoMaterialError","synthetic":false,"types":[]}];
 implementors["libra_github_client"] = [{"text":"impl Error for Error","synthetic":false,"types":[]}];
