@@ -71,6 +71,13 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -103,8 +110,10 @@
     <span class="ident">InvalidQuorumCertificate</span>(<span class="ident">String</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;{0} is not set, SafetyRules is not initialized&quot;</span>)]</span>
     <span class="ident">NotInitialized</span>(<span class="ident">String</span>),
-    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Error returned by secure storage: {0}&quot;</span>)]</span>
-    <span class="ident">SecureStorageError</span>(<span class="ident">String</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Data not found in secure storage: {0}&quot;</span>)]</span>
+    <span class="ident">SecureStorageMissingDataError</span>(<span class="ident">String</span>),
+    <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Unexpected error returned by secure storage: {0}&quot;</span>)]</span>
+    <span class="ident">SecureStorageUnexpectedError</span>(<span class="ident">String</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Serialization error: {0}&quot;</span>)]</span>
     <span class="ident">SerializationError</span>(<span class="ident">String</span>),
     <span class="attribute">#[<span class="ident">error</span>(<span class="string">&quot;Validator key not found: {0}&quot;</span>)]</span>
@@ -129,18 +138,23 @@
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">libra_secure_storage</span>::<span class="ident">Error</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Error</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">error</span>: <span class="ident">libra_secure_storage</span>::<span class="ident">Error</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
-        <span class="comment">// If a storage error is thrown that indicates a permission failure, we</span>
-        <span class="comment">// want to panic immediately to alert an operator that something has gone</span>
-        <span class="comment">// wrong. For example, this error is thrown when a storage (e.g., vault)</span>
-        <span class="comment">// token has expired, so it makes sense to fail fast and require a token</span>
-        <span class="comment">// renewal!</span>
-        <span class="kw">if</span> <span class="ident">libra_secure_storage</span>::<span class="ident">Error</span>::<span class="ident">PermissionDenied</span> <span class="op">==</span> <span class="ident">error</span> {
-            <span class="macro">panic</span><span class="macro">!</span>(
-                <span class="string">&quot;A permission error was thrown: {:?}. Maybe the storage token needs to be renewed?&quot;</span>,
-                <span class="ident">error</span>
-            );
-        } <span class="kw">else</span> {
-            <span class="self">Self</span>::<span class="ident">SecureStorageError</span>(<span class="ident">error</span>.<span class="ident">to_string</span>())
+        <span class="kw">match</span> <span class="ident">error</span> {
+            <span class="ident">libra_secure_storage</span>::<span class="ident">Error</span>::<span class="ident">PermissionDenied</span> <span class="op">=&gt;</span> {
+                <span class="comment">// If a storage error is thrown that indicates a permission failure, we</span>
+                <span class="comment">// want to panic immediately to alert an operator that something has gone</span>
+                <span class="comment">// wrong. For example, this error is thrown when a storage (e.g., vault)</span>
+                <span class="comment">// token has expired, so it makes sense to fail fast and require a token</span>
+                <span class="comment">// renewal!</span>
+                <span class="macro">panic</span><span class="macro">!</span>(
+                    <span class="string">&quot;A permission error was thrown: {:?}. Maybe the storage token needs to be renewed?&quot;</span>,
+                    <span class="ident">error</span>
+                );
+            }
+            <span class="ident">libra_secure_storage</span>::<span class="ident">Error</span>::<span class="ident">KeyVersionNotFound</span>(<span class="kw">_</span>, <span class="kw">_</span>)
+            <span class="op">|</span> <span class="ident">libra_secure_storage</span>::<span class="ident">Error</span>::<span class="ident">KeyNotSet</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
+                <span class="self">Self</span>::<span class="ident">SecureStorageMissingDataError</span>(<span class="ident">error</span>.<span class="ident">to_string</span>())
+            }
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">SecureStorageUnexpectedError</span>(<span class="ident">error</span>.<span class="ident">to_string</span>()),
         }
     }
 }
