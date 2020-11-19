@@ -255,25 +255,14 @@
 <span id="254">254</span>
 <span id="255">255</span>
 <span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">libra_metrics</span>::{
-    <span class="ident">register_histogram</span>, <span class="ident">register_int_counter</span>, <span class="ident">register_int_counter_vec</span>, <span class="ident">register_int_gauge</span>,
-    <span class="ident">DurationHistogram</span>, <span class="ident">Histogram</span>, <span class="ident">IntCounter</span>, <span class="ident">IntCounterVec</span>, <span class="ident">IntGauge</span>,
+    <span class="ident">register_histogram</span>, <span class="ident">register_histogram_vec</span>, <span class="ident">register_int_counter</span>, <span class="ident">register_int_counter_vec</span>,
+    <span class="ident">register_int_gauge</span>, <span class="ident">DurationHistogram</span>, <span class="ident">Histogram</span>, <span class="ident">HistogramVec</span>, <span class="ident">IntCounter</span>, <span class="ident">IntCounterVec</span>,
+    <span class="ident">IntGauge</span>,
 };
 <span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">Lazy</span>;
 
@@ -458,26 +447,13 @@
     .<span class="ident">unwrap</span>()
 });
 
-<span class="doccomment">/// Histogram of the time it takes for a block to get committed.</span>
-<span class="doccomment">/// Measured as the commit time minus block&#39;s timestamp.</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CREATION_TO_COMMIT_S</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">DurationHistogram</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
-    <span class="ident">DurationHistogram</span>::<span class="ident">new</span>(<span class="macro">register_histogram</span><span class="macro">!</span>(<span class="string">&quot;libra_consensus_creation_to_commit_s&quot;</span>, <span class="string">&quot;Histogram of the time it takes for a block to get committed. Measured as the commit time minus block&#39;s timestamp.&quot;</span>).<span class="ident">unwrap</span>())
-});
-
-<span class="doccomment">/// Duration between block generation time until the moment it gathers full QC</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CREATION_TO_QC_S</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">DurationHistogram</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
-    <span class="ident">DurationHistogram</span>::<span class="ident">new</span>(
-        <span class="macro">register_histogram</span><span class="macro">!</span>(
-            <span class="string">&quot;libra_consensus_creation_to_qc_s&quot;</span>,
-            <span class="string">&quot;Duration between block generation time until the moment it gathers full QC&quot;</span>
-        )
-        .<span class="ident">unwrap</span>(),
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">BLOCK_TRACING</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">HistogramVec</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
+    <span class="macro">register_histogram_vec</span><span class="macro">!</span>(
+        <span class="string">&quot;libra_consensus_block_tracing&quot;</span>,
+        <span class="string">&quot;Histogram for different stages of a block&quot;</span>,
+        <span class="kw-2">&amp;</span>[<span class="string">&quot;stage&quot;</span>]
     )
-});
-
-<span class="doccomment">/// Duration between block generation time until the moment it is received and ready for execution.</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">CREATION_TO_RECEIVAL_S</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">DurationHistogram</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy</span>::<span class="ident">new</span>(<span class="op">||</span> {
-    <span class="ident">DurationHistogram</span>::<span class="ident">new</span>(<span class="macro">register_histogram</span><span class="macro">!</span>(<span class="string">&quot;libra_consensus_creation_to_receival_s&quot;</span>, <span class="string">&quot;Duration between block generation time until the moment it is received and ready for execution.&quot;</span>).<span class="ident">unwrap</span>())
+    .<span class="ident">unwrap</span>()
 });
 
 <span class="doccomment">/// Histogram of the time it requires to wait before inserting blocks into block store.</span>
