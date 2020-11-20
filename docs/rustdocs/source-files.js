@@ -130,6 +130,6 @@ sourcesIndex["transaction_builder_generator"] = {"name":"","files":["common.rs",
 sourcesIndex["vm"] = {"name":"","dirs":[{"name":"proptest_types","files":["constants.rs","functions.rs","signature.rs","types.rs"]}],"files":["access.rs","check_bounds.rs","constant.rs","deserializer.rs","errors.rs","file_format.rs","file_format_common.rs","internals.rs","lib.rs","normalized.rs","proptest_types.rs","serializer.rs","views.rs"]};
 sourcesIndex["vm_genesis"] = {"name":"","files":["genesis_context.rs","genesis_gas_schedule.rs","lib.rs"]};
 sourcesIndex["vm_validator"] = {"name":"","dirs":[{"name":"mocks","files":["mock_vm_validator.rs","mod.rs"]}],"files":["lib.rs","vm_validator.rs"]};
-sourcesIndex["x_core"] = {"name":"","files":["debug_ignore.rs","errors.rs","graph.rs","lib.rs","workspace_subset.rs"]};
-sourcesIndex["x_lint"] = {"name":"","files":["content.rs","file.rs","lib.rs","package.rs","project.rs","runner.rs"]};
+sourcesIndex["x_core"] = {"name":"","files":["debug_ignore.rs","errors.rs","git.rs","graph.rs","lib.rs","workspace_subset.rs"]};
+sourcesIndex["x_lint"] = {"name":"","files":["content.rs","file_path.rs","lib.rs","package.rs","project.rs","runner.rs"]};
 createSourceSidebar();

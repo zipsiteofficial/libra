@@ -1,1 +1,0 @@
-initSidebarItems({"struct":[["FileContext","Contains information for a single file."]]});

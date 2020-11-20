@@ -254,39 +254,12 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">LintContext</span>};
-<span class="kw">use</span> <span class="ident">once_cell</span>::<span class="ident">sync</span>::<span class="ident">OnceCell</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{
-    <span class="ident">ffi</span>::<span class="ident">OsStr</span>,
-    <span class="ident">path</span>::<span class="ident">Path</span>,
-    <span class="ident">process</span>::{<span class="ident">Command</span>, <span class="ident">Stdio</span>},
-};
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">Path</span>;
 <span class="kw">use</span> <span class="ident">x_core</span>::<span class="ident">XCoreContext</span>;
 
 <span class="doccomment">/// Configuration for the lint engine.</span>
@@ -295,6 +268,7 @@
     <span class="ident">core</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="ident">XCoreContext</span>,
     <span class="ident">project_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">ProjectLinter</span>],
     <span class="ident">package_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">PackageLinter</span>],
+    <span class="ident">file_path_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">FilePathLinter</span>],
     <span class="ident">content_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">ContentLinter</span>],
     <span class="ident">fail_fast</span>: <span class="ident">bool</span>,
 }
@@ -305,6 +279,7 @@
             <span class="ident">core</span>,
             <span class="ident">project_linters</span>: <span class="kw-2">&amp;</span>[],
             <span class="ident">package_linters</span>: <span class="kw-2">&amp;</span>[],
+            <span class="ident">file_path_linters</span>: <span class="kw-2">&amp;</span>[],
             <span class="ident">content_linters</span>: <span class="kw-2">&amp;</span>[],
             <span class="ident">fail_fast</span>: <span class="bool-val">false</span>,
         }
@@ -323,6 +298,14 @@
         <span class="ident">package_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">PackageLinter</span>],
     ) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">package_linters</span> <span class="op">=</span> <span class="ident">package_linters</span>;
+        <span class="self">self</span>
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_file_path_linters</span>(
+        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="ident">file_path_linters</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> [<span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="kw">dyn</span> <span class="ident">FilePathLinter</span>],
+    ) <span class="op">-&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span> {
+        <span class="self">self</span>.<span class="ident">file_path_linters</span> <span class="op">=</span> <span class="ident">file_path_linters</span>;
         <span class="self">self</span>
     }
 
@@ -349,8 +332,6 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LintEngine</span><span class="op">&lt;</span><span class="lifetime">&#39;cfg</span><span class="op">&gt;</span> {
     <span class="ident">config</span>: <span class="ident">LintEngineConfig</span><span class="op">&lt;</span><span class="lifetime">&#39;cfg</span><span class="op">&gt;</span>,
     <span class="ident">project_ctx</span>: <span class="ident">ProjectContext</span><span class="op">&lt;</span><span class="lifetime">&#39;cfg</span><span class="op">&gt;</span>,
-    <span class="comment">// Caches to allow results to live as long as the engine itself.</span>
-    <span class="ident">files_stdout</span>: <span class="ident">OnceCell</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;cfg</span><span class="op">&gt;</span> <span class="ident">LintEngine</span><span class="op">&lt;</span><span class="lifetime">&#39;cfg</span><span class="op">&gt;</span> {
@@ -359,7 +340,6 @@
         <span class="self">Self</span> {
             <span class="ident">config</span>,
             <span class="ident">project_ctx</span>,
-            <span class="ident">files_stdout</span>: <span class="ident">OnceCell</span>::<span class="ident">new</span>(),
         }
     }
 
@@ -421,15 +401,40 @@
             }
         }
 
+        <span class="comment">// Run file path linters.</span>
+        <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">config</span>.<span class="ident">file_path_linters</span>.<span class="ident">is_empty</span>() {
+            <span class="kw">let</span> <span class="ident">file_list</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">file_list</span>()<span class="question-mark">?</span>;
+
+            <span class="kw">let</span> <span class="ident">file_ctxs</span> <span class="op">=</span> <span class="ident">file_list</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">FilePathContext</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">project_ctx</span>, <span class="ident">path</span>));
+
+            <span class="kw">for</span> <span class="ident">file_ctx</span> <span class="kw">in</span> <span class="ident">file_ctxs</span> {
+                <span class="kw">for</span> <span class="ident">linter</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">file_path_linters</span> {
+                    <span class="kw">let</span> <span class="ident">source</span> <span class="op">=</span> <span class="ident">file_ctx</span>.<span class="ident">source</span>(<span class="ident">linter</span>.<span class="ident">name</span>());
+                    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">formatter</span> <span class="op">=</span> <span class="ident">LintFormatter</span>::<span class="ident">new</span>(<span class="ident">source</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">messages</span>);
+                    <span class="kw">match</span> <span class="ident">linter</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">file_ctx</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">formatter</span>)<span class="question-mark">?</span> {
+                        <span class="ident">RunStatus</span>::<span class="ident">Executed</span> <span class="op">=&gt;</span> {
+                            <span class="comment">// Lint ran successfully.</span>
+                        }
+                        <span class="ident">RunStatus</span>::<span class="ident">Skipped</span>(<span class="ident">reason</span>) <span class="op">=&gt;</span> {
+                            <span class="ident">skipped</span>.<span class="ident">push</span>((<span class="ident">source</span>, <span class="ident">reason</span>));
+                        }
+                    }
+
+                    <span class="kw">if</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">fail_fast</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">messages</span>.<span class="ident">is_empty</span>() {
+                        <span class="comment">// At least one issue was found.</span>
+                        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">LintResults</span> { <span class="ident">skipped</span>, <span class="ident">messages</span> });
+                    }
+                }
+            }
+        }
+
         <span class="comment">// Run content linters.</span>
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">config</span>.<span class="ident">content_linters</span>.<span class="ident">is_empty</span>() {
-            <span class="kw">let</span> <span class="ident">file_list</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_file_list</span>()<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">file_list</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">file_list</span>()<span class="question-mark">?</span>;
 
             <span class="comment">// TODO: This should probably be a worker queue with a thread pool or something.</span>
 
-            <span class="kw">let</span> <span class="ident">file_ctxs</span> <span class="op">=</span> <span class="ident">file_list</span>
-                .<span class="ident">iter</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">FileContext</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">project_ctx</span>, <span class="ident">path</span>));
+            <span class="kw">let</span> <span class="ident">file_ctxs</span> <span class="op">=</span> <span class="ident">file_list</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">path</span><span class="op">|</span> <span class="ident">FilePathContext</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">project_ctx</span>, <span class="ident">path</span>));
 
             <span class="kw">for</span> <span class="ident">file_ctx</span> <span class="kw">in</span> <span class="ident">file_ctxs</span> {
                 <span class="kw">let</span> <span class="ident">linters_to_run</span> <span class="op">=</span> <span class="self">self</span>
@@ -490,61 +495,12 @@
     <span class="comment">// Helper methods</span>
     <span class="comment">// ---</span>
 
-    <span class="kw">fn</span> <span class="ident">get_file_list</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">Path</span><span class="op">&gt;&gt;</span> {
-        <span class="comment">// TODO: It&#39;d be pretty cool to be able to cache the `&amp;Path` instances as well. The options</span>
-        <span class="comment">// are:</span>
-        <span class="comment">// 1. Cache them as `PathBuf` instances. That would involve lots of allocations.</span>
-        <span class="comment">// 2. Store the `&amp;Path` instances alongside `files_stdout`. That would be a self-referential</span>
-        <span class="comment">//    struct (so would require the use of something like</span>
-        <span class="comment">//    [`rental`](https://docs.rs/rental/).</span>
-        <span class="comment">// 3. Reorganize the code to use some sort of arena allocator which is passed into the lint</span>
-        <span class="comment">//    context (and/or stored alongside with `rental`.)</span>
-        <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">files_stdout</span>()<span class="question-mark">?</span>;
-
-        <span class="prelude-val">Ok</span>(<span class="ident">stdout</span>
-            .<span class="ident">split</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">b</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="number">0</span>)
-            .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> {
-                <span class="comment">// TODO: make global exclusions configurable.</span>
-                <span class="kw">if</span> <span class="op">!</span><span class="ident">s</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">s</span>.<span class="ident">starts_with</span>(<span class="string">b&quot;testsuite/libra-fuzzer/artifacts/&quot;</span>) {
-                    <span class="comment">// `OsStr::from_bytes` only works on Unix, since &quot;OS strings&quot; on Windows are</span>
-                    <span class="comment">// actually UTF-16ish. Would be cool to get it working on Windows at some point</span>
-                    <span class="comment">// too, but it needs to be done with some care.</span>
-                    <span class="comment">//</span>
-                    <span class="comment">// For more, see:</span>
-                    <span class="comment">// * https://doc.rust-lang.org/std/ffi/index.html#conversions</span>
-                    <span class="comment">// * https://www.mercurial-scm.org/wiki/EncodingStrategy and</span>
-                    <span class="comment">// * https://en.wikipedia.org/wiki/Mojibake.</span>
-                    <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">unix</span>::<span class="ident">ffi</span>::<span class="ident">OsStrExt</span>;
-
-                    <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">OsStr</span>::<span class="ident">from_bytes</span>(<span class="ident">s</span>);
-                    <span class="prelude-val">Some</span>(<span class="ident">Path</span>::<span class="ident">new</span>(<span class="ident">s</span>))
-                } <span class="kw">else</span> {
-                    <span class="prelude-val">None</span>
-                }
-            })
-            .<span class="ident">collect</span>())
-    }
-
-    <span class="kw">fn</span> <span class="ident">files_stdout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">files_stdout</span>
-            .<span class="ident">get_or_try_init</span>(<span class="op">||</span> {
-                <span class="comment">// TODO: abstract out SCM and command-running functionality.</span>
-                <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command</span>::<span class="ident">new</span>(<span class="string">&quot;git&quot;</span>)
-                    .<span class="ident">current_dir</span>(<span class="self">self</span>.<span class="ident">config</span>.<span class="ident">core</span>.<span class="ident">project_root</span>())
-                    <span class="comment">// The -z causes files to not be quoted, and to be separated by \0.</span>
-                    .<span class="ident">args</span>(<span class="kw-2">&amp;</span>[<span class="string">&quot;ls-files&quot;</span>, <span class="string">&quot;-z&quot;</span>])
-                    .<span class="ident">stderr</span>(<span class="ident">Stdio</span>::<span class="ident">inherit</span>())
-                    .<span class="ident">output</span>()
-                    .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">SystemError</span>::<span class="ident">io</span>(<span class="string">&quot;running git ls-files&quot;</span>, <span class="ident">err</span>))<span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="op">!</span><span class="ident">output</span>.<span class="ident">status</span>.<span class="ident">success</span>() {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">SystemError</span>::<span class="ident">Exec</span> {
-                        <span class="ident">cmd</span>: <span class="string">&quot;git ls-files&quot;</span>,
-                        <span class="ident">status</span>: <span class="ident">output</span>.<span class="ident">status</span>,
-                    });
-                }
-                <span class="prelude-val">Ok</span>(<span class="ident">output</span>.<span class="ident">stdout</span>)
-            })
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">stdout</span><span class="op">|</span> <span class="ident">stdout</span>.<span class="ident">as_slice</span>())
+    <span class="kw">fn</span> <span class="ident">file_list</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="lifetime">&#39;cfg</span> <span class="ident">Path</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;cfg</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">tracked_files</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">core</span>.<span class="ident">git_cli</span>().<span class="ident">tracked_files</span>()<span class="question-mark">?</span>;
+        <span class="comment">// TODO: make global exclusions configurable</span>
+        <span class="prelude-val">Ok</span>(<span class="ident">tracked_files</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">f</span><span class="op">|</span> <span class="op">!</span><span class="ident">f</span>.<span class="ident">starts_with</span>(<span class="string">&quot;testsuite/libra-fuzzer/artifacts/&quot;</span>)))
     }
 }
 
