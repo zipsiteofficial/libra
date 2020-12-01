@@ -595,9 +595,6 @@
 <span id="594">594</span>
 <span id="595">595</span>
 <span id="596">596</span>
-<span id="597">597</span>
-<span id="598">598</span>
-<span id="599">599</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright (c) The Libra Core Contributors</span>
 <span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
@@ -606,10 +603,7 @@
     <span class="ident">access_path_cache</span>::<span class="ident">AccessPathCache</span>,
     <span class="ident">counters</span>::<span class="kw-2">*</span>,
     <span class="ident">data_cache</span>::{<span class="ident">RemoteStorage</span>, <span class="ident">StateViewCache</span>},
-    <span class="ident">errors</span>::{
-        <span class="ident">convert_normal_prologue_error</span>, <span class="ident">convert_normal_success_epilogue_error</span>,
-        <span class="ident">convert_write_set_prologue_error</span>, <span class="ident">expect_only_successful_execution</span>,
-    },
+    <span class="ident">errors</span>::{<span class="ident">convert_epilogue_error</span>, <span class="ident">convert_prologue_error</span>, <span class="ident">expect_only_successful_execution</span>},
     <span class="ident">system_module_names</span>::<span class="kw-2">*</span>,
     <span class="ident">transaction_metadata</span>::<span class="ident">TransactionMetadata</span>,
 };
@@ -843,7 +837,7 @@
                 <span class="ident">cost_strategy</span>,
                 <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the prologue of a transaction by calling into `MODULE_PROLOGUE_NAME` function stored</span>
@@ -882,7 +876,7 @@
                 <span class="ident">cost_strategy</span>,
                 <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `EPILOGUE_NAME` function stored</span>
@@ -923,7 +917,7 @@
                 <span class="ident">cost_strategy</span>,
                 <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_normal_success_epilogue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_epilogue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the failure epilogue of a transaction by calling into `USER_EPILOGUE_NAME` function</span>
@@ -994,7 +988,7 @@
                 <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">cost_strategy</span>,
                 <span class="ident">log_context</span>,
             )
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_write_set_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
+            .<span class="ident">or_else</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">convert_prologue_error</span>(<span class="ident">err</span>, <span class="ident">log_context</span>))
     }
 
     <span class="doccomment">/// Run the epilogue of a transaction by calling into `WRITESET_EPILOGUE_NAME` function stored</span>
