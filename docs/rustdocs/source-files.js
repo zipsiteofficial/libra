@@ -72,6 +72,7 @@ sourcesIndex["libra_secure_net"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_secure_push_metrics"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_secure_storage"] = {"name":"","files":["crypto_kv_storage.rs","crypto_storage.rs","error.rs","github.rs","in_memory.rs","kv_storage.rs","lib.rs","namespaced_storage.rs","on_disk.rs","policy.rs","storage.rs","vault.rs"]};
 sourcesIndex["libra_secure_time"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["libra_smoke_test_attribute"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_state_view"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["libra_swarm"] = {"name":"","files":["client.rs","faucet.rs","lib.rs","swarm.rs"]};
 sourcesIndex["libra_temppath"] = {"name":"","files":["lib.rs"]};
